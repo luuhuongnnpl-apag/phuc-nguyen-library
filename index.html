@@ -261,6 +261,7 @@ ul.mm-d li{margin:1px 0}
   <div id="main"></div>
 </div>
 
+<script src="codes.js"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -372,7 +373,11 @@ async function checkCode(raw){const code=norm(raw);
     const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã dùng đủ "+(r&&r.max||"")+" người. Hỏi giảng viên."};
     if(r&&r.why==="notfound"&&DB){const v=valid(code);if(v.ok)return {ok:true,s:legacyS(v.p)}}
     return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
-  const v=valid(code);if(!v.ok)return v;return {ok:true,s:legacyS(v.p)}}
+  const k=await maTinh(code);if(k){if(todayISO()>k.han)return {ok:false,expired:true,why:"Mã đã hết hạn ngày "+fmtDate(k.han)+". Hỏi giảng viên mã mới."};return {ok:true,s:{code,label:k.note?String(k.note):"Mã "+code,han:k.han}}}
+  const v=valid(code);if(!v.ok)return /^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)&&!parse(code)?{ok:false,why:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên."}:v;return {ok:true,s:legacyS(v.p)}}
+/* Mã lớp giảng viên tạo, đồng bộ sang file codes.js (chỉ lưu dấu băm, không lộ mã) */
+async function bam(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+async function maTinh(code){const L=window.PN_CODES||[];if(!L.length||!(window.crypto&&crypto.subtle))return null;const h=await bam("PNLIB|"+code);return L.find(x=>x.h===h)||null}
 function loadSession(){const raw=store.get(KEY);if(!raw)return null;
   try{const s=JSON.parse(raw);if(s&&s.code&&s.han)return s}catch(e){}
   const v=valid(raw);return v.ok?legacyS(v.p):null}
@@ -944,6 +949,7 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home")route("home"
   const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
   try{DB=onClaude?await window.claude.use("db"):null}catch(e){DB=null}
+  if(!BE()&&session&&!valid(session.code).ok){maTinh(session.code).then(k=>{if(!k){store.del(KEY);session=null;expiredMsg="Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho()}})}
   if(BE()&&session&&!valid(session.code).ok){call({action:"check",code:session.code,dev:getDev()}).then(r=>{if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
       store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
       if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
