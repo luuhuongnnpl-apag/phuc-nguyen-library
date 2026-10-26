@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Phúc Nguyên Library</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Merriweather:wght@700;900&display=swap">
+<style>
+/* Bố cục theo bản phác của giảng viên: băng tiêu đề xanh thép có logo; hàng trên gồm khung Học phần (trái) và Tài liệu học tập (phải); hàng dưới gồm Hướng dẫn sử dụng và Dữ liệu truy cập */
+:root{
+  --bg:#f2f4f9; --paper:#ffffff; --ink:#18263a; --muted:#5a6678; --line:#dfe3ec;
+  --band:#1d5677; --band-2:#16455f; --on-band:#ffffff; --on-band-2:#cfe0ea;
+  --head:#1f4f7a; --frame:#b9b3da; --tint:#eef2f9;
+  --red:#d33a3a; --red-soft:#fdecec; --ok:#1f7a4d; --bad:#b3261e;
+  --f-display:"Merriweather",Georgia,"Times New Roman",serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1420; --paper:#141d2c; --ink:#e6ebf3; --muted:#9ca8bb; --line:#27334a;
+  --band:#143e57; --band-2:#0f3146; --on-band:#ffffff; --on-band-2:#b8d0de;
+  --head:#9cc4e6; --frame:#4a4673; --tint:#1a2638;
+  --red:#ef6b6b; --red-soft:#3a1d1f; --ok:#6fd3a0; --bad:#f08a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1420; --paper:#141d2c; --ink:#e6ebf3; --muted:#9ca8bb; --line:#27334a;
+  --band:#143e57; --band-2:#0f3146; --on-band:#ffffff; --on-band-2:#b8d0de;
+  --head:#9cc4e6; --frame:#4a4673; --tint:#1a2638;
+  --red:#ef6b6b; --red-soft:#3a1d1f; --ok:#6fd3a0; --bad:#f08a80; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--band)}
+button{font:inherit;color:inherit}
+a{color:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--head);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.logo{flex:none;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}
+.logo img{width:90%;height:90%;object-fit:contain;display:block}
+
+/* Băng tiêu đề */
+.band{background:var(--band);color:var(--on-band)}
+.band .wrap{display:flex;align-items:center;gap:clamp(14px,3vw,28px);padding-block:18px 16px;position:relative}
+.band .logo{width:clamp(70px,11vw,112px);aspect-ratio:1}
+.band .titles{flex:1;min-width:0;text-align:center}
+.band .kicker{font:900 clamp(12px,1.8vw,16px) var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--on-band-2)}
+.band h1{font-size:clamp(28px,6vw,58px);font-weight:900;text-transform:uppercase;letter-spacing:.02em;line-height:1.1}
+.band .copy{font-size:12px;color:var(--on-band-2);margin-top:4px}
+.band .who{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:12px;font-size:12.5px;color:var(--on-band-2);text-align:right;line-height:1.35}
+.band .who button{border:1px solid rgba(255,255,255,.35);background:none;color:#fff;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;margin-top:4px}
+.subbar{background:var(--band-2);color:var(--on-band)}
+.subbar .wrap{display:flex;align-items:center;gap:12px;padding-block:8px;flex-wrap:wrap}
+.subbar button{border:1px solid rgba(255,255,255,.35);background:none;color:#fff;border-radius:8px;padding:5px 12px;font-weight:600;cursor:pointer}
+.subbar h2{font-size:16px;text-transform:uppercase;letter-spacing:.03em}
+.subbar .sp{flex:1}
+.subbar a{font-size:13.5px;font-weight:600;color:#fff}
+
+/* Khung */
+main.wrap{padding-block:22px 40px;display:grid;gap:20px}
+.grid-top{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:20px;align-items:start}
+.grid-bot{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,5fr);gap:20px;align-items:stretch}
+.frame{background:var(--paper);border:2px dashed var(--frame);border-radius:24px;padding:20px clamp(16px,2.6vw,28px) 24px;min-width:0}
+.ftitle{font:900 clamp(20px,2.6vw,28px) var(--f-display);text-transform:uppercase;color:var(--head);letter-spacing:.01em;margin-bottom:14px;display:inline-block;border-bottom:3px solid currentColor;line-height:1.25;padding-bottom:2px}
+.center{text-align:center}
+
+/* Học phần */
+.courses{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.courses button{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;border-radius:10px;padding:7px 8px;cursor:pointer;text-align:left}
+.courses button:hover{background:var(--tint)}
+.courses .nm{flex:1;min-width:0;font:700 15.5px/1.3 var(--f-display);text-transform:uppercase;color:var(--head)}
+.courses .soon .nm{color:var(--muted)}
+.courses .st{font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.courses .open .st{background:var(--head);color:var(--paper)}
+.courses .soon .st{color:var(--muted);border:1px solid var(--line)}
+.book{flex:none;width:30px;height:24px}
+
+/* Tài liệu học tập */
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px 20px}
+.doc{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center;min-width:0}
+.doc .ph{width:100%;aspect-ratio:4/3;max-width:100%;border-radius:6px;overflow:hidden;background:var(--tint);position:relative}
+.doc img{width:100%;height:100%;object-fit:cover;display:block}
+.doc.soon img{filter:grayscale(.85) opacity(.6)}
+.doc .ph .tag{position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;background:rgba(10,20,35,.72);color:#fff;border-radius:999px;padding:2px 9px}
+.doc .ttl{font:900 15.5px/1.3 var(--f-display);text-transform:uppercase;color:var(--head);background:none;border:0;padding:0;cursor:pointer;text-decoration:none}
+.doc .ttl:hover{text-decoration:underline}
+.doc.soon .ttl{color:var(--muted);cursor:default;text-decoration:none}
+.doc .sub{font-size:12.5px;color:var(--muted);margin-top:-4px}
+
+/* Hướng dẫn */
+.guide{margin:0;padding-left:26px;display:grid;gap:6px;font:700 clamp(15px,1.8vw,17.5px)/1.45 var(--f-display);color:var(--head)}
+.guide li::marker{font-weight:900}
+.thanks{margin:10px 0 0 26px;font:700 16px var(--f-display);color:var(--head)}
+
+/* Dữ liệu truy cập */
+.stats{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:8px}
+.stats li{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stats li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--head)}
+.stats .lbl{font:700 16px var(--f-display);color:var(--head);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.stats button.lbl:hover{text-decoration:underline}
+.stats .val{font:900 17px var(--f-display);font-variant-numeric:tabular-nums;color:var(--ink)}
+.stats .val.na{font:500 12.5px var(--f-body);color:var(--muted)}
+.fb{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:10px}
+.bubble{width:58px;height:50px;border-radius:12px;background:var(--red);color:#fff;display:grid;place-items:center;font:900 34px/1 Georgia,serif;position:relative;padding-top:12px}
+.bubble::after{content:"";position:absolute;left:12px;bottom:-10px;border:10px solid transparent;border-top-color:var(--red);border-bottom:0}
+.sendfb{font-style:italic;color:var(--muted);font-size:14.5px;text-decoration:none;border-bottom:1px solid currentColor;background:none;border-top:0;border-left:0;border-right:0;cursor:pointer;padding:0}
+.sendfb:hover{color:var(--head)}
+
+/* Danh sách góp ý */
+.fb-list{display:grid;gap:10px;margin-top:12px}
+.fb-item{background:var(--tint);border-radius:12px;padding:12px 14px}
+.fb-item .m{font-size:12.5px;color:var(--muted)}
+.fb-item p{margin:4px 0 0;max-width:70ch}
+.info{background:var(--tint);border-radius:12px;padding:12px 16px;font-size:14.5px;color:var(--muted)}
+
+/* Trang học phần */
+.viewer{display:flex;flex-direction:column;height:calc(100dvh - env(safe-area-inset-top,0px))}
+.viewer iframe{flex:1;width:100%;border:0;background:var(--bg)}
+.soon-page{padding-block:30px 50px}
+.soon-page .frame{max-width:720px;margin:0 auto;display:grid;gap:12px}
+.soon-page p{margin:0;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--band);border-color:var(--band);color:var(--on-band)}
+
+/* Cổng nhập mã */
+.gate{min-height:100dvh;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.gate-card{width:min(480px,100%);background:var(--paper);border:2px dashed var(--frame);border-radius:24px;overflow:hidden}
+.gate-top{background:var(--band);color:var(--on-band);padding:24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.gate-top .logo{width:96px;height:96px}
+.gate-top .kicker{font:900 13px var(--f-display);letter-spacing:.08em;color:var(--on-band-2)}
+.gate-top h1{font-size:28px;text-transform:uppercase;font-weight:900}
+.gate-form{padding:22px 26px 24px;display:grid;gap:10px}
+.gate-form p{margin:0;color:var(--muted);font-size:14.5px}
+label.lab{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+input[type=text],input[type=month]{width:100%;font:600 17px var(--f-body);color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:11px 14px}
+#code-in,#k-in{letter-spacing:.06em;text-transform:uppercase}
+.err{color:var(--bad);font-size:13.5px;min-height:1.2em}
+.demo{background:var(--tint);border-radius:10px;padding:10px 14px;font-size:13.5px}
+.demo code{font:700 14px var(--f-body);letter-spacing:.06em;color:var(--head)}
+
+/* Quản lý mã */
+.admin{display:grid;gap:16px}
+.admin .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.admin .row>div{display:grid;gap:6px;flex:1;min-width:150px}
+.big{font:900 22px var(--f-display);letter-spacing:.04em;color:var(--head);word-break:break-all}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{background:var(--tint);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.msg{font-size:13.5px;color:var(--muted)}
+.admin-link{font-size:13px;color:var(--muted);text-align:center}
+.admin-link button{background:none;border:0;color:var(--head);font-weight:700;cursor:pointer;text-decoration:underline}
+
+@media (max-width:900px){.grid-top,.grid-bot{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){.band .who{position:static;text-align:left}.band .wrap{flex-wrap:wrap;justify-content:center}.band .titles{flex-basis:100%}.docs{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.doc .ttl{font-size:13.5px}}
+</style>
+</head>
+<body>
+
+
+<div id="gate" class="gate" hidden>
+  <div class="gate-card">
+    <div class="gate-top"><div class="logo"><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"></div><div class="kicker">THƯ VIỆN PHÚC NGUYÊN</div><h1>Tài liệu luật học</h1></div>
+    <form class="gate-form" id="gate-form" novalidate>
+      <p>Nhập mã lớp do giảng viên cung cấp. Trình duyệt nhớ mã đến khi mã hết hạn.</p>
+      <label class="lab" for="code-in">Mã lớp</label>
+      <input type="text" id="code-in" autocomplete="off" spellcheck="false" placeholder="K24LUAT1-0127-CCQ">
+      <div class="err" id="code-err" role="alert"></div>
+      <button class="btn primary" type="submit">Vào thư viện</button>
+      <div class="demo" id="demo-note">Bản demo, mã dùng thử: <code>DEMO-1227-D8H</code></div>
+      <div class="msg">© Bản quyền thuộc Phúc Nguyên</div>
+    </form>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header class="band"><div class="wrap">
+    <div class="logo"><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"></div>
+    <div class="titles"><div class="kicker">Thư viện Phúc Nguyên</div><h1>Tài liệu luật học</h1><div class="copy">Bản quyền thuộc Phúc Nguyên</div></div>
+    <div class="who" id="who"></div>
+  </div></header>
+  <div id="main"></div>
+</div>
+
+<script>
+/* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
+const CONFIG={
+  formUrl:"",          /* Link Google Form "Gửi góp ý" */
+  responsesCsvUrl:"",  /* Link CSV của trang tính câu trả lời (Xuất bản lên web, định dạng CSV) */
+  goatcounter:""       /* Tên mã GoatCounter, ví dụ "phucnguyen" */
+};
+const COURSES=[
+  {id:"luat-dan-su",name:"Luật Dân sự",c:"#6fa8d6",src:"hp/luat-dan-su.html"},
+  {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",c:"#3d7fc1"},
+  {id:"luat-hinh-su",name:"Luật Hình sự",c:"#3e4a57"},
+  {id:"to-tung-hinh-su",name:"Luật Tố tụng hình sự",c:"#56626e"},
+  {id:"luat-hanh-chinh",name:"Luật Hành chính",c:"#b9bfc7"},
+  {id:"to-tung-hanh-chinh",name:"Luật Tố tụng hành chính",c:"#d0d4da"},
+  {id:"luat-doanh-nghiep",name:"Luật Doanh nghiệp",c:"#8a5a1e"},
+  {id:"so-huu-tri-tue",name:"Luật Sở hữu trí tuệ",c:"#7aa62e"},
+  {id:"luat-dat-dai",name:"Luật Đất đai",c:"#c0392b",src:"hp/luat-dat-dai.html"},
+  {id:"cong-chung-chung-thuc",name:"Công chứng, chứng thực",c:"#3f3a8c",src:"hp/cong-chung-chung-thuc.html"},
+  {id:"ky-nang-tu-van",name:"Kỹ năng tư vấn pháp luật",c:"#6a3fa0"},
+  {id:"luat-dau-tu",name:"Luật Đầu tư",c:"#e08a3c"},
+  {id:"luat-thuong-mai",name:"Luật Thương mại",c:"#e3b928"}
+];
+const DOCS=[
+  {id:"luat-dan-su",name:"Luật Dân sự",img:"assets/dan-su.jpg"},
+  {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",img:"assets/to-tung-dan-su.jpg"},
+  {id:"luat-dat-dai",name:"Luật Đất đai",img:"assets/dat-dai.jpg"},
+  {id:"cong-chung-chung-thuc",name:"Công chứng, chứng thực",img:"assets/cong-chung.jpg"},
+  {id:"ky-nang-tu-van",name:"Kỹ năng tư vấn pháp luật",img:"assets/ky-nang-tu-van.jpg"},
+  {id:"dam-phan-hop-dong",name:"Đàm phán, soạn thảo hợp đồng",img:"assets/hop-dong.jpg"}
+];
+const ALL=[...COURSES,{id:"dam-phan-hop-dong",name:"Đàm phán, soạn thảo hợp đồng"}];
+const course=id=>ALL.find(c=>c.id===id);
+const book=c=>`<svg class="book" viewBox="0 0 30 24" aria-hidden="true"><path d="M3 5 L15 2 L27 5 L27 19 L15 22 L3 19 Z" fill="${c}"/><path d="M15 2 L15 22" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/><path d="M5 18 L15 20.5 L25 18" stroke="#fff" stroke-width="1.4" fill="none" opacity=".85"/><path d="M3 5 L15 2 L27 5 L15 8 Z" fill="#fff" opacity=".35"/></svg>`;
+
+/* ===== Mã lớp: LỚP-MMYY-KKK (MMYY: tháng hết hạn; KKK: mã kiểm tra) ===== */
+const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",SALT="PN-LIB-2026",REVOKED=[];
+function fnv(s){let h=0x811c9dc5;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,0x01000193)>>>0}return h}
+function chk(l,b){let h=fnv(SALT+"|"+l+"|"+b),o="";for(let i=0;i<3;i++){o+=A[h%32];h=Math.floor(h/32)}return o}
+function norm(s){return String(s||"").toUpperCase().replace(/\s+/g,"").replace(/[–—_]/g,"-")}
+function endOf(mm,yy){return new Date(2000+yy,mm,1)}
+function hanText(mm,yy){const d=new Date(2000+yy,mm,0);return d.getDate()+"/"+String(mm).padStart(2,"0")+"/"+(2000+yy)}
+function parse(code){const m=/^([A-Z0-9]{2,12})-(\d{2})(\d{2})-([A-Z0-9]{3})$/.exec(norm(code));if(!m)return null;const mm=+m[2],yy=+m[3];if(mm<1||mm>12)return null;return {lop:m[1],mmyy:m[2]+m[3],mm,yy,ck:m[4],code:m[1]+"-"+m[2]+m[3]+"-"+m[4]}}
+function valid(code){const p=parse(code);
+  if(!p)return {ok:false,why:"Mã chưa đúng dạng, ví dụ K24LUAT1-0127-CCQ."};
+  if(chk(p.lop,p.mmyy)!==p.ck)return {ok:false,why:"Mã không đúng. Kiểm tra lại từng ký tự hoặc hỏi giảng viên."};
+  if(REVOKED.includes(p.code))return {ok:false,why:"Mã này đã bị khóa. Hỏi giảng viên mã mới của lớp."};
+  if(new Date()>=endOf(p.mm,p.yy))return {ok:false,expired:true,why:"Mã của lớp đã hết hạn ngày "+hanText(p.mm,p.yy)+". Hỏi giảng viên mã mới."};
+  return {ok:true,p}}
+
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const KEY="pnlib-ma-lop";
+let session=null,isOwner=false,visits=null,feedback=null,fbErr="";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function showGate(msg){$("#app").hidden=true;$("#gate").hidden=false;$("#code-err").textContent=msg||""}
+function enter(p){session=p;store.set(KEY,p.code);$("#gate").hidden=true;$("#app").hidden=false;
+  $("#who").innerHTML=(p.lop==="DEMO"?"Mã dùng thử":"Lớp "+esc(p.lop))+" · đến "+hanText(p.mm,p.yy)+'<br><button type="button" id="logout">Đổi mã</button>';
+  $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";showGate()};
+  const h=(location.hash||"").slice(1); route(course(h)||h==="quan-ly-ma"||h==="gop-y"?h:"home")}
+$("#gate-form").addEventListener("submit",e=>{e.preventDefault();
+  if(!$("#code-in").value.trim()){$("#code-err").textContent="Nhập mã lớp trước khi vào.";return}
+  const v=valid($("#code-in").value);if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.p)});
+$("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
+
+let cur="home";
+function route(id){cur=id;const m=$("#main");
+  if(id==="home") m.innerHTML=homeHTML();
+  else if(id==="gop-y") m.innerHTML=fbHTML();
+  else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
+  else{const c=course(id);if(!c){route("home");return}
+    m.innerHTML=c.src
+      ?`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2><div class="sp"></div><a href="${c.src}" target="_blank" rel="noopener">Mở trong thẻ mới</a></div></div><section class="viewer"><iframe src="${c.src}" title="Tài liệu ${c.name}"></iframe></section>`
+      :`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2></div></div><section class="soon-page wrap"><div class="frame"><div class="ftitle">${c.name}</div><p>Tài liệu học phần đang được biên soạn và sẽ cập nhật tại đây khi có dữ liệu: thi thử, văn bản pháp luật, kiến thức, câu hỏi lý thuyết và tình huống.</p><div><button class="btn" data-home>Về thư viện</button></div></div></section>`}
+  m.querySelectorAll("[data-home]").forEach(b=>b.onclick=()=>route("home"));
+  m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
+  window.scrollTo(0,0)}
+
+function homeHTML(){
+  const list=COURSES.map(c=>`<li><button type="button" class="${c.src?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${c.name}</span><span class="st">${c.src?"Đã có":"Sắp có"}</span></button></li>`).join("");
+  const docs=DOCS.map(d=>{const c=course(d.id),has=!!(c&&c.src);
+    return `<div class="doc${has?"":" soon"}"><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="${d.id}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
+  const vTxt=visits==null?'<span class="val na">chưa kết nối bộ đếm</span>':`<span class="val">${visits.toLocaleString("vi-VN")}</span>`;
+  const fTxt=feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`;
+  return `<main class="wrap">
+  <div class="grid-top">
+    <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
+    <section class="frame center"><div class="ftitle">Tài liệu học tập</div><div class="docs">${docs}</div></section>
+  </div>
+  <div class="grid-bot">
+    <section class="frame"><div class="ftitle">Hướng dẫn sử dụng</div>
+      <ol class="guide"><li>Đăng nhập dữ liệu thông tin</li><li>Đọc tài liệu, sau đó làm các bài test kiểm tra kiến thức và luyện tập</li><li>Phản hồi, góp ý để hoàn thiện hệ thống.</li><li>Thông tin dữ liệu cung cấp vì mục đích học thuật, không có yếu tố thương mại.</li></ol>
+      <p class="thanks">Trân trọng cảm ơn!</p></section>
+    <section class="frame"><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
+      <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
+      <div class="fb"><div class="bubble" aria-hidden="true">“</div>${sendLink()}</div>
+      ${isOwner?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
+    </section>
+  </div></main>`}
+function sendLink(){return CONFIG.formUrl?`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`:`<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`}
+
+function fbHTML(){
+  let body;
+  if(feedback&&feedback.length) body=`<div class="fb-list">${feedback.slice().reverse().map(r=>`<div class="fb-item"><div class="m">${esc(r.time)}${r.course?" · "+esc(r.course):""}</div><p>${esc(r.text)}</p></div>`).join("")}</div>`;
+  else if(feedback) body=`<div class="info">Chưa có góp ý nào. Hãy là người đầu tiên gửi góp ý.</div>`;
+  else body=`<div class="info">${fbErr||"Mục góp ý sẽ hiện toàn bộ phản hồi của sinh viên tại đây khi biểu mẫu góp ý được kết nối."}</div>`;
+  return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Phản hồi góp ý</h2></div></div>
+  <main class="wrap"><section class="frame"><div class="ftitle">Phản hồi góp ý</div>
+  <p class="msg">Góp ý về nội dung cần cập nhật, câu hỏi chưa chính xác hoặc đề xuất cải thiện. Mọi góp ý hiện công khai cho cả lớp cùng xem.</p>
+  <div style="margin:12px 0">${CONFIG.formUrl?`<a class="btn primary" style="display:inline-block;text-decoration:none" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý mới</a>`:'<span class="msg">Nút gửi góp ý sẽ mở biểu mẫu khi được kết nối.</span>'}</div>
+  ${body}</section></main>`}
+
+/* Đọc CSV câu trả lời Google Form (cột: Dấu thời gian, Học phần, Nội dung góp ý) */
+function parseCSV(t){const rows=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const ch=t[i];
+  if(q){if(ch=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=ch}
+  else if(ch=='"')q=true;else if(ch==","){r.push(f);f=""}else if(ch=="\n"){r.push(f);rows.push(r);r=[];f=""}else if(ch!="\r")f+=ch}
+  if(f||r.length){r.push(f);rows.push(r)}return rows}
+async function loadFeedback(){ if(!CONFIG.responsesCsvUrl)return;
+  try{const res=await fetch(CONFIG.responsesCsvUrl,{cache:"no-store"});const rows=parseCSV(await res.text()).slice(1).filter(r=>r.some(x=>x.trim()));
+    feedback=rows.map(r=>({time:r[0]||"",course:r.length>2?r[1]:"",text:r.length>2?r.slice(2).join(" "):(r[1]||"")})).filter(x=>x.text.trim())}
+  catch(e){fbErr="Không tải được danh sách góp ý lúc này. Thử lại sau."}}
+async function loadVisits(){ if(!CONFIG.goatcounter)return;
+  try{const s=document.createElement("script");s.async=true;s.dataset.goatcounter=`https://${CONFIG.goatcounter}.goatcounter.com/count`;s.src="https://gc.zgo.at/count.js";document.head.appendChild(s);
+    const r=await fetch(`https://${CONFIG.goatcounter}.goatcounter.com/counter/TOTAL.json`);const j=await r.json();visits=parseInt(String(j.count).replace(/\D/g,""),10)}catch(e){}}
+
+/* ===== Quản lý mã lớp (chỉ hiện cho chủ trang khi mở trên Claude) ===== */
+let issued=[];try{issued=JSON.parse(store.get("pnlib-ma-da-cap")||"[]")}catch(e){issued=[]}
+function adminHTML(){const n=new Date(),d=new Date(n.getFullYear(),n.getMonth()+4,1),def=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã lớp</h2></div></div>
+  <main class="wrap admin"><section class="frame"><div class="ftitle">Tạo mã cho lớp</div>
+    <form id="gen-form" novalidate class="admin"><p class="msg">Mã dạng LỚP-MMYY-KKK: MMYY là tháng hết hạn, KKK là mã kiểm tra. Mã dùng được ngay trên mọi bản của web.</p>
+      <div class="row"><div><label class="lab" for="g-lop">Tên lớp (không dấu)</label><input type="text" id="g-lop" placeholder="K24LUAT1" maxlength="12"></div><div><label class="lab" for="g-han">Dùng đến hết tháng</label><input type="month" id="g-han" value="${def}"></div></div>
+      <div class="err" id="g-err" role="alert"></div><div><button class="btn primary" type="submit">Tạo mã</button></div>
+      <div id="g-res" hidden><div class="lab">Mã của lớp</div><div class="big" id="g-code"></div><div class="msg" id="g-han-t"></div><button class="btn" type="button" id="g-copy" style="margin-top:8px">Sao chép mã</button></div></form></section>
+  <section class="frame"><div class="ftitle">Kiểm tra mã</div><input type="text" id="k-in" placeholder="K24LUAT1-0127-CCQ" autocomplete="off" spellcheck="false"><div id="k-out" class="msg" aria-live="polite" style="margin-top:8px"></div></section>
+  <section class="frame"><div class="ftitle">Mã đã tạo trên máy này</div><div class="tbl"><table><thead><tr><th>Lớp</th><th>Mã</th><th>Hạn dùng</th><th>Trạng thái</th></tr></thead><tbody id="iss"></tbody></table></div></section></main>`}
+function renderIssued(){const b=$("#iss");if(!b)return;b.innerHTML=issued.length?issued.map(c=>{const p=parse(c),v=valid(c);return `<tr><td>${esc(p.lop)}</td><td><b>${esc(c)}</b></td><td>${hanText(p.mm,p.yy)}</td><td>${v.ok?'<span class="ok">Còn hạn</span>':'<span class="bad">Hết hạn</span>'}</td></tr>`}).join(""):`<tr><td colspan="4" class="msg">Chưa tạo mã nào.</td></tr>`}
+function bindAdmin(){renderIssued();
+  $("#gen-form").addEventListener("submit",e=>{e.preventDefault();const lop=norm($("#g-lop").value).replace(/-/g,""),m=/^(\d{4})-(\d{2})$/.exec($("#g-han").value);
+    if(!/^[A-Z0-9]{2,12}$/.test(lop)){$("#g-err").textContent="Tên lớp gồm 2–12 chữ cái hoặc chữ số, không dấu, không khoảng trắng.";return}
+    if(!m){$("#g-err").textContent="Chọn tháng hết hạn.";return}
+    const yy=+m[1]-2000,mm=+m[2];if(new Date()>=endOf(mm,yy)){$("#g-err").textContent="Tháng hết hạn phải từ tháng này trở đi.";return}
+    $("#g-err").textContent="";const mmyy=String(mm).padStart(2,"0")+String(yy).padStart(2,"0"),code=lop+"-"+mmyy+"-"+chk(lop,mmyy);
+    $("#g-code").textContent=code;$("#g-han-t").textContent="Dùng được đến hết ngày "+hanText(mm,yy)+".";$("#g-res").hidden=false;
+    if(!issued.includes(code)){issued.unshift(code);store.set("pnlib-ma-da-cap",JSON.stringify(issued.slice(0,200)))}renderIssued()});
+  ["g-lop","g-han"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#g-err").textContent=""));
+  $("#g-copy").onclick=()=>navigator.clipboard.writeText($("#g-code").textContent).then(()=>$("#g-han-t").textContent="Đã sao chép mã.",()=>$("#g-han-t").textContent="Trình duyệt chặn sao chép, bôi đen mã để sao chép.");
+  $("#k-in").addEventListener("input",()=>{const v=$("#k-in").value.trim();if(!v){$("#k-out").textContent="";return}const r=valid(v),p=parse(v);
+    $("#k-out").innerHTML=r.ok?`<span class="ok">Hợp lệ</span> · lớp ${esc(r.p.lop)} · dùng đến ${hanText(r.p.mm,r.p.yy)}`:(r.expired?`<span class="bad">Hết hạn</span> · lớp ${esc(p.lop)}`:`<span class="bad">Không hợp lệ.</span> ${esc(r.why)}`)})}
+
+(async function boot(){
+  const saved=store.get(KEY),v=saved?valid(saved):{ok:false};
+  if(v.ok)enter(v.p);else{if(saved)store.del(KEY);showGate(saved&&v.expired?v.why:"")}
+  await Promise.all([loadFeedback(),loadVisits()]);
+  try{const u=window.claude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false}catch(e){isOwner=false}
+  if(session&&(cur==="home"||cur==="gop-y"))route(cur);
+  if(session&&isOwner&&(location.hash||"").slice(1)==="quan-ly-ma")route("quan-ly-ma");
+})();
+</script>
+
+</body>
+</html>
