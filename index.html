@@ -117,6 +117,7 @@ main.wrap{padding-block:22px 40px;display:grid;gap:20px}
 
 /* Trang học phần */
 .viewer{display:flex;flex-direction:column;height:calc(100dvh - env(safe-area-inset-top,0px))}
+.in-course .band{display:none}
 .viewer iframe{flex:1;width:100%;border:0;background:var(--bg)}
 .soon-page{padding-block:30px 50px}
 .soon-page .frame{max-width:720px;margin:0 auto;display:grid;gap:12px}
@@ -269,7 +270,7 @@ const CONFIG={
   goatcounter:""       /* Tên mã GoatCounter, ví dụ "phucnguyen" */
 };
 const COURSES=[
-  {id:"luat-dan-su",name:"Luật Dân sự",c:"#6fa8d6",src:"hp/luat-dan-su.html"},
+  {id:"luat-dan-su",name:"Luật Dân sự",c:"#6fa8d6",src:"hp/luat-dan-su.html",skin:true},
   {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",c:"#3d7fc1"},
   {id:"luat-hinh-su",name:"Luật Hình sự",c:"#3e4a57"},
   {id:"to-tung-hinh-su",name:"Luật Tố tụng hình sự",c:"#56626e"},
@@ -455,6 +456,7 @@ $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 let cur="home";
 function route(id){if(needsCode(id)&&!session){pending=id;showGate(expiredMsg);return}
   if(!$("#gate").hidden)hideGate();
+  document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(API){m.innerHTML=fbApiHTML();fbApiBind()}else m.innerHTML=fbHTML()}
@@ -462,7 +464,8 @@ function route(id){if(needsCode(id)&&!session){pending=id;showGate(expiredMsg);r
   else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
-    m.innerHTML=c.src
+    if(c.src&&c.skin){document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${c.src}" title="Ôn tập ${c.name}"></iframe></section>`}
+    else m.innerHTML=c.src
       ?`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2><div class="sp"></div><a href="${c.src}" target="_blank" rel="noopener">Mở trong thẻ mới</a></div></div><section class="viewer"><iframe src="${c.src}" title="Tài liệu ${c.name}"></iframe></section>`
       :`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2></div></div><section class="soon-page wrap"><div class="frame"><div class="ftitle">${c.name}</div><p>Tài liệu học phần đang được biên soạn và sẽ cập nhật tại đây khi có dữ liệu: thi thử, văn bản pháp luật, kiến thức, câu hỏi lý thuyết và tình huống.</p><div><button class="btn" data-home>Về thư viện</button></div></div></section>`}
   m.querySelectorAll("[data-home]").forEach(b=>b.onclick=()=>route("home"));
@@ -893,6 +896,7 @@ function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
   else m.innerHTML=tlHomeHTML(p.k);
   return true}
 
+window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home")route("home")});
 (async function boot(){
   session=loadSession();
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
