@@ -333,4 +333,83 @@ renderList();
 })();
 </script>
 
+
+<script>window.PN_SKIN={"title": "Tài liệu Luật Đất đai", "menuTitle": "Luật Đất đai", "examView": "bode", "menu": [["bode", "Thi thử", "thithu"], ["lythuyet", "Lý thuyết", "luyentap"], ["tinhhuong", "Tình huống", "tinhhuong"], ["kienthuc", "Kiến thức", "tomtat"], ["vanban", "Văn bản", "vanban"]]};</script>
+<!-- ===== Giao diện Phúc Nguyên Library cho web ôn tập (chỉ đổi bố cục, giữ nguyên nội dung và cách làm bài) ===== -->
+<style>
+:root{--pn-band:#1d5677;--pn-head:#1f4f7a;--pn-frame:#b9b3da;--pn-tint:#e6eef8;--acc:#1f4f7a;--acc-soft:#e6eef8;--bg:#f2f4f9}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--pn-band:#143e57;--pn-head:#9cc4e6;--pn-frame:#4a4673;--pn-tint:#1a2638}}
+:root[data-theme="dark"]{--pn-band:#143e57;--pn-head:#9cc4e6;--pn-frame:#4a4673;--pn-tint:#1a2638}
+body::before{background:var(--pn-band)}
+.pn-wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pn-band{background:var(--pn-band);color:#fff}
+.pn-band .pn-wrap{display:flex;align-items:center;gap:clamp(14px,3vw,28px);padding-block:16px 14px}
+.pn-logo{flex:none;width:clamp(64px,10vw,104px);aspect-ratio:1;border-radius:50%;background:#fff;object-fit:contain;padding:0;box-sizing:border-box;border:4px solid #fff}
+.pn-titles{flex:1;min-width:0;text-align:center}
+.pn-kicker{font:900 clamp(12px,1.7vw,15px) "Merriweather",Georgia,serif;letter-spacing:.08em;text-transform:uppercase;color:#cfe0ea}
+.pn-band h1{margin:0;font:900 clamp(26px,5.4vw,52px)/1.1 "Merriweather",Georgia,serif;text-transform:uppercase;letter-spacing:.02em;text-wrap:balance}
+.pn-copy{font-size:12px;color:#cfe0ea;margin-top:4px}
+.pn-layout{display:grid;gap:18px;padding-block:16px 44px}
+.pn-home a{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font:900 15px "Merriweather",Georgia,serif;text-transform:uppercase;color:var(--pn-head)}
+.pn-home .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--pn-tint);border:1.5px solid var(--pn-frame);color:var(--pn-head)}
+.pn-home a:hover .ic{background:var(--pn-head);color:var(--paper)}
+.pn-top{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px;align-items:stretch}
+.pn-frame{background:var(--paper);border:2px dashed var(--pn-frame);border-radius:24px;padding:18px clamp(16px,2.4vw,26px) 22px;min-width:0}
+.pn-ftitle{display:inline-block;margin:0 0 12px;font:900 clamp(20px,2.4vw,26px)/1.25 "Merriweather",Georgia,serif;text-transform:uppercase;color:var(--pn-head);border-bottom:3px solid currentColor;padding-bottom:2px}
+.pn-menu ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.pn-menu button{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:8px 10px;border-radius:14px;cursor:pointer;text-align:left;font:900 15px/1.3 "Merriweather",Georgia,serif;text-transform:uppercase;color:var(--pn-head)}
+.pn-menu button:hover{background:var(--pn-tint)}
+.pn-menu button[aria-current="true"]{background:var(--pn-tint);box-shadow:inset 0 0 0 1.5px var(--pn-frame)}
+.pn-menu svg{flex:none;width:42px;height:42px}
+.pn-ctrl .intro{max-width:none;font-size:15px;font-style:italic;color:var(--ink);font-family:"Merriweather",Georgia,serif;line-height:1.6}
+.pn-ctrl .intro b{font-style:normal}
+.pn-ctrl .toolbar:last-child,.pn-ctrl .bar:last-child{margin-bottom:0}
+.pn-body{min-height:240px}
+.pn-note{margin:0;background:#fdf0dc;color:#7a4a0c;border-radius:12px;padding:10px 14px;font-size:14px}
+.pn-body .kt{width:auto!important;margin-left:0!important}
+.pn-body .examhead{top:8px}
+.pn-vh{font:900 13px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+@media (max-width:820px){.pn-top{grid-template-columns:minmax(0,1fr)}.pn-menu ul{grid-template-columns:repeat(2,minmax(0,1fr))}.pn-menu svg{width:34px;height:34px}.pn-menu button{font-size:13px;gap:8px;padding:6px}}
+@media (max-width:420px){.pn-band .pn-wrap{flex-direction:column;gap:8px}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&display=swap">
+<script>
+(function(){
+  const Q=s=>document.querySelector(s);
+  const ICON={
+    thithu:'<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="27" r="15" fill="#f6d77a" stroke="#8a5a00" stroke-width="2.5"/><rect x="20" y="5" width="8" height="6" rx="2" fill="#c0392b"/><path d="M24 27V18M24 27l7 4" stroke="#1f3a5a" stroke-width="3" stroke-linecap="round"/></svg>',
+    luyentap:'<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="31" width="34" height="8" rx="2" fill="#c0392b"/><rect x="9" y="23" width="30" height="8" rx="2" fill="#2e7d4f"/><rect x="6" y="15" width="34" height="8" rx="2" fill="#2f6db0"/><rect x="11" y="8" width="26" height="7" rx="2" fill="#e3a23b"/><path d="M10 35h28M12 27h24M9 19h28" stroke="#fff" stroke-width="1.5" opacity=".7"/></svg>',
+    tinhhuong:'<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="16" cy="15" r="7" fill="#f2c9a0"/><path d="M9 14c0-6 14-7 14 0" fill="#3b2a20"/><path d="M4 42c1-10 6-15 12-15s11 5 12 15z" fill="#d9534f"/><circle cx="33" cy="16" r="6.5" fill="#f2c9a0"/><path d="M26 15c0-7 14-7 14 0l1 7c-4-3-11-3-15 0z" fill="#5a3a26"/><path d="M21 42c1-9 6-14 12-14s11 5 12 14z" fill="#3f6fb5"/></svg>',
+    tomtat:'<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="36" rx="3" fill="#e9824a"/><rect x="13" y="12" width="22" height="28" rx="1.5" fill="#fff"/><rect x="18" y="4" width="12" height="7" rx="2" fill="#7a8794"/><path d="M17 19h14M17 25h14M17 31h10" stroke="#e9824a" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    vanban:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 8h22a5 5 0 0 1 0 10H12z" fill="#e8d3a0"/><path d="M12 8c-3 0-5 2-5 5s2 5 5 5h3V8z" fill="#c9a96a"/><path d="M15 18h19v18a5 5 0 0 1-5 5H15z" fill="#f3e4bd"/><path d="M15 36a5 5 0 1 0 10 0" fill="#c9a96a"/><path d="M19 24h11M19 29h11M19 34h7" stroke="#8a6a2a" stroke-width="2" stroke-linecap="round"/><path d="M38 30l3 10-4-2-3 3-1-10z" fill="#c0392b"/></svg>'};
+  const CFG=window.PN_SKIN||{};
+  const MENU=CFG.menu.map(m=>[m[0],m[1]]);const LABEL={},ICK={};CFG.menu.forEach(m=>{LABEL[m[0]]=m[1];ICK[m[0]]=m[2]});
+  const header=Q("header.top"),nav=Q("nav.tabs"),main=Q("main.wrap");
+  if(!header||!nav||!main)return;
+  const dn=header.querySelector(".draftnote");const dnText=dn&&!dn.hidden?dn.textContent.trim():"";
+  const band=document.createElement("header");band.className="pn-band";
+  band.innerHTML='<div class="pn-wrap"><img class="pn-logo" src="../assets/logo.png" alt="Logo Phúc Nguyên Library"><div class="pn-titles"><div class="pn-kicker">Thư viện Phúc Nguyên</div><h1>'+CFG.title+'</h1><div class="pn-copy">Bản quyền thuộc Phúc Nguyên</div></div></div>';
+  header.replaceWith(band);nav.hidden=true;
+  const lay=document.createElement("div");lay.className="pn-layout pn-wrap";
+  lay.innerHTML='<nav class="pn-home"><a href="../index.html" id="pn-home"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z" fill="currentColor"/></svg></span>Trang chủ</a></nav>'
+    +'<div class="pn-top"><aside class="pn-frame pn-menu"><div class="pn-ftitle">'+CFG.menuTitle+'</div><ul>'
+    +MENU.map(([v,t])=>'<li><button type="button" data-pn="'+v+'">'+ICON[ICK[v]]+'<span>'+t+'</span></button></li>').join("")
+    +'</ul></aside><section class="pn-frame pn-ctrl" id="pn-ctrl" aria-live="polite"></section></div><section class="pn-frame pn-body" id="pn-body"></section>';
+  main.before(lay);main.hidden=true;
+  if(dnText){const n=document.createElement("p");n.className="pn-note";n.textContent=dnText;lay.querySelector(".pn-top").before(n)}
+  const CTRL=["intro","toolbar","stats","bar"],boxes={};
+  MENU.forEach(([v])=>{const s=Q("#v-"+v);if(!s)return;
+    const c=document.createElement("div"),b=document.createElement("div");
+    c.innerHTML='<div class="pn-vh">'+LABEL[v]+'</div>';
+    [...s.children].forEach(el=>{(CTRL.some(k=>el.classList.contains(k))?c:b).appendChild(el)});
+    if(CFG.examView===v&&!c.querySelector(".intro"))c.insertAdjacentHTML("beforeend",'<p class="intro">Đề thi thử trộn câu hỏi của các nhóm nội dung, có tính giờ. Chọn số câu, thời gian và các nhóm rồi bấm bắt đầu ở khung bên dưới. Đáp án và căn cứ pháp lý hiện sau khi nộp bài.</p>');
+    Q("#pn-ctrl").appendChild(c);Q("#pn-body").appendChild(b);boxes[v]={s,c,b}});
+  function sync(){Object.entries(boxes).forEach(([v,o])=>{o.c.hidden=o.s.hidden;o.b.hidden=o.s.hidden;
+    const btn=lay.querySelector('[data-pn="'+v+'"]');if(btn)btn.setAttribute("aria-current",String(!o.s.hidden))})}
+  const mo=new MutationObserver(sync);Object.values(boxes).forEach(o=>mo.observe(o.s,{attributes:true,attributeFilter:["hidden"]}));sync();
+  lay.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const t=document.querySelector('.tab[data-view="'+b.dataset.pn+'"]');if(t)t.click();
+    if(window.innerWidth<820)Q("#pn-ctrl").scrollIntoView({behavior:"smooth",block:"start"})});
+  Q("#pn-home").addEventListener("click",e=>{if(window.parent&&window.parent!==window){e.preventDefault();try{window.parent.postMessage({pn:"home"},"*")}catch(err){}}});
+})();
+</script>
 </body></html>

@@ -522,6 +522,7 @@ renderLaws('');
 </script>
 
 
+<script>window.PN_SKIN={"title": "Tài liệu Luật Dân sự", "menuTitle": "Luật Dân sự", "examView": "thithu", "menu": [["thithu", "Thi thử", "thithu"], ["luyentap", "Lý thuyết", "luyentap"], ["tinhhuong", "Tình huống", "tinhhuong"], ["tomtat", "Tóm tắt lý thuyết", "tomtat"], ["vanban", "Văn bản, án lệ", "vanban"]]};</script>
 <!-- ===== Giao diện Phúc Nguyên Library cho web ôn tập (chỉ đổi bố cục, giữ nguyên nội dung và cách làm bài) ===== -->
 <style>
 :root{--pn-band:#1d5677;--pn-head:#1f4f7a;--pn-frame:#b9b3da;--pn-tint:#e6eef8;--acc:#1f4f7a;--acc-soft:#e6eef8;--bg:#f2f4f9}
@@ -552,6 +553,7 @@ body::before{background:var(--pn-band)}
 .pn-ctrl .intro b{font-style:normal}
 .pn-ctrl .toolbar:last-child,.pn-ctrl .bar:last-child{margin-bottom:0}
 .pn-body{min-height:240px}
+.pn-note{margin:0;background:#fdf0dc;color:#7a4a0c;border-radius:12px;padding:10px 14px;font-size:14px}
 .pn-body .kt{width:auto!important;margin-left:0!important}
 .pn-body .examhead{top:8px}
 .pn-vh{font:900 13px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
@@ -568,30 +570,32 @@ body::before{background:var(--pn-band)}
     tinhhuong:'<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="16" cy="15" r="7" fill="#f2c9a0"/><path d="M9 14c0-6 14-7 14 0" fill="#3b2a20"/><path d="M4 42c1-10 6-15 12-15s11 5 12 15z" fill="#d9534f"/><circle cx="33" cy="16" r="6.5" fill="#f2c9a0"/><path d="M26 15c0-7 14-7 14 0l1 7c-4-3-11-3-15 0z" fill="#5a3a26"/><path d="M21 42c1-9 6-14 12-14s11 5 12 14z" fill="#3f6fb5"/></svg>',
     tomtat:'<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="36" rx="3" fill="#e9824a"/><rect x="13" y="12" width="22" height="28" rx="1.5" fill="#fff"/><rect x="18" y="4" width="12" height="7" rx="2" fill="#7a8794"/><path d="M17 19h14M17 25h14M17 31h10" stroke="#e9824a" stroke-width="2.4" stroke-linecap="round"/></svg>',
     vanban:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 8h22a5 5 0 0 1 0 10H12z" fill="#e8d3a0"/><path d="M12 8c-3 0-5 2-5 5s2 5 5 5h3V8z" fill="#c9a96a"/><path d="M15 18h19v18a5 5 0 0 1-5 5H15z" fill="#f3e4bd"/><path d="M15 36a5 5 0 1 0 10 0" fill="#c9a96a"/><path d="M19 24h11M19 29h11M19 34h7" stroke="#8a6a2a" stroke-width="2" stroke-linecap="round"/><path d="M38 30l3 10-4-2-3 3-1-10z" fill="#c0392b"/></svg>'};
-  const MENU=[["thithu","Thi thử"],["luyentap","Lý thuyết"],["tinhhuong","Tình huống"],["tomtat","Tóm tắt lý thuyết"],["vanban","Văn bản, án lệ"]];
-  const LABEL={thithu:"Thi thử",luyentap:"Lý thuyết",tinhhuong:"Tình huống",tomtat:"Tóm tắt lý thuyết",vanban:"Văn bản, án lệ"};
+  const CFG=window.PN_SKIN||{};
+  const MENU=CFG.menu.map(m=>[m[0],m[1]]);const LABEL={},ICK={};CFG.menu.forEach(m=>{LABEL[m[0]]=m[1];ICK[m[0]]=m[2]});
   const header=Q("header.top"),nav=Q("nav.tabs"),main=Q("main.wrap");
   if(!header||!nav||!main)return;
+  const dn=header.querySelector(".draftnote");const dnText=dn&&!dn.hidden?dn.textContent.trim():"";
   const band=document.createElement("header");band.className="pn-band";
-  band.innerHTML='<div class="pn-wrap"><img class="pn-logo" src="../assets/logo.png" alt="Logo Phúc Nguyên Library"><div class="pn-titles"><div class="pn-kicker">Thư viện Phúc Nguyên</div><h1>Tài liệu Luật Dân sự</h1><div class="pn-copy">Bản quyền thuộc Phúc Nguyên</div></div></div>';
+  band.innerHTML='<div class="pn-wrap"><img class="pn-logo" src="../assets/logo.png" alt="Logo Phúc Nguyên Library"><div class="pn-titles"><div class="pn-kicker">Thư viện Phúc Nguyên</div><h1>'+CFG.title+'</h1><div class="pn-copy">Bản quyền thuộc Phúc Nguyên</div></div></div>';
   header.replaceWith(band);nav.hidden=true;
   const lay=document.createElement("div");lay.className="pn-layout pn-wrap";
   lay.innerHTML='<nav class="pn-home"><a href="../index.html" id="pn-home"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z" fill="currentColor"/></svg></span>Trang chủ</a></nav>'
-    +'<div class="pn-top"><aside class="pn-frame pn-menu"><div class="pn-ftitle">Luật Dân sự</div><ul>'
-    +MENU.map(([v,t])=>'<li><button type="button" data-pn="'+v+'">'+ICON[v]+'<span>'+t+'</span></button></li>').join("")
+    +'<div class="pn-top"><aside class="pn-frame pn-menu"><div class="pn-ftitle">'+CFG.menuTitle+'</div><ul>'
+    +MENU.map(([v,t])=>'<li><button type="button" data-pn="'+v+'">'+ICON[ICK[v]]+'<span>'+t+'</span></button></li>').join("")
     +'</ul></aside><section class="pn-frame pn-ctrl" id="pn-ctrl" aria-live="polite"></section></div><section class="pn-frame pn-body" id="pn-body"></section>';
   main.before(lay);main.hidden=true;
+  if(dnText){const n=document.createElement("p");n.className="pn-note";n.textContent=dnText;lay.querySelector(".pn-top").before(n)}
   const CTRL=["intro","toolbar","stats","bar"],boxes={};
   MENU.forEach(([v])=>{const s=Q("#v-"+v);if(!s)return;
     const c=document.createElement("div"),b=document.createElement("div");
     c.innerHTML='<div class="pn-vh">'+LABEL[v]+'</div>';
     [...s.children].forEach(el=>{(CTRL.some(k=>el.classList.contains(k))?c:b).appendChild(el)});
-    if(v==="thithu")c.insertAdjacentHTML("beforeend",'<p class="intro">Đề thi thử trộn câu hỏi của các nhóm nội dung, có tính giờ. Chọn số câu, thời gian và các nhóm rồi bấm bắt đầu ở khung bên dưới. Đáp án và căn cứ pháp lý hiện sau khi nộp bài.</p>');
+    if(CFG.examView===v&&!c.querySelector(".intro"))c.insertAdjacentHTML("beforeend",'<p class="intro">Đề thi thử trộn câu hỏi của các nhóm nội dung, có tính giờ. Chọn số câu, thời gian và các nhóm rồi bấm bắt đầu ở khung bên dưới. Đáp án và căn cứ pháp lý hiện sau khi nộp bài.</p>');
     Q("#pn-ctrl").appendChild(c);Q("#pn-body").appendChild(b);boxes[v]={s,c,b}});
   function sync(){Object.entries(boxes).forEach(([v,o])=>{o.c.hidden=o.s.hidden;o.b.hidden=o.s.hidden;
     const btn=lay.querySelector('[data-pn="'+v+'"]');if(btn)btn.setAttribute("aria-current",String(!o.s.hidden))})}
   const mo=new MutationObserver(sync);Object.values(boxes).forEach(o=>mo.observe(o.s,{attributes:true,attributeFilter:["hidden"]}));sync();
-  lay.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const t=document.getElementById("t-"+b.dataset.pn);if(t)t.click();
+  lay.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const t=document.querySelector('.tab[data-view="'+b.dataset.pn+'"]');if(t)t.click();
     if(window.innerWidth<820)Q("#pn-ctrl").scrollIntoView({behavior:"smooth",block:"start"})});
   Q("#pn-home").addEventListener("click",e=>{if(window.parent&&window.parent!==window){e.preventDefault();try{window.parent.postMessage({pn:"home"},"*")}catch(err){}}});
 })();
