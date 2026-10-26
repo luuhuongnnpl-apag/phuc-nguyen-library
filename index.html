@@ -134,7 +134,7 @@ main.wrap{padding-block:22px 40px;display:grid;gap:20px}
 .gate-form{padding:22px 26px 24px;display:grid;gap:10px}
 .gate-form p{margin:0;color:var(--muted);font-size:14.5px}
 label.lab{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
-input[type=text],input[type=month]{width:100%;font:600 17px var(--f-body);color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:11px 14px}
+input[type=text],input[type=month],input[type=date],input[type=number],input[type=password]{width:100%;font:600 17px var(--f-body);color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:11px 14px}
 #code-in,#k-in{letter-spacing:.06em;text-transform:uppercase}
 .gate-x{position:absolute;right:10px;top:8px;z-index:2;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font:400 24px/1 var(--f-body);cursor:pointer}
 .gate-x:hover{background:rgba(255,255,255,.3)}
@@ -243,7 +243,7 @@ ul.mm-d li{margin:1px 0}
     <form class="gate-form" id="gate-form" novalidate>
       <p id="gate-msg">Lần đầu mở tài liệu, bạn cần nhập mã lớp do giảng viên cung cấp. Trình duyệt sẽ nhớ mã cho đến khi mã hết hạn.</p>
       <label class="lab" for="code-in">Mã lớp</label>
-      <input type="text" id="code-in" autocomplete="off" spellcheck="false" placeholder="K24LUAT1-0127-CCQ">
+      <input type="text" id="code-in" autocomplete="off" spellcheck="false" placeholder="K25D-LDS">
       <div class="err" id="code-err" role="alert"></div>
       <button class="btn primary" type="submit">Xác nhận mã</button>
       <div class="msg">© Bản quyền thuộc Phúc Nguyên</div>
@@ -263,6 +263,7 @@ ul.mm-d li{margin:1px 0}
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
+  api:"",              /* Link Ứng dụng web Google Apps Script (kết thúc bằng /exec): mã lớp, lượt truy cập, góp ý */
   formUrl:"",          /* Link Google Form "Gửi góp ý" */
   responsesCsvUrl:"",  /* Link CSV của trang tính câu trả lời (Xuất bản lên web, định dạng CSV) */
   goatcounter:""       /* Tên mã GoatCounter, ví dụ "phucnguyen" */
@@ -315,6 +316,119 @@ let session=null,isOwner=false,visits=null,feedback=null,fbErr="",cmt=null;
 const onClaude=!!(window.claude&&window.claude.use);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* ===== Máy chủ mã lớp (Google Apps Script) — chỉ dùng trên bản web GitHub ===== */
+const API=onClaude?"":(CONFIG.api||"");
+const pad2=n=>String(n).padStart(2,"0");
+function fmtDate(iso){const p=String(iso||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:iso}
+function todayISO(){const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+function getDev(){let d=store.get("pnlib-dev");if(!d){d=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));store.set("pnlib-dev",d)}return d}
+function jsonp(params){return new Promise((res,rej)=>{const cb="pncb"+Math.random().toString(36).slice(2),s=document.createElement("script");
+  const t=setTimeout(()=>{done();rej(new Error("timeout"))},20000);
+  function done(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove()}
+  window[cb]=d=>{done();res(d)};s.onerror=()=>{done();rej(new Error("net"))};
+  s.src=API+"?"+new URLSearchParams(Object.assign({},params,{callback:cb})).toString();document.head.appendChild(s)})}
+function legacyS(p){const d=new Date(2000+p.yy,p.mm,0);return {code:p.code,label:p.lop==="DEMO"?"Mã dùng thử":"Lớp "+p.lop,han:d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}}
+async function checkCode(raw){const code=norm(raw);
+  if(API){let r;try{r=await jsonp({action:"check",code,dev:getDev()})}catch(e){return {ok:false,why:"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."}}
+    if(r&&r.ok)return {ok:true,s:{code,label:r.note?String(r.note):"Mã "+code,han:r.han}};
+    const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã dùng đủ "+(r&&r.max||"")+" người. Hỏi giảng viên."};
+    return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
+  const v=valid(code);if(!v.ok)return v;return {ok:true,s:legacyS(v.p)}}
+function loadSession(){const raw=store.get(KEY);if(!raw)return null;
+  try{const s=JSON.parse(raw);if(s&&s.code&&s.han)return s}catch(e){}
+  const v=valid(raw);return v.ok?legacyS(v.p):null}
+
+/* Thống kê và góp ý qua máy chủ */
+let stats=null,fbItems=null,fbLoadErr="";
+async function loadStats(){if(!API)return;try{const r=await jsonp({action:"stats"});if(r&&r.ok)stats=r}catch(e){}}
+async function loadFb(){if(!API)return;try{const r=await jsonp({action:"fb_list"});if(r&&r.ok){fbItems=r.items;fbLoadErr=""}}catch(e){fbLoadErr="Không tải được danh sách góp ý lúc này. Thử lại sau."}}
+
+/* ===== Quản lý mã lớp trên bản web (cần mật khẩu quản lý) ===== */
+const AKEY="pnlib-admin-key";
+function admin2HTML(){const k=store.get(AKEY);const head=`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã lớp</h2></div></div>`;
+  if(!k)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản lý</div>
+    <form id="ak-form" novalidate class="admin"><p class="msg">Nhập mật khẩu quản lý đã đặt trong Google Apps Script.</p>
+    <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản lý</label><input type="password" id="ak-in" autocomplete="current-password"></div></div>
+    <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form></section></main>`;
+  const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  return head+`<main class="wrap admin">
+  <section class="frame"><div class="ftitle">Tạo mã lớp</div>
+    <form id="c-form" novalidate class="admin"><p class="msg">Sếp tự đặt mã ngắn, ví dụ <b>K25D-LDS</b>. Mã giữ nguyên như đã gõ (chữ in hoa, không dấu, có thể có dấu gạch ngang).</p>
+      <div class="row">
+        <div><label class="lab" for="c-code">Mã</label><input type="text" id="c-code" placeholder="K25D-LDS" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.05em"></div>
+        <div><label class="lab" for="c-note">Lớp / ghi chú</label><input type="text" id="c-note" placeholder="K25D Luật Dân sự" maxlength="80"></div>
+      </div>
+      <div class="row">
+        <div><label class="lab" for="c-han">Dùng đến hết ngày</label><input type="date" id="c-han" value="${def}"></div>
+        <div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40"></div>
+      </div>
+      <div class="err" id="c-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Tạo mã</button><span class="msg" id="c-msg"></span></div>
+      <p class="msg">Mỗi trình duyệt trên một thiết bị tính là một người. Nên đặt dư so với sĩ số lớp.</p></form></section>
+  <section class="frame"><div class="ftitle">Danh sách mã</div>
+    <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại</button><button class="btn" type="button" id="l-out">Đăng xuất quản lý</button><span class="msg" id="l-msg"></span></div>
+    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="6" class="msg">Đang tải…</td></tr></tbody></table></div>
+    <p class="msg" style="margin-top:8px">Xóa mã sẽ xóa luôn các lượt đã dùng mã đó; sinh viên đang dùng mã sẽ phải nhập mã mới.</p></section></main>`}
+async function admin2Bind(){
+  const af=$("#ak-form");
+  if(af){af.addEventListener("submit",async e=>{e.preventDefault();const k=$("#ak-in").value.trim();if(!k){$("#ak-err").textContent="Nhập mật khẩu quản lý.";return}
+      $("#ak-err").textContent="Đang kiểm tra…";
+      try{const r=await jsonp({action:"admin_list",key:k});if(r&&r.ok){store.set(AKEY,k);route("quan-ly-ma")}else $("#ak-err").textContent=r&&r.why==="key"?"Mật khẩu không đúng.":"Chưa đăng nhập được, thử lại sau."}
+      catch(err){$("#ak-err").textContent="Không kết nối được máy chủ."}});
+    $("#ak-in").addEventListener("input",()=>$("#ak-err").textContent="");return}
+  const key=store.get(AKEY);
+  async function list(){$("#l-msg").textContent="Đang tải…";
+    try{const r=await jsonp({action:"admin_list",key});
+      if(!r||!r.ok){if(r&&r.why==="key"){store.del(AKEY);route("quan-ly-ma");return}$("#l-msg").textContent="Chưa tải được danh sách.";return}
+      $("#l-msg").textContent=r.items.length+" mã";const t=todayISO();
+      $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{const exp=t>x.han,full=x.used>=x.max;
+        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${fmtDate(x.han)}</td><td>${x.used} / ${x.max}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đã đủ người</span>':'<span class="ok">Đang dùng</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Xóa</button></td></tr>`}).join("")
+        :`<tr><td colspan="6" class="msg">Chưa có mã nào. Tạo mã đầu tiên ở khung bên trên.</td></tr>`;
+      $("#l-body").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+        if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để xóa";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Xóa";b.classList.remove("primary")}},4000);return}
+        b.disabled=true;b.textContent="Đang xóa…";
+        try{const r=await jsonp({action:"admin_delete",key,code:b.dataset.del});if(r&&r.ok){$("#l-msg").textContent="Đã xóa mã "+b.dataset.del;list()}else{b.textContent="Lỗi, thử lại";b.disabled=false}}
+        catch(e){b.textContent="Lỗi, thử lại";b.disabled=false}})}
+    catch(e){$("#l-msg").textContent="Không kết nối được máy chủ."}}
+  $("#l-reload").onclick=list;
+  $("#l-out").onclick=()=>{store.del(AKEY);route("quan-ly-ma")};
+  $("#c-form").addEventListener("submit",async e=>{e.preventDefault();
+    const code=norm($("#c-code").value),note=$("#c-note").value.trim(),han=$("#c-han").value,max=parseInt($("#c-max").value,10);
+    if(!/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, dấu gạch ngang.";return}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
+    if(!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa từ 1 đến 1000.";return}
+    $("#c-err").textContent="";$("#c-msg").textContent="Đang tạo…";
+    try{const r=await jsonp({action:"admin_create",key,code,note,han,max});
+      if(r&&r.ok){$("#c-msg").textContent="Đã tạo mã "+code+".";$("#c-code").value="";$("#c-note").value="";list()}
+      else{$("#c-msg").textContent="";$("#c-err").textContent=({exists:"Mã này đã có, hãy đặt mã khác.",badcode:"Mã chưa đúng dạng.",badhan:"Ngày hết hạn chưa đúng.",badmax:"Số người chưa đúng.",key:"Phiên quản lý đã hết, đăng nhập lại."})[r&&r.why]||"Chưa tạo được mã."}}
+    catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Không kết nối được máy chủ."}});
+  ["c-code","c-note","c-han","c-max"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#c-err").textContent=""));
+  list()}
+
+/* Trang góp ý khi dùng máy chủ */
+function fbApiHTML(){
+  const opts=['<option value="Chung">Góp ý chung</option>'].concat(COURSES.filter(c=>c.src).map(c=>`<option>${esc(c.name)}</option>`)).join("");
+  const list=fbItems==null?`<div class="info">${fbLoadErr||"Đang tải góp ý…"}</div>`:(fbItems.length?`<div class="fb-list">${fbItems.slice().reverse().map(r=>`<div class="fb-item"><div class="m">${esc(fmtDate(r.time))}${r.course?" · "+esc(r.course):""}</div><p>${esc(r.text)}</p></div>`).join("")}</div>`:`<div class="info">Chưa có góp ý nào. Hãy là người đầu tiên gửi góp ý.</div>`);
+  return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Phản hồi góp ý</h2></div></div>
+  <main class="wrap"><section class="frame"><div class="ftitle">Gửi góp ý</div>
+    <form id="fb-form" novalidate class="admin"><p class="msg">Góp ý về nội dung cần cập nhật, câu hỏi chưa chính xác hoặc đề xuất cải thiện. Góp ý hiện công khai cho mọi người cùng xem, không ghi tên người gửi.</p>
+      <div class="row"><div><label class="lab" for="fb-course">Học phần</label><select id="fb-course" style="width:100%;font:500 15px var(--f-body);padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)">${opts}</select></div></div>
+      <div><label class="lab" for="fb-text">Nội dung góp ý</label><textarea id="fb-text" rows="4" maxlength="1500" style="width:100%;font:400 15px/1.5 var(--f-body);padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"></textarea></div>
+      <div class="err" id="fb-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Gửi góp ý</button><span class="msg" id="fb-msg"></span></div></form></section>
+  <section class="frame"><div class="ftitle">Phản hồi góp ý</div><div id="fb-wrap">${list}</div></section></main>`}
+function fbApiBind(){
+  const draw=()=>{const w=$("#fb-wrap");if(!w)return;const tmp=document.createElement("div");tmp.innerHTML=fbApiHTML();const n=tmp.querySelector("#fb-wrap");if(n)w.innerHTML=n.innerHTML};
+  loadFb().then(draw);
+  $("#fb-form").addEventListener("submit",async e=>{e.preventDefault();const text=$("#fb-text").value.trim();
+    if(text.length<3){$("#fb-err").textContent="Viết nội dung góp ý trước khi gửi.";return}
+    $("#fb-err").textContent="";$("#fb-msg").textContent="Đang gửi…";
+    try{const r=await jsonp({action:"fb_add",course:$("#fb-course").value,text,code:session?session.code:""});
+      if(r&&r.ok){$("#fb-msg").textContent="Đã gửi. Cảm ơn bạn!";$("#fb-text").value="";await loadFb();draw();loadStats()}
+      else{$("#fb-msg").textContent="";$("#fb-err").textContent="Chưa gửi được, thử lại sau."}}
+    catch(err){$("#fb-msg").textContent="";$("#fb-err").textContent="Không kết nối được máy chủ."}});
+  $("#fb-text").addEventListener("input",()=>$("#fb-err").textContent="")}
+
 
 /* Trang chủ mở tự do; lần đầu bấm vào nội dung (học phần, tài liệu, chương) mới hỏi mã */
 const FREE=["home","gop-y","quan-ly-ma"];
@@ -323,24 +437,28 @@ function needsCode(id){return !FREE.includes(id)}
 function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
 function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
 function renderWho(){const w=$("#who");
-  if(session){w.innerHTML=(session.lop==="DEMO"?"Mã dùng thử":"Lớp "+esc(session.lop))+" · đến "+hanText(session.mm,session.yy)+'<br><button type="button" id="logout">Đổi mã</button>';
+  if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';
     $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")}}
   else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>',$("#login").onclick=()=>{pending=null;showGate()}}
-function enter(p){session=p;store.set(KEY,p.code);hideGate();renderWho();
+function enter(sv){session=sv;store.set(KEY,JSON.stringify(sv));hideGate();renderWho();
   if(pending){const t=pending;pending=null;route(t)}}
 $("#gate-x").onclick=()=>{pending=null;hideGate()};
 $("#gate").addEventListener("click",e=>{if(e.target.id==="gate"){pending=null;hideGate()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#gate").hidden){pending=null;hideGate()}});
-$("#gate-form").addEventListener("submit",e=>{e.preventDefault();
+$("#gate-form").addEventListener("submit",async e=>{e.preventDefault();
   if(!$("#code-in").value.trim()){$("#code-err").textContent="Nhập mã lớp trước khi vào.";return}
-  const v=valid($("#code-in").value);if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.p)});
+  const btn=$("#gate-form button[type=submit]");btn.disabled=true;const old=btn.textContent;btn.textContent="Đang kiểm tra…";
+  const v=await checkCode($("#code-in").value);btn.disabled=false;btn.textContent=old;
+  if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.s)});
 $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 
 let cur="home";
 function route(id){if(needsCode(id)&&!session){pending=id;showGate(expiredMsg);return}
+  if(!$("#gate").hidden)hideGate();
   cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
-  else if(id==="gop-y") m.innerHTML=fbHTML();
+  else if(id==="gop-y"){if(API){m.innerHTML=fbApiHTML();fbApiBind()}else m.innerHTML=fbHTML()}
+  else if(id==="quan-ly-ma"&&API){m.innerHTML=admin2HTML();admin2Bind()}
   else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
@@ -356,8 +474,9 @@ function homeHTML(){
   const list=COURSES.map(c=>`<li data-comment-target><button type="button" class="${c.src?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${c.name}</span><span class="st">${c.src?"Đã có":"Sắp có"}</span></button></li>`).join("");
   const docs=DOCS.map(d=>{const has=!!(d.tl&&TL[d.tl]);
     return `<div class="doc${has?"":" soon"}" data-comment-target><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="tl-${d.tl}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
-  const vTxt=visits!=null?`<span class="val">${visits.toLocaleString("vi-VN")}</span>`:(CONFIG.goatcounter?`<a class="val na" href="https://${esc(CONFIG.goatcounter)}.goatcounter.com" target="_blank" rel="noopener">xem thống kê</a>`:(onClaude?'<span class="val na">thống kê trên bản web</span>':'<span class="val na">chưa kết nối bộ đếm</span>'));
-  const fTxt=cmt?'<span class="val na">xem ở khung Bình luận</span>':(feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`);
+  if(API&&stats){visits=stats.users}
+  const vTxt=API&&!stats?'<span class="val na">đang tải…</span>':visits!=null?`<span class="val">${visits.toLocaleString("vi-VN")}</span>`:(CONFIG.goatcounter?`<a class="val na" href="https://${esc(CONFIG.goatcounter)}.goatcounter.com" target="_blank" rel="noopener">xem thống kê</a>`:(onClaude?'<span class="val na">thống kê trên bản web</span>':'<span class="val na">chưa kết nối bộ đếm</span>'));
+  const fTxt=API?(stats?`<span class="val">${stats.feedback}</span>`:'<span class="val na">đang tải…</span>'):cmt?'<span class="val na">xem ở khung Bình luận</span>':(feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`);
   return `<main class="wrap">
   <div class="grid-top">
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
@@ -368,12 +487,12 @@ function homeHTML(){
       <ol class="guide"><li>Đăng nhập dữ liệu thông tin</li><li>Đọc tài liệu, sau đó làm các bài test kiểm tra kiến thức và luyện tập</li><li>Phản hồi, góp ý để hoàn thiện hệ thống.</li><li>Thông tin dữ liệu cung cấp vì mục đích học thuật, không có yếu tố thương mại.</li></ol>
       <p class="thanks">Trân trọng cảm ơn!</p></section>
     <section class="frame" data-comment-target><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
-      <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
+      <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}${API&&stats?'<span class="val na">người đã dùng mã</span>':''}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
       <div class="fb"><div class="bubble" aria-hidden="true">“</div>${sendLink()}</div>
-      ${isOwner?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
+      ${(API||isOwner)?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
     </section>
   </div></main>`}
-function sendLink(){return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
+function sendLink(){if(API)return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
 async function sendFeedback(btn){
   if(cmt){const target=btn.closest("[data-comment-target]")||btn;
     try{const r=await cmt.openComposer({element:target}); if(r&&r.opened===false) note(btn,"Bấm lại một lần nữa để mở khung góp ý.")}
@@ -775,11 +894,15 @@ function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
   return true}
 
 (async function boot(){
-  const saved=store.get(KEY),v=saved?valid(saved):{ok:false};
-  if(v.ok)session=v.p;else if(saved){store.del(KEY);if(v.expired)expiredMsg=v.why}
+  session=loadSession();
+  if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
+  else if(!session&&store.get(KEY))store.del(KEY);
   $("#app").hidden=false;renderWho();
   const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
-  await Promise.all([loadFeedback(),loadVisits()]);
+  if(API&&session){jsonp({action:"check",code:session.code,dev:getDev()}).then(r=>{if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
+      store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
+      if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
+  await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false}catch(e){isOwner=false}
   try{cmt=onClaude?await window.claude.use("comments"):null}catch(e){cmt=null}
   if(isOwner)renderWho();
