@@ -125,8 +125,8 @@ main.wrap{padding-block:22px 40px;display:grid;gap:20px}
 .btn.primary{background:var(--band);border-color:var(--band);color:var(--on-band)}
 
 /* Cổng nhập mã */
-.gate{min-height:100dvh;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.gate-card{width:min(480px,100%);background:var(--paper);border:2px dashed var(--frame);border-radius:24px;overflow:hidden}
+.gate{position:fixed;inset:0;z-index:50;overflow-y:auto;background:rgba(8,18,32,.62);display:grid;place-items:center;padding-top:calc(24px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.gate-card{position:relative;width:min(480px,100%);background:var(--paper);border:2px dashed var(--frame);border-radius:24px;overflow:hidden}
 .gate-top{background:var(--band);color:var(--on-band);padding:24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
 .gate-top .logo{width:96px;height:96px}
 .gate-top .kicker{font:900 13px var(--f-display);letter-spacing:.08em;color:var(--on-band-2)}
@@ -136,6 +136,8 @@ main.wrap{padding-block:22px 40px;display:grid;gap:20px}
 label.lab{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 input[type=text],input[type=month]{width:100%;font:600 17px var(--f-body);color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:11px 14px}
 #code-in,#k-in{letter-spacing:.06em;text-transform:uppercase}
+.gate-x{position:absolute;right:10px;top:8px;z-index:2;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font:400 24px/1 var(--f-body);cursor:pointer}
+.gate-x:hover{background:rgba(255,255,255,.3)}
 .err{color:var(--bad);font-size:13.5px;min-height:1.2em}
 .demo{background:var(--tint);border-radius:10px;padding:10px 14px;font-size:13.5px}
 .demo code{font:700 14px var(--f-body);letter-spacing:.06em;color:var(--head)}
@@ -234,16 +236,16 @@ ul.mm-d li{margin:1px 0}
 <body>
 
 
-<div id="gate" class="gate" hidden>
+<div id="gate" class="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-h">
   <div class="gate-card">
-    <div class="gate-top"><div class="logo"><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"></div><div class="kicker">THƯ VIỆN PHÚC NGUYÊN</div><h1>Tài liệu luật học</h1></div>
+    <button type="button" class="gate-x" id="gate-x" aria-label="Đóng">×</button>
+    <div class="gate-top"><div class="logo"><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"></div><div class="kicker">THƯ VIỆN PHÚC NGUYÊN</div><h1 id="gate-h">Tài liệu luật học</h1></div>
     <form class="gate-form" id="gate-form" novalidate>
-      <p>Nhập mã lớp do giảng viên cung cấp. Trình duyệt nhớ mã đến khi mã hết hạn.</p>
+      <p id="gate-msg">Lần đầu mở tài liệu, bạn cần nhập mã lớp do giảng viên cung cấp. Trình duyệt sẽ nhớ mã cho đến khi mã hết hạn.</p>
       <label class="lab" for="code-in">Mã lớp</label>
       <input type="text" id="code-in" autocomplete="off" spellcheck="false" placeholder="K24LUAT1-0127-CCQ">
       <div class="err" id="code-err" role="alert"></div>
-      <button class="btn primary" type="submit">Vào thư viện</button>
-      <div class="demo" id="demo-note">Bản demo, mã dùng thử: <code>DEMO-1227-D8H</code></div>
+      <button class="btn primary" type="submit">Xác nhận mã</button>
       <div class="msg">© Bản quyền thuộc Phúc Nguyên</div>
     </form>
   </div>
@@ -314,18 +316,29 @@ const onClaude=!!(window.claude&&window.claude.use);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-function showGate(msg){$("#app").hidden=true;$("#gate").hidden=false;$("#code-err").textContent=msg||""}
-function enter(p){session=p;store.set(KEY,p.code);$("#gate").hidden=true;$("#app").hidden=false;
-  $("#who").innerHTML=(p.lop==="DEMO"?"Mã dùng thử":"Lớp "+esc(p.lop))+" · đến "+hanText(p.mm,p.yy)+'<br><button type="button" id="logout">Đổi mã</button>';
-  $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";showGate()};
-  const h=(location.hash||"").slice(1); route(course(h)||tlParse(h)||h==="quan-ly-ma"||h==="gop-y"?h:"home")}
+/* Trang chủ mở tự do; lần đầu bấm vào nội dung (học phần, tài liệu, chương) mới hỏi mã */
+const FREE=["home","gop-y","quan-ly-ma"];
+let pending=null,gateReturn=null,expiredMsg="";
+function needsCode(id){return !FREE.includes(id)}
+function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
+function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
+function renderWho(){const w=$("#who");
+  if(session){w.innerHTML=(session.lop==="DEMO"?"Mã dùng thử":"Lớp "+esc(session.lop))+" · đến "+hanText(session.mm,session.yy)+'<br><button type="button" id="logout">Đổi mã</button>';
+    $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")}}
+  else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>',$("#login").onclick=()=>{pending=null;showGate()}}
+function enter(p){session=p;store.set(KEY,p.code);hideGate();renderWho();
+  if(pending){const t=pending;pending=null;route(t)}}
+$("#gate-x").onclick=()=>{pending=null;hideGate()};
+$("#gate").addEventListener("click",e=>{if(e.target.id==="gate"){pending=null;hideGate()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#gate").hidden){pending=null;hideGate()}});
 $("#gate-form").addEventListener("submit",e=>{e.preventDefault();
   if(!$("#code-in").value.trim()){$("#code-err").textContent="Nhập mã lớp trước khi vào.";return}
   const v=valid($("#code-in").value);if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.p)});
 $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 
 let cur="home";
-function route(id){cur=id;const m=$("#main");
+function route(id){if(needsCode(id)&&!session){pending=id;showGate(expiredMsg);return}
+  cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y") m.innerHTML=fbHTML();
   else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
@@ -763,12 +776,15 @@ function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
 
 (async function boot(){
   const saved=store.get(KEY),v=saved?valid(saved):{ok:false};
-  if(v.ok)enter(v.p);else{if(saved)store.del(KEY);showGate(saved&&v.expired?v.why:"")}
+  if(v.ok)session=v.p;else if(saved){store.del(KEY);if(v.expired)expiredMsg=v.why}
+  $("#app").hidden=false;renderWho();
+  const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
   await Promise.all([loadFeedback(),loadVisits()]);
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false}catch(e){isOwner=false}
   try{cmt=onClaude?await window.claude.use("comments"):null}catch(e){cmt=null}
-  if(session&&(cur==="home"||cur==="gop-y"))route(cur);
-  if(session&&isOwner&&(location.hash||"").slice(1)==="quan-ly-ma")route("quan-ly-ma");
+  if(isOwner)renderWho();
+  if(cur==="home"||cur==="gop-y")route(cur);
+  if(isOwner&&(location.hash||"").slice(1)==="quan-ly-ma")route("quan-ly-ma");
 })();
 </script>
 
