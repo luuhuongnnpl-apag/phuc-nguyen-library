@@ -157,6 +157,78 @@ th{background:var(--tint);font-size:11.5px;text-transform:uppercase;letter-spaci
 
 @media (max-width:900px){.grid-top,.grid-bot{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:560px){.band .who{position:static;text-align:left}.band .wrap{flex-wrap:wrap;justify-content:center}.band .titles{flex-basis:100%}.docs{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.doc .ttl{font-size:13.5px}}
+
+/* Tài liệu học phần */
+.tl-nav{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding-block:18px 0}
+.tl-pill{display:inline-flex;align-items:center;gap:10px;border:0;background:none;cursor:pointer;font:900 15px var(--f-display);text-transform:uppercase;color:var(--head);padding:2px 0}
+.tl-pill .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--tint);color:var(--head);border:1.5px solid var(--frame)}
+.tl-pill:hover .ic{background:var(--head);color:var(--paper)}
+.tl-main{padding-block:14px 44px;display:grid;gap:20px}
+.tl-head,.ch-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tl-head .kicker,.ch-head .kicker{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;flex-basis:100%}
+.tl-head h2,.ch-head h2{font:900 clamp(22px,3.4vw,32px)/1.2 var(--f-display);text-transform:uppercase;color:var(--head)}
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px 20px}
+.ch-card{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:0;background:none;cursor:pointer;padding:0;min-width:0}
+.ch-card .ph{width:100%;aspect-ratio:3/2;border-radius:8px;overflow:hidden;background:var(--tint);display:block}
+.ch-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s ease}
+.ch-card:hover img{transform:scale(1.04)}
+.ch-card .no{font:900 15px var(--f-display);text-transform:uppercase;color:var(--head)}
+.ch-card .nm{font:700 14px/1.35 var(--f-display);color:var(--ink)}
+.ch-card .cnt{font-size:12px;color:var(--muted)}
+.law-g{border:1px solid var(--line);border-radius:12px;margin-top:10px;background:var(--paper)}
+.law-g summary{cursor:pointer;padding:11px 16px;font:700 15px var(--f-display);color:var(--head);display:flex;justify-content:space-between;gap:10px;list-style:none}
+.law-g summary::-webkit-details-marker{display:none}
+.law-g summary .n{font:600 12px var(--f-body);color:var(--muted);background:var(--tint);border-radius:999px;padding:1px 9px;align-self:center}
+.law-g ol{margin:0;padding:0 18px 14px 36px;display:grid;gap:8px}
+.law-g li{max-width:80ch}
+.law-g li b{font-weight:600}
+.law-g .meta{display:block;font-size:12.5px;color:var(--muted)}
+.refs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.ref-g h4{margin:0 0 6px;font:900 14px var(--f-display);text-transform:uppercase;color:var(--head)}
+.ref-g ul{margin:0;padding-left:20px;display:grid;gap:6px;font-style:italic;color:var(--ink)}
+.mm-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.mm-tabs button{border:1.5px solid var(--frame);background:var(--paper);color:var(--head);border-radius:999px;padding:7px 16px;font:700 14px var(--f-display);cursor:pointer}
+.mm-tabs button[aria-selected="true"]{background:var(--head);border-color:var(--head);color:var(--paper)}
+.ch-pager{display:flex;justify-content:space-between;gap:10px}
+
+/* Tờ sơ đồ: giữ nền giấy trắng ở cả hai chế độ sáng, tối như slide in */
+.sheet{position:relative;overflow:hidden;background:#fff;color:#14304f;border:2px dashed var(--frame);border-radius:24px;padding:18px 16px 60px;--ln:#8592a3}
+.sheet-deco{position:absolute;right:-90px;top:-90px;width:230px;height:230px;border-radius:50%;background:#1d4f74;pointer-events:none}
+.sheet-logo{position:absolute;left:18px;top:16px;width:58px;height:58px;object-fit:contain}
+.draft{position:relative;z-index:1;margin:0 auto 6px;width:max-content;max-width:100%;font-size:12px;font-weight:700;color:#8a4b0f;background:#fdf0dc;border-radius:999px;padding:3px 12px}
+.mm-tools{position:absolute;z-index:3;right:16px;bottom:12px;display:flex;gap:6px}
+.mm-tools button{border:1px solid #c9d0da;background:#fff;color:#14304f;border-radius:8px;min-width:34px;height:32px;font:700 14px var(--f-body);cursor:pointer;padding:0 10px}
+.mm-vp{position:relative;z-index:1;overflow:auto;max-width:100%}
+.mm-sizer{position:relative;margin:0 auto}
+.mm-canvas{position:absolute;left:0;top:0;transform-origin:0 0;width:max-content;padding:4px 8px 10px}
+.mm-title{text-align:center;padding:4px 70px 18px}
+.mm-title .h1{font:900 46px/1.1 var(--f-display);text-transform:uppercase;color:#12395c;letter-spacing:.01em}
+.mm-title .h2{font:900 24px/1.2 var(--f-display);text-transform:uppercase;color:#12395c;margin-top:4px}
+.mm-tree{display:flex;justify-content:center}
+.mm-node{display:flex;flex-direction:column;align-items:center}
+.mm-box{position:relative;background:#fff;border:1.5px solid #8592a3;border-radius:14px;padding:7px 11px;font:700 13.5px/1.32 var(--f-display);color:#14304f;text-align:center;max-width:140px}
+.mm-box.d0{font-size:21px;padding:10px 46px;border-radius:16px;max-width:none;border-color:#6b7787}
+.mm-box.d1{font-size:18px;padding:10px 16px;border-radius:20px;max-width:230px;border-color:#6b7787;border-width:1.8px}
+.mm-box.d2{font-size:15px;max-width:175px;padding:7px 12px;border-radius:16px}
+.mm-box.has-d{max-width:200px}
+.mm-box.d1.has-d{max-width:260px}
+.mm-d{display:block;margin-top:4px;font:400 12.5px/1.42 var(--f-body);color:#2f3f55}
+ul.mm-d{text-align:left;padding-left:14px;margin:4px 0 0}
+ul.mm-d li{margin:1px 0}
+.mm-kids.row{display:flex;align-items:flex-start;gap:14px;padding-top:30px;position:relative}
+.mm-kids.row::before{content:"";position:absolute;top:0;left:50%;height:15px;border-left:1.5px solid var(--ln)}
+.mm-kids.row>.mm-kid{position:relative;display:flex;justify-content:center}
+.mm-kids.row>.mm-kid::before{content:"";position:absolute;top:-15px;left:-7px;right:-7px;border-top:1.5px solid var(--ln)}
+.mm-kids.row>.mm-kid:first-child::before{left:50%}
+.mm-kids.row>.mm-kid:last-child::before{right:50%}
+.mm-kids.row>.mm-kid:only-child::before{display:none}
+.mm-kids.row>.mm-kid::after{content:"";position:absolute;top:-15px;left:50%;height:15px;border-left:1.5px solid var(--ln)}
+.mm-kids.stack{display:flex;flex-direction:column;align-items:center}
+.mm-sk{position:relative;padding-top:16px;display:flex;justify-content:center}
+.mm-sk::before{content:"";position:absolute;top:0;left:50%;height:16px;border-left:1.5px solid var(--ln)}
+.mm-col{display:flex;flex-direction:column;align-items:center}
+.mm-kid>.mm-node>.mm-box::before,.mm-sk>.mm-node>.mm-box::before,.mm-col>.mm-node:first-child>.mm-box::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%);border-left:4.5px solid transparent;border-right:4.5px solid transparent;border-top:7px solid var(--ln)}
+@media (max-width:560px){.sheet-logo{width:40px;height:40px}.sheet-deco{width:150px;height:150px;right:-70px;top:-70px}}
 </style>
 </head>
 <body>
@@ -209,7 +281,7 @@ const COURSES=[
   {id:"luat-thuong-mai",name:"Luật Thương mại",c:"#e3b928"}
 ];
 const DOCS=[
-  {id:"luat-dan-su",name:"Luật Dân sự",img:"assets/dan-su.jpg"},
+  {id:"luat-dan-su",name:"Luật Dân sự",img:"assets/dan-su.jpg",tl:"luat-dan-su"},
   {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",img:"assets/to-tung-dan-su.jpg"},
   {id:"luat-dat-dai",name:"Luật Đất đai",img:"assets/dat-dai.jpg"},
   {id:"cong-chung-chung-thuc",name:"Công chứng, chứng thực",img:"assets/cong-chung.jpg"},
@@ -237,7 +309,8 @@ function valid(code){const p=parse(code);
 
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const KEY="pnlib-ma-lop";
-let session=null,isOwner=false,visits=null,feedback=null,fbErr="";
+let session=null,isOwner=false,visits=null,feedback=null,fbErr="",cmt=null;
+const onClaude=!!(window.claude&&window.claude.use);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -245,7 +318,7 @@ function showGate(msg){$("#app").hidden=true;$("#gate").hidden=false;$("#code-er
 function enter(p){session=p;store.set(KEY,p.code);$("#gate").hidden=true;$("#app").hidden=false;
   $("#who").innerHTML=(p.lop==="DEMO"?"Mã dùng thử":"Lớp "+esc(p.lop))+" · đến "+hanText(p.mm,p.yy)+'<br><button type="button" id="logout">Đổi mã</button>';
   $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";showGate()};
-  const h=(location.hash||"").slice(1); route(course(h)||h==="quan-ly-ma"||h==="gop-y"?h:"home")}
+  const h=(location.hash||"").slice(1); route(course(h)||tlParse(h)||h==="quan-ly-ma"||h==="gop-y"?h:"home")}
 $("#gate-form").addEventListener("submit",e=>{e.preventDefault();
   if(!$("#code-in").value.trim()){$("#code-err").textContent="Nhập mã lớp trước khi vào.";return}
   const v=valid($("#code-in").value);if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.p)});
@@ -256,20 +329,22 @@ function route(id){cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y") m.innerHTML=fbHTML();
   else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
+  else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
     m.innerHTML=c.src
       ?`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2><div class="sp"></div><a href="${c.src}" target="_blank" rel="noopener">Mở trong thẻ mới</a></div></div><section class="viewer"><iframe src="${c.src}" title="Tài liệu ${c.name}"></iframe></section>`
       :`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2></div></div><section class="soon-page wrap"><div class="frame"><div class="ftitle">${c.name}</div><p>Tài liệu học phần đang được biên soạn và sẽ cập nhật tại đây khi có dữ liệu: thi thử, văn bản pháp luật, kiến thức, câu hỏi lý thuyết và tình huống.</p><div><button class="btn" data-home>Về thư viện</button></div></div></section>`}
   m.querySelectorAll("[data-home]").forEach(b=>b.onclick=()=>route("home"));
   m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
+  m.querySelectorAll("[data-send]").forEach(b=>b.onclick=()=>sendFeedback(b));
   window.scrollTo(0,0)}
 
 function homeHTML(){
-  const list=COURSES.map(c=>`<li><button type="button" class="${c.src?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${c.name}</span><span class="st">${c.src?"Đã có":"Sắp có"}</span></button></li>`).join("");
-  const docs=DOCS.map(d=>{const c=course(d.id),has=!!(c&&c.src);
-    return `<div class="doc${has?"":" soon"}"><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="${d.id}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
-  const vTxt=visits==null?'<span class="val na">chưa kết nối bộ đếm</span>':`<span class="val">${visits.toLocaleString("vi-VN")}</span>`;
-  const fTxt=feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`;
+  const list=COURSES.map(c=>`<li data-comment-target><button type="button" class="${c.src?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${c.name}</span><span class="st">${c.src?"Đã có":"Sắp có"}</span></button></li>`).join("");
+  const docs=DOCS.map(d=>{const has=!!(d.tl&&TL[d.tl]);
+    return `<div class="doc${has?"":" soon"}" data-comment-target><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="tl-${d.tl}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
+  const vTxt=visits!=null?`<span class="val">${visits.toLocaleString("vi-VN")}</span>`:(CONFIG.goatcounter?`<a class="val na" href="https://${esc(CONFIG.goatcounter)}.goatcounter.com" target="_blank" rel="noopener">xem thống kê</a>`:(onClaude?'<span class="val na">thống kê trên bản web</span>':'<span class="val na">chưa kết nối bộ đếm</span>'));
+  const fTxt=cmt?'<span class="val na">xem ở khung Bình luận</span>':(feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`);
   return `<main class="wrap">
   <div class="grid-top">
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
@@ -279,23 +354,31 @@ function homeHTML(){
     <section class="frame"><div class="ftitle">Hướng dẫn sử dụng</div>
       <ol class="guide"><li>Đăng nhập dữ liệu thông tin</li><li>Đọc tài liệu, sau đó làm các bài test kiểm tra kiến thức và luyện tập</li><li>Phản hồi, góp ý để hoàn thiện hệ thống.</li><li>Thông tin dữ liệu cung cấp vì mục đích học thuật, không có yếu tố thương mại.</li></ol>
       <p class="thanks">Trân trọng cảm ơn!</p></section>
-    <section class="frame"><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
+    <section class="frame" data-comment-target><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
       <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
       <div class="fb"><div class="bubble" aria-hidden="true">“</div>${sendLink()}</div>
       ${isOwner?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
     </section>
   </div></main>`}
-function sendLink(){return CONFIG.formUrl?`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`:`<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`}
+function sendLink(){return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
+async function sendFeedback(btn){
+  if(cmt){const target=btn.closest("[data-comment-target]")||btn;
+    try{const r=await cmt.openComposer({element:target}); if(r&&r.opened===false) note(btn,"Bấm lại một lần nữa để mở khung góp ý.")}
+    catch(e){ if(e&&e.code==="unavailable"){cmt=null;note(btn,"Tài khoản của bạn chưa được bật quyền góp ý trên trang này.")} else note(btn,"Chưa mở được khung góp ý, thử lại sau ít phút.")}
+    return}
+  route("gop-y")}
+function note(btn,t){let n=btn.parentElement.parentElement.querySelector(".fbnote");if(!n){n=document.createElement("p");n.className="msg fbnote";btn.parentElement.after(n)}n.textContent=t}
 
 function fbHTML(){
   let body;
-  if(feedback&&feedback.length) body=`<div class="fb-list">${feedback.slice().reverse().map(r=>`<div class="fb-item"><div class="m">${esc(r.time)}${r.course?" · "+esc(r.course):""}</div><p>${esc(r.text)}</p></div>`).join("")}</div>`;
+  if(onClaude) body=`<div class="info">Toàn bộ góp ý của sinh viên hiển thị trong khung <b>Bình luận</b> của Claude (biểu tượng bình luận ở góc trên trang). Bấm vào một góp ý để xem chỗ được góp ý và trả lời.</div>`;
+  else if(feedback&&feedback.length) body=`<div class="fb-list">${feedback.slice().reverse().map(r=>`<div class="fb-item"><div class="m">${esc(r.time)}${r.course?" · "+esc(r.course):""}</div><p>${esc(r.text)}</p></div>`).join("")}</div>`;
   else if(feedback) body=`<div class="info">Chưa có góp ý nào. Hãy là người đầu tiên gửi góp ý.</div>`;
   else body=`<div class="info">${fbErr||"Mục góp ý sẽ hiện toàn bộ phản hồi của sinh viên tại đây khi biểu mẫu góp ý được kết nối."}</div>`;
   return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Phản hồi góp ý</h2></div></div>
-  <main class="wrap"><section class="frame"><div class="ftitle">Phản hồi góp ý</div>
-  <p class="msg">Góp ý về nội dung cần cập nhật, câu hỏi chưa chính xác hoặc đề xuất cải thiện. Mọi góp ý hiện công khai cho cả lớp cùng xem.</p>
-  <div style="margin:12px 0">${CONFIG.formUrl?`<a class="btn primary" style="display:inline-block;text-decoration:none" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý mới</a>`:'<span class="msg">Nút gửi góp ý sẽ mở biểu mẫu khi được kết nối.</span>'}</div>
+  <main class="wrap"><section class="frame" data-comment-target><div class="ftitle">Phản hồi góp ý</div>
+  <p class="msg">Góp ý về nội dung cần cập nhật, câu hỏi chưa chính xác hoặc đề xuất cải thiện. Mọi góp ý hiện công khai cho cả lớp cùng xem. Muốn góp ý cho một học phần cụ thể, bật chế độ bình luận rồi bấm vào học phần đó.</p>
+  <div style="margin:12px 0">${cmt?'<button type="button" class="btn primary" data-send>Gửi góp ý mới</button>':CONFIG.formUrl?`<a class="btn primary" style="display:inline-block;text-decoration:none" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý mới</a>`:'<span class="msg">Nút gửi góp ý sẽ mở biểu mẫu khi được kết nối.</span>'}</div>
   ${body}</section></main>`}
 
 /* Đọc CSV câu trả lời Google Form (cột: Dấu thời gian, Học phần, Nội dung góp ý) */
@@ -336,11 +419,354 @@ function bindAdmin(){renderIssued();
   $("#k-in").addEventListener("input",()=>{const v=$("#k-in").value.trim();if(!v){$("#k-out").textContent="";return}const r=valid(v),p=parse(v);
     $("#k-out").innerHTML=r.ok?`<span class="ok">Hợp lệ</span> · lớp ${esc(r.p.lop)} · dùng đến ${hanText(r.p.mm,r.p.yy)}`:(r.expired?`<span class="bad">Hết hạn</span> · lớp ${esc(p.lop)}`:`<span class="bad">Không hợp lệ.</span> ${esc(r.why)}`)})}
 
+/* ===== TÀI LIỆU HỌC TẬP: LUẬT DÂN SỰ ===== */
+/* Sơ đồ: {h1,h2,r?,c:[...]}; nút: {t, d?, c?, l?} — l: "row" | "stack" | "cols2" | "cols3" */
+const TL={};
+TL["luat-dan-su"]={
+ name:"Luật Dân sự", review:"luat-dan-su",
+ chapters:[
+ {n:1,t:"Khái quát chung về Luật Dân sự",img:"assets/ds/ch1.jpg",maps:[
+  {k:"Khái quát chung",h1:"Khái quát chung",h2:"về Luật Dân sự",src:"canva",c:[
+   {t:"Khái niệm, đối tượng và phương pháp điều chỉnh",l:"row",c:[
+     {t:"Đối tượng",c:[{t:"Quan hệ tài sản"},{t:"Quan hệ nhân thân"}]},
+     {t:"Phương pháp",l:"cols2",c:[{t:"Bình đẳng"},{t:"Tự do ý chí"},{t:"Độc lập về tài sản"},{t:"Trách nhiệm dân sự"}]}]},
+   {t:"Nguyên tắc cơ bản của Luật Dân sự",l:"cols3",c:[
+     {t:"Bình đẳng"},{t:"Thiện chí, trung thực"},{t:"Tự do, tự nguyện cam kết, thỏa thuận"},
+     {t:"Tôn trọng lợi ích Nhà nước, công cộng, quyền và lợi ích hợp pháp của người khác"},{t:"Tự chịu trách nhiệm dân sự"}]},
+   {t:"Quan hệ pháp luật dân sự",l:"row",c:[
+     {t:"Khái niệm, đặc điểm"},
+     {t:"Cấu thành QHPL dân sự",c:[{t:"Chủ thể"},{t:"Khách thể"},{t:"Nội dung"}]},
+     {t:"Căn cứ phát sinh, thay đổi, chấm dứt",c:[{t:"Sự kiện pháp lý"}]}]},
+   {t:"Nguồn và áp dụng nguồn",l:"row",c:[
+     {t:"Nguồn",c:[{t:"Văn bản QPPL"},{t:"Án lệ"},{t:"Tập quán"}]},
+     {t:"Áp dụng nguồn",c:[{t:"Áp dụng pháp luật"},{t:"Áp dụng tập quán"},{t:"Áp dụng tương tự pháp luật"},{t:"Nguyên tắc cơ bản, án lệ, lẽ công bằng"}]}]}
+  ]}]},
+ {n:2,t:"Chủ thể quan hệ pháp luật dân sự",img:"assets/ds/ch2.jpg",maps:[
+  {k:"Chủ thể",h1:"Chủ thể",h2:"quan hệ pháp luật dân sự",src:"canva",c:[
+   {t:"Cá nhân",l:"row",c:[
+     {t:"Năng lực chủ thể của cá nhân",l:"row",c:[
+       {t:"Năng lực pháp luật",c:[{t:"Bắt đầu khi sinh ra"},{t:"Chấm dứt khi chết"},{t:"Mọi cá nhân như nhau, không bị hạn chế trừ khi luật quy định"},{t:"Gồm quyền nhân thân và quyền tài sản"}]},
+       {t:"Năng lực hành vi",c:[{t:"Đầy đủ",d:"Từ đủ 18 tuổi"},{t:"Một phần",d:"Từ đủ 6 tuổi đến chưa đủ 18 tuổi"},{t:"Chưa có",d:"Chưa đủ 6 tuổi"},{t:"Mất NLHVDS"},{t:"Khó khăn trong nhận thức, làm chủ hành vi"},{t:"Hạn chế NLHVDS"}]}]},
+     {t:"Giám hộ",l:"row",c:[
+       {t:"Người được giám hộ",c:[
+         {t:"Người chưa thành niên",d:"Không còn cha mẹ, không xác định được cha mẹ; cha mẹ mất hoặc hạn chế NLHVDS, bị hạn chế quyền đối với con, không có điều kiện chăm sóc, giáo dục con và có yêu cầu"},
+         {t:"Người mất NLHVDS"},{t:"Người có khó khăn trong nhận thức, làm chủ hành vi"}]},
+       {t:"Người giám hộ",l:"row",c:[
+         {t:"Các loại",c:[{t:"Giám hộ đương nhiên"},{t:"Giám hộ được cử"},{t:"Giám hộ được chỉ định"}]},
+         {t:"Điều kiện",c:[
+           {t:"Cá nhân",d:"NLHVDS đầy đủ; tư cách đạo đức tốt, có điều kiện cần thiết; không đang bị truy cứu TNHS hoặc bị kết án chưa xóa án tích về tội cố ý xâm phạm tính mạng, sức khỏe, danh dự, nhân phẩm, tài sản; không bị hạn chế quyền đối với con chưa thành niên"},
+           {t:"Pháp nhân",d:"Năng lực pháp luật phù hợp; có điều kiện cần thiết"}]},
+         {t:"Nghĩa vụ",c:[{t:"Chăm sóc, giáo dục người được giám hộ"},{t:"Đại diện trong giao dịch dân sự"},{t:"Quản lý tài sản"},{t:"Bảo vệ quyền, lợi ích hợp pháp"}]},
+         {t:"Quyền",c:[{t:"Sử dụng tài sản cho nhu cầu thiết yếu của người được giám hộ"},{t:"Được thanh toán chi phí hợp lý cho việc quản lý tài sản"},{t:"Đại diện trong giao dịch dân sự"}]}]}]}]},
+   {t:"Pháp nhân",l:"row",c:[
+     {t:"Điều kiện",c:[{t:"Thành lập hợp pháp"},{t:"Cơ cấu tổ chức chặt chẽ"},{t:"Tài sản độc lập, tự chịu trách nhiệm bằng tài sản đó"},{t:"Nhân danh mình tham gia quan hệ pháp luật độc lập"}]},
+     {t:"Phân loại",c:[{t:"Pháp nhân thương mại"},{t:"Pháp nhân phi thương mại"}]}]},
+   {t:"Chủ thể khác",c:[{t:"Hộ gia đình, tổ hợp tác"},{t:"Tổ chức không có tư cách pháp nhân"},{t:"Nhà nước"}]}
+  ]}]},
+ {n:3,t:"Giao dịch dân sự, đại diện, thời hạn và thời hiệu",img:"assets/ds/ch3.jpg",maps:[
+  {k:"Giao dịch dân sự",h1:"Giao dịch dân sự",r:"Giao dịch dân sự",src:"canva",c:[
+   {t:"Các loại GDDS",c:[{t:"Hành vi pháp lý đơn phương"},{t:"Hợp đồng"}]},
+   {t:"Điều kiện có hiệu lực",c:[{t:"Chủ thể có NLPL, NLHVDS phù hợp"},{t:"Hoàn toàn tự nguyện"},{t:"Mục đích, nội dung không vi phạm điều cấm, không trái đạo đức xã hội"},{t:"Hình thức (khi luật quy định)"}]},
+   {t:"GDDS vô hiệu",c:[{t:"Không đáp ứng điều kiện có hiệu lực"},{t:"Vô hiệu tuyệt đối",d:"Vi phạm điều cấm, trái đạo đức xã hội; giả tạo"},{t:"Vô hiệu tương đối",d:"Nhầm lẫn; lừa dối, đe dọa, cưỡng ép; người chưa thành niên, mất, hạn chế NLHVDS xác lập; không nhận thức, làm chủ hành vi; vi phạm hình thức"},{t:"Vô hiệu từng phần / toàn bộ"}]},
+   {t:"Hậu quả pháp lý của GDDS vô hiệu",c:[{t:"Không làm phát sinh, thay đổi, chấm dứt quyền, nghĩa vụ"},{t:"Khôi phục tình trạng ban đầu",d:"Hoàn trả cho nhau những gì đã nhận"},{t:"Không phải hoàn trả hoa lợi, lợi tức",d:"Bên ngay tình"},{t:"Bồi thường thiệt hại",d:"Bên có lỗi"}]}
+  ]},
+  {k:"Đại diện",h1:"Đại diện",src:"canva",c:[
+   {t:"Khái niệm",d:"Cá nhân, pháp nhân nhân danh và vì lợi ích của cá nhân, pháp nhân khác xác lập, thực hiện giao dịch dân sự"},
+   {t:"Đại diện theo pháp luật",l:"row",c:[
+     {t:"Căn cứ",c:[{t:"Quyết định của cơ quan nhà nước có thẩm quyền"},{t:"Điều lệ pháp nhân"},{t:"Quy định của pháp luật"}]},
+     {t:"Của cá nhân",c:[{t:"Người chưa thành niên",d:"Cha, mẹ hoặc người giám hộ"},{t:"Người được giám hộ",d:"Người giám hộ"},{t:"Người bị hạn chế NLHVDS",d:"Người do Tòa án chỉ định"}]},
+     {t:"Của pháp nhân",c:[{t:"Người do pháp nhân chỉ định theo điều lệ"},{t:"Người có thẩm quyền theo quy định của pháp luật"},{t:"Người do Tòa án chỉ định trong tố tụng"},{t:"Có thể có nhiều người đại diện",d:"Mỗi người một phạm vi"}]}]},
+   {t:"Đại diện theo ủy quyền",l:"row",c:[
+     {t:"Chủ thể",c:[{t:"Người được đại diện",d:"Cá nhân, pháp nhân; thành viên hộ gia đình, tổ hợp tác, tổ chức không có tư cách pháp nhân"},{t:"Người đại diện",d:"Cá nhân, pháp nhân"}]},
+     {t:"Điều kiện người đại diện",c:[{t:"NLHVDS đầy đủ"},{t:"Từ đủ 15 đến chưa đủ 18 tuổi",d:"Trừ giao dịch luật đòi hỏi người từ đủ 18 tuổi"}]}]},
+   {t:"Thời hạn",c:[{t:"Theo văn bản ủy quyền, quyết định, điều lệ, quy định của pháp luật"},{t:"Không xác định được",d:"Gắn với giao dịch cụ thể: đến khi giao dịch chấm dứt; không gắn: 01 năm kể từ khi phát sinh quyền đại diện"}]},
+   {t:"Phạm vi",c:[{t:"Theo quyết định, điều lệ, nội dung ủy quyền, quy định của pháp luật"},{t:"Không xác định được",d:"Mọi giao dịch vì lợi ích của người được đại diện, trừ luật có quy định khác"},{t:"Không giao dịch với chính mình hoặc người thứ ba mà mình cũng là người đại diện"}]},
+   {t:"Hậu quả pháp lý",c:[{t:"Hành vi đại diện",d:"Làm phát sinh quyền, nghĩa vụ của người được đại diện"},{t:"Người không có quyền đại diện xác lập"},{t:"Vượt quá phạm vi đại diện"}]},
+   {t:"Chấm dứt đại diện",l:"row",c:[
+     {t:"Theo pháp luật",c:[{t:"Người được đại diện thành niên, NLHVDS được khôi phục"},{t:"Người được đại diện chết, pháp nhân chấm dứt tồn tại"},{t:"Căn cứ khác"}]},
+     {t:"Theo ủy quyền",c:[{t:"Theo thỏa thuận"},{t:"Hết thời hạn ủy quyền"},{t:"Công việc đã hoàn thành"},{t:"Đơn phương chấm dứt"},{t:"Một bên chết, chấm dứt tồn tại"},{t:"Người đại diện không còn đủ điều kiện"}]}]}
+  ]},
+  {k:"Thời hạn, thời hiệu",h1:"Thời hạn, thời hiệu",src:"canva",c:[
+   {t:"Thời hạn",l:"row",c:[
+     {t:"Khái niệm",d:"Khoảng thời gian được xác định từ thời điểm này đến thời điểm khác"},
+     {t:"Cách tính",c:[{t:"Theo thỏa thuận hoặc pháp luật"},{t:"Phút, giờ, ngày, tuần, tháng, năm hoặc sự kiện"},{t:"Quy ước",d:"1 năm = 365 ngày; 1 tháng = 30 ngày; 1 tuần = 7 ngày; 1 ngày = 24 giờ"}]},
+     {t:"Bắt đầu thời hạn",c:[{t:"Phút, giờ",d:"Từ thời điểm đã xác định"},{t:"Ngày, tuần, tháng, năm",d:"Ngày đầu tiên không tính; tính từ ngày tiếp theo liền kề"},{t:"Sự kiện",d:"Từ ngày tiếp theo liền kề ngày xảy ra sự kiện"}]},
+     {t:"Kết thúc thời hạn",c:[{t:"Ngày",d:"Kết thúc ngày cuối cùng"},{t:"Tuần, tháng, năm",d:"Kết thúc ngày tương ứng của tuần, tháng, năm cuối cùng"},{t:"Ngày cuối là ngày nghỉ",d:"Kết thúc ngày làm việc tiếp theo ngày nghỉ đó"}]}]},
+   {t:"Thời hiệu",l:"row",c:[
+     {t:"Khái niệm",d:"Thời hạn do luật quy định, khi kết thúc thì phát sinh hậu quả pháp lý theo điều kiện luật định"},
+     {t:"Các loại",c:[{t:"Hưởng quyền dân sự"},{t:"Miễn trừ nghĩa vụ dân sự"},{t:"Khởi kiện"},{t:"Yêu cầu giải quyết việc dân sự"}]},
+     {t:"Cách tính",c:[{t:"Từ ngày đầu tiên, chấm dứt khi kết thúc ngày cuối cùng"},{t:"Khởi kiện",d:"Từ ngày người có quyền biết hoặc phải biết quyền bị xâm phạm"}]},
+     {t:"Áp dụng thời hiệu",c:[{t:"Theo yêu cầu của một bên hoặc các bên"},{t:"Trước khi Tòa án cấp sơ thẩm ra bản án, quyết định"}]},
+     {t:"Không áp dụng thời hiệu khởi kiện",c:[{t:"Bảo vệ quyền nhân thân không gắn với tài sản"},{t:"Bảo vệ quyền sở hữu, trừ luật có quy định khác"},{t:"Tranh chấp quyền sử dụng đất"},{t:"Trường hợp khác do luật quy định"}]}]}
+  ]}]},
+ {n:4,t:"Tài sản, quyền đối với tài sản và thừa kế",img:"assets/ds/ch4.jpg",maps:[
+  {k:"Tài sản",h1:"Tài sản",h2:"và các quyền đối với tài sản",src:"canva",c:[
+   {t:"Tài sản",l:"row",c:[
+     {t:"Các loại tài sản",c:[{t:"Vật",d:"Vật chính, vật phụ · Vật chia được, không chia được · Vật tiêu hao, không tiêu hao · Vật cùng loại, đặc định, đồng bộ · Hoa lợi, lợi tức"},{t:"Tiền"},{t:"Giấy tờ có giá"},{t:"Quyền tài sản"}]},
+     {t:"Phân loại tài sản",c:[{t:"Khả năng di dời",d:"Bất động sản · Động sản"},{t:"Thời điểm hình thành",d:"Tài sản hiện có · Tài sản hình thành trong tương lai"},{t:"Hình dạng",d:"Hữu hình · Vô hình"},{t:"Hình thức sở hữu",d:"Sở hữu toàn dân · Sở hữu riêng · Sở hữu chung (theo phần, hợp nhất)"}]}]},
+   {t:"Quyền sở hữu",l:"row",c:[
+     {t:"Quyền chiếm hữu",l:"row",c:[
+       {t:"Nội dung",c:[{t:"Nắm giữ tài sản"},{t:"Chi phối, quản lý tài sản"}]},
+       {t:"Chiếm hữu của người không phải chủ sở hữu",l:"row",c:[
+         {t:"Có căn cứ pháp luật",c:[{t:"Được chủ sở hữu ủy quyền quản lý"},{t:"Được chuyển giao qua giao dịch dân sự"},{t:"Phát hiện, giữ tài sản vô chủ, bị đánh rơi, bỏ quên, chôn giấu"},{t:"Phát hiện, giữ gia súc, gia cầm, vật nuôi dưới nước bị thất lạc"},{t:"Trường hợp khác do luật quy định"}]},
+         {t:"Không có căn cứ pháp luật",c:[{t:"Ngay tình"},{t:"Không ngay tình"}]}]}]},
+     {t:"Quyền sử dụng",c:[{t:"Khai thác công dụng của tài sản"},{t:"Hưởng hoa lợi, lợi tức"}]},
+     {t:"Quyền định đoạt",c:[{t:"Chuyển giao quyền sở hữu"},{t:"Từ bỏ quyền sở hữu"},{t:"Tiêu dùng, tiêu hủy tài sản"}]}]},
+   {t:"Quyền khác đối với tài sản",l:"row",c:[
+     {t:"Quyền đối với bất động sản liền kề",c:[{t:"Khái niệm",d:"Quyền thực hiện trên bất động sản của người khác để khai thác bất động sản của mình"},{t:"Căn cứ xác lập",d:"Địa thế tự nhiên · Quy định của luật · Thỏa thuận · Di chúc"},{t:"Nội dung",d:"Cấp, thoát nước · Tưới, tiêu nước · Lối đi qua · Mắc đường dây tải điện, thông tin liên lạc"}]},
+     {t:"Quyền hưởng dụng",c:[{t:"Khái niệm",d:"Quyền khai thác công dụng, hưởng hoa lợi, lợi tức của tài sản thuộc sở hữu của người khác trong thời hạn nhất định"},{t:"Căn cứ xác lập",d:"Luật · Thỏa thuận · Di chúc"},{t:"Nội dung",d:"Khai thác công dụng · Hưởng hoa lợi, lợi tức · Cho thuê quyền hưởng dụng"}]},
+     {t:"Quyền bề mặt",c:[{t:"Khái niệm",d:"Quyền đối với mặt đất, mặt nước, khoảng không và lòng đất mà quyền sử dụng đất thuộc về người khác"},{t:"Căn cứ xác lập",d:"Luật · Thỏa thuận · Di chúc"},{t:"Nội dung",d:"Khai thác, sử dụng bề mặt; sở hữu tài sản tạo lập; thời hạn không xác định thì báo trước ít nhất 06 tháng khi chấm dứt"},{t:"Chấm dứt",d:"Hết thời hạn · Chủ có quyền bề mặt và chủ sử dụng đất là một · Từ bỏ quyền · Đất bị thu hồi · Thỏa thuận"}]}]},
+   {t:"Bảo vệ quyền sở hữu, quyền khác đối với tài sản",c:[{t:"Tự bảo vệ"},{t:"Đòi lại tài sản",d:"Kiện vật quyền"},{t:"Yêu cầu chấm dứt hành vi xâm phạm"},{t:"Yêu cầu bồi thường thiệt hại",d:"Kiện trái quyền"}]}
+  ]},
+  {k:"Thừa kế",h1:"Thừa kế",src:"new",c:[
+   {t:"Quy định chung",c:[
+     {t:"Thời điểm mở thừa kế",d:"Thời điểm người có tài sản chết; bị tuyên bố chết: ngày Tòa án xác định"},
+     {t:"Địa điểm mở thừa kế",d:"Nơi cư trú cuối cùng; không xác định được: nơi có toàn bộ hoặc phần lớn di sản"},
+     {t:"Di sản",d:"Tài sản riêng và phần tài sản trong khối tài sản chung với người khác"},
+     {t:"Người thừa kế",d:"Cá nhân còn sống vào thời điểm mở thừa kế hoặc sinh ra và còn sống sau đó nhưng đã thành thai trước khi người để lại di sản chết; cơ quan, tổ chức còn tồn tại (theo di chúc)"},
+     {t:"Từ chối nhận di sản",d:"Trước thời điểm phân chia di sản; không nhằm trốn tránh nghĩa vụ tài sản"},
+     {t:"Người không được hưởng di sản",d:"Bị kết án về hành vi cố ý xâm phạm tính mạng, sức khỏe, ngược đãi nghiêm trọng người để lại di sản; vi phạm nghiêm trọng nghĩa vụ nuôi dưỡng; bị kết án về hành vi cố ý xâm phạm tính mạng người thừa kế khác; lừa dối, cưỡng ép, ngăn cản lập di chúc, giả mạo, che giấu di chúc. Trừ khi người để lại di sản biết mà vẫn cho hưởng theo di chúc"},
+     {t:"Thời hiệu",d:"Chia di sản: 30 năm (bất động sản), 10 năm (động sản) · Xác nhận, bác bỏ quyền thừa kế: 10 năm · Yêu cầu thực hiện nghĩa vụ tài sản: 03 năm"}]},
+   {t:"Thừa kế theo di chúc",c:[
+     {t:"Người lập di chúc",d:"Người thành niên minh mẫn, sáng suốt; từ đủ 15 đến chưa đủ 18 tuổi: lập bằng văn bản, được cha mẹ hoặc người giám hộ đồng ý"},
+     {t:"Hình thức",l:"row",c:[
+       {t:"Bằng văn bản",d:"Không có người làm chứng · Có người làm chứng · Có công chứng · Có chứng thực"},
+       {t:"Di chúc miệng",d:"Tính mạng bị đe dọa, không thể lập văn bản; ít nhất 2 người làm chứng ghi chép, ký tên; công chứng, chứng thực trong 05 ngày làm việc; sau 03 tháng còn sống, minh mẫn thì bị hủy bỏ"}]},
+     {t:"Di chúc hợp pháp",d:"Minh mẫn, sáng suốt, tự nguyện; nội dung không vi phạm điều cấm, không trái đạo đức xã hội; hình thức đúng luật"},
+     {t:"Hiệu lực",d:"Từ thời điểm mở thừa kế; không có hiệu lực khi người thừa kế chết trước hoặc cùng thời điểm, tổ chức không còn, di sản không còn"},
+     {t:"Người thừa kế không phụ thuộc nội dung di chúc",d:"Con chưa thành niên, cha, mẹ, vợ, chồng; con thành niên không có khả năng lao động: hưởng 2/3 suất thừa kế theo pháp luật"}]},
+   {t:"Thừa kế theo pháp luật",c:[
+     {t:"Trường hợp áp dụng",d:"Không có di chúc · Di chúc không hợp pháp · Người thừa kế theo di chúc chết trước, không còn tồn tại, từ chối hoặc không có quyền hưởng · Phần di sản không được định đoạt"},
+     {t:"Hàng thừa kế",l:"stack",c:[
+       {t:"Hàng thứ nhất",d:"Vợ, chồng, cha đẻ, mẹ đẻ, cha nuôi, mẹ nuôi, con đẻ, con nuôi"},
+       {t:"Hàng thứ hai",d:"Ông bà nội, ngoại; anh, chị, em ruột; cháu ruột (người chết là ông, bà)"},
+       {t:"Hàng thứ ba",d:"Cụ nội, ngoại; bác, chú, cậu, cô, dì ruột; cháu ruột (người chết là bác, chú, cậu, cô, dì); chắt ruột"}]},
+     {t:"Nguyên tắc",d:"Cùng hàng hưởng phần bằng nhau; hàng sau chỉ hưởng khi không còn ai ở hàng trước"},
+     {t:"Thừa kế thế vị",d:"Con chết trước hoặc cùng thời điểm với người để lại di sản: cháu hưởng phần của cha, mẹ; cháu cũng chết trước: chắt hưởng"},
+     {t:"Con nuôi, con riêng",d:"Con nuôi và cha mẹ nuôi thừa kế của nhau; con riêng và bố dượng, mẹ kế chăm sóc, nuôi dưỡng nhau như cha con, mẹ con thì thừa kế của nhau"}]},
+   {t:"Thanh toán, phân chia di sản",c:[
+     {t:"Thứ tự thanh toán",d:"Chi phí mai táng → tiền cấp dưỡng còn thiếu → chi phí bảo quản di sản → trợ cấp người sống nương nhờ → tiền công lao động → bồi thường thiệt hại → thuế → nợ khác → tiền phạt → chi phí khác"},
+     {t:"Phân chia theo di chúc",d:"Theo ý chí người lập di chúc; không xác định rõ phần thì chia đều"},
+     {t:"Phân chia theo pháp luật",d:"Chia đều cho người cùng hàng; giữ lại phần cho người đã thành thai"},
+     {t:"Họp mặt người thừa kế",d:"Thỏa thuận cử người quản lý, người phân chia di sản"}]}
+  ]}]},
+ {n:5,t:"Nghĩa vụ và hợp đồng",img:"assets/ds/ch5.jpg",maps:[
+  {k:"Nghĩa vụ",h1:"Nghĩa vụ",h2:"dân sự",src:"new",c:[
+   {t:"Khái niệm, thành phần",c:[
+     {t:"Khái niệm",d:"Bên có nghĩa vụ phải chuyển giao vật, quyền, trả tiền, giấy tờ có giá, thực hiện hoặc không thực hiện công việc vì lợi ích của bên có quyền"},
+     {t:"Chủ thể",d:"Bên có quyền · Bên có nghĩa vụ"},
+     {t:"Đối tượng",d:"Tài sản · Công việc phải thực hiện · Công việc không được thực hiện"}]},
+   {t:"Căn cứ phát sinh",c:[{t:"Hợp đồng"},{t:"Hành vi pháp lý đơn phương"},{t:"Thực hiện công việc không có ủy quyền"},{t:"Chiếm hữu, sử dụng, được lợi về tài sản không có căn cứ pháp luật"},{t:"Gây thiệt hại do hành vi trái pháp luật"},{t:"Căn cứ khác do pháp luật quy định"}]},
+   {t:"Phân loại",c:[{t:"Theo đối tượng",d:"Chuyển giao vật · Trả tiền · Thực hiện, không thực hiện công việc"},{t:"Theo chủ thể",d:"Riêng rẽ · Liên đới · Hoàn lại"},{t:"Theo cách thực hiện",d:"Có đối tượng tùy ý lựa chọn · Thay thế được"},{t:"Theo đối tượng phân chia",d:"Phân chia được theo phần · Không phân chia được theo phần"}]},
+   {t:"Thực hiện nghĩa vụ",c:[{t:"Nguyên tắc",d:"Thiện chí, trung thực, đúng cam kết, không trái pháp luật, đạo đức xã hội"},{t:"Địa điểm",d:"Theo thỏa thuận; không có: nơi có bất động sản hoặc nơi cư trú, trụ sở của bên có quyền"},{t:"Thời hạn",d:"Theo thỏa thuận, pháp luật · Chậm thực hiện · Hoãn thực hiện"},{t:"Chuyển giao",d:"Chuyển giao quyền yêu cầu: không cần bên có nghĩa vụ đồng ý · Chuyển giao nghĩa vụ: bên có quyền phải đồng ý"}]},
+   {t:"Trách nhiệm do vi phạm nghĩa vụ",c:[{t:"Tiếp tục thực hiện nghĩa vụ"},{t:"Bồi thường thiệt hại"},{t:"Trả lãi do chậm trả tiền"},{t:"Miễn trách nhiệm",d:"Sự kiện bất khả kháng · Hoàn toàn do lỗi của bên có quyền"}]},
+   {t:"Chấm dứt nghĩa vụ",c:[{t:"Đã hoàn thành"},{t:"Thỏa thuận; bên có quyền miễn"},{t:"Thay thế bằng nghĩa vụ khác"},{t:"Bù trừ; hòa nhập"},{t:"Hết thời hiệu miễn trừ"},{t:"Bên có nghĩa vụ chết, chấm dứt tồn tại (nghĩa vụ gắn với nhân thân)"},{t:"Vật đặc định không còn; phá sản; trường hợp khác"}]}
+  ]},
+  {k:"Bảo đảm thực hiện nghĩa vụ",h1:"Bảo đảm",h2:"thực hiện nghĩa vụ",src:"new",c:[
+   {t:"Quy định chung",c:[
+     {t:"Nghĩa vụ được bảo đảm",d:"Một phần hoặc toàn bộ; hiện tại, tương lai hoặc có điều kiện"},
+     {t:"Tài sản bảo đảm",d:"Thuộc sở hữu của bên bảo đảm (trừ cầm giữ, bảo lưu quyền sở hữu); mô tả chung nhưng xác định được; hiện có hoặc hình thành trong tương lai"},
+     {t:"Hiệu lực đối kháng với người thứ ba",d:"Từ khi đăng ký hoặc bên nhận bảo đảm nắm giữ, chiếm giữ tài sản"}]},
+   {t:"Bảo đảm bằng tài sản",l:"cols2",c:[
+     {t:"Cầm cố",d:"Giao tài sản cho bên nhận cầm cố"},
+     {t:"Thế chấp",d:"Dùng tài sản bảo đảm nhưng không giao tài sản"},
+     {t:"Đặt cọc",d:"Giao tiền, kim khí quý, đá quý, vật có giá trị; từ chối giao kết, thực hiện: mất cọc hoặc trả cọc và một khoản tương đương"},
+     {t:"Ký cược",d:"Khi thuê động sản; tài sản thuê không còn để trả lại thì tài sản ký cược thuộc về bên cho thuê"},
+     {t:"Ký quỹ",d:"Gửi tiền, kim khí quý, đá quý, giấy tờ có giá vào tài khoản phong tỏa tại tổ chức tín dụng"},
+     {t:"Bảo lưu quyền sở hữu",d:"Trong mua bán, bên bán giữ quyền sở hữu đến khi được thanh toán đủ"},
+     {t:"Cầm giữ tài sản",d:"Trong hợp đồng song vụ, bên có quyền chiếm giữ tài sản khi bên kia không thực hiện nghĩa vụ"}]},
+   {t:"Bảo đảm không bằng tài sản",c:[
+     {t:"Bảo lãnh",d:"Người thứ ba cam kết thực hiện thay nếu bên có nghĩa vụ không thực hiện hoặc thực hiện không đúng"},
+     {t:"Tín chấp",d:"Tổ chức chính trị – xã hội ở cơ sở bảo đảm cho cá nhân, hộ gia đình nghèo vay vốn"}]},
+   {t:"Xử lý tài sản bảo đảm",c:[
+     {t:"Trường hợp xử lý",d:"Đến hạn không thực hiện hoặc thực hiện không đúng nghĩa vụ; phải thực hiện trước hạn do vi phạm"},
+     {t:"Phương thức",d:"Bán đấu giá · Bên nhận bảo đảm tự bán · Nhận chính tài sản · Phương thức khác"},
+     {t:"Thứ tự ưu tiên",d:"Theo thứ tự phát sinh hiệu lực đối kháng"}]}
+  ]},
+  {k:"Hợp đồng",h1:"Hợp đồng",src:"new",c:[
+   {t:"Khái niệm, phân loại",c:[
+     {t:"Khái niệm",d:"Sự thỏa thuận giữa các bên về việc xác lập, thay đổi, chấm dứt quyền, nghĩa vụ dân sự"},
+     {t:"Phân loại",d:"Song vụ · Đơn vụ · Chính · Phụ · Vì lợi ích người thứ ba · Có điều kiện"}]},
+   {t:"Hình thức, nội dung",c:[
+     {t:"Hình thức",d:"Lời nói · Văn bản · Hành vi cụ thể · Công chứng, chứng thực, đăng ký khi luật quy định"},
+     {t:"Nội dung",d:"Đối tượng · Số lượng, chất lượng · Giá, phương thức thanh toán · Thời hạn, địa điểm, phương thức thực hiện · Quyền, nghĩa vụ · Trách nhiệm do vi phạm · Giải quyết tranh chấp"}]},
+   {t:"Giao kết",c:[
+     {t:"Đề nghị giao kết",d:"Thể hiện rõ ý định giao kết và chịu ràng buộc với bên được đề nghị"},
+     {t:"Chấp nhận đề nghị",d:"Trả lời chấp nhận toàn bộ nội dung đề nghị"},
+     {t:"Thời điểm giao kết",d:"Bên đề nghị nhận được chấp nhận · Im lặng hết thời hạn (nếu có thỏa thuận) · Bên sau cùng ký văn bản · Thỏa thuận xong bằng lời nói"},
+     {t:"Hiệu lực",d:"Từ thời điểm giao kết, trừ thỏa thuận hoặc luật quy định khác"}]},
+   {t:"Thực hiện",c:[
+     {t:"Đúng cam kết, thiện chí, hợp tác"},
+     {t:"Hoãn thực hiện nghĩa vụ trong hợp đồng song vụ"},
+     {t:"Hoàn cảnh thay đổi cơ bản",d:"Yêu cầu đàm phán lại; không thỏa thuận được thì yêu cầu Tòa án"},
+     {t:"Phạt vi phạm",d:"Theo thỏa thuận của các bên"}]},
+   {t:"Sửa đổi, chấm dứt",c:[
+     {t:"Sửa đổi",d:"Theo thỏa thuận hoặc khi hoàn cảnh thay đổi cơ bản"},
+     {t:"Hủy bỏ",d:"Không có hiệu lực từ thời điểm giao kết; hoàn trả cho nhau những gì đã nhận"},
+     {t:"Đơn phương chấm dứt",d:"Chấm dứt từ khi bên kia nhận được thông báo"},
+     {t:"Căn cứ chấm dứt",d:"Hoàn thành · Thỏa thuận · Chủ thể chết, chấm dứt tồn tại (hợp đồng gắn với nhân thân) · Hủy bỏ, đơn phương chấm dứt · Đối tượng không còn · Hoàn cảnh thay đổi cơ bản"}]},
+   {t:"Hợp đồng thông dụng",l:"cols2",c:[
+     {t:"Mua bán tài sản"},{t:"Trao đổi tài sản"},{t:"Tặng cho tài sản"},{t:"Vay tài sản"},{t:"Thuê tài sản"},{t:"Mượn tài sản"},{t:"Về quyền sử dụng đất"},{t:"Hợp tác"},{t:"Dịch vụ"},{t:"Vận chuyển"},{t:"Gia công"},{t:"Gửi giữ"},{t:"Ủy quyền"}]}
+  ]},
+  {k:"Bồi thường thiệt hại ngoài hợp đồng",h1:"Bồi thường thiệt hại",h2:"ngoài hợp đồng",src:"new",c:[
+   {t:"Căn cứ phát sinh trách nhiệm",c:[{t:"Có thiệt hại xảy ra"},{t:"Hành vi xâm phạm tính mạng, sức khỏe, danh dự, nhân phẩm, uy tín, tài sản, quyền, lợi ích hợp pháp"},{t:"Quan hệ nhân quả giữa hành vi và thiệt hại"},{t:"Không phải bồi thường",d:"Bất khả kháng · Hoàn toàn do lỗi của bên bị thiệt hại"}]},
+   {t:"Nguyên tắc bồi thường",c:[{t:"Toàn bộ và kịp thời"},{t:"Có thể giảm mức bồi thường",d:"Không có lỗi hoặc lỗi vô ý, thiệt hại quá lớn so với khả năng kinh tế"},{t:"Thay đổi mức bồi thường khi không còn phù hợp"},{t:"Bên bị thiệt hại có lỗi",d:"Không được bồi thường phần do mình gây ra"}]},
+   {t:"Năng lực chịu trách nhiệm",c:[{t:"Từ đủ 18 tuổi",d:"Tự bồi thường"},{t:"Từ đủ 15 đến chưa đủ 18 tuổi",d:"Tự bồi thường; thiếu thì cha, mẹ bồi thường phần còn thiếu"},{t:"Chưa đủ 15 tuổi",d:"Cha, mẹ bồi thường; thiếu thì lấy tài sản riêng của con"},{t:"Người được giám hộ",d:"Lấy tài sản của người được giám hộ; thiếu thì người giám hộ bồi thường, trừ khi chứng minh mình không có lỗi"}]},
+   {t:"Xác định thiệt hại",c:[{t:"Tài sản bị xâm phạm"},{t:"Sức khỏe bị xâm phạm",d:"Bù đắp tổn thất tinh thần tối đa 50 lần lương cơ sở"},{t:"Tính mạng bị xâm phạm",d:"Bù đắp tổn thất tinh thần tối đa 100 lần lương cơ sở"},{t:"Danh dự, nhân phẩm, uy tín bị xâm phạm",d:"Bù đắp tổn thất tinh thần tối đa 10 lần lương cơ sở"}]},
+   {t:"Trường hợp cụ thể",l:"cols2",c:[{t:"Vượt quá phòng vệ chính đáng"},{t:"Vượt quá tình thế cấp thiết"},{t:"Dùng chất kích thích"},{t:"Người của pháp nhân"},{t:"Người làm công, học nghề"},{t:"Nguồn nguy hiểm cao độ"},{t:"Ô nhiễm môi trường"},{t:"Súc vật gây ra"},{t:"Cây cối gây ra"},{t:"Nhà cửa, công trình"},{t:"Xâm phạm thi thể, mồ mả"},{t:"Vi phạm quyền lợi người tiêu dùng"}]},
+   {t:"Thời hiệu",d:"03 năm kể từ ngày người có quyền yêu cầu biết hoặc phải biết quyền, lợi ích bị xâm phạm"}
+  ]}]},
+ {n:6,t:"Hôn nhân và gia đình",img:"assets/ds/ch6.jpg",maps:[
+  {k:"Quan hệ HNGĐ và kết hôn",h1:"Kết hôn",h2:"và quan hệ pháp luật hôn nhân gia đình",src:"new",c:[
+   {t:"Quan hệ pháp luật HNGĐ",c:[
+     {t:"Đặc điểm",d:"Chủ thể gắn bó bởi hôn nhân, huyết thống, nuôi dưỡng; yếu tố tình cảm; quyền, nghĩa vụ gắn với nhân thân, không chuyển giao"},
+     {t:"Thành tố",d:"Chủ thể · Khách thể · Nội dung: quan hệ nhân thân và quan hệ tài sản"},
+     {t:"Căn cứ phát sinh, thay đổi, chấm dứt",d:"Sự kiện pháp lý: kết hôn, sinh con, nuôi con nuôi, ly hôn, cái chết…"}]},
+   {t:"Điều kiện kết hôn",c:[{t:"Nam từ đủ 20 tuổi, nữ từ đủ 18 tuổi"},{t:"Tự nguyện quyết định"},{t:"Không bị mất NLHVDS"},
+     {t:"Không thuộc trường hợp cấm",d:"Kết hôn giả tạo · Tảo hôn, cưỡng ép, lừa dối, cản trở kết hôn · Đang có vợ, có chồng · Cùng dòng máu trực hệ, có họ trong phạm vi ba đời · Cha mẹ nuôi với con nuôi; cha chồng với con dâu; mẹ vợ với con rể; cha dượng, mẹ kế với con riêng"},
+     {t:"Không thừa nhận hôn nhân giữa người cùng giới tính"}]},
+   {t:"Đăng ký kết hôn",c:[{t:"Đăng ký tại cơ quan nhà nước có thẩm quyền"},{t:"Không đăng ký",d:"Không làm phát sinh quan hệ vợ chồng"},{t:"Chung sống như vợ chồng không đăng ký",d:"Con chung giải quyết như cha mẹ – con; tài sản, nghĩa vụ theo thỏa thuận hoặc quy định của pháp luật dân sự"}]},
+   {t:"Kết hôn trái pháp luật",c:[
+     {t:"Khái niệm",d:"Đã đăng ký kết hôn nhưng vi phạm điều kiện kết hôn"},
+     {t:"Người có quyền yêu cầu hủy",d:"Người bị cưỡng ép, lừa dối · Vợ, chồng của người đang có vợ, chồng · Cha mẹ, con, người giám hộ · Cơ quan quản lý nhà nước về gia đình, trẻ em · Hội Liên hiệp phụ nữ"},
+     {t:"Hậu quả",d:"Chấm dứt quan hệ như vợ chồng · Quyền, nghĩa vụ cha mẹ – con như khi ly hôn · Tài sản giải quyết như chung sống không đăng ký"},
+     {t:"Công nhận hôn nhân",d:"Khi cả hai đã đủ điều kiện kết hôn và cùng yêu cầu"}]}
+  ]},
+  {k:"Quan hệ giữa các thành viên",h1:"Quan hệ giữa",h2:"các thành viên gia đình",src:"new",c:[
+   {t:"Vợ và chồng",l:"row",c:[
+     {t:"Nhân thân",c:[{t:"Bình đẳng"},{t:"Thương yêu, chung thủy, tôn trọng"},{t:"Lựa chọn nơi cư trú"},{t:"Tôn trọng danh dự, nhân phẩm, uy tín, tín ngưỡng"},{t:"Đại diện giữa vợ và chồng"}]},
+     {t:"Chế độ tài sản",c:[
+       {t:"Theo luật định",d:"Tài sản chung: tạo ra, thu nhập trong thời kỳ hôn nhân; được thừa kế, tặng cho chung; quyền sử dụng đất có sau khi kết hôn · Tài sản riêng: có trước khi kết hôn; được thừa kế, tặng cho riêng; được chia riêng; đồ dùng cá nhân"},
+       {t:"Theo thỏa thuận",d:"Lập trước khi kết hôn, bằng văn bản có công chứng, chứng thực; có hiệu lực từ ngày đăng ký kết hôn"},
+       {t:"Chia tài sản chung trong thời kỳ hôn nhân",d:"Thỏa thuận hoặc yêu cầu Tòa án; vô hiệu nếu nhằm trốn tránh nghĩa vụ"}]}]},
+   {t:"Cha mẹ và con",c:[
+     {t:"Quyền, nghĩa vụ nhân thân",d:"Thương yêu, nuôi dưỡng, chăm sóc, giáo dục con; con kính trọng, chăm sóc, phụng dưỡng cha mẹ"},
+     {t:"Tài sản riêng của con",d:"Con từ đủ 15 tuổi tự quản lý hoặc nhờ cha mẹ quản lý"},
+     {t:"Hạn chế quyền của cha mẹ",d:"Bị kết án tội cố ý xâm phạm con · Vi phạm nghiêm trọng nghĩa vụ trông nom, nuôi dưỡng · Phá tán tài sản của con · Lối sống đồi trụy · Xúi giục, ép buộc con làm việc trái pháp luật"},
+     {t:"Xác định cha, mẹ, con",d:"Con sinh ra hoặc thụ thai trong thời kỳ hôn nhân là con chung · Sinh con bằng kỹ thuật hỗ trợ sinh sản · Mang thai hộ vì mục đích nhân đạo"}]},
+   {t:"Thành viên khác",c:[
+     {t:"Anh, chị, em",d:"Thương yêu, chăm sóc, giúp đỡ; nuôi dưỡng nhau khi không còn cha mẹ"},
+     {t:"Ông bà – cháu",d:"Ông bà trông nom, chăm sóc, giáo dục cháu; cháu kính trọng, phụng dưỡng ông bà"}]},
+   {t:"Cấp dưỡng",c:[
+     {t:"Khái niệm",d:"Đóng góp tiền, tài sản đáp ứng nhu cầu thiết yếu của người không sống chung là người chưa thành niên, người thành niên không có khả năng lao động và không có tài sản tự nuôi mình, hoặc người gặp khó khăn, túng thiếu"},
+     {t:"Các trường hợp",d:"Cha mẹ – con · Anh, chị, em · Ông bà – cháu · Cô, dì, chú, cậu, bác – cháu · Vợ chồng khi ly hôn"},
+     {t:"Mức, phương thức",d:"Thỏa thuận theo thu nhập, khả năng thực tế và nhu cầu thiết yếu; định kỳ hoặc một lần"},
+     {t:"Chấm dứt",d:"Người được cấp dưỡng đã thành niên, có khả năng lao động hoặc tài sản · Được nhận làm con nuôi · Người cấp dưỡng trực tiếp nuôi dưỡng · Một bên chết · Bên được cấp dưỡng sau ly hôn kết hôn với người khác"}]}
+  ]},
+  {k:"Chấm dứt hôn nhân",h1:"Chấm dứt",h2:"hôn nhân",src:"new",c:[
+   {t:"Vợ, chồng chết hoặc bị tuyên bố đã chết",c:[
+     {t:"Thời điểm chấm dứt",d:"Ngày vợ hoặc chồng chết; bị tuyên bố đã chết: ngày chết ghi trong bản án, quyết định của Tòa án"},
+     {t:"Quyết định tuyên bố chết bị hủy",d:"Quan hệ hôn nhân được khôi phục, trừ khi người kia đã kết hôn với người khác"}]},
+   {t:"Ly hôn",l:"row",c:[
+     {t:"Quyền yêu cầu",c:[{t:"Vợ, chồng hoặc cả hai"},{t:"Cha, mẹ, người thân thích",d:"Khi một bên mất NLHVDS và là nạn nhân bạo lực gia đình do bên kia gây ra"},{t:"Hạn chế",d:"Chồng không được yêu cầu khi vợ đang có thai, sinh con hoặc nuôi con dưới 12 tháng tuổi"}]},
+     {t:"Thuận tình ly hôn",c:[{t:"Hai bên thực sự tự nguyện"},{t:"Đã thỏa thuận về tài sản, nuôi con, bảo đảm quyền lợi chính đáng của vợ và con"},{t:"Tòa án công nhận"}]},
+     {t:"Ly hôn theo yêu cầu một bên",c:[{t:"Bạo lực gia đình hoặc vi phạm nghiêm trọng nghĩa vụ làm hôn nhân lâm vào tình trạng trầm trọng"},{t:"Vợ hoặc chồng bị tuyên bố mất tích"}]}]},
+   {t:"Hậu quả ly hôn",l:"row",c:[
+     {t:"Nhân thân",c:[{t:"Quan hệ vợ chồng chấm dứt từ ngày bản án, quyết định có hiệu lực"}]},
+     {t:"Về con",c:[{t:"Thỏa thuận người trực tiếp nuôi con; không thỏa thuận được thì Tòa án quyết định"},{t:"Con từ đủ 07 tuổi",d:"Xem xét nguyện vọng của con"},{t:"Con dưới 36 tháng tuổi",d:"Giao mẹ trực tiếp nuôi, trừ khi mẹ không đủ điều kiện hoặc có thỏa thuận khác"},{t:"Người không trực tiếp nuôi",d:"Cấp dưỡng, thăm nom con"}]},
+     {t:"Về tài sản",c:[{t:"Thỏa thuận; không thỏa thuận được thì Tòa án giải quyết"},{t:"Tài sản chung chia đôi có tính đến",d:"Hoàn cảnh gia đình · Công sức đóng góp · Bảo vệ lợi ích chính đáng trong sản xuất, kinh doanh · Lỗi vi phạm quyền, nghĩa vụ"},{t:"Tài sản riêng thuộc về người đó"}]}]}
+  ]}]},
+ {n:7,t:"Quan hệ pháp luật dân sự có yếu tố nước ngoài",img:"assets/ds/ch7.jpg",maps:[
+  {k:"Yếu tố nước ngoài",h1:"Quan hệ dân sự",h2:"có yếu tố nước ngoài",src:"new",c:[
+   {t:"Khái niệm, đặc điểm",c:[
+     {t:"Yếu tố nước ngoài",d:"Ít nhất một bên là cá nhân, pháp nhân nước ngoài · Các bên là Việt Nam nhưng việc xác lập, thay đổi, thực hiện, chấm dứt xảy ra ở nước ngoài · Các bên là Việt Nam nhưng đối tượng ở nước ngoài"},
+     {t:"Đặc điểm",d:"Xung đột pháp luật · Xung đột thẩm quyền giải quyết"}]},
+   {t:"Xác định pháp luật áp dụng",c:[{t:"Theo điều ước quốc tế hoặc luật Việt Nam"},{t:"Pháp luật do các bên lựa chọn (khi luật cho phép)"},{t:"Pháp luật của nước có mối liên hệ gắn bó nhất"},{t:"Không áp dụng pháp luật nước ngoài trái nguyên tắc cơ bản của pháp luật Việt Nam"}]},
+   {t:"Một số quy tắc xung đột",c:[
+     {t:"Năng lực pháp luật, năng lực hành vi của cá nhân",d:"Pháp luật nước mà người đó có quốc tịch"},
+     {t:"Quyền sở hữu",d:"Pháp luật nơi có tài sản"},
+     {t:"Hợp đồng",d:"Pháp luật do các bên lựa chọn; hợp đồng về bất động sản ở Việt Nam: pháp luật Việt Nam"},
+     {t:"Thừa kế",d:"Pháp luật nước người để lại di sản có quốc tịch ngay trước khi chết; bất động sản: nơi có bất động sản"},
+     {t:"Bồi thường ngoài hợp đồng",d:"Các bên thỏa thuận; không thỏa thuận: pháp luật nơi phát sinh hậu quả"}]},
+   {t:"Hôn nhân và gia đình",c:[
+     {t:"Kết hôn",d:"Mỗi bên tuân theo pháp luật nước mình về điều kiện kết hôn; kết hôn tại Việt Nam thì người nước ngoài còn phải tuân theo điều kiện của pháp luật Việt Nam"},
+     {t:"Ly hôn",d:"Tại cơ quan Việt Nam theo pháp luật Việt Nam; công dân Việt Nam không thường trú ở Việt Nam: pháp luật nơi thường trú chung của vợ chồng, không có thì pháp luật Việt Nam"}]}
+  ]}]}
+ ],
+ laws:null, /* lấy từ danh mục văn bản trong web ôn tập */
+ refs:[
+  {g:"Tài liệu bắt buộc",items:["Trường Đại học Luật Hà Nội (2022), Giáo trình Luật Dân sự Việt Nam – Tập I, Tập II, NXB Tư pháp.","Trường Đại học Luật Hà Nội (2024), Giáo trình Luật Hôn nhân và gia đình Việt Nam, NXB Tư pháp."]},
+  {g:"Văn kiện, nghị quyết",items:["Đảng Cộng sản Việt Nam, Văn kiện Đại hội đại biểu toàn quốc lần thứ XIV của Đảng.","Bộ Chính trị, Nghị quyết số 68-NQ/TW ngày 04/5/2025 về phát triển kinh tế tư nhân.","Bộ Chính trị, Nghị quyết số 66-NQ/TW ngày 30/4/2025 về đổi mới công tác xây dựng và thi hành pháp luật đáp ứng yêu cầu phát triển đất nước trong kỷ nguyên mới."]},
+  {g:"Tạp chí chuyên ngành",items:["Tạp chí Khoa học pháp lý","Tạp chí Kiểm sát","Tạp chí Luật học","Tạp chí Nhà nước và pháp luật","Tạp chí Công thương"]}
+ ]
+};
+TL["luat-dan-su"].laws=[{"name": "I. Văn bản chung của luật dân sự", "rows": [["Hiến pháp nước CHXHCN Việt Nam 2013 (sửa đổi, bổ sung theo Nghị quyết 203/2025/QH15)", "28/11/2013", "Quốc hội"], ["Bộ luật Dân sự số 91/2015/QH13", "24/11/2015", "Quốc hội"], ["Nghị quyết 103/2015/QH13 về việc thi hành Bộ luật Dân sự", "24/11/2015", "Quốc hội"], ["Bộ luật Tố tụng dân sự số 92/2015/QH13 (sửa đổi, bổ sung năm 2025 theo Luật 85/2025/QH15)", "25/11/2015", "Quốc hội"], ["Nghị quyết 01/2019/NQ-HĐTP hướng dẫn áp dụng một số quy định của pháp luật về lãi, lãi suất, phạt vi phạm", "11/01/2019", "Hội đồng Thẩm phán TANDTC"], ["Nghị quyết 02/2022/NQ-HĐTP hướng dẫn áp dụng một số quy định của BLDS về trách nhiệm bồi thường thiệt hại ngoài hợp đồng", "06/9/2022", "Hội đồng Thẩm phán TANDTC"], ["Nghị quyết 03/2026/NQ-HĐTP hướng dẫn áp dụng một số quy định của pháp luật trong giải quyết tranh chấp về đặt cọc", "18/8/2026", "Hội đồng Thẩm phán TANDTC"], ["Nghị định 161/2026/NĐ-CP quy định mức lương cơ sở và chế độ tiền thưởng", "15/5/2026", "Chính phủ"]], "open": true}, {"name": "II. Chủ thể, quyền nhân thân (Chương 1–2)", "rows": [["Luật Hộ tịch số 60/2014/QH13", "20/11/2014", "Quốc hội"], ["Nghị định 123/2015/NĐ-CP quy định chi tiết Luật Hộ tịch (sửa đổi bởi Nghị định 07/2025/NĐ-CP, Nghị định 18/2026/NĐ-CP)", "15/11/2015", "Chính phủ"], ["Nghị định 120/2025/NĐ-CP về phân định thẩm quyền của chính quyền địa phương 02 cấp trong lĩnh vực quản lý nhà nước của Bộ Tư pháp", "11/6/2025", "Chính phủ"], ["Luật Cư trú số 68/2020/QH14", "13/11/2020", "Quốc hội"], ["Luật Quốc tịch Việt Nam 2008 (đã được sửa đổi, bổ sung)", "13/11/2008", "Quốc hội"], ["Luật Khám bệnh, chữa bệnh số 15/2023/QH15", "09/01/2023", "Quốc hội"], ["Luật Hiến, lấy, ghép mô, bộ phận cơ thể người và hiến, lấy xác số 75/2006/QH11", "29/11/2006", "Quốc hội"], ["Luật Doanh nghiệp số 59/2020/QH14 (đã được sửa đổi, bổ sung)", "17/6/2020", "Quốc hội"], ["Luật Hợp tác xã số 17/2023/QH15", "20/6/2023", "Quốc hội"]]}, {"name": "III. Tài sản, quyền sở hữu, nghĩa vụ và hợp đồng (Chương 4–5)", "rows": [["Luật Đất đai số 31/2024/QH15 (đã được sửa đổi, bổ sung)", "18/01/2024", "Quốc hội"], ["Luật Nhà ở số 27/2023/QH15", "27/11/2023", "Quốc hội"], ["Luật Kinh doanh bất động sản số 29/2023/QH15", "28/11/2023", "Quốc hội"], ["Luật Công chứng số 46/2024/QH15 (đã được sửa đổi, bổ sung)", "26/11/2024", "Quốc hội"], ["Nghị định 21/2021/NĐ-CP quy định thi hành BLDS về bảo đảm thực hiện nghĩa vụ", "19/3/2021", "Chính phủ"], ["Nghị định 99/2022/NĐ-CP về đăng ký biện pháp bảo đảm", "30/11/2022", "Chính phủ"], ["Luật Bảo vệ quyền lợi người tiêu dùng số 19/2023/QH15", "20/6/2023", "Quốc hội"], ["Luật Thương mại số 36/2005/QH11 (đã được sửa đổi, bổ sung)", "14/6/2005", "Quốc hội"], ["Luật Sở hữu trí tuệ số 50/2005/QH11 (đã được sửa đổi, bổ sung)", "29/11/2005", "Quốc hội"], ["Luật Trách nhiệm bồi thường của Nhà nước số 10/2017/QH14", "20/6/2017", "Quốc hội"]]}, {"name": "IV. Hôn nhân và gia đình (Chương 6)", "rows": [["Luật Hôn nhân và gia đình số 52/2014/QH13 (Văn bản hợp nhất 121/VBHN-VPQH ngày 27/8/2025)", "19/6/2014", "Quốc hội"], ["Nghị định 126/2014/NĐ-CP quy định chi tiết một số điều và biện pháp thi hành Luật HNGĐ", "31/12/2014", "Chính phủ"], ["Nghị định 10/2015/NĐ-CP về sinh con bằng kỹ thuật thụ tinh trong ống nghiệm và mang thai hộ vì mục đích nhân đạo (sửa đổi bởi Nghị định 98/2016/NĐ-CP)", "28/01/2015", "Chính phủ"], ["Thông tư liên tịch 01/2016/TTLT-TANDTC-VKSNDTC-BTP hướng dẫn thi hành một số quy định của Luật HNGĐ", "06/01/2016", "TANDTC – VKSNDTC – Bộ Tư pháp"], ["Nghị quyết 01/2024/NQ-HĐTP hướng dẫn áp dụng một số quy định của pháp luật trong giải quyết vụ việc về hôn nhân và gia đình", "16/5/2024", "Hội đồng Thẩm phán TANDTC"], ["Luật Nuôi con nuôi số 52/2010/QH12", "17/6/2010", "Quốc hội"], ["Luật Phòng, chống bạo lực gia đình số 13/2022/QH15", "14/11/2022", "Quốc hội"], ["Nghị định 109/2026/NĐ-CP xử phạt vi phạm hành chính trong lĩnh vực bổ trợ tư pháp; hành chính tư pháp; hôn nhân và gia đình; thi hành án dân sự; phục hồi, phá sản", "01/4/2026", "Chính phủ"]]}];
+TL["luat-dan-su"].cases=[["02/2016/AL", "Tranh chấp đòi lại tài sản (người Việt Nam định cư ở nước ngoài nhờ người trong nước đứng tên nhận chuyển nhượng nhà đất)", "Tài sản, quyền sở hữu"], ["03/2016/AL", "Vụ án ly hôn (cha mẹ cho vợ chồng con đất, vợ chồng xây nhà, sử dụng công khai, cha mẹ không phản đối)", "HNGĐ; Tài sản"], ["04/2016/AL", "Hợp đồng chuyển nhượng quyền sử dụng đất (tài sản chung vợ chồng do một bên chuyển nhượng, bên kia biết và không phản đối)", "Giao dịch; HNGĐ"], ["05/2016/AL", "Tranh chấp di sản thừa kế", "Thừa kế"], ["06/2016/AL", "Tranh chấp thừa kế (xác định người thừa kế không phụ thuộc nội dung di chúc)", "Thừa kế"], ["07/2016/AL", "Tranh chấp quyền sở hữu, sử dụng nhà", "Tài sản"], ["15/2017/AL", "Tranh chấp hợp đồng đổi đất", "Hợp đồng"], ["16/2017/AL", "Công nhận hợp đồng chuyển nhượng quyền sử dụng đất là di sản do một trong các đồng thừa kế chuyển nhượng", "Thừa kế; Giao dịch"], ["21/2018/AL", "Lỗi và thiệt hại khi đơn phương chấm dứt hợp đồng cho thuê tài sản", "Hợp đồng"], ["24/2018/AL", "Di sản thừa kế chuyển thành tài sản thuộc quyền sở hữu, quyền sử dụng hợp pháp của cá nhân", "Thừa kế"], ["25/2018/AL", "Không phải chịu phạt cọc vì lý do khách quan", "Nghĩa vụ – đặt cọc"], ["26/2018/AL", "Thời điểm bắt đầu tính thời hiệu và thời hiệu yêu cầu chia di sản thừa kế là bất động sản", "Thừa kế; Thời hiệu"], ["34/2020/AL", "Quyền lập di chúc định đoạt giá trị bồi thường về đất khi đất bị thu hồi", "Thừa kế"], ["39/2020/AL", "Giao dịch dân sự có điều kiện vô hiệu do điều kiện không thể xảy ra", "Giao dịch"], ["41/2021/AL", "Chấm dứt hôn nhân thực tế", "HNGĐ"], ["43/2021/AL", "Hiệu lực hợp đồng thế chấp khi bên thế chấp nhận chuyển nhượng nhà đất nhưng chưa thanh toán đủ tiền", "Nghĩa vụ – bảo đảm"], ["51/2021/AL", "Quyền sở hữu đối với khu vực để xe ô tô của nhà chung cư", "Tài sản"], ["52/2021/AL", "Hiệu lực hợp đồng tặng cho quyền sử dụng đất khi chưa đăng ký", "Hợp đồng"], ["53/2022/AL", "Hủy việc kết hôn trái pháp luật", "HNGĐ"], ["54/2022/AL", "Quyền nuôi con dưới 36 tháng tuổi khi người mẹ không trực tiếp chăm sóc con", "HNGĐ"], ["55/2022/AL", "Công nhận hiệu lực của hợp đồng vi phạm điều kiện về hình thức", "Giao dịch"], ["56/2022/AL", "Giải quyết tranh chấp di dời mồ mả", "Tài sản; BTTH"], ["61/2023/AL", "Chấm dứt việc nuôi con nuôi khi con nuôi chưa thành niên", "HNGĐ"], ["62/2023/AL", "Thời điểm bắt đầu nghĩa vụ cấp dưỡng cho con chưa thành niên trong tranh chấp xác định cha cho con", "HNGĐ"], ["67/2023/AL", "Người được nhận hiện vật khi chia tài sản chung", "Tài sản"], ["68/2023/AL", "Quyền nhận di sản bằng hiện vật là nhà ở của người thừa kế là người Việt Nam định cư ở nước ngoài", "Thừa kế"], ["72/2024/AL", "Xác định di sản là quyền sử dụng đất khi di chúc không thể hiện diện tích cụ thể", "Thừa kế"], ["79/2025/AL", "Chủ thể giao kết hợp đồng đặt cọc và hiệu lực của hợp đồng đặt cọc", "Nghĩa vụ – đặt cọc"], ["80/2025/AL", "Việc tặng cho vé số của vợ, chồng", "HNGĐ; Hợp đồng"], ["82/2025/AL", "Xác định tài sản chung của vợ chồng trước khi đăng ký kết hôn", "HNGĐ"], ["84/2026/AL", "Chấm dứt việc nuôi con nuôi là người chưa thành niên khi người nhận con nuôi là người độc thân chết", "HNGĐ"], ["87/2026/AL", "Thứ tự ưu tiên thanh toán khi xử lý tài sản bảo đảm", "Nghĩa vụ – bảo đảm"]];
+/* ===== Trang tài liệu học phần + sơ đồ tư duy ===== */
+function tlParse(id){ if(!id||id.indexOf("tl-")!==0)return null;
+  for(const k in TL){ if(id==="tl-"+k)return {k}; if(id.indexOf("tl-"+k+"-")===0){const p=id.slice(k.length+4).split("-").map(Number);return {k,ch:p[0],mi:(p[1]||1)-1}} }
+  return null}
+const HOUSE='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z" fill="currentColor"/></svg>';
+const BACK='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function tlNav(k,withBack){return `<nav class="tl-nav wrap"><button type="button" class="tl-pill" data-home><span class="ic">${HOUSE}</span>Trang chủ</button>${withBack?`<button type="button" class="tl-pill" data-go="tl-${k}"><span class="ic">${BACK}</span>Tóm tắt nội dung</button>`:""}</nav>`}
+
+function tlHomeHTML(k){const T=TL[k];
+  const cards=T.chapters.map(c=>`<button type="button" class="ch-card" data-go="tl-${k}-${c.n}"><span class="ph"><img src="${c.img}" alt="" loading="lazy"></span><span class="no">Chương ${c.n}</span><span class="nm">${esc(c.t)}</span><span class="cnt">${c.maps.length} sơ đồ</span></button>`).join("");
+  const laws=(T.laws||[]).map(g=>`<details class="law-g"${g.open?" open":""}><summary>${esc(g.name)}<span class="n">${g.rows.length}</span></summary><ol>${g.rows.map(r=>`<li><b>${esc(r[0])}</b><span class="meta">${esc(r[2])} · ${esc(r[1])}</span></li>`).join("")}</ol></details>`).join("");
+  const refs=T.refs.map(g=>`<div class="ref-g"><h4>${esc(g.g)}</h4><ul>${g.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("");
+  const cases=(T.cases||[]).length?`<details class="law-g"><summary>Án lệ liên quan<span class="n">${T.cases.length}</span></summary><ol>${T.cases.map(r=>`<li><b>Án lệ ${esc(r[0])}</b> ${esc(r[1])}<span class="meta">${esc(r[2])}</span></li>`).join("")}</ol></details>`:"";
+  const rv=course(T.review);
+  return tlNav(k,false)+`<main class="wrap tl-main">
+  <div class="tl-head"><div class="kicker">Tài liệu học phần</div><h2>${esc(T.name)}</h2>${rv&&rv.src?`<button type="button" class="btn primary" data-go="${rv.id}">Vào ôn tập học phần</button>`:""}</div>
+  <section class="frame"><div class="ftitle">Tóm tắt nội dung chính của học phần</div><div class="ch-grid">${cards}</div></section>
+  <section class="frame"><div class="ftitle">Danh mục văn bản quy phạm pháp luật</div><p class="msg">Bấm vào từng nhóm để xem danh sách. Khi tra cứu, dùng bản hợp nhất đã cập nhật các lần sửa đổi, bổ sung.</p>${laws}</section>
+  <section class="frame"><div class="ftitle">Tài liệu tham khảo khác</div><div class="refs">${refs}</div>${cases}</section>
+  </main>`}
+
+function mmBox(n,depth){const items=n.d?n.d.split(" · "):null;
+  const d=!items?"":(items.length>1?`<ul class="mm-d">${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:`<span class="mm-d">${esc(n.d)}</span>`);
+  return `<div class="mm-box d${Math.min(depth,4)}${n.d?" has-d":""}">${esc(n.t)}${d}</div>`}
+function mmNode(n,depth){const kids=n.c||[];const box=mmBox(n,depth);
+  if(!kids.length)return `<div class="mm-node">${box}</div>`;
+  const l=n.l||(depth<=1&&kids.some(k=>k.c&&k.c.length)?"row":"stack");
+  return `<div class="mm-node">${box}${mmKids(kids,l,depth)}</div>`}
+function mmKids(kids,l,depth){
+  if(l.indexOf("cols")===0){const N=+l.slice(4)||2,cols=[...Array(N)].map(()=>[]);kids.forEach((k,i)=>cols[i%N].push(k));
+    return `<div class="mm-kids row">${cols.filter(c=>c.length).map(col=>`<div class="mm-kid"><div class="mm-col">${col.map((k,i)=>i?`<div class="mm-sk">${mmNode(k,depth+1)}</div>`:mmNode(k,depth+1)).join("")}</div></div>`).join("")}</div>`}
+  if(l==="row")return `<div class="mm-kids row">${kids.map(k=>`<div class="mm-kid">${mmNode(k,depth+1)}</div>`).join("")}</div>`;
+  return `<div class="mm-kids stack">${kids.map(k=>`<div class="mm-sk">${mmNode(k,depth+1)}</div>`).join("")}</div>`}
+function mmHTML(m){const top=m.r?`<div class="mm-node">${mmBox({t:m.r},0)}${mmKids(m.c,"row",0)}</div>`:`<div class="mm-node mm-noroot">${mmKids(m.c,"row",0)}</div>`;
+  return `<div class="mm-title"><div class="h1">${esc(m.h1)}</div>${m.h2?`<div class="h2">${esc(m.h2)}</div>`:""}</div><div class="mm-tree">${top}</div>`}
+
+function tlChapterHTML(k,n,mi){const T=TL[k],c=T.chapters.find(x=>x.n===n);if(!c)return null;
+  mi=Math.max(0,Math.min(mi||0,c.maps.length-1));const m=c.maps[mi];
+  const tabs=c.maps.length>1?`<div class="mm-tabs" role="tablist">${c.maps.map((x,i)=>`<button type="button" role="tab" aria-selected="${i===mi}" data-go="tl-${k}-${n}-${i+1}">${esc(x.k)}</button>`).join("")}</div>`:"";
+  const prev=T.chapters.find(x=>x.n===n-1),next=T.chapters.find(x=>x.n===n+1);
+  return tlNav(k,true)+`<main class="wrap tl-main">
+  <div class="ch-head"><div class="kicker">Tóm tắt nội dung · ${esc(T.name)}</div><h2>Chương ${n}. ${esc(c.t)}</h2></div>
+  ${tabs}
+  <section class="sheet">
+    <div class="sheet-deco" aria-hidden="true"></div><img class="sheet-logo" src="assets/logo.png" alt="">
+    ${m.src==="new"?'<div class="draft">Sơ đồ mới soạn · chờ giảng viên duyệt</div>':""}
+    <div class="mm-tools"><button type="button" data-z="-1" aria-label="Thu nhỏ">−</button><button type="button" data-z="0">Vừa khung</button><button type="button" data-z="1" aria-label="Phóng to">+</button></div>
+    <div class="mm-vp"><div class="mm-sizer"><div class="mm-canvas">${mmHTML(m)}</div></div></div>
+  </section>
+  <div class="ch-pager">${prev?`<button type="button" class="btn" data-go="tl-${k}-${prev.n}">← Chương ${prev.n}</button>`:"<span></span>"}${next?`<button type="button" class="btn" data-go="tl-${k}-${next.n}">Chương ${next.n} →</button>`:"<span></span>"}</div>
+  </main>`}
+
+let mmZoom=null;
+function mmFit(){const vp=document.querySelector(".mm-vp");if(!vp)return;const sz=vp.querySelector(".mm-sizer"),cv=vp.querySelector(".mm-canvas");
+  cv.style.transform="none";const w=cv.scrollWidth,h=cv.scrollHeight;
+  let s=mmZoom!=null?mmZoom:Math.min(1,(vp.clientWidth-4)/w);
+  if(mmZoom==null)s=Math.max(s,vp.clientWidth<700?.5:.74);
+  cv.style.transform=`scale(${s})`;sz.style.width=Math.ceil(w*s)+"px";sz.style.height=Math.ceil(h*s)+"px";vp.dataset.s=s;vp.scrollLeft=Math.max(0,(w*s-vp.clientWidth)/2)}
+function bindMM(){mmZoom=null;
+  document.querySelectorAll(".mm-tools [data-z]").forEach(b=>b.onclick=()=>{const z=+b.dataset.z,vp=document.querySelector(".mm-vp"),s=+vp.dataset.s||1;
+    mmZoom=z===0?null:Math.max(.3,Math.min(2,s*(z>0?1.25:.8)));mmFit()});
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(mmFit);mmFit()}
+window.addEventListener("resize",()=>{if(document.querySelector(".mm-vp"))mmFit()});
+
+function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
+  if(p.ch){const h=tlChapterHTML(p.k,p.ch,p.mi);if(!h)return false;m.innerHTML=h;setTimeout(bindMM,0)}
+  else m.innerHTML=tlHomeHTML(p.k);
+  return true}
+
 (async function boot(){
   const saved=store.get(KEY),v=saved?valid(saved):{ok:false};
   if(v.ok)enter(v.p);else{if(saved)store.del(KEY);showGate(saved&&v.expired?v.why:"")}
   await Promise.all([loadFeedback(),loadVisits()]);
-  try{const u=window.claude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false}catch(e){isOwner=false}
+  try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false}catch(e){isOwner=false}
+  try{cmt=onClaude?await window.claude.use("comments"):null}catch(e){cmt=null}
   if(session&&(cur==="home"||cur==="gop-y"))route(cur);
   if(session&&isOwner&&(location.hash||"").slice(1)==="quan-ly-ma")route("quan-ly-ma");
 })();
