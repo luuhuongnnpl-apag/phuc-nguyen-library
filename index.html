@@ -412,7 +412,7 @@ function admin2HTML(){
     <p class="msg">Nếu mật khẩu chưa được khởi tạo, cần chạy hàm <b>caiDatMatKhauQuanLy</b> trong Google Apps Script một lần, sau đó cập nhật deployment Web app.</p></section></main>`;
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
   const courseChoices=COURSES.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}${c.src?"":" (chưa có trang ôn tập)"}</span></label>`).join("");
-  const bulkCourseChoices=COURSES.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+  const bulkCourseChoices=COURSES.map(c=>`<option value="${esc(c.id)}"${c.id==="luat-dan-su"?" selected":""}>${esc(c.name)}</option>`).join("");
   return head+`<main class="wrap admin">
   <section class="frame"><div class="ftitle">Cấp mã truy cập mới</div>
     <form id="c-form" novalidate class="admin">
