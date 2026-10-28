@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+<title id="title">Mind map Chương 2 – Tội phạm và trách nhiệm hình sự</title>
+<desc id="desc">Sơ đồ khái quát khái niệm tội phạm, phân loại, cấu thành tội phạm, lỗi, các giai đoạn thực hiện tội phạm, đồng phạm và trách nhiệm hình sự.</desc>
+<defs><style>
+text{font-family:Arial,'DejaVu Sans',sans-serif;fill:#243447}.head{font-size:30px;font-weight:700;fill:#fff}.sub{font-size:18px;fill:#eaf1f7}.ct{font-size:23px;font-weight:700}.tx{font-size:19px}.sm{font-size:16px;fill:#5d6b7a}.line{fill:none;stroke:#9aabba;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.card{fill:#fff;stroke:#d2dce5;stroke-width:2}.badge{font-size:18px;font-weight:700;fill:#fff}
+</style></defs>
+<rect width="1600" height="1120" fill="#f5f7fa"/>
+<rect x="230" y="28" width="1140" height="122" rx="24" fill="#263f59"/>
+<text x="800" y="77" text-anchor="middle" class="head">CHƯƠNG 2 · TỘI PHẠM VÀ TRÁCH NHIỆM HÌNH SỰ</text>
+<text x="800" y="112" text-anchor="middle" class="sub">Sơ đồ hệ thống hóa kiến thức trọng tâm</text>
+<path class="line" d="M800 150 V184 H260 V214 M800 184 H800 V214 M800 184 H1340 V214 M260 515 V552 H530 V584 M800 515 V584 M1340 515 V552 H1070 V584"/>
+<g>
+<rect class="card" x="40" y="214" width="440" height="301" rx="18"/>
+<rect x="40" y="214" width="440" height="62" rx="18" fill="#356b8c"/><rect x="40" y="258" width="440" height="18" fill="#356b8c"/>
+<circle cx="78" cy="245" r="20" fill="#fff" opacity=".18"/><text x="78" y="252" text-anchor="middle" class="badge">1</text>
+<text x="112" y="253" class="head">Khái niệm và dấu hiệu</text>
+<text x="68" y="316" class="tx"><tspan x="68" dy="0">• Hành vi nguy hiểm cho xã hội</tspan><tspan x="68" dy="35">• Được quy định trong Bộ luật Hình sự</tspan><tspan x="68" dy="35">• Do người có năng lực TNHS hoặc</tspan><tspan x="90" dy="27">pháp nhân thương mại thực hiện</tspan><tspan x="68" dy="35">• Phải chịu hình phạt theo luật định</tspan></text>
+<text x="68" y="484" class="sm">Đối chiếu khái niệm với dấu hiệu pháp lý.</text>
+</g>
+<g>
+<rect class="card" x="580" y="214" width="440" height="301" rx="18"/>
+<rect x="580" y="214" width="440" height="62" rx="18" fill="#547b52"/><rect x="580" y="258" width="440" height="18" fill="#547b52"/>
+<circle cx="618" cy="245" r="20" fill="#fff" opacity=".18"/><text x="618" y="252" text-anchor="middle" class="badge">2</text>
+<text x="652" y="253" class="head">Phân loại tội phạm</text>
+<text x="608" y="316" class="tx"><tspan x="608" dy="0">Căn cứ mức cao nhất của khung hình phạt:</tspan><tspan x="608" dy="38">• Ít nghiêm trọng</tspan><tspan x="608" dy="34">• Nghiêm trọng</tspan><tspan x="608" dy="34">• Rất nghiêm trọng</tspan><tspan x="608" dy="34">• Đặc biệt nghiêm trọng</tspan></text>
+<text x="608" y="484" class="sm">Phân biệt theo giới hạn hình phạt luật định.</text>
+</g>
+<g>
+<rect class="card" x="1120" y="214" width="440" height="301" rx="18"/>
+<rect x="1120" y="214" width="440" height="62" rx="18" fill="#8b6544"/><rect x="1120" y="258" width="440" height="18" fill="#8b6544"/>
+<circle cx="1158" cy="245" r="20" fill="#fff" opacity=".18"/><text x="1158" y="252" text-anchor="middle" class="badge">3</text>
+<text x="1192" y="253" class="head">Cấu thành tội phạm</text>
+<text x="1148" y="316" class="tx"><tspan x="1148" dy="0">• Khách thể của tội phạm</tspan><tspan x="1148" dy="38">• Mặt khách quan</tspan><tspan x="1148" dy="38">• Chủ thể của tội phạm</tspan><tspan x="1148" dy="38">• Mặt chủ quan</tspan></text>
+<text x="1148" y="484" class="sm">Các yếu tố liên kết để định tội danh.</text>
+</g>
+<g>
+<rect class="card" x="40" y="584" width="440" height="301" rx="18"/>
+<rect x="40" y="584" width="440" height="62" rx="18" fill="#765c91"/><rect x="40" y="628" width="440" height="18" fill="#765c91"/>
+<circle cx="78" cy="615" r="20" fill="#fff" opacity=".18"/><text x="78" y="622" text-anchor="middle" class="badge">4</text>
+<text x="112" y="623" class="head">Lỗi và hình thức lỗi</text>
+<text x="68" y="686" class="tx"><tspan x="68" dy="0">• Cố ý trực tiếp</tspan><tspan x="68" dy="36">• Cố ý gián tiếp</tspan><tspan x="68" dy="36">• Vô ý vì quá tự tin</tspan><tspan x="68" dy="36">• Vô ý do cẩu thả</tspan></text>
+<text x="68" y="852" class="sm">Xác định nhận thức và ý chí của chủ thể.</text>
+</g>
+<g>
+<rect class="card" x="580" y="584" width="440" height="301" rx="18"/>
+<rect x="580" y="584" width="440" height="62" rx="18" fill="#3d7f7a"/><rect x="580" y="628" width="440" height="18" fill="#3d7f7a"/>
+<circle cx="618" cy="615" r="20" fill="#fff" opacity=".18"/><text x="618" y="622" text-anchor="middle" class="badge">5</text>
+<text x="652" y="623" class="head">Giai đoạn thực hiện</text>
+<text x="608" y="686" class="tx"><tspan x="608" dy="0">• Chuẩn bị phạm tội</tspan><tspan x="608" dy="36">• Phạm tội chưa đạt</tspan><tspan x="608" dy="36">• Tội phạm hoàn thành</tspan><tspan x="608" dy="45">Lưu ý: không phải mọi tội đều có</tspan><tspan x="608" dy="28">đầy đủ các giai đoạn giống nhau.</tspan></text>
+<text x="608" y="852" class="sm">Phân biệt theo diễn biến thực hiện hành vi.</text>
+</g>
+<g>
+<rect class="card" x="1120" y="584" width="440" height="301" rx="18"/>
+<rect x="1120" y="584" width="440" height="62" rx="18" fill="#a34d4d"/><rect x="1120" y="628" width="440" height="18" fill="#a34d4d"/>
+<circle cx="1158" cy="615" r="20" fill="#fff" opacity=".18"/><text x="1158" y="622" text-anchor="middle" class="badge">6</text>
+<text x="1192" y="623" class="head">Đồng phạm</text>
+<text x="1148" y="686" class="tx"><tspan x="1148" dy="0">• Từ hai người trở lên cố ý cùng thực hiện</tspan><tspan x="1148" dy="29">một tội phạm</tspan><tspan x="1148" dy="38">• Người tổ chức</tspan><tspan x="1148" dy="34">• Người thực hành</tspan><tspan x="1148" dy="34">• Người xúi giục</tspan><tspan x="1148" dy="34">• Người giúp sức</tspan></text>
+<text x="1148" y="852" class="sm">Làm rõ vai trò, lỗi và phạm vi cùng thực hiện.</text>
+</g>
+<rect x="180" y="928" width="1240" height="140" rx="22" fill="#263f59"/>
+<text x="800" y="970" text-anchor="middle" class="head">7 · TRÁCH NHIỆM HÌNH SỰ (TNHS)</text>
+<text x="800" y="1008" text-anchor="middle" class="sub">Căn cứ phát sinh TNHS · chủ thể chịu TNHS · nguyên tắc cá thể hóa trách nhiệm</text>
+<text x="800" y="1040" text-anchor="middle" class="sub">Phân biệt căn cứ loại trừ TNHS, miễn TNHS và miễn hình phạt theo quy định cụ thể</text>
+<text x="800" y="1096" text-anchor="middle" class="sm">Sơ đồ học tập khái quát · Khi làm bài, đối chiếu điều luật và phạm vi đề cương được giảng dạy.</text>
+</svg>
