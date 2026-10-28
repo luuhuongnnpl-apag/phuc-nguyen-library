@@ -133,3 +133,38 @@ table td, table th { border-color: var(--pn-line) !important; }
   h1, h2, h3, h4, .ftitle, .subbar h2 { color: var(--pn-ink) !important; }
   .btn.primary, button.primary { color: #101722 !important; }
 }
+
+/* Access-code management controls */
+.admin-course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.admin-course {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--pn-line);
+  border-radius: 10px;
+  background: var(--pn-paper);
+  color: var(--pn-ink);
+  cursor: pointer;
+}
+.admin-course input { margin-top: 5px; accent-color: var(--pn-primary); flex: 0 0 auto; }
+.admin-course input:disabled { cursor: not-allowed; }
+.admin-course:has(input:disabled) { opacity: .72; cursor: default; }
+.admin-all { background: var(--pn-primary-soft); border-color: var(--pn-primary); }
+.admin .row > div { min-width: min(100%, 220px); }
+.admin input:not([type="checkbox"]), .admin select, .admin textarea {
+  max-width: 100%;
+  background: var(--pn-paper);
+  color: var(--pn-ink);
+  border: 1px solid var(--pn-line);
+  padding: 10px 12px;
+}
+@media (max-width: 560px) {
+  .admin-course-grid { grid-template-columns: 1fr; }
+}
