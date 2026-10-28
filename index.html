@@ -562,7 +562,6 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"&&BE()){m.innerHTML=admin2HTML();admin2Bind()}
-  else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
     if(c.src&&c.skin){document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${c.src}" title="Ôn tập ${c.name}"></iframe></section>`}
