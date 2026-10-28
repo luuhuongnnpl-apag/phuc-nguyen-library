@@ -2,7 +2,7 @@
  "v": 2,
  "ghi_chu": "Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",
  "salt": "hkY/fsp9kdC9LWSbdR+Jzg==",
- "updated": "2026-10-28T13:48:47.757Z",
+ "updated": "2026-10-28T13:48:50.540Z",
  "codes": [
   {
    "h": "901af43855e968e732fe2c2148a4f465e6c1ccfaffed9ddecdb70b983bbe39ca",
@@ -43,20 +43,12 @@
     "*"
    ],
    "note": ""
-  },
-  {
-   "h": "57802a32f3802dc653124b244875bdb5dad8f7a44e65f8ce3651f855b38280a0",
-   "han": "2027-02-28",
-   "courses": [
-    "*"
-   ],
-   "note": ""
   }
  ],
  "admin": {
-  "salt": "LNE3utO2pA25O5NZxFFJVw==",
+  "salt": "mfAyjImDeScwoSrSLQGweg==",
   "iter": 250000,
-  "iv": "BBqRN6D8GiLTg/hN",
-  "data": "SrXVPEhfMOa6pe23Qh8OGTHbQjI5jJuucXsJh8KM4zSAWiyxbH+L4Tc7oC4OpfXQkd5WgEK0n51t1q/S6LkSffGyRue90x5fadGbxhrD5QMIigwno8uB5xl3cV2/pMKCMBbRHYDzmy5/Fw0zLz4kJGkt9m8R/f7pYhpzrByuAQc3BLekgW2Nk7vbagO0jHezB40AsB2Nze4hj11akl/5DaB8lt3CTcPDPaVboLRt0FPx4sqhRGG7owOin1+KqA4G8KhqgEDhziXhOOli3ll6vpp989z2Pv6sZPB+D8egkwTZHqkD/qiDko6m0VFED+qFVNowTU/yl7pHkmNPKryx9rVS3nAhhI5Dt+u8wX1Ne6dXSh5bm4CtBTFLD4HnboMadcOoCLNEWW42rdVXhvwQ1UEOApZTlHd/rYT0L9sme19gwZZGoVGg1iDI0xkeKkrdVkDXOqc1wGJnnj60KkJAwMWYw12jmQQCCt0WdiFXIg7I606jrYavVm0wm8dHFVUw3iv1MtIBc+WSMOVBTO3c5GCwSgwPg9tFt3Xw6edENtR18SiXFwyO29DqhbHfKFbWLFt8Mfg78CqJqksDvL0IVWWr/AMOt8tcazgb0Cqvk+M/hYUqNxNvNg1b/dv4aojqyp3gAVwbZxU2lJSVfhii2WOeFWRRUvYdpKwos1E8b3xrkp6SczIzQFnomn8WzLwoPtUI649QnHtfmX7tK7agdJew966Gju0ZZrLpA4Ka7r2/34dm+fl8P8AEo1AXy2ow3OOr6Ke+dZo3tNMqaZIz/AP7BlyuCUmcFFdGO2himdqAzZCRCPz/pWQkPAAmNo9JEOxWtLKuEg7xZTdx8+tC"
+  "iv": "C817z7hwIXLbVfyN",
+  "data": "wIFZ+w+Gkf9Yh/p/eEoWMFQDln5nvsUVpNxMb6MI9ydJm6qSklTKl9fyUGZNL5hR2juop00FRuTboEHkiJGKG6l1EjezH1izF/4G5vMLAJASx/3gzCoiey9FaEJANpqIa+aO/ocIRm4Nk1l5GkEYfan+PanF1B2qjcnBa8A+0VFOhza0SU/YgYlf4RbSFffijK3S2hJApE9X+JKGRIA0VeacFYZZl2hn4Q/DkVbt5gRK7FAwZCS+JY8BL0VW3fXJrDnrCb7dfdIdHjk46nPQRsaxwzvWXN8pSj+1s7qGISTjwZGCl61263hiU12Fw7CR+t2C8898kctnbzyl53WW3XzXrXqOFFAdFxLvaxvbYLN7mQ+FEx2JPmsBNFq4P16Heu324zzt/XVXvlA/XF84nkk1BJoBzeLOguNCW9XFcHxmJLlhBrp9c8yRzurE1TplEm9v8mzrE8GLUAG78xxfngP5SNI0PlJ+bQunogfeUf77FNpVvn2dQqYc/2Brzy1akbpfdlmrme8UkmhTBa266/XRnJuPu9Q36dceiZrRF904aLoPZ7/vKUeFDryPmmj8jGpiVn9xPNgw1xLJIrOSAeoX5F87bM5sPV0BJwx1dCv6xZ2wV0BXhV19boPAOwVchHkNmpCpvqlHjcKD/KUviFiE+VASsYXhl/nFfVV3l00Dcpw7nL+GGTINJ1iHk/DehAqkPpB9PRwY"
  }
 }
