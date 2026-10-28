@@ -57,6 +57,7 @@ Note: if using GitHub Pages project site, the Origin is `https://luuhuongnnpl-ap
 - Do not delete or disable Apps Script / Google Sheets until access codes, course scope, expiry, usage limits, and feedback are migrated and verified.
 
 ## API
+- Open the simple admin screen at `/admin` after deployment; it is served by the Worker itself so the secure session cookie stays first-party.
 - `GET /health`
 - `GET /auth/login`, `GET /auth/callback`, `POST /auth/logout`
 - `GET /api/me`
@@ -65,4 +66,4 @@ Note: if using GitHub Pages project site, the Origin is `https://luuhuongnnpl-ap
 - `POST /api/admin/codes` JSON: `{ "prefix":"LDS_25_", "count":10, "expiresAt":"2026-11-30", "maxUses":20, "courses":["luat-dan-su"], "note":"..." }`
 - `POST /api/admin/codes/{id}/revoke`
 
-The public frontend has not yet been switched to this Worker. Complete the frontend OAuth/admin integration and data migration only after this backend is deployed and verified.
+The Worker includes a basic browser-based code manager at `/admin`. The public GitHub Pages code-checking flow and existing Google Sheets data have not yet been switched or migrated. Keep the old backend available until both are migrated and verified.
