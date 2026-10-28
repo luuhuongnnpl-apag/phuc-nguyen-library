@@ -377,16 +377,15 @@ async function loadStats(){if(!BE())return;try{const r=await call({action:"stats
 async function loadFb(){if(!BE())return;try{const r=await call({action:"fb_list"});if(r&&r.ok){fbItems=r.items;fbLoadErr=""}}catch(e){fbLoadErr="Không tải được danh sách góp ý lúc này. Thử lại sau."}}
 
 /* ===== Quản lý mã lớp =====
-   Bản web GitHub: mã lưu trong data/ma-lop.json. Học sinh chỉ thấy dấu băm của mã;
-   danh sách mã gốc được mã hóa bằng mật khẩu quản trị. Lưu thay đổi lên GitHub bằng token cá nhân của giảng viên.
+   Một mã dùng chung cho cả lớp. Bản web GitHub: mã lưu trong data/ma-lop.json (sinh viên chỉ thấy dấu băm).
+   Danh sách mã gốc và token GitHub được mã hóa bằng mật khẩu quản trị, nên chỉ cần kết nối GitHub một lần;
+   từ đó mỗi lần cấp hoặc xóa mã, trang tự lưu ngược lên GitHub.
    Bản Claude: chủ trang quản lý mã trong kho dữ liệu của artifact. */
-const TKEY="pnlib-gh-token";
-let ST=null; /* phiên quản trị trên bản web: {pw,list,salt,sha,dirty} */
+let ST=null; /* phiên quản trị trên bản web: {pw,list,salt,sha,tok} */
 function adminScopeLabel(xs){
   if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return "Tất cả học phần";
   return xs.map(id=>{const c=course(id);return c?c.name:id}).join(", ");
 }
-const ghTok=()=>store.get(TKEY)||"";
 const b64e=u8=>{let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
 const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
@@ -398,7 +397,7 @@ async function sealVault(obj,pw){const salt=b64e(rnd(16)),iv=b64e(rnd(12)),iter=
   const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:b64d(iv)},k,new TextEncoder().encode(JSON.stringify(obj)));return {salt,iter,iv,data:b64e(new Uint8Array(ct))}}
 async function buildFile(){const codes=[];
   for(const x of ST.list)codes.push({h:await codeHash(ST.salt,x.code),han:x.han,courses:x.courses,note:x.note||""});
-  return {v:2,ghi_chu:"Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",salt:ST.salt,updated:new Date().toISOString(),codes,admin:await sealVault({codes:ST.list},ST.pw)}}
+  return {v:2,ghi_chu:"Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",salt:ST.salt,updated:new Date().toISOString(),codes,admin:await sealVault({codes:ST.list,tok:ST.tok||""},ST.pw)}}
 const ghURL=()=>`https://api.github.com/repos/${GH.repo}/contents/${GH.path}`;
 const ghHead=t=>({Authorization:"Bearer "+t,Accept:"application/vnd.github+json"});
 async function ghGet(t){const r=await fetch(ghURL()+"?ref="+GH.branch+"&t="+Date.now(),{headers:ghHead(t),cache:"no-store"});
@@ -407,30 +406,36 @@ async function ghGet(t){const r=await fetch(ghURL()+"?ref="+GH.branch+"&t="+Date
 async function ghPut(t,obj,sha){const body={message:"Cập nhật mã lớp",branch:GH.branch,content:b64e(new TextEncoder().encode(JSON.stringify(obj,null,1)+"\n"))};if(sha)body.sha=sha;
   const r=await fetch(ghURL(),{method:"PUT",headers:Object.assign(ghHead(t),{"Content-Type":"application/json"}),body:JSON.stringify(body)});
   if(!r.ok)throw new Error("gh"+r.status);return (await r.json()).content.sha}
-const ghErr=e=>{const m=String(e&&e.message||"");return m==="gh401"?"Token GitHub sai hoặc đã hết hạn. Vào mục Cài đặt lưu để nhập token mới.":(m==="gh403"||m==="gh404")?"Token GitHub chưa có quyền ghi (Contents: Read and write) cho kho phuc-nguyen-library.":m==="gh409"||m==="gh422"?"Dữ liệu trên GitHub vừa thay đổi ở nơi khác. Đăng xuất rồi đăng nhập lại để tải bản mới nhất.":"Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."};
-async function persist(){const file=await buildFile();MA=file;
-  const t=ghTok();if(!t){ST.dirty=true;return {ok:true,saved:false}}
-  try{ST.sha=await ghPut(t,file,ST.sha);ST.dirty=false;return {ok:true,saved:true}}catch(e){ST.dirty=true;return {ok:false,why:ghErr(e)}}}
-function downloadFile(){buildFile().then(f=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(f,null,1)+"\n"],{type:"application/json"}));a.download="ma-lop.json";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)})}
-function randomCode(){return "PN-"+Array.from(rnd(3)).map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase()}
+const ghErr=e=>{const m=String(e&&e.message||"");return m==="gh401"?"Token GitHub sai hoặc đã hết hạn. Kết nối lại GitHub ở khung bên dưới.":(m==="gh403"||m==="gh404")?"Token GitHub chưa có quyền ghi (Contents: Read and write) cho kho phuc-nguyen-library.":m==="gh409"||m==="gh422"?"Dữ liệu trên GitHub vừa thay đổi ở nơi khác. Đăng xuất rồi đăng nhập lại.":"Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."};
+/* Lưu ngược lên GitHub; lỗi thì hoàn tác thay đổi trên trang để không có trạng thái "chưa lưu" */
+async function persist(undo){try{const file=await buildFile();ST.sha=await ghPut(ST.tok,file,ST.sha);MA=file;return {ok:true}}
+  catch(e){if(undo)undo();return {ok:false,why:ghErr(e)}}}
+const TOKEN_URL="https://github.com/settings/personal-access-tokens/new?name=Phuc+Nguyen+Library+-+ma+lop&description=Luu+ma+lop+tu+trang+quan+tri&target_name=luuhuongnnpl-apag&expires_in=none&contents=write";
 
-/* Bộ điều hợp: cùng một giao diện cho bản web (file JSON) và bản Claude (kho dữ liệu) */
 const ADM={
   web:()=>!DB,
   async list(){if(!DB)return {ok:true,items:ST.list.slice()};return dbCall({action:"admin_list"})},
   async create(o){if(DB)return dbCall(Object.assign({action:"admin_create"},o,{courses:o.courses.join(",")||"*"}));
     if(ST.list.some(x=>x.code===o.code))return {ok:false,why:"exists"};
-    ST.list.push({code:o.code,note:o.note,han:o.han,courses:o.courses.length?o.courses:["*"],created:new Date().toISOString()});const r=await persist();return Object.assign({code:o.code},r)},
-  async bulk(o){const codes=Array.from({length:o.count},(_,i)=>o.prefix+(i+1));
-    if(DB){const have=new Set(((await dbCall({action:"admin_list"})).items||[]).map(x=>x.code));if(codes.some(c=>have.has(c)))return {ok:false,why:"exists"};
-      for(const c of codes){const r=await dbCall({action:"admin_create",code:c,note:o.note,han:o.han,max:o.max,courses:o.courses.join(",")||"*"});if(!r||!r.ok)return r||{ok:false}}return {ok:true,codes}}
-    if(codes.some(c=>ST.list.some(x=>x.code===c)))return {ok:false,why:"exists"};
-    const now=new Date().toISOString();codes.forEach(c=>ST.list.push({code:c,note:o.note,han:o.han,courses:o.courses.length?o.courses:["*"],created:now}));
-    const r=await persist();return Object.assign({codes},r)},
-  async del(code){if(DB)return dbCall({action:"admin_delete",code});ST.list=ST.list.filter(x=>x.code!==code);return persist()}
+    const item={code:o.code,note:o.note,han:o.han,courses:o.courses.length?o.courses:["*"],created:new Date().toISOString()};
+    ST.list.push(item);return persist(()=>{ST.list=ST.list.filter(x=>x!==item)})},
+  async del(code){if(DB)return dbCall({action:"admin_delete",code});const before=ST.list;ST.list=ST.list.filter(x=>x.code!==code);return persist(()=>{ST.list=before})}
 };
 
 function adminHead(){return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã lớp</h2></div></div>`}
+function connectBox(first){return `<section class="frame"><div class="ftitle">${first?"Kết nối GitHub (làm một lần duy nhất)":"Đổi token GitHub"}</div>
+    <form id="t-form" novalidate class="admin">
+      ${first?`<p class="msg">Để mỗi lần cấp mã trang tự lưu lên GitHub, cần kết nối một lần. Sau bước này, đăng nhập ở máy nào cũng tự lưu, không phải làm lại.</p>
+      <ol class="msg" style="margin:0;padding-left:20px;display:grid;gap:4px">
+        <li>Bấm <a href="${TOKEN_URL}" target="_blank" rel="noopener"><b>Mở trang tạo token GitHub</b></a> (đăng nhập GitHub nếu được hỏi).</li>
+        <li>Mục <b>Repository access</b>: chọn <b>Only select repositories</b> → <b>phuc-nguyen-library</b>.</li>
+        <li>Mục <b>Permissions</b> → <b>Contents</b>: chọn <b>Read and write</b> (nếu trang chưa tự chọn).</li>
+        <li>Bấm <b>Generate token</b>, sao chép dãy ký tự bắt đầu bằng <b>github_pat_</b> và dán vào ô dưới.</li></ol>`
+      :`<p class="msg">Chỉ dùng khi token cũ hết hạn hoặc bị thu hồi. <a href="${TOKEN_URL}" target="_blank" rel="noopener">Mở trang tạo token GitHub</a>.</p>`}
+      <div class="row"><div><label class="lab" for="t-in">Token GitHub</label><input type="password" id="t-in" autocomplete="off" placeholder="github_pat_…"></div></div>
+      <div class="err" id="t-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">${first?"Kết nối":"Lưu token mới"}</button><span class="msg" id="t-msg" aria-live="polite"></span></div>
+    </form></section>`}
 function admin2HTML(){
   const head=adminHead();
   if(DB&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã lớp</div><p class="msg">Chỉ chủ trang mới được quản lý mã lớp.</p></section></main>`;
@@ -438,153 +443,106 @@ function admin2HTML(){
     <form id="ak-form" novalidate class="admin"><p class="msg">Tài khoản quản trị dành cho giảng viên. Nhập mật khẩu quản trị để vào phần cấp mã lớp.</p>
     <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
     <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form></section></main>`;
-  const web=!DB, t=web?ghTok():"";
+  const web=!DB;
+  if(web&&!ST.tok)return head+`<main class="wrap admin">${connectBox(true)}
+    <section class="frame"><div class="row"><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button></div></section></main>`;
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
-  const live=COURSES.filter(c=>c.src);
-  const courseChoices=live.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
-  const bulkChoices=live.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
-  const sel='style="width:100%;font:500 15px var(--f-body);padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"';
+  const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=web?"":`<div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40" required></div>`;
-  const bulkMax=web?"":`<div><label class="lab" for="bulk-max">Số người tối đa mỗi mã</label><input type="number" id="bulk-max" min="1" max="1000" value="40" required></div>`;
-  const saveBox=!web?"":t
-    ?`<section class="frame"><div class="ftitle">Trạng thái lưu</div><p class="msg" id="s-state"><span class="ok">Đã bật lưu tự động lên GitHub trên trình duyệt này.</span> Mỗi lần cấp hoặc xóa mã, trang tự lưu; mã có hiệu lực với sinh viên sau khoảng 1–2 phút.</p></section>`
-    :`<section class="frame"><div class="ftitle">Trạng thái lưu</div>
-      <p class="msg" id="s-state"><span class="bad">Trình duyệt này chưa bật lưu tự động.</span> Thay đổi về mã mới chỉ nằm trên máy này cho đến khi được lưu lên GitHub.</p>
-      <p class="msg">Cách 1 (khuyến nghị, làm một lần cho mỗi máy): nhập token GitHub ở mục <b>Cài đặt lưu</b> bên dưới. Cách 2: bấm <b>Tải file ma-lop.json</b>, rồi trên github.com vào kho phuc-nguyen-library → thư mục <b>data</b> → Add file → Upload files → kéo file vừa tải vào → Commit changes.</p>
-      <div class="row"><button class="btn primary" type="button" id="s-dl">Tải file ma-lop.json</button></div></section>`;
-  return head+`<main class="wrap admin">${saveBox}
-  <section class="frame"><div class="ftitle">Cấp mã lớp mới</div>
+  return head+`<main class="wrap admin">
+  <section class="frame"><div class="ftitle">Cấp mã lớp</div>
     <form id="c-form" novalidate class="admin">
-      <p class="msg">Tự đặt mã ngắn (ví dụ <b>K25D-LDS</b>) hoặc để trống để hệ thống tự sinh. Mã chỉ mở được những học phần đã chọn.</p>
+      <p class="msg">Mỗi lớp một mã; cả lớp dùng chung mã này. Bấm <b>Cấp mã</b> là mã được lưu lên GitHub ngay, sinh viên dùng được sau khoảng 1–2 phút.</p>
       <div class="row">
-        <div><label class="lab" for="c-code">Mã lớp</label><input type="text" id="c-code" placeholder="Để trống để tự sinh" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
+        <div><label class="lab" for="c-code">Mã lớp</label><input type="text" id="c-code" placeholder="Ví dụ: K25D-LDS" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em" required></div>
         <div><label class="lab" for="c-note">Tên lớp / ghi chú</label><input type="text" id="c-note" placeholder="K25D Luật Dân sự" maxlength="80"></div>
       </div>
       <div class="row"><div><label class="lab" for="c-han">Có hiệu lực đến hết ngày</label><input type="date" id="c-han" value="${def}" required></div>${maxField}</div>
-      <div class="field"><span class="lab">Phạm vi học phần</span>
+      <div class="field"><span class="lab">Học phần được mở</span>
         <label class="admin-course admin-all"><input type="checkbox" id="c-all-courses" checked><span><b>Tất cả học phần</b></span></label>
         <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div></div>
       <div class="err" id="c-err" role="alert"></div>
       <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
     </form></section>
-  <section class="frame"><div class="ftitle">Cấp mã hàng loạt</div>
-    <form id="bulk-form" novalidate class="admin">
-      <p class="msg">Tạo nhiều mã theo tiền tố và số thứ tự. Ví dụ tiền tố <b>LDS25-</b> và số lượng 5 tạo LDS25-1 … LDS25-5.</p>
-      <div class="row">
-        <div><label class="lab" for="bulk-prefix">Tiền tố mã</label><input type="text" id="bulk-prefix" placeholder="LDS25-" maxlength="20" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
-        <div><label class="lab" for="bulk-count">Số lượng mã</label><input type="number" id="bulk-count" min="1" max="100" value="5" required></div>
-      </div>
-      <div class="row"><div><label class="lab" for="bulk-han">Có hiệu lực đến hết ngày</label><input type="date" id="bulk-han" value="${def}" required></div>${bulkMax}</div>
-      <div class="row">
-        <div><label class="lab" for="bulk-course">Phạm vi học phần</label><select id="bulk-course" ${sel}><option value="*">Tất cả học phần</option>${bulkChoices}</select></div>
-        <div><label class="lab" for="bulk-note">Tên lớp / ghi chú</label><input type="text" id="bulk-note" maxlength="80" placeholder="K25D Luật Dân sự"></div>
-      </div>
-      <div class="err" id="bulk-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Tạo hàng loạt</button><span class="msg" id="bulk-msg" aria-live="polite"></span></div>
-      <div id="bulk-result" class="msg" aria-live="polite"></div>
-    </form></section>
-  <section class="frame"><div class="ftitle">Danh sách mã đã cấp</div>
+  <section class="frame"><div class="ftitle">Danh sách mã lớp</div>
     <div class="row" style="align-items:center;margin-bottom:10px"><span class="msg" id="l-msg" aria-live="polite"></span></div>
-    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Phạm vi học phần</th><th>Hạn dùng</th>${web?"":"<th>Đã dùng</th>"}<th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
-    <p class="msg" style="margin-top:8px">Xóa mã sẽ thu hồi quyền truy cập: sinh viên đang dùng mã đó sẽ phải nhập mã mới ở lần mở trang kế tiếp.</p>
+    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Học phần</th><th>Hạn dùng</th>${web?"":"<th>Đã dùng</th>"}<th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
+    <p class="msg" style="margin-top:8px">Xóa mã sẽ thu hồi quyền truy cập: sinh viên dùng mã đó phải nhập mã mới ở lần mở trang kế tiếp.</p>
   </section>
-  ${web?`<section class="frame"><div class="ftitle">Cài đặt lưu</div>
-    <form id="t-form" novalidate class="admin">
-      <p class="msg">Token GitHub chỉ lưu trong trình duyệt của máy này, không đưa lên trang web. Tạo token: github.com → ảnh đại diện → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token; Repository access: <b>Only select repositories</b> → phuc-nguyen-library; Permissions → Repository permissions → <b>Contents: Read and write</b>; Generate token rồi dán vào ô dưới.</p>
-      <div class="row"><div><label class="lab" for="t-in">Token GitHub</label><input type="password" id="t-in" autocomplete="off" placeholder="${t?"Đã lưu trên máy này – dán token mới để thay":"github_pat_…"}"></div></div>
-      <div class="err" id="t-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Lưu token và lưu dữ liệu</button>${t?'<button class="btn" type="button" id="t-clear">Xóa token khỏi máy này</button>':""}<span class="msg" id="t-msg" aria-live="polite"></span></div>
-    </form></section>
-  <section class="frame"><div class="ftitle">Đổi mật khẩu quản trị</div>
+  ${web?`<section class="frame"><div class="ftitle">Đổi mật khẩu quản trị</div>
     <form id="p-form" novalidate class="admin">
       <div class="row"><div><label class="lab" for="p-new">Mật khẩu mới (ít nhất 10 ký tự)</label><input type="password" id="p-new" autocomplete="new-password"></div>
       <div><label class="lab" for="p-new2">Nhập lại mật khẩu mới</label><input type="password" id="p-new2" autocomplete="new-password"></div></div>
       <div class="err" id="p-err" role="alert"></div>
       <div class="row" style="align-items:center"><button class="btn primary" type="submit">Đổi mật khẩu</button><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button><span class="msg" id="p-msg" aria-live="polite"></span></div>
-    </form></section>`:""}
+    </form></section>
+  <details class="frame"><summary class="msg" style="cursor:pointer">Đổi token GitHub (chỉ khi token cũ hết hạn)</summary>${connectBox(false)}</details>`:""}
   </main>`;
 }
-function savedNote(r){return r.saved?" Đã lưu lên GitHub; sinh viên dùng được sau khoảng 1–2 phút.":" Chưa lưu lên GitHub – xem khung Trạng thái lưu."}
+function bindToken(){const f=$("#t-form");if(!f)return;
+  f.addEventListener("submit",async e=>{e.preventDefault();const t=$("#t-in").value.trim();
+    if(!t){$("#t-err").textContent="Dán token GitHub vào ô trên.";return}
+    $("#t-err").textContent="";$("#t-msg").textContent="Đang kết nối…";
+    try{const g=await ghGet(t);const old=ST.tok,oldSha=ST.sha;ST.tok=t;ST.sha=g?g.sha:null;
+      const r=await persist(()=>{ST.tok=old;ST.sha=oldSha});
+      if(r.ok){route("quan-ly-ma");setTimeout(()=>{if($("#c-msg"))$("#c-msg").textContent="Đã kết nối GitHub. Từ nay mỗi lần cấp mã sẽ tự lưu."},0)}
+      else{$("#t-msg").textContent="";$("#t-err").textContent=r.why}}
+    catch(err){$("#t-msg").textContent="";$("#t-err").textContent=ghErr(err)}})}
 async function admin2Bind(){
   const af=$("#ak-form");
   if(af){
     af.addEventListener("submit",async e=>{e.preventDefault();const pw=$("#ak-in").value;
       if(!pw){$("#ak-err").textContent="Nhập mật khẩu quản trị.";return}
       $("#ak-err").textContent="Đang xác thực…";
-      let src;try{const t=ghTok();if(t){const g=await ghGet(t);src=g?{d:g.data,sha:g.sha}:null}else src={d:await loadMa(true),sha:null}}
-      catch(err){$("#ak-err").textContent=String(err.message||"").indexOf("gh")===0?ghErr(err):"Chưa tải được dữ liệu mã lớp. Kiểm tra mạng rồi thử lại.";return}
-      if(!src||!src.d||!src.d.admin){$("#ak-err").textContent="Chưa có dữ liệu quản trị trên trang.";return}
-      try{const v=await openVault(src.d.admin,pw);ST={pw,list:Array.isArray(v.codes)?v.codes:[],salt:src.d.salt,sha:src.sha,dirty:false};MA=src.d;route("quan-ly-ma")}
-      catch(err){$("#ak-err").textContent="Mật khẩu không đúng."}});
+      let d,v;try{d=await loadMa(true)}catch(err){$("#ak-err").textContent="Chưa tải được dữ liệu mã lớp. Kiểm tra mạng rồi thử lại.";return}
+      try{v=await openVault(d.admin,pw)}catch(err){$("#ak-err").textContent="Mật khẩu không đúng.";return}
+      let sha=null;
+      if(v.tok){try{const g=await ghGet(v.tok);if(g){sha=g.sha;d=g.data;v=await openVault(d.admin,pw)}}catch(err){$("#ak-err").textContent=ghErr(err);v.tok="";}}
+      ST={pw,list:Array.isArray(v.codes)?v.codes:[],salt:d.salt,sha,tok:v.tok||""};MA=d;route("quan-ly-ma")});
     $("#ak-in").addEventListener("input",()=>$("#ak-err").textContent="");
     return;
   }
+  bindToken();
+  if($("#l-out"))$("#l-out").onclick=()=>{ST=null;route("quan-ly-ma")};
   if(!$("#c-form"))return;
   const web=ADM.web();
-  const markDirty=()=>{if(web&&ST&&ST.dirty&&$("#s-state"))$("#s-state").innerHTML='<span class="bad">Có thay đổi chưa lưu lên GitHub.</span> Nhập token ở mục Cài đặt lưu, hoặc bấm Tải file ma-lop.json và tải lên thư mục data trên GitHub.'};
   async function list(){
-    $("#l-msg").textContent="Đang tải…";
     try{const r=await ADM.list();if(!r||!r.ok){$("#l-msg").textContent="Chưa tải được danh sách mã.";return}
-      $("#l-msg").textContent=r.items.length+" mã";const t=todayISO();
+      $("#l-msg").textContent=r.items.length?r.items.length+" mã":"";const t=todayISO();
       $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{const exp=t>x.han,full=!web&&x.max&&x.used>=x.max;
         return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td>${web?"":`<td>${x.used} / ${x.max}</td>`}<td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Xóa</button></td></tr>`}).join("")
         :`<tr><td colspan="7" class="msg">Chưa có mã nào. Cấp mã đầu tiên ở khung bên trên.</td></tr>`;
       $("#l-body").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
         if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để xóa";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Xóa";b.classList.remove("primary")}},4000);return}
         b.disabled=true;b.textContent="Đang xóa…";
-        try{const rr=await ADM.del(b.dataset.del);await list();$("#l-msg").textContent=rr&&rr.ok?"Đã xóa mã "+b.dataset.del+"."+(web?savedNote(rr):""):(rr&&rr.why)||"Chưa xóa được.";markDirty()}
+        try{const rr=await ADM.del(b.dataset.del);await list();$("#l-msg").textContent=rr&&rr.ok?"Đã xóa mã "+b.dataset.del+(web?" và lưu lên GitHub.":"."):(rr&&rr.why)||"Chưa xóa được."}
         catch(err){b.textContent="Thử lại";b.disabled=false}});
     }catch(err){$("#l-msg").textContent="Chưa tải được danh sách mã."}
   }
   $("#c-all-courses").addEventListener("change",()=>document.querySelectorAll(".c-course").forEach(x=>{x.disabled=$("#c-all-courses").checked;if(x.disabled)x.checked=false}));
-  const WHY={exists:"Mã đã tồn tại; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Chỉ chủ trang mới được cấp mã."};
+  const WHY={exists:"Mã này đã có trong danh sách; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Chỉ chủ trang mới được cấp mã."};
   $("#c-form").addEventListener("submit",async e=>{e.preventDefault();
-    const code=norm($("#c-code").value)||randomCode(),note=$("#c-note").value.trim(),han=$("#c-han").value,max=web?0:parseInt($("#c-max").value,10);
+    const code=norm($("#c-code").value),note=$("#c-note").value.trim(),han=$("#c-han").value,max=web?0:parseInt($("#c-max").value,10);
     const all=$("#c-all-courses").checked,courses=all?[]:[...document.querySelectorAll(".c-course:checked")].map(x=>x.value);
+    if(!code){$("#c-err").textContent="Nhập mã lớp, ví dụ K25D-LDS.";return}
     if(!okCode(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới.";return}
     if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
     if(!web&&!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
     if(!all&&!courses.length){$("#c-err").textContent="Chọn ít nhất một học phần hoặc bật Tất cả học phần.";return}
-    $("#c-err").textContent="";$("#c-msg").textContent="Đang cấp mã…";const btn=$("#c-form button[type=submit]");btn.disabled=true;
+    $("#c-err").textContent="";$("#c-msg").textContent=web?"Đang cấp mã và lưu lên GitHub…":"Đang cấp mã…";const btn=$("#c-form button[type=submit]");btn.disabled=true;
     try{const r=await ADM.create({code,note,han,max,courses});
-      if(r&&r.ok){$("#c-msg").textContent="Đã cấp mã "+code+"."+(web?savedNote(r):"");$("#c-code").value="";$("#c-note").value="";list();markDirty()}
-      else{$("#c-msg").textContent="";$("#c-err").textContent=WHY[r&&r.why]||(r&&r.why)||"Chưa cấp được mã.";list();markDirty()}}
+      if(r&&r.ok){$("#c-msg").textContent="Đã cấp mã "+code+(web?" và lưu lên GitHub. Sinh viên dùng được sau khoảng 1–2 phút.":".");$("#c-code").value="";$("#c-note").value="";list()}
+      else{$("#c-msg").textContent="";$("#c-err").textContent=WHY[r&&r.why]||(r&&r.why)||"Chưa cấp được mã."}}
     catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Chưa cấp được mã. Thử lại."}finally{btn.disabled=false}});
-  $("#bulk-form").addEventListener("submit",async e=>{e.preventDefault();
-    const prefix=norm($("#bulk-prefix").value),count=parseInt($("#bulk-count").value,10),han=$("#bulk-han").value,max=web?0:parseInt($("#bulk-max").value,10),cv=$("#bulk-course").value,note=$("#bulk-note").value.trim();
-    if(!/^[A-Z0-9][A-Z0-9_-]{1,19}$/.test(prefix)){$("#bulk-err").textContent="Tiền tố gồm 2–20 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới.";return}
-    if(!(count>=1&&count<=100)){$("#bulk-err").textContent="Số lượng mã từ 1 đến 100.";return}
-    if((prefix+count).length>24){$("#bulk-err").textContent="Tiền tố quá dài so với số lượng mã.";return}
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#bulk-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
-    if(!web&&!(max>=1&&max<=1000)){$("#bulk-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
-    $("#bulk-err").textContent="";$("#bulk-msg").textContent="Đang tạo "+count+" mã…";$("#bulk-result").textContent="";const btn=$("#bulk-form button[type=submit]");btn.disabled=true;
-    try{const r=await ADM.bulk({prefix,count,han,max,note,courses:cv==="*"?[]:[cv]});
-      if(r&&r.codes){$("#bulk-msg").textContent="Đã tạo "+r.codes.length+" mã."+(web?savedNote(r):"");$("#bulk-result").innerHTML="<b>Mã đã tạo (hết hạn "+fmtDate(han)+"):</b><br>"+r.codes.map(esc).join("<br>");list();markDirty();if(r.why)$("#bulk-err").textContent=r.why}
-      else{$("#bulk-msg").textContent="";$("#bulk-err").textContent=WHY[r&&r.why]||"Chưa tạo được mã."}}
-    catch(err){$("#bulk-msg").textContent="";$("#bulk-err").textContent="Chưa tạo được mã. Thử lại."}finally{btn.disabled=false}});
   ["c-code","c-note","c-han"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#c-err").textContent=""));
-  ["bulk-prefix","bulk-count","bulk-han","bulk-note"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#bulk-err").textContent=""));
-  if(web){
-    if($("#s-dl"))$("#s-dl").onclick=downloadFile;
-    $("#t-form").addEventListener("submit",async e=>{e.preventDefault();const t=$("#t-in").value.trim()||ghTok();
-      if(!t){$("#t-err").textContent="Dán token GitHub vào ô trên.";return}
-      $("#t-err").textContent="";$("#t-msg").textContent="Đang kiểm tra token…";
-      try{const g=await ghGet(t);store.set(TKEY,t);ST.sha=g?g.sha:null;const r=await persist();
-        if(r.ok){$("#t-in").value="";route("quan-ly-ma");setTimeout(()=>{if($("#t-msg"))$("#t-msg").textContent="Đã lưu token và lưu dữ liệu lên GitHub."},0)}
-        else{$("#t-msg").textContent="";$("#t-err").textContent=r.why}}
-      catch(err){$("#t-msg").textContent="";$("#t-err").textContent=ghErr(err)}});
-    if($("#t-clear"))$("#t-clear").onclick=()=>{store.del(TKEY);route("quan-ly-ma")};
-    $("#p-form").addEventListener("submit",async e=>{e.preventDefault();const a=$("#p-new").value,b=$("#p-new2").value;
-      if(a.length<10){$("#p-err").textContent="Mật khẩu mới cần ít nhất 10 ký tự.";return}
-      if(a!==b){$("#p-err").textContent="Hai lần nhập mật khẩu chưa khớp.";return}
-      $("#p-err").textContent="";$("#p-msg").textContent="Đang đổi mật khẩu…";const old=ST.pw;ST.pw=a;
-      const r=await persist();
-      if(r.ok&&r.saved){$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi mật khẩu. Từ nay đăng nhập bằng mật khẩu mới."}
-      else if(r.ok){$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi trên máy này. Mật khẩu mới chỉ có hiệu lực sau khi lưu dữ liệu lên GitHub.";markDirty()}
-      else{ST.pw=old;$("#p-msg").textContent="";$("#p-err").textContent=r.why}});
-    $("#l-out").onclick=()=>{if(ST&&ST.dirty&&!confirm("Còn thay đổi chưa lưu lên GitHub. Vẫn đăng xuất?"))return;ST=null;route("quan-ly-ma")};
-  }
-  list();markDirty();
+  if(web)$("#p-form").addEventListener("submit",async e=>{e.preventDefault();const a=$("#p-new").value,b=$("#p-new2").value;
+    if(a.length<10){$("#p-err").textContent="Mật khẩu mới cần ít nhất 10 ký tự.";return}
+    if(a!==b){$("#p-err").textContent="Hai lần nhập mật khẩu chưa khớp.";return}
+    $("#p-err").textContent="";$("#p-msg").textContent="Đang đổi mật khẩu…";const old=ST.pw;ST.pw=a;
+    const r=await persist(()=>{ST.pw=old});
+    if(r.ok){$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi mật khẩu. Từ nay đăng nhập bằng mật khẩu mới."}
+    else{$("#p-msg").textContent="";$("#p-err").textContent=r.why}});
+  list();
 }
 
 /* Trang góp ý khi dùng máy chủ */

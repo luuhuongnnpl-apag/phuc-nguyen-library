@@ -9,9 +9,9 @@ Trang ôn tập luật học theo học phần. © Bản quyền thuộc Phúc N
 
 ## Mã lớp
 
-Không dùng Google Sheets / Apps Script. Giảng viên vào trang chủ → **Quản lý mã lớp** → đăng nhập bằng mật khẩu quản trị → cấp hoặc xóa mã.
-Mã được lưu lên GitHub bằng token cá nhân (Fine-grained, chỉ kho này, quyền *Contents: Read and write*) nhập một lần trên mỗi máy;
-nếu chưa có token, bấm *Tải file ma-lop.json* rồi tải file lên thư mục `data/` của kho.
+Không dùng Google Sheets / Apps Script. Mỗi lớp một mã, cả lớp dùng chung.
 
-File chỉ chứa dấu băm của mã (sinh viên không đọc được mã); danh sách mã gốc được mã hóa bằng mật khẩu quản trị.
-Trang web tĩnh nên không giới hạn được số người dùng một mã; mã được kiểm soát bằng hạn dùng và phạm vi học phần.
+Giảng viên vào trang chủ → **Quản lý mã lớp** → đăng nhập bằng mật khẩu quản trị → cấp hoặc xóa mã. Mỗi lần cấp/xóa, trang tự lưu ngược lên GitHub.
+Lần đầu đăng nhập cần kết nối GitHub một lần (token Fine-grained, chỉ kho này, quyền *Contents: Read and write*); token được mã hóa bằng mật khẩu quản trị và lưu cùng dữ liệu, nên đăng nhập ở máy nào cũng tự lưu.
+
+File chỉ chứa dấu băm của mã (sinh viên không đọc được mã). Trang web tĩnh nên không giới hạn được số người dùng một mã; mã được kiểm soát bằng hạn dùng và học phần được mở.
