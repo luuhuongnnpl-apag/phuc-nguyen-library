@@ -36,6 +36,42 @@ function caiDat() {
   }
 }
 
+/**
+ * Tạo bộ 10 mã Luật Dân sự theo yêu cầu ngày 30/11/2026.
+ * Chạy thủ công một lần trong Apps Script sau khi đã chạy caiDat().
+ * Có thể chạy lại an toàn: chỉ thêm những mã còn thiếu, không ghi đè mã đã có.
+ */
+function taoBoMaLDS25() {
+  const s = sh(SH_MA);
+  if (!s) throw new Error('Chưa có trang tính MaLop. Hãy chạy caiDat() trước.');
+  if (s.getLastColumn() < 6) {
+    s.getRange(1, 6).setValue('Phạm vi học phần').setFontWeight('bold');
+  }
+  const codes = Array.from({ length: 10 }, (_, i) => 'LDS_25_' + (i + 1));
+  const existing = new Set(dongDuLieu(SH_MA).map(r => chuanMa(r[0])));
+  const missing = codes.filter(code => !existing.has(code));
+  if (!missing.length) {
+    SpreadsheetApp.getUi().alert('Bộ mã LDS_25_1 đến LDS_25_10 đã tồn tại; không tạo trùng.');
+    return;
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const current = new Set(dongDuLieu(SH_MA).map(r => chuanMa(r[0])));
+    const toAdd = missing.filter(code => !current.has(code));
+    if (!toAdd.length) {
+      SpreadsheetApp.getUi().alert('Bộ mã đã được tạo bởi một lượt chạy khác; không tạo trùng.');
+      return;
+    }
+    const expiry = new Date('2026-11-30T12:00:00+07:00');
+    const rows = toAdd.map(code => [code, 'Luật Dân sự - đợt 25', expiry, 20, new Date(), 'luat-dan-su']);
+    s.getRange(s.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+    SpreadsheetApp.getUi().alert('Đã tạo ' + toAdd.length + ' mã: ' + toAdd.join(', ') + '. Mỗi mã tối đa 20 thiết bị, chỉ vào Luật Dân sự, hết hạn 30/11/2026.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function caiDatMatKhauQuanLy() {
   const ui = SpreadsheetApp.getUi();
   const res = ui.prompt(
