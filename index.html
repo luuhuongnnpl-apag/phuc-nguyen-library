@@ -337,7 +337,7 @@ function jsonp(params){return new Promise((res,rej)=>{const cb="pncb"+Math.rando
 let DB=null,UID=null;
 const BE=()=>!!(API||DB);
 function call(params){return API?jsonp(params):(DB?dbCall(params):Promise.reject(new Error("nobackend")))}
-const okCode=c=>/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(c);
+const okCode=c=>/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(c);
 async function luotDocs(){try{return (await DB.collection("luot").get()).docs.map(d=>({id:d.id,x:d.data()||{}}))}catch(e){return null}}
 async function dbCall(p){const a=p.action;
   if(a==="check"){const code=norm(p.code);if(!okCode(code))return {ok:false,why:"notfound"};
@@ -379,7 +379,7 @@ async function checkCode(raw,courseId){const code=norm(raw);
     if(r&&r.why==="notfound"&&DB){const v=valid(code);if(v.ok)return {ok:true,s:Object.assign(legacyS(v.p),{courses:["*"]})}}
     return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
   const k=await maTinh(code);if(k){if(todayISO()>k.han)return {ok:false,expired:true,why:"Mã đã hết hạn ngày "+fmtDate(k.han)+". Hỏi giảng viên mã mới."};return {ok:true,s:{code,label:k.note?String(k.note):"Mã "+code,han:k.han,courses:["*"]}}}
-  const v=valid(code);if(!v.ok)return /^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)&&!parse(code)?{ok:false,why:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên."}:v;return {ok:true,s:legacyS(v.p)}}
+  const v=valid(code);if(!v.ok)return /^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code)&&!parse(code)?{ok:false,why:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên."}:v;return {ok:true,s:legacyS(v.p)}}
 /* Mã lớp giảng viên tạo, đồng bộ sang file codes.js (chỉ lưu dấu băm, không lộ mã) */
 async function bam(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 async function maTinh(code){const L=window.PN_CODES||[];if(!L.length||!(window.crypto&&crypto.subtle))return null;const h=await bam("PNLIB|"+code);return L.find(x=>x.h===h)||null}
@@ -412,6 +412,7 @@ function admin2HTML(){
     <p class="msg">Nếu mật khẩu chưa được khởi tạo, cần chạy hàm <b>caiDatMatKhauQuanLy</b> trong Google Apps Script một lần, sau đó cập nhật deployment Web app.</p></section></main>`;
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
   const courseChoices=COURSES.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}${c.src?"":" (chưa có trang ôn tập)"}</span></label>`).join("");
+  const bulkCourseChoices=COURSES.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
   return head+`<main class="wrap admin">
   <section class="frame"><div class="ftitle">Cấp mã truy cập mới</div>
     <form id="c-form" novalidate class="admin">
@@ -432,6 +433,26 @@ function admin2HTML(){
       <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã mới</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
       <p class="msg">Một trình duyệt trên một thiết bị được tính là một lượt người dùng. Mã hết hạn sau ngày đã chọn; số người đã sử dụng được theo dõi tại máy chủ.</p>
     </form></section>
+  <section class="frame"><div class="ftitle">Cấp mã hàng loạt</div>
+    <form id="bulk-form" novalidate class="admin">
+      <p class="msg">Tạo nhiều mã theo tiền tố và số thứ tự. Ví dụ tiền tố <b>LDS_25_</b> tạo LDS_25_1, LDS_25_2…; tiền tố <b>PNL_</b> tạo PNL_1, PNL_2… Mỗi mã có hạn dùng, phạm vi học phần và giới hạn người dùng riêng.</p>
+      <div class="row">
+        <div><label class="lab" for="bulk-prefix">Tiền tố mã</label><input id="bulk-prefix" value="LDS_25_" maxlength="20" required autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
+        <div><label class="lab" for="bulk-count">Số lượng mã cần tạo</label><input type="number" id="bulk-count" min="1" max="100" value="10" required></div>
+      </div>
+      <div class="row">
+        <div><label class="lab" for="bulk-han">Có hiệu lực đến hết ngày</label><input type="date" id="bulk-han" value="2026-11-30" required></div>
+        <div><label class="lab" for="bulk-max">Số người tối đa cho mỗi mã</label><input type="number" id="bulk-max" min="1" max="1000" value="20" required></div>
+      </div>
+      <div class="row">
+        <div><label class="lab" for="bulk-course">Phạm vi học phần</label><select id="bulk-course" style="width:100%;font:500 15px var(--f-body);padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"><option value="*">Tất cả học phần (ví dụ PNL_1)</option>${bulkCourseChoices}</select></div>
+        <div><label class="lab" for="bulk-note">Tên lớp / ghi chú</label><input id="bulk-note" maxlength="80" placeholder="Ví dụ: K25D Luật Dân sự"></div>
+      </div>
+      <div class="err" id="bulk-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Tạo hàng loạt mã</button><span class="msg" id="bulk-msg" aria-live="polite"></span></div>
+      <div id="bulk-result" class="msg" aria-live="polite"></div>
+    </form>
+  </section>
   <section class="frame"><div class="ftitle">Danh sách mã đã cấp</div>
     <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại danh sách</button>${owner?"":'<button class="btn" type="button" id="l-out">Đăng xuất quản trị</button>'}<span class="msg" id="l-msg" aria-live="polite"></span></div>
     <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Phạm vi học phần</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
@@ -482,6 +503,24 @@ async function admin2Bind(){
   $("#c-all-courses").addEventListener("change",()=>{
     document.querySelectorAll(".c-course").forEach(x=>{x.disabled=$("#c-all-courses").checked;if(x.disabled)x.checked=false});
   });
+  $("#bulk-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const prefix=norm($("#bulk-prefix").value),count=parseInt($("#bulk-count").value,10),han=$("#bulk-han").value,max=parseInt($("#bulk-max").value,10),courses=$("#bulk-course").value,note=$("#bulk-note").value.trim();
+    if(!/^[A-Z0-9][A-Z0-9_-]{1,19}$/.test(prefix)){$("#bulk-err").textContent="Tiền tố gồm 2–20 ký tự: chữ cái không dấu, chữ số, gạch dưới hoặc gạch ngang.";return}
+    if(!(count>=1&&count<=100)){$("#bulk-err").textContent="Số lượng mã phải từ 1 đến 100.";return}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#bulk-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
+    if(!(max>=1&&max<=1000)){$("#bulk-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
+    if((prefix+String(count)).length>24){$("#bulk-err").textContent="Tiền tố quá dài so với số lượng mã.";return}
+    $("#bulk-err").textContent="";$("#bulk-msg").textContent="Đang tạo "+count+" mã…";$("#bulk-result").textContent="";
+    const btn=$("#bulk-form button[type=submit]");btn.disabled=true;
+    try{
+      const r=await call({action:"admin_bulk_create",token:auth,prefix,count,han,max,courses,note});
+      if(r&&r.ok){$("#bulk-msg").textContent="Đã tạo "+r.codes.length+" mã.";$("#bulk-result").innerHTML="<b>Mã đã tạo (mỗi mã dùng tối đa "+max+" người, hết hạn "+fmtDate(han)+"):</b><br>"+r.codes.map(x=>esc(x)).join("<br>");list()}
+      else{$("#bulk-msg").textContent="";$("#bulk-err").textContent=({badprefix:"Tiền tố mã không hợp lệ.",badcount:"Số lượng mã không hợp lệ.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",exists:"Một hoặc nhiều mã đã tồn tại; chưa tạo mã nào. Hãy đổi tiền tố.",badcode:"Mã sinh ra vượt quá 24 ký tự.",key:"Phiên quản trị đã hết hạn; đăng nhập lại."})[r&&r.why]||"Chưa tạo được mã."}
+    }catch(err){$("#bulk-msg").textContent="";$("#bulk-err").textContent="Không kết nối được máy chủ."}
+    finally{btn.disabled=false}
+  });
+  ["bulk-prefix","bulk-count","bulk-han","bulk-max","bulk-course","bulk-note"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#bulk-err").textContent=""));
   $("#c-form").addEventListener("submit",async e=>{
     e.preventDefault();
     let code=norm($("#c-code").value);
@@ -490,7 +529,7 @@ async function admin2Bind(){
     const all=$("#c-all-courses").checked;
     const selected=[...document.querySelectorAll(".c-course:checked")].map(x=>x.value);
     const courses=all?"*":selected.join(",");
-    if(!/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số và dấu gạch ngang.";return}
+    if(!/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số và dấu gạch ngang.";return}
     if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
     if(!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
     if(!all&&!selected.length){$("#c-err").textContent="Chọn ít nhất một học phần hoặc bật Tất cả học phần.";return}
