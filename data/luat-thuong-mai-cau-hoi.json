@@ -1,0 +1,998 @@
+{
+  "courseId": "luat-thuong-mai",
+  "courseName": "Pháp luật thương mại và chủ thể kinh doanh",
+  "source": "Đề cương chi tiết học phần; câu hỏi mới biên soạn cần giảng viên thẩm định.",
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "TM001",
+      "chapter": 1,
+      "question": "Hoạt động thương mại theo Luật Thương mại được nhận diện chủ yếu dựa vào yếu tố nào?",
+      "options": [
+        "Mục đích sinh lợi và loại hoạt động theo luật",
+        "Chủ thể luôn phải là công ty cổ phần",
+        "Mọi giao dịch dân sự đều là thương mại",
+        "Giao dịch bắt buộc phải có yếu tố nước ngoài"
+      ],
+      "correctIndex": 0,
+      "explanation": "Hoạt động thương mại gắn với mục đích sinh lợi và các hoạt động được luật xác định; không phải mọi giao dịch dân sự đều là thương mại.",
+      "legalBasis": "Luật Thương mại 2005, Điều 3",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM002",
+      "chapter": 1,
+      "question": "Theo Luật Thương mại, thương nhân có thể là chủ thể nào?",
+      "options": [
+        "Chỉ công ty cổ phần",
+        "Tổ chức kinh tế thành lập hợp pháp hoặc cá nhân hoạt động thương mại độc lập, thường xuyên và đăng ký kinh doanh theo luật",
+        "Chỉ cơ quan nhà nước",
+        "Bất kỳ người mua hàng nào"
+      ],
+      "correctIndex": 1,
+      "explanation": "Khái niệm thương nhân không đồng nhất với doanh nghiệp; luật còn ghi nhận cá nhân đáp ứng điều kiện.",
+      "legalBasis": "Luật Thương mại 2005, Điều 6",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM003",
+      "chapter": 1,
+      "question": "Điểm khác biệt cơ bản giữa doanh nghiệp và thương nhân là gì?",
+      "options": [
+        "Hai thuật ngữ luôn đồng nghĩa",
+        "Doanh nghiệp chỉ gồm cá nhân kinh doanh",
+        "Doanh nghiệp là một loại tổ chức kinh tế; thương nhân là tư cách chủ thể theo luật thương mại",
+        "Thương nhân không bao giờ là pháp nhân"
+      ],
+      "correctIndex": 2,
+      "explanation": "Doanh nghiệp và thương nhân thuộc hai tiêu chí pháp lý khác nhau; một doanh nghiệp có thể là thương nhân nhưng hai khái niệm không đồng nhất.",
+      "legalBasis": "Luật Thương mại 2005; Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM004",
+      "chapter": 1,
+      "question": "Chủ doanh nghiệp tư nhân chịu trách nhiệm về nghĩa vụ của doanh nghiệp như thế nào?",
+      "options": [
+        "Trong phạm vi vốn điều lệ đã đăng ký",
+        "Bằng toàn bộ tài sản của mình theo luật",
+        "Chỉ bằng tài sản doanh nghiệp",
+        "Không chịu trách nhiệm cá nhân"
+      ],
+      "correctIndex": 1,
+      "explanation": "Doanh nghiệp tư nhân không có sự tách biệt trách nhiệm hữu hạn như công ty TNHH hoặc công ty cổ phần.",
+      "legalBasis": "Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM005",
+      "chapter": 1,
+      "question": "Trong công ty hợp danh, chủ thể nào chịu trách nhiệm vô hạn theo chế độ thành viên hợp danh?",
+      "options": [
+        "Thành viên hợp danh",
+        "Mọi người lao động",
+        "Chủ nợ",
+        "Mọi thành viên góp vốn"
+      ],
+      "correctIndex": 0,
+      "explanation": "Thành viên hợp danh chịu trách nhiệm bằng toàn bộ tài sản theo quy định; thành viên góp vốn có chế độ trách nhiệm khác.",
+      "legalBasis": "Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM006",
+      "chapter": 1,
+      "question": "Đặc điểm nào gắn với công ty cổ phần?",
+      "options": [
+        "Vốn điều lệ không chia thành phần",
+        "Chỉ có một cổ đông",
+        "Vốn điều lệ chia thành cổ phần",
+        "Cổ đông luôn chịu trách nhiệm vô hạn"
+      ],
+      "correctIndex": 2,
+      "explanation": "Vốn điều lệ công ty cổ phần được chia thành cổ phần; trách nhiệm của cổ đông về nguyên tắc trong phạm vi vốn góp.",
+      "legalBasis": "Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM007",
+      "chapter": 1,
+      "question": "Điểm phân biệt chính giữa giải thể và phá sản là gì?",
+      "options": [
+        "Hai thủ tục có cùng căn cứ và hậu quả",
+        "Phá sản luôn do chủ sở hữu tự quyết định",
+        "Giải thể chỉ do Tòa án tuyên bố",
+        "Phá sản gắn với mất khả năng thanh toán và thủ tục tư pháp; giải thể có căn cứ, trình tự riêng"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cần phân biệt căn cứ, cơ quan/thủ tục và hậu quả pháp lý của hai cơ chế chấm dứt hoạt động.",
+      "legalBasis": "Luật Doanh nghiệp; pháp luật về phục hồi, phá sản",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM008",
+      "chapter": 1,
+      "question": "Khi xác định địa vị pháp lý của hộ kinh doanh, cách tiếp cận nào phù hợp?",
+      "options": [
+        "Áp dụng nguyên xi mọi quy định về công ty cổ phần",
+        "Xác định đúng quy định riêng điều chỉnh hộ kinh doanh và thời điểm áp dụng",
+        "Mặc nhiên coi hộ kinh doanh là công ty TNHH",
+        "Bỏ qua chủ thể đứng tên đăng ký"
+      ],
+      "correctIndex": 1,
+      "explanation": "Không nên suy rộng chế độ tổ chức và trách nhiệm của doanh nghiệp sang hộ kinh doanh.",
+      "legalBasis": "Pháp luật về đăng ký kinh doanh; Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM009",
+      "chapter": 1,
+      "question": "Đối với hợp tác xã, nguồn luật nào cần được xem xét trực tiếp?",
+      "options": [
+        "Chỉ Luật Doanh nghiệp",
+        "Chỉ Bộ luật Hình sự",
+        "Luật Hợp tác xã và văn bản hướng dẫn còn hiệu lực",
+        "Chỉ điều lệ do thành viên tự soạn"
+      ],
+      "correctIndex": 2,
+      "explanation": "Hợp tác xã có khuôn khổ pháp lý riêng; điều lệ không thể thay thế quy phạm bắt buộc.",
+      "legalBasis": "Luật Hợp tác xã 2023",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM010",
+      "chapter": 1,
+      "question": "Khi đánh giá quyền tự do kinh doanh, nhận định nào đúng?",
+      "options": [
+        "Là quyền tuyệt đối, không có giới hạn",
+        "Chỉ doanh nghiệp nhà nước có quyền này",
+        "Chỉ được kinh doanh ngành nghề được liệt kê là cấm",
+        "Được kinh doanh ngành nghề luật không cấm nhưng phải đáp ứng điều kiện và giới hạn hợp pháp"
+      ],
+      "correctIndex": 3,
+      "explanation": "Tự do kinh doanh được thực hiện trong khuôn khổ Hiến pháp và pháp luật; ngành nghề đầu tư kinh doanh có điều kiện phải đáp ứng điều kiện tương ứng.",
+      "legalBasis": "Hiến pháp; Luật Đầu tư",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM011",
+      "chapter": 1,
+      "question": "Khi xem xét doanh nghiệp có vốn đầu tư nước ngoài, cần phối hợp áp dụng nhóm pháp luật nào?",
+      "options": [
+        "Chỉ quy định nội bộ doanh nghiệp",
+        "Pháp luật doanh nghiệp và đầu tư, cùng điều kiện tiếp cận thị trường và quy định chuyên ngành khi có liên quan",
+        "Chỉ Bộ luật Dân sự",
+        "Chỉ pháp luật về thuế"
+      ],
+      "correctIndex": 1,
+      "explanation": "Tư cách doanh nghiệp và điều kiện đầu tư là các vấn đề liên quan nhưng không trùng nhau.",
+      "legalBasis": "Luật Doanh nghiệp; Luật Đầu tư",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM012",
+      "chapter": 1,
+      "question": "Việc đăng ký doanh nghiệp có ý nghĩa pháp lý trọng yếu nào?",
+      "options": [
+        "Tạo cơ sở xác lập tư cách pháp lý của doanh nghiệp theo quy định",
+        "Tự động miễn mọi loại thuế",
+        "Thay thế giấy phép chuyên ngành trong mọi trường hợp",
+        "Bảo đảm mọi hợp đồng sau đó đều hợp pháp"
+      ],
+      "correctIndex": 0,
+      "explanation": "Đăng ký doanh nghiệp không thay thế các giấy phép/điều kiện kinh doanh chuyên ngành và không bảo đảm mọi giao dịch đều hợp pháp.",
+      "legalBasis": "Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM013",
+      "chapter": 1,
+      "question": "Nhận định nào đúng về người đại diện theo pháp luật của doanh nghiệp?",
+      "options": [
+        "Luôn là kế toán trưởng",
+        "Luôn là cổ đông nắm nhiều cổ phần nhất",
+        "Xác định theo Luật Doanh nghiệp và điều lệ hợp pháp của doanh nghiệp",
+        "Không thể là người được thuê"
+      ],
+      "correctIndex": 2,
+      "explanation": "Cần kiểm tra luật và điều lệ, thông tin đăng ký cùng phạm vi đại diện; không suy luận từ chức danh kế toán hoặc tỷ lệ sở hữu.",
+      "legalBasis": "Luật Doanh nghiệp; Bộ luật Dân sự",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM014",
+      "chapter": 1,
+      "question": "Để xác định trách nhiệm tài sản của thành viên công ty, cần ưu tiên xem xét điều gì?",
+      "options": [
+        "Lời giới thiệu trên website",
+        "Tên thương mại của công ty",
+        "Số lượng người lao động",
+        "Loại hình doanh nghiệp, tư cách thành viên và quy định pháp luật áp dụng"
+      ],
+      "correctIndex": 3,
+      "explanation": "Chế độ trách nhiệm phụ thuộc loại hình và vị trí pháp lý của chủ thể; tên gọi hoặc nội dung quảng cáo không quyết định.",
+      "legalBasis": "Luật Doanh nghiệp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM015",
+      "chapter": 1,
+      "question": "Khi áp dụng văn bản pháp luật về chủ thể kinh doanh, cách làm nào an toàn nhất?",
+      "options": [
+        "Chỉ đọc bản luật ban hành ban đầu",
+        "Kiểm tra văn bản sửa đổi, văn bản hướng dẫn, hiệu lực và điều khoản chuyển tiếp",
+        "Dùng bất kỳ bài viết nào trên mạng",
+        "Mặc nhiên áp dụng văn bản cũ cho mọi thời điểm"
+      ],
+      "correctIndex": 1,
+      "explanation": "Tình trạng pháp lý phải được kiểm tra theo thời điểm sự kiện và văn bản có hiệu lực liên quan.",
+      "legalBasis": "Nguyên tắc áp dụng pháp luật theo thời gian",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM016",
+      "chapter": 2,
+      "question": "Khi xác định luật điều chỉnh hợp đồng có yếu tố thương mại, bước đầu tiên nên làm gì?",
+      "options": [
+        "Chỉ căn cứ tên gọi hợp đồng",
+        "Luôn áp dụng Bộ luật Dân sự và bỏ qua luật chuyên ngành",
+        "Xác định chủ thể, bản chất giao dịch, yếu tố liên quan và luật chuyên ngành",
+        "Chỉ xem nơi ký hợp đồng"
+      ],
+      "correctIndex": 2,
+      "explanation": "Tên gọi không quyết định hoàn toàn bản chất; cần phân loại quan hệ và xác định luật chuyên ngành, quy định chung cùng quan hệ giữa chúng.",
+      "legalBasis": "Luật Thương mại 2005; Bộ luật Dân sự 2015",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM017",
+      "chapter": 2,
+      "question": "Điều khoản nào giúp giảm tranh chấp về đối tượng hợp đồng mua bán?",
+      "options": [
+        "Mô tả hàng hóa, số lượng, chất lượng và tiêu chuẩn nghiệm thu rõ ràng",
+        "Chỉ ghi tên người bán",
+        "Không lưu chứng từ giao nhận",
+        "Ghi giá nhưng không xác định hàng hóa"
+      ],
+      "correctIndex": 0,
+      "explanation": "Mô tả cụ thể đối tượng và tiêu chí nghiệm thu giúp xác định nghĩa vụ và đánh giá việc thực hiện.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM018",
+      "chapter": 2,
+      "question": "Trong hợp đồng cung ứng dịch vụ, nội dung nào cần được xác định rõ?",
+      "options": [
+        "Chỉ tên người đại diện",
+        "Chỉ địa chỉ trụ sở",
+        "Chỉ màu sắc thương hiệu",
+        "Phạm vi công việc, tiêu chuẩn, thời hạn, nghiệm thu và phí dịch vụ"
+      ],
+      "correctIndex": 3,
+      "explanation": "Các điều khoản về phạm vi, tiêu chuẩn và nghiệm thu giúp xác định chất lượng thực hiện và nghĩa vụ thanh toán.",
+      "legalBasis": "Luật Thương mại 2005; Bộ luật Dân sự 2015",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM019",
+      "chapter": 2,
+      "question": "Đặc điểm cốt lõi của đại diện cho thương nhân là gì?",
+      "options": [
+        "Người trung gian chỉ cung cấp địa chỉ liên hệ",
+        "Một thương nhân nhận ủy nhiệm để thực hiện hoạt động thương mại nhân danh thương nhân giao đại diện trong phạm vi đại diện",
+        "Bên trung gian luôn mua hàng để bán lại nhân danh mình",
+        "Đại diện không cần xác định phạm vi"
+      ],
+      "correctIndex": 1,
+      "explanation": "Cần nhận diện việc nhân danh thương nhân giao đại diện và phạm vi đại diện theo hợp đồng, luật.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM020",
+      "chapter": 2,
+      "question": "Môi giới thương mại khác đại diện cho thương nhân ở điểm nào?",
+      "options": [
+        "Môi giới luôn trở thành chủ sở hữu hàng hóa",
+        "Môi giới luôn ký hợp đồng nhân danh bên được môi giới",
+        "Môi giới làm trung gian cho các bên đàm phán, giao kết; không mặc nhiên nhân danh bên nào để giao kết",
+        "Môi giới không được nhận thù lao"
+      ],
+      "correctIndex": 2,
+      "explanation": "Môi giới chủ yếu làm trung gian kết nối, hỗ trợ đàm phán/giao kết; không đồng nhất với đại diện.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM021",
+      "chapter": 2,
+      "question": "Trong ủy thác mua bán hàng hóa, bên nhận ủy thác thường thực hiện giao dịch theo cách nào?",
+      "options": [
+        "Nhân danh chính mình theo điều kiện ủy thác và nhận thù lao",
+        "Luôn nhân danh bên ủy thác như đại diện",
+        "Không được ký hợp đồng",
+        "Chỉ làm nhiệm vụ vận chuyển"
+      ],
+      "correctIndex": 0,
+      "explanation": "Ủy thác mua bán hàng hóa có cơ chế nhân danh bên nhận ủy thác, khác với đại diện cho thương nhân.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM022",
+      "chapter": 2,
+      "question": "Trong đại lý thương mại, quan hệ pháp lý cơ bản là gì?",
+      "options": [
+        "Đại lý luôn là người lao động của bên giao đại lý",
+        "Bên đại lý chỉ được làm môi giới",
+        "Bên giao đại lý chuyển toàn bộ tư cách pháp nhân cho đại lý",
+        "Bên đại lý nhân danh mình mua/bán hoặc cung ứng dịch vụ cho bên giao đại lý theo thỏa thuận"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cần xác định hình thức đại lý và quyền, nghĩa vụ cụ thể theo hợp đồng và Luật Thương mại.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM023",
+      "chapter": 2,
+      "question": "Hoạt động nào thuộc nhóm xúc tiến thương mại được Luật Thương mại điều chỉnh?",
+      "options": [
+        "Phát hành bản án của Tòa án",
+        "Khuyến mại, quảng cáo thương mại, trưng bày giới thiệu và hội chợ triển lãm",
+        "Đăng ký khai sinh",
+        "Cấp giấy chứng nhận quyền sử dụng đất"
+      ],
+      "correctIndex": 1,
+      "explanation": "Các hình thức xúc tiến thương mại được quy định trong Luật Thương mại và chịu thêm quy định chuyên ngành khi liên quan.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM024",
+      "chapter": 2,
+      "question": "Khi xác định trách nhiệm trong dịch vụ logistics, yếu tố nào đặc biệt quan trọng?",
+      "options": [
+        "Chỉ màu sắc bao bì",
+        "Chỉ quốc tịch người nhận hàng",
+        "Phạm vi dịch vụ, chứng từ, thời điểm nhận/giao và giới hạn trách nhiệm theo luật",
+        "Không cần xem hợp đồng"
+      ],
+      "correctIndex": 2,
+      "explanation": "Trách nhiệm phụ thuộc phạm vi dịch vụ, chứng cứ, thỏa thuận hợp pháp và giới hạn luật định.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM025",
+      "chapter": 2,
+      "question": "Trong mua bán hàng hóa, chuyển giao rủi ro và chuyển quyền sở hữu có quan hệ thế nào?",
+      "options": [
+        "Luôn diễn ra cùng thời điểm trong mọi trường hợp",
+        "Không có ý nghĩa pháp lý",
+        "Luôn xảy ra khi người mua đặt hàng",
+        "Là hai vấn đề pháp lý riêng, thời điểm xác định theo luật và thỏa thuận"
+      ],
+      "correctIndex": 3,
+      "explanation": "Không đồng nhất thời điểm chuyển rủi ro với thời điểm chuyển quyền sở hữu; cần kiểm tra điều khoản và quy định áp dụng.",
+      "legalBasis": "Luật Thương mại 2005; Bộ luật Dân sự 2015",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM026",
+      "chapter": 2,
+      "question": "Incoterms 2020 chủ yếu điều chỉnh vấn đề gì?",
+      "options": [
+        "Một bộ quy tắc về điều kiện giao hàng, phân bổ chi phí và rủi ro trong mua bán hàng hóa khi được đưa vào hợp đồng",
+        "Tư cách pháp nhân của doanh nghiệp",
+        "Tội phạm thương mại",
+        "Thẩm quyền của Tòa án trong mọi tranh chấp"
+      ],
+      "correctIndex": 0,
+      "explanation": "Incoterms không thay thế toàn bộ hợp đồng hoặc luật áp dụng; hiệu lực phụ thuộc việc các bên viện dẫn và phạm vi điều khoản.",
+      "legalBasis": "Incoterms 2020, ICC",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM027",
+      "chapter": 2,
+      "question": "CISG 1980 có phạm vi trọng tâm nào?",
+      "options": [
+        "Mọi loại dịch vụ trong nước",
+        "Mọi hợp đồng lao động",
+        "Hợp đồng mua bán hàng hóa quốc tế thuộc phạm vi Công ước",
+        "Mọi quan hệ về thành lập doanh nghiệp"
+      ],
+      "correctIndex": 2,
+      "explanation": "CISG tập trung vào hợp đồng mua bán hàng hóa quốc tế theo các điều kiện áp dụng của Công ước.",
+      "legalBasis": "CISG 1980",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM028",
+      "chapter": 2,
+      "question": "Khi giao kết hợp đồng bằng phương tiện điện tử, cần kiểm tra điều gì?",
+      "options": [
+        "Mặc nhiên vô hiệu vì không ký giấy",
+        "Điều kiện pháp lý về thông điệp dữ liệu, xác thực, thời điểm gửi/nhận và yêu cầu hình thức chuyên biệt",
+        "Chỉ kiểm tra màu nền email",
+        "Chỉ căn cứ việc có bản in"
+      ],
+      "correctIndex": 1,
+      "explanation": "Giao dịch điện tử có thể đáp ứng yêu cầu văn bản nếu thỏa điều kiện luật định; vẫn cần kiểm tra hình thức bắt buộc riêng của loại giao dịch.",
+      "legalBasis": "Luật Giao dịch điện tử 2023; Luật Thương mại điện tử 2025",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM029",
+      "chapter": 2,
+      "question": "Trong hợp đồng nhượng quyền thương mại, nội dung nào cần quan tâm?",
+      "options": [
+        "Chỉ tên cửa hàng",
+        "Chỉ số lượng nhân viên",
+        "Chỉ tài khoản mạng xã hội",
+        "Quyền sử dụng mô hình/đối tượng nhượng quyền, phí, hỗ trợ, kiểm soát chất lượng và nghĩa vụ các bên"
+      ],
+      "correctIndex": 3,
+      "explanation": "Quan hệ nhượng quyền thường liên quan hệ thống kinh doanh, quyền sở hữu trí tuệ, phí và nghĩa vụ hỗ trợ/kiểm soát.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM030",
+      "chapter": 2,
+      "question": "Khi xem xét điều khoản lựa chọn luật trong hợp đồng quốc tế, nhận định nào phù hợp?",
+      "options": [
+        "Cần kiểm tra hiệu lực của điều khoản, phạm vi lựa chọn và các quy phạm bắt buộc có liên quan",
+        "Luật nơi ký hợp đồng luôn áp dụng",
+        "Các bên có thể loại trừ mọi quy phạm bắt buộc",
+        "Không cần xác định yếu tố nước ngoài"
+      ],
+      "correctIndex": 0,
+      "explanation": "Lựa chọn luật phải được đánh giá theo quy phạm xung đột và giới hạn của pháp luật áp dụng.",
+      "legalBasis": "Bộ luật Dân sự 2015; điều ước liên quan",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM031",
+      "chapter": 3,
+      "question": "Theo Luật Thương mại, phạt vi phạm hợp đồng được áp dụng khi nào?",
+      "options": [
+        "Trong mọi trường hợp dù không có thỏa thuận",
+        "Chỉ khi có thỏa thuận phạt hợp pháp và đủ điều kiện áp dụng",
+        "Chỉ khi Tòa án tự đặt mức phạt",
+        "Chỉ với hợp đồng mua bán quốc tế"
+      ],
+      "correctIndex": 1,
+      "explanation": "Thỏa thuận phạt là điều kiện quan trọng; cần xem nội dung hợp đồng và quy định bắt buộc.",
+      "legalBasis": "Luật Thương mại 2005, Điều 300",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM032",
+      "chapter": 3,
+      "question": "Mức phạt vi phạm thông thường theo Điều 301 Luật Thương mại 2005 được giới hạn thế nào?",
+      "options": [
+        "Không quá 50% toàn bộ giá trị hợp đồng",
+        "Không có giới hạn nào",
+        "Không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm, trừ trường hợp luật quy định khác",
+        "Luôn bằng thiệt hại thực tế"
+      ],
+      "correctIndex": 2,
+      "explanation": "Điều 301 đặt mức trần thông thường là 8% giá trị phần nghĩa vụ bị vi phạm; cần kiểm tra trường hợp luật quy định khác.",
+      "legalBasis": "Luật Thương mại 2005, Điều 301",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM033",
+      "chapter": 3,
+      "question": "Một bên yêu cầu bồi thường thiệt hại do vi phạm hợp đồng thương mại cần tập trung chứng minh điều gì?",
+      "options": [
+        "Chỉ việc hợp đồng đã ký",
+        "Chỉ sự không hài lòng",
+        "Chỉ lỗi đạo đức của bên kia",
+        "Hành vi vi phạm, thiệt hại thực tế và quan hệ nhân quả trực tiếp theo luật"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cần chứng minh các yếu tố luật định; thiệt hại không tự động được suy ra từ hành vi vi phạm.",
+      "legalBasis": "Luật Thương mại 2005, Điều 303",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM034",
+      "chapter": 3,
+      "question": "Nghĩa vụ hạn chế tổn thất có ý nghĩa gì?",
+      "options": [
+        "Bên bị vi phạm phải áp dụng biện pháp hợp lý để hạn chế tổn thất; phần tổn thất có thể hạn chế được xử lý theo luật",
+        "Bên bị vi phạm được để thiệt hại tăng không giới hạn",
+        "Chỉ bên vi phạm có nghĩa vụ",
+        "Nghĩa vụ này chỉ áp dụng cho hợp đồng lao động"
+      ],
+      "correctIndex": 0,
+      "explanation": "Bên yêu cầu bồi thường phải thực hiện nghĩa vụ hạn chế tổn thất theo quy định; đây là yếu tố ảnh hưởng phạm vi bồi thường.",
+      "legalBasis": "Luật Thương mại 2005, Điều 305; CISG Điều 77",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM035",
+      "chapter": 3,
+      "question": "Biện pháp nào là chế tài tạm ngừng thực hiện hợp đồng?",
+      "options": [
+        "Hợp đồng tự động vô hiệu từ ngày ký",
+        "Bên vi phạm luôn bị giải thể",
+        "Tạm thời không thực hiện nghĩa vụ khi đủ căn cứ luật định hoặc thỏa thuận",
+        "Chuyển tranh chấp cho trọng tài"
+      ],
+      "correctIndex": 2,
+      "explanation": "Tạm ngừng là chế tài có tính tạm thời, khác với đình chỉ và hủy bỏ hợp đồng.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM036",
+      "chapter": 3,
+      "question": "Hủy bỏ hợp đồng khác đình chỉ thực hiện hợp đồng chủ yếu ở điểm nào?",
+      "options": [
+        "Hai chế tài luôn có hậu quả giống hệt nhau",
+        "Hủy bỏ kéo theo hậu quả pháp lý riêng đối với hiệu lực hợp đồng và hoàn trả theo luật; đình chỉ chấm dứt thực hiện từ thời điểm luật định",
+        "Đình chỉ luôn làm hợp đồng vô hiệu từ đầu",
+        "Hủy bỏ chỉ là lời nhắc thực hiện"
+      ],
+      "correctIndex": 1,
+      "explanation": "Phải phân biệt căn cứ, thời điểm phát sinh hậu quả và nghĩa vụ hoàn trả theo từng chế tài.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM037",
+      "chapter": 3,
+      "question": "Trường hợp nào có thể là căn cứ miễn trách nhiệm theo Luật Thương mại nếu đáp ứng điều kiện luật định?",
+      "options": [
+        "Doanh nghiệp không còn muốn thực hiện hợp đồng",
+        "Giá thị trường giảm nhẹ",
+        "Nhân sự nghỉ phép",
+        "Sự kiện bất khả kháng được chứng minh và tuân thủ nghĩa vụ liên quan"
+      ],
+      "correctIndex": 3,
+      "explanation": "Không phải mọi khó khăn đều là bất khả kháng; bên viện dẫn phải đáp ứng điều kiện và nghĩa vụ chứng minh/thông báo.",
+      "legalBasis": "Luật Thương mại 2005, Điều 294–295",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM038",
+      "chapter": 3,
+      "question": "Trong Luật Thương mại, khi bên bị vi phạm yêu cầu cả phạt vi phạm và bồi thường thiệt hại, cách xử lý nào đúng?",
+      "options": [
+        "Kiểm tra thỏa thuận phạt, căn cứ bồi thường và quy định về áp dụng đồng thời",
+        "Luôn chỉ được chọn một chế tài",
+        "Luôn được nhận cả hai không cần điều kiện",
+        "Tòa án không được xem xét thỏa thuận"
+      ],
+      "correctIndex": 0,
+      "explanation": "Việc áp dụng đồng thời phụ thuộc điều kiện luật định và thỏa thuận, không thể khẳng định tuyệt đối cho mọi trường hợp.",
+      "legalBasis": "Luật Thương mại 2005, Điều 307",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM039",
+      "chapter": 3,
+      "question": "Vi phạm cơ bản trong CISG có vai trò gì?",
+      "options": [
+        "Là căn cứ tự động giải thể doanh nghiệp",
+        "Chỉ dùng trong tranh chấp lao động",
+        "Có ý nghĩa đối với quyền áp dụng một số biện pháp như tuyên bố hủy hợp đồng theo điều kiện Công ước",
+        "Là thuật ngữ đồng nghĩa với mọi sai sót nhỏ"
+      ],
+      "correctIndex": 2,
+      "explanation": "CISG có tiêu chí vi phạm cơ bản riêng; cần phân tích hậu quả nghiêm trọng theo Công ước và các điều kiện tương ứng.",
+      "legalBasis": "CISG 1980, Điều 25",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM040",
+      "chapter": 3,
+      "question": "Bất khả kháng và hardship có phải là một khái niệm đồng nhất?",
+      "options": [
+        "Có, luôn tạo cùng một hậu quả",
+        "Không; hardship liên quan thay đổi căn bản làm mất cân bằng hợp đồng theo quy tắc áp dụng, còn bất khả kháng tập trung vào trở ngại miễn trách nhiệm",
+        "Có, chỉ khác cách viết",
+        "Không khái niệm nào được sử dụng trong thương mại quốc tế"
+      ],
+      "correctIndex": 1,
+      "explanation": "Hai khái niệm có điều kiện và hậu quả khác nhau; phải xác định văn bản/điều khoản điều chỉnh.",
+      "legalBasis": "PICC 2016; hợp đồng và luật áp dụng",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM041",
+      "chapter": 3,
+      "question": "Điều khoản giới hạn trách nhiệm cần được đánh giá như thế nào?",
+      "options": [
+        "Mặc nhiên có hiệu lực tuyệt đối",
+        "Chỉ cần in đậm",
+        "Không cần xác định phạm vi thiệt hại",
+        "Kiểm tra cách hình thành, phạm vi, quy định bắt buộc và giới hạn pháp lý áp dụng"
+      ],
+      "correctIndex": 3,
+      "explanation": "Hiệu lực phụ thuộc nội dung, hoàn cảnh giao kết và các giới hạn của luật áp dụng.",
+      "legalBasis": "Luật Thương mại 2005; Bộ luật Dân sự 2015",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM042",
+      "chapter": 3,
+      "question": "Khi viện dẫn miễn trách nhiệm, bên viện dẫn nên làm gì?",
+      "options": [
+        "Thu thập chứng cứ về sự kiện, quan hệ nhân quả, tác động và thực hiện nghĩa vụ thông báo theo luật",
+        "Chỉ gửi tin nhắn không nêu lý do",
+        "Xóa hồ sơ giao dịch",
+        "Chờ đến khi tranh chấp kết thúc mới thông báo trong mọi trường hợp"
+      ],
+      "correctIndex": 0,
+      "explanation": "Nghĩa vụ chứng minh và thông báo có vai trò quan trọng khi viện dẫn miễn trách nhiệm.",
+      "legalBasis": "Luật Thương mại 2005, Điều 295",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM043",
+      "chapter": 3,
+      "question": "Theo cách tiếp cận hợp lý, thiệt hại được yêu cầu bồi thường phải được xử lý ra sao?",
+      "options": [
+        "Chấp nhận toàn bộ con số bên yêu cầu nêu",
+        "Không cần chứng từ",
+        "Đánh giá tính thực tế, trực tiếp, quan hệ nhân quả, khả năng dự liệu nếu luật áp dụng yêu cầu và nghĩa vụ hạn chế tổn thất",
+        "Chỉ dựa vào lời khai của bên vi phạm"
+      ],
+      "correctIndex": 2,
+      "explanation": "Phải đánh giá chứng cứ và các yếu tố pháp lý áp dụng, không mặc nhiên chấp nhận số tiền yêu cầu.",
+      "legalBasis": "Luật Thương mại 2005; CISG nếu áp dụng",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM044",
+      "chapter": 3,
+      "question": "Nguyên tắc favor contractus trong thảo luận về hợp đồng quốc tế thường nhấn mạnh điều gì?",
+      "options": [
+        "Ưu tiên tuyên bố mọi hợp đồng vô hiệu",
+        "Ưu tiên bảo tồn hợp đồng khi có thể theo điều kiện của nguồn luật áp dụng",
+        "Bỏ qua quyền của bên bị vi phạm",
+        "Chỉ bảo vệ bên bán"
+      ],
+      "correctIndex": 1,
+      "explanation": "Đây là định hướng ưu tiên duy trì hợp đồng khi đáp ứng điều kiện pháp lý, không phải nguyên tắc tuyệt đối.",
+      "legalBasis": "PICC 2016; CISG",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM045",
+      "chapter": 3,
+      "question": "Một bên bị giao hàng không phù hợp muốn yêu cầu bồi thường; chứng cứ nào hữu ích nhất?",
+      "options": [
+        "Chỉ ảnh quảng cáo của doanh nghiệp",
+        "Chỉ hợp đồng lao động của nhân viên",
+        "Chỉ thông tin mạng xã hội",
+        "Hợp đồng, tiêu chuẩn kỹ thuật, biên bản kiểm tra, thông báo khiếm khuyết và tài liệu chứng minh tổn thất"
+      ],
+      "correctIndex": 3,
+      "explanation": "Hồ sơ cần chứng minh nghĩa vụ, việc không phù hợp, thông báo và thiệt hại.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM046",
+      "chapter": 3,
+      "question": "Khi xác định chế tài phù hợp, cần tránh sai lầm nào?",
+      "options": [
+        "Áp dụng cùng một chế tài cho mọi loại vi phạm",
+        "Xác định mức độ vi phạm và căn cứ từng chế tài",
+        "Đọc điều khoản thông báo",
+        "Kiểm tra luật chuyên ngành"
+      ],
+      "correctIndex": 0,
+      "explanation": "Mỗi chế tài có điều kiện và hậu quả riêng; cần áp dụng theo dữ kiện và quy định.",
+      "legalBasis": "Luật Thương mại 2005",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM047",
+      "chapter": 4,
+      "question": "Bốn phương thức giải quyết tranh chấp thương mại trong nước thường được xem xét là gì?",
+      "options": [
+        "Hình sự, hành chính, kỷ luật, khiếu nại",
+        "Chỉ thương lượng và khởi kiện",
+        "Thương lượng, hòa giải, trọng tài thương mại và Tòa án",
+        "Chỉ trọng tài và hòa giải"
+      ],
+      "correctIndex": 2,
+      "explanation": "Đề cương học phần xác định bốn phương thức này; lựa chọn tùy thỏa thuận và điều kiện pháp lý.",
+      "legalBasis": "Đề cương học phần; pháp luật về giải quyết tranh chấp",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM048",
+      "chapter": 4,
+      "question": "Điều kiện nền tảng để giải quyết tranh chấp bằng trọng tài là gì?",
+      "options": [
+        "Chỉ cần một bên gửi email",
+        "Có thỏa thuận trọng tài hợp lệ và tranh chấp thuộc thẩm quyền",
+        "Phải có bản án của Tòa án trước",
+        "Trọng tài có thẩm quyền với mọi tranh chấp không cần thỏa thuận"
+      ],
+      "correctIndex": 1,
+      "explanation": "Thỏa thuận trọng tài và phạm vi thẩm quyền là các điều kiện cốt lõi; cần kiểm tra hiệu lực thỏa thuận.",
+      "legalBasis": "Luật Trọng tài thương mại 2010",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM049",
+      "chapter": 4,
+      "question": "Thỏa thuận trọng tài có thể được xác lập dưới hình thức nào?",
+      "options": [
+        "Chỉ bằng lời nói trong mọi trường hợp",
+        "Chỉ bằng văn bản công chứng",
+        "Chỉ sau khi phát sinh tranh chấp",
+        "Điều khoản trong hợp đồng hoặc thỏa thuận riêng dưới hình thức luật công nhận"
+      ],
+      "correctIndex": 3,
+      "explanation": "Luật quy định hình thức văn bản và một số phương thức trao đổi thông tin được coi là văn bản.",
+      "legalBasis": "Luật Trọng tài thương mại 2010, Điều 16",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM050",
+      "chapter": 4,
+      "question": "Nguyên tắc độc lập của thỏa thuận trọng tài có nghĩa là gì?",
+      "options": [
+        "Hiệu lực thỏa thuận trọng tài được xem xét độc lập với hợp đồng chính theo quy định",
+        "Hợp đồng chính vô hiệu thì thỏa thuận trọng tài luôn vô hiệu",
+        "Trọng tài không cần thỏa thuận",
+        "Tòa án không bao giờ có vai trò"
+      ],
+      "correctIndex": 0,
+      "explanation": "Luật Trọng tài thương mại quy định tính độc lập của thỏa thuận trọng tài với hợp đồng.",
+      "legalBasis": "Luật Trọng tài thương mại 2010, Điều 19",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM051",
+      "chapter": 4,
+      "question": "Phán quyết trọng tài thương mại trong nước về nguyên tắc có đặc điểm nào?",
+      "options": [
+        "Luôn được phúc thẩm bởi Tòa án",
+        "Chỉ có hiệu lực khi các bên cùng đồng ý sau đó",
+        "Có tính chung thẩm, nhưng có thể bị yêu cầu hủy theo căn cứ và thủ tục luật định",
+        "Không có giá trị pháp lý"
+      ],
+      "correctIndex": 2,
+      "explanation": "Tính chung thẩm không loại trừ thủ tục yêu cầu hủy theo các căn cứ giới hạn của luật.",
+      "legalBasis": "Luật Trọng tài thương mại 2010",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM052",
+      "chapter": 4,
+      "question": "Tòa án có vai trò gì đối với hoạt động trọng tài?",
+      "options": [
+        "Thay hội đồng trọng tài xét xử lại mọi vụ việc",
+        "Hỗ trợ và giám sát trong phạm vi luật quy định, gồm một số yêu cầu về biện pháp khẩn cấp, chứng cứ, hủy phán quyết",
+        "Không có bất kỳ vai trò nào",
+        "Luôn được sửa nội dung phán quyết"
+      ],
+      "correctIndex": 1,
+      "explanation": "Vai trò Tòa án được giới hạn theo luật; thủ tục hủy không phải xét xử phúc thẩm nội dung.",
+      "legalBasis": "Luật Trọng tài thương mại; Bộ luật Tố tụng dân sự",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM053",
+      "chapter": 4,
+      "question": "Hòa giải thương mại khác xét xử ở điểm nào?",
+      "options": [
+        "Hòa giải viên luôn ra phán quyết bắt buộc",
+        "Hòa giải không cần sự tham gia của các bên",
+        "Hòa giải viên đại diện một bên",
+        "Hòa giải viên hỗ trợ các bên tự nguyện tìm giải pháp, không tự mình áp đặt kết quả"
+      ],
+      "correctIndex": 3,
+      "explanation": "Bản chất hòa giải là hỗ trợ các bên đạt thỏa thuận tự nguyện.",
+      "legalBasis": "Nghị định 22/2017/NĐ-CP",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM054",
+      "chapter": 4,
+      "question": "Khi lựa chọn giữa trọng tài và Tòa án, yếu tố nào cần xem xét trước?",
+      "options": [
+        "Thỏa thuận giải quyết tranh chấp, thẩm quyền và hiệu lực điều khoản",
+        "Chỉ mức phí luật sư",
+        "Chỉ nơi đặt trụ sở bên bán",
+        "Chỉ ngôn ngữ quảng cáo"
+      ],
+      "correctIndex": 0,
+      "explanation": "Thỏa thuận giải quyết tranh chấp có thể quyết định phương thức và ảnh hưởng thẩm quyền.",
+      "legalBasis": "Luật Trọng tài thương mại; Bộ luật Tố tụng dân sự",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM055",
+      "chapter": 4,
+      "question": "Công ước New York 1958 tập trung vào vấn đề gì?",
+      "options": [
+        "Thành lập doanh nghiệp quốc tế",
+        "Điều kiện quảng cáo thương mại",
+        "Công nhận và thi hành phán quyết trọng tài nước ngoài",
+        "Thủ tục phá sản trong nước"
+      ],
+      "correctIndex": 2,
+      "explanation": "Công ước đặt nền tảng quốc tế về công nhận và thi hành phán quyết trọng tài nước ngoài trong phạm vi áp dụng.",
+      "legalBasis": "Công ước New York 1958",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM056",
+      "chapter": 4,
+      "question": "DSU của WTO điều chỉnh cơ chế tranh chấp nào?",
+      "options": [
+        "Tranh chấp giữa người lao động và doanh nghiệp",
+        "Tranh chấp giữa các thành viên WTO về nghĩa vụ thuộc các hiệp định liên quan",
+        "Mọi tranh chấp hợp đồng dân sự",
+        "Tranh chấp hôn nhân"
+      ],
+      "correctIndex": 1,
+      "explanation": "Cơ chế DSU là cơ chế giải quyết tranh chấp giữa các thành viên WTO, không phải cơ chế hợp đồng tư nhân.",
+      "legalBasis": "WTO Dispute Settlement Understanding",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM057",
+      "chapter": 4,
+      "question": "Khi tranh chấp hợp đồng có yếu tố nước ngoài và không có điều khoản chọn luật, cách tiếp cận nào đúng?",
+      "options": [
+        "Luôn áp dụng luật quốc tịch bên mua",
+        "Luôn áp dụng luật nơi giao hàng",
+        "Bỏ qua quy phạm xung đột",
+        "Xác định quy phạm xung đột và yếu tố kết nối theo pháp luật áp dụng"
+      ],
+      "correctIndex": 3,
+      "explanation": "Luật áp dụng phải được xác định theo quy phạm xung đột thích hợp và dữ kiện; không có quy tắc một yếu tố luôn quyết định.",
+      "legalBasis": "Bộ luật Dân sự 2015; điều ước liên quan",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM058",
+      "chapter": 4,
+      "question": "Căn cứ nào không nên được coi là lý do tự động để Tòa án hủy phán quyết trọng tài?",
+      "options": [
+        "Không đồng ý với cách đánh giá chứng cứ/nội dung phán quyết mà không thuộc căn cứ hủy luật định",
+        "Có căn cứ luật định về thỏa thuận trọng tài vô hiệu",
+        "Vi phạm nghiêm trọng thủ tục theo điều kiện luật định",
+        "Phán quyết thuộc trường hợp luật cho phép yêu cầu hủy"
+      ],
+      "correctIndex": 0,
+      "explanation": "Tòa án không xét xử lại nội dung như phúc thẩm; yêu cầu hủy phải dựa trên căn cứ luật định.",
+      "legalBasis": "Luật Trọng tài thương mại 2010",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM059",
+      "chapter": 4,
+      "question": "Khi một điều khoản chọn Tòa án mâu thuẫn với điều khoản trọng tài, cần làm gì?",
+      "options": [
+        "Mặc nhiên bỏ cả hai điều khoản",
+        "Chỉ chọn điều khoản được in đậm",
+        "Phân tích toàn văn hợp đồng, ý chí các bên, hiệu lực và quy tắc giải thích áp dụng",
+        "Chỉ hỏi bên soạn hợp đồng"
+      ],
+      "correctIndex": 2,
+      "explanation": "Cần giải thích điều khoản trên tổng thể và xác định thỏa thuận có hiệu lực, không suy đoán chỉ từ hình thức trình bày.",
+      "legalBasis": "Luật Trọng tài thương mại; Bộ luật Dân sự",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM060",
+      "chapter": 4,
+      "question": "Trong hòa giải thương mại, yếu tố nào là cốt lõi?",
+      "options": [
+        "Hòa giải viên có quyền cưỡng chế tài sản",
+        "Tự nguyện và trung lập, không áp đặt kết quả",
+        "Một bên phải thắng tuyệt đối",
+        "Không cần bảo mật"
+      ],
+      "correctIndex": 1,
+      "explanation": "Hòa giải dựa trên sự tự nguyện và vai trò hỗ trợ của người thứ ba trung lập theo pháp luật.",
+      "legalBasis": "Nghị định 22/2017/NĐ-CP",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM061",
+      "chapter": 4,
+      "question": "Công nhận bản án của Tòa án nước ngoài và công nhận phán quyết trọng tài nước ngoài có giống hoàn toàn nhau không?",
+      "options": [
+        "Có, đều theo cùng một điều khoản",
+        "Có, không cần xác định nguồn gốc",
+        "Có, luôn tự động thi hành",
+        "Không; chúng chịu cơ chế pháp lý và căn cứ xem xét khác nhau"
+      ],
+      "correctIndex": 3,
+      "explanation": "Phải phân biệt nguồn gốc quyết định và hệ thống quy tắc công nhận, thi hành tương ứng.",
+      "legalBasis": "Bộ luật Tố tụng dân sự; Công ước New York 1958",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM062",
+      "chapter": 4,
+      "question": "Một điều khoản giải quyết tranh chấp tốt nên xác định gì?",
+      "options": [
+        "Phương thức, cơ quan/tổ chức, quy tắc, địa điểm và các yếu tố cần thiết khác phù hợp giao dịch",
+        "Chỉ ghi “nếu có tranh chấp sẽ giải quyết theo pháp luật” trong mọi trường hợp",
+        "Chỉ ghi tên người bán",
+        "Không cần cân nhắc khả năng thi hành"
+      ],
+      "correctIndex": 0,
+      "explanation": "Điều khoản rõ giúp giảm tranh chấp về thẩm quyền và thủ tục; nội dung cần phù hợp giao dịch và luật áp dụng.",
+      "legalBasis": "Luật Trọng tài thương mại; pháp luật tố tụng",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM063",
+      "chapter": 4,
+      "question": "Khi đánh giá hiệu lực thỏa thuận hòa giải thành, nên phân biệt điều gì?",
+      "options": [
+        "Thỏa thuận thành luôn là bản án",
+        "Hòa giải viên có thể tự cưỡng chế thi hành",
+        "Thỏa thuận giữa các bên và cơ chế công nhận/thi hành theo pháp luật là hai vấn đề liên quan nhưng không đồng nhất",
+        "Không cần văn bản ghi nhận"
+      ],
+      "correctIndex": 2,
+      "explanation": "Hiệu lực ràng buộc của thỏa thuận và cơ chế cưỡng chế thi hành cần được phân tích riêng.",
+      "legalBasis": "Nghị định 22/2017/NĐ-CP; Bộ luật Tố tụng dân sự",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM064",
+      "chapter": 4,
+      "question": "Khi có yếu tố nước ngoài, lựa chọn phương thức giải quyết tranh chấp cần tính đến điều gì ngoài chi phí?",
+      "options": [
+        "Chỉ màu sắc hợp đồng",
+        "Luật áp dụng, thẩm quyền, tống đạt, bảo toàn chứng cứ và khả năng công nhận/thi hành ở nơi có tài sản",
+        "Chỉ số lượng trang hợp đồng",
+        "Chỉ nơi ký hợp đồng"
+      ],
+      "correctIndex": 1,
+      "explanation": "Khả năng thi hành và các yếu tố xuyên biên giới có thể quyết định hiệu quả thực tế của phương thức.",
+      "legalBasis": "Bộ luật Dân sự; Bộ luật Tố tụng dân sự; Công ước New York 1958",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM065",
+      "chapter": 4,
+      "question": "Mục đích của việc phân tích cấu trúc pháp lý tranh chấp là gì?",
+      "options": [
+        "Tìm cách trì hoãn giải quyết",
+        "Thay thế toàn bộ chứng cứ bằng nhận xét",
+        "Chỉ xác định bên có lỗi đạo đức",
+        "Xác định đúng yêu cầu, nghĩa vụ, chứng cứ, luật áp dụng và cơ chế giải quyết"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cấu trúc hóa tranh chấp giúp xác định vấn đề cần chứng minh và phương thức xử lý phù hợp.",
+      "legalBasis": "Kỹ năng phân tích pháp lý; pháp luật tố tụng liên quan",
+      "status": "draft-review"
+    },
+    {
+      "id": "TM066",
+      "chapter": 4,
+      "question": "Khi sử dụng tài liệu về pháp luật trọng tài trong học phần, nên làm gì?",
+      "options": [
+        "Đối chiếu văn bản gốc, văn bản hợp nhất/sửa đổi và tình trạng hiệu lực trước khi trích dẫn",
+        "Mặc nhiên cho rằng mọi tài liệu năm 2010 là bản cập nhật mới nhất",
+        "Chỉ đọc bài quảng cáo của trung tâm trọng tài",
+        "Bỏ qua điều khoản chuyển tiếp"
+      ],
+      "correctIndex": 0,
+      "explanation": "Phải xác minh tình trạng hiệu lực và văn bản liên quan; văn bản hợp nhất không tự thân là luật sửa đổi.",
+      "legalBasis": "Cơ sở dữ liệu văn bản pháp luật chính thức",
+      "status": "draft-review"
+    }
+  ]
+}
