@@ -2,12 +2,12 @@
  "v": 2,
  "ghi_chu": "Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",
  "salt": "hkY/fsp9kdC9LWSbdR+Jzg==",
- "updated": "2026-10-28T13:52:47.308Z",
+ "updated": "2026-10-28T13:53:09.604Z",
  "codes": [],
  "admin": {
-  "salt": "pdP5Gc2eiJZjRbnhp/KUsw==",
+  "salt": "FefLgI9RcDGB7SoP7zbuqw==",
   "iter": 250000,
-  "iv": "3x1BT/m023OthKUH",
-  "data": "MbURQ0WX+IIpkdjZby2YCtzPBgp0gEB5lBvpkiXuqnbqzWPZWwazOpwN1AjdvevTg5cgLzbDdZWpjt8W6PbsP/CF/YxvlY6nnctmE6o/2VaNW9RQ5IYvAhv+mH9C8JvxBwem98yNrlGD3Skcfsmf0BFtsWqLE353++ftb5cxTjT75A=="
+  "iv": "KWwJLMOSVZfaAGBq",
+  "data": "Rx3+emvRV46fVFF4KJ5vGhZY90e1f876YGsPr4gUM8EjFnso1tjmjp/S2O4cIVwYjR3Xkeg6OK68DVRRVDp1lmatgspE0geGztGklPnEMAszoKbuyBc6fn/3TC5wMU45Y5XWEwxxrtCBRa70Yu1Lb0ZdXeTExb/8/iacADDsnN06wA=="
  }
 }
