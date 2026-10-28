@@ -2,7 +2,7 @@
  "v": 2,
  "ghi_chu": "Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",
  "salt": "hkY/fsp9kdC9LWSbdR+Jzg==",
- "updated": "2026-10-28T13:48:53.296Z",
+ "updated": "2026-10-28T13:48:56.027Z",
  "codes": [
   {
    "h": "901af43855e968e732fe2c2148a4f465e6c1ccfaffed9ddecdb70b983bbe39ca",
@@ -27,20 +27,12 @@
     "*"
    ],
    "note": ""
-  },
-  {
-   "h": "abf32b8bc138cfa72f833fff0da17c761b6efde3d23992e26ee6929e26e6a70c",
-   "han": "2027-02-28",
-   "courses": [
-    "*"
-   ],
-   "note": ""
   }
  ],
  "admin": {
-  "salt": "5CQcv2JPGvT257StLRnldw==",
+  "salt": "h/bHlgqlJXcFV7Dec4uqkw==",
   "iter": 250000,
-  "iv": "YSwvms3iPfpB/Ye8",
-  "data": "UiexpmtFPL+5P0UXkZdghxeMnb45KFKJ8yJnXZg4ko5hftUyD4rT1NFWHFy18mRN82il0TG9lE6Dr4/UzDNedlneo3ZBLc0z6Xgh6VSO52fTdHjBADpzbjRCoL8ALvDfeWEtQpvxXr5csra1nyUhF3NtY7Q1/V/BYdsv+TF5YtHsTB9/WrUV1+u/agSrznJX+fPzlB+0MM9BNJLYOaHVimnNNC4ICoNhOPywCiHx9VU8oVLNl//fER7O/yf2GQKIZbFGQ02VvvxrpQctIMLdwa2kYHi/40FORm137lV8urAPtymb5Bf0zozR6PVOpEtajplsx9eGPrcOC/giitBPJmWgFHxbSqPhTTHgJgTS+bOEhJpnW6WKDetknVHqGJLqkqm7MH2lac2ethDMVr6bBj2IkZtIQCFP/+oZGLxAnGOl6OpUmT7AKPfglGaBRhE48TsH8MKhJRhLMKgUHkCttBbYbP18O3blZR6PG0leI+TqZgJ2Ef2SdsvaeSNxF/dSQhJ/AWplcuLuXI5x4MgvO4wKxrfR6U8t6lLqiaHdvFjaKS/pSsvB6jOxvNu+Kjw5yD4I"
+  "iv": "k2DC3OO6uddyW3Rh",
+  "data": "FIPstH8AzFWLDAoJs0TFCYJSI03l+gVeCnP8I2TTIiNKy+7LjuHhFmD3T8VJLOHHFExJvSh1bc4zYoSfFtvg6DpgQmAbHiV4aQjk62602glLkMgFz6IDSmeWF3uXpDFOHdVIot0ZVzkseo7CGoZ8q/An5s0Oeby0d1z5OPVxbHur/2hO5GkBXAlBdYQKMZ24ucSslXoLXpmNraH4bIb+rH67yy2mvmHlWe9PTMmPnHYoaBPbTZCpmdGO/EwZripalfYxDQLZpuGaG5pOWChi0KHHwdHJi3ghjcrLycuvZq+/DWeA2sOVlgAcAWhKGgse+CSeOkHe37pLvfModX3SRHmkPwFnX+tlwAyYgMTgvCwfAgWWYtGusGDtw6J1NmzFzlNxejxM6Apnf5EScd8jZNqzRiiMCSgELJg+yOpgmKkpGOT78YdQszt0LrNS"
  }
 }
