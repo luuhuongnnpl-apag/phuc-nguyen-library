@@ -403,16 +403,16 @@ function adminScopeLabel(xs){
 }
 function admin2HTML(){
   const owner=!!(DB&&isOwner), token=adminToken();
-  const head=\`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã truy cập</h2></div></div>\`;
-  if(DB&&!owner)return head+\`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã truy cập</div><p class="msg">Chỉ chủ trang mới được quản lý mã truy cập.</p></section></main>\`;
-  if(!owner&&!token)return head+\`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
+  const head=`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã truy cập</h2></div></div>`;
+  if(DB&&!owner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã truy cập</div><p class="msg">Chỉ chủ trang mới được quản lý mã truy cập.</p></section></main>`;
+  if(!owner&&!token)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
     <form id="ak-form" novalidate class="admin"><p class="msg">Nhập mật khẩu quản trị mới đã thiết lập cho Phúc Nguyên Library.</p>
     <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
     <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form>
-    <p class="msg">Nếu mật khẩu chưa được khởi tạo, cần chạy hàm <b>caiDatMatKhauQuanLy</b> trong Google Apps Script một lần, sau đó cập nhật deployment Web app.</p></section></main>\`;
+    <p class="msg">Nếu mật khẩu chưa được khởi tạo, cần chạy hàm <b>caiDatMatKhauQuanLy</b> trong Google Apps Script một lần, sau đó cập nhật deployment Web app.</p></section></main>`;
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
-  const courseChoices=COURSES.map(c=>\`<label class="admin-course"><input type="checkbox" class="c-course" value="\${esc(c.id)}" disabled><span>\${esc(c.name)}\${c.src?"":" (chưa có trang ôn tập)"}</span></label>\`).join("");
-  return head+\`<main class="wrap admin">
+  const courseChoices=COURSES.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}${c.src?"":" (chưa có trang ôn tập)"}</span></label>`).join("");
+  return head+`<main class="wrap admin">
   <section class="frame"><div class="ftitle">Cấp mã truy cập mới</div>
     <form id="c-form" novalidate class="admin">
       <p class="msg">Có thể để trống mã để hệ thống tự sinh mã ngẫu nhiên, hoặc tự đặt mã riêng. Mã mới chỉ có quyền vào những học phần được chọn.</p>
@@ -421,22 +421,22 @@ function admin2HTML(){
         <div><label class="lab" for="c-note">Tên lớp / ghi chú</label><input type="text" id="c-note" placeholder="K25D Luật Dân sự" maxlength="80"></div>
       </div>
       <div class="row">
-        <div><label class="lab" for="c-han">Có hiệu lực đến hết ngày</label><input type="date" id="c-han" value="\${def}" required></div>
+        <div><label class="lab" for="c-han">Có hiệu lực đến hết ngày</label><input type="date" id="c-han" value="${def}" required></div>
         <div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40" required></div>
       </div>
       <div class="field"><span class="lab">Phạm vi học phần</span>
         <label class="admin-course admin-all"><input type="checkbox" id="c-all-courses" checked><span><b>Tất cả học phần</b></span></label>
-        <div class="admin-course-grid" id="c-course-grid">\${courseChoices}</div>
+        <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div>
       </div>
       <div class="err" id="c-err" role="alert"></div>
       <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã mới</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
       <p class="msg">Một trình duyệt trên một thiết bị được tính là một lượt người dùng. Mã hết hạn sau ngày đã chọn; số người đã sử dụng được theo dõi tại máy chủ.</p>
     </form></section>
   <section class="frame"><div class="ftitle">Danh sách mã đã cấp</div>
-    <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại danh sách</button>\${owner?"":'<button class="btn" type="button" id="l-out">Đăng xuất quản trị</button>'}<span class="msg" id="l-msg" aria-live="polite"></span></div>
+    <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại danh sách</button>${owner?"":'<button class="btn" type="button" id="l-out">Đăng xuất quản trị</button>'}<span class="msg" id="l-msg" aria-live="polite"></span></div>
     <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Phạm vi học phần</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
     <p class="msg" style="margin-top:8px">Xóa mã sẽ thu hồi quyền truy cập của mã đó và xóa các lượt sử dụng gắn với mã. Các mã cũ được giữ nguyên; mã cũ chưa có phạm vi được xem là áp dụng cho tất cả học phần để tránh làm gián đoạn quyền truy cập hiện tại.</p>
-  </section></main>\`;
+  </section></main>`;
 }
 async function admin2Bind(){
   const af=$("#ak-form");
@@ -467,8 +467,8 @@ async function admin2Bind(){
       const t=todayISO();
       $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{
         const exp=t>x.han,full=x.used>=x.max;
-        return \`<tr><td><b>\${esc(x.code)}</b></td><td>\${esc(x.note||"")}</td><td>\${esc(adminScopeLabel(x.courses))}</td><td>\${fmtDate(x.han)}</td><td>\${x.used} / \${x.max}</td><td>\${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="\${esc(x.code)}" style="padding:5px 10px">Thu hồi</button></td></tr>\`;
-      }).join(""):\`<tr><td colspan="7" class="msg">Chưa có mã nào. Có thể cấp mã đầu tiên ở khung bên trên.</td></tr>\`;
+        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td><td>${x.used} / ${x.max}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Thu hồi</button></td></tr>`;
+      }).join(""):`<tr><td colspan="7" class="msg">Chưa có mã nào. Có thể cấp mã đầu tiên ở khung bên trên.</td></tr>`;
       $("#l-body").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
         if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để thu hồi";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Thu hồi";b.classList.remove("primary")}},4000);return}
         b.disabled=true;b.textContent="Đang thu hồi…";
