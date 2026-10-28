@@ -2,12 +2,93 @@
  "v": 2,
  "ghi_chu": "Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",
  "salt": "hkY/fsp9kdC9LWSbdR+Jzg==",
- "updated": "2026-10-28T13:45:05.535Z",
- "codes": [],
+ "updated": "2026-10-28T13:45:41.945Z",
+ "codes": [
+  {
+   "h": "901af43855e968e732fe2c2148a4f465e6c1ccfaffed9ddecdb70b983bbe39ca",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "fde1acf6b4991e5d1aa58ccb4f96b4f9abd7db37d9ae9d34d57668f0b16f4688",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "e5462b4fbc27fb471c2361487e037bd37c368e0e987bcf442f51d7cdefa7924e",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "abf32b8bc138cfa72f833fff0da17c761b6efde3d23992e26ee6929e26e6a70c",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "18ec1defdc6d6ca66d6eaab9c02ef277230305629a6a49659364d9395bdb7977",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "57802a32f3802dc653124b244875bdb5dad8f7a44e65f8ce3651f855b38280a0",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "0dc718766c447e4444b457a3699927a29c8e0b0dfc241d3013960a828cd4fd21",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "93e8acdae707aec277dc530a1088ff80a7e72772b686a0bb10a0d10cdfb29793",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "54c464a6e642bc495508a26848be333d787eb70d4c3957d472ea4dd8f89abe4c",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  },
+  {
+   "h": "2ca942de5659f45254a82cf69cb870a9abb43f3a1741bc9763f28bd6c883bcf4",
+   "han": "2027-02-28",
+   "courses": [
+    "*"
+   ],
+   "note": ""
+  }
+ ],
  "admin": {
-  "salt": "gQQN7cE+CkSPDS2ZM72SbQ==",
+  "salt": "oLrb2KT5gDqKZJPUIjdjSA==",
   "iter": 250000,
-  "iv": "o/PNZ8zW8Sddrzdz",
-  "data": "zWjnxh0oConf5uPQ/T72csiokZjmfn4NNRx3zg=="
+  "iv": "Ivqsa1Ec5lRztgT5",
+  "data": "2/fZJ1BEFM1jgf2yJnU0aF3f6WdWnSIgtDNZ6GPTzAGRoUDdCFQcc8Z8/5Z6Lpj54KtDs9lkPJNCzN6iHMntWuT7nZtUjSmol5RgCD68t10aN4SkPoHINNfYhxwqGdkxxivZgaW2zCqxaAXbRLutVhR2d710v//vbRtVWyYVe+GWcnGKocONous1CyfRhHwXxGrCdXmAlz+RaD5BnZ4bkhe6CB3leE5V4WoxIJ9MWdEUhlL6uW0PmTf0qUWpo1g67J73DHItS3+jy2n/8jHZaiNgGOV++dv78g6Fe9oua3qVVKaIlWyOIIoIirMlxP9glzAMQmWDv79b2FhCWwQhp+LgnVRuSVLKgGj58E9Hs6Y5rdh869czV6zhmx+6ONflPdPjXTi0wSQU2nM+iRZLRuYup3jewzwajZkubz0K3z2K9+gA6kD8/Nqu/KR/nCrdjGSkdlWmREK7280JufE4hzzFwbhsnZJvtm8X3o5EyRXt/wxat2yxBDj29QM+Fkl+4B3X87KzS09Hj1scXmu9UW+e8y5pMnCO9ztVTWIjAu9ohLobX5IY8PjSK0CWDK2qjj2WucMDkonAYczWRO419MvZyLfZUQR2Dzz1qXF9KzXmlgxaYjEUAaTjPmp+9c06DQLsf7v5dM98RN3pemWjvwarIIcZTGm5phwP41Dn+69qa28FvQ84b+g2sIeNEnPagzlUVoCVtQG9psOtA6qhlub8OpqrfpfPHcw8BSGmDFsJ/boPDbYdffHx/fp/zYX0qoiybjFtIK0cVU+Bhs1gy3fU/bR93FDyUqCUfNyD75j83FbiIoHUAGQ+kulobvDdw/kKITefLpfyHxZSwkrYGwclqGi7W25Ck2hUmChUv9gmPhFjl0PFdo01Bu7NiesbVD7nhfMGhb1fquiHOTREkmHc15UKUI+DSnFbJD273k3gjSFvZU9ikPXJDLpBPHc7ovCVC82ib2SmsNAueW0XiV1e7QiiuYtJxEn4cYE6xZnbQbQn4Ci3H12FsGDPVRoBe/QaxCqglEvZcAlAHjyfEFhrBkWOEf9g1l104CP34ai6Xq99RpRBRALJtVZJTGInKEbqAzG8DnJ1a9Z6s9+sF7UPFzOCZB7AxuUeEf1ugwPXZCfwpO7J+gs/lG9EU4T+DDp23YZcYEsdLZNnlXJkGtNTv1wNP4Td+6ZCgz5cmadPRjmgEv11Wk47CVSggodGbDkvkXUhiwN3alPubpH9syeBqtdGVi7oRiEgFTjPSfgo9eFszzr/T9cGYBPIZCJ9456PSbxsobjC0WMfB9E0k9ML7JfRn//EMvSJAl1QrSQS+vT3XsVcO1YFpb9oeGSRVXDmY86glrOteIMVn4BigU/w84ozv9MdSbdokTsqZ5e0yOcdXI8FRw=="
  }
 }
