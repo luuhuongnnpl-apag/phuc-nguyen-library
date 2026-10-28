@@ -58,14 +58,14 @@ function adminAllowed(login, env) {
 async function getSession(request, env) {
   const sid = cookieValue(request, COOKIE);
   if (!sid) return null;
-  const row = await env.DB.prepare("SELECT s.id, s.expires_at, u.github_login FROM sessions s JOIN admins u ON u.id=s.admin_id WHERE s.id=? AND s.expires_at>?")
+  const row = await env.DB.prepare("SELECT s.id, s.csrf_token, s.expires_at, u.github_login FROM sessions s JOIN admins u ON u.id=s.admin_id WHERE s.id=? AND s.expires_at>?")
     .bind(await sha256(sid), Math.floor(Date.now()/1000)).first();
   return row || null;
 }
 async function requireAdmin(request, env) {
   const session = await getSession(request, env);
   if (!session) return { error: json({ok:false, error:"unauthorized"}, 401) };
-  if (request.method !== "GET" && request.headers.get("X-PNLIB-CSRF") !== session.id.slice(0, 24)) {
+  if (request.method !== "GET" && request.headers.get("X-PNLIB-CSRF") !== session.csrf_token) {
     return { error: json({ok:false, error:"csrf"}, 403) };
   }
   return { session };
@@ -115,10 +115,10 @@ async function handle(request, env) {
     const csrf = randomHex(12);
     await env.DB.prepare("INSERT INTO sessions (id, admin_id, csrf_token, expires_at, created_at) VALUES (?,?,?,?,?)")
       .bind(sidHash, admin.id, csrf, Math.floor(Date.now()/1000)+SESSION_SECONDS, Math.floor(Date.now()/1000)).run();
-    return redirect(siteUrl(env, "/?admin=authenticated"), {
-      "Set-Cookie": cookieHeader(rawSid, SESSION_SECONDS) + ", " + `pnlib_oauth_state=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
-      "Cache-Control":"no-store"
-    });
+    const headers = new Headers({ Location: siteUrl(env, "/?admin=authenticated"), "Cache-Control":"no-store" });
+    headers.append("Set-Cookie", cookieHeader(rawSid, SESSION_SECONDS));
+    headers.append("Set-Cookie", "pnlib_oauth_state=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0");
+    return new Response(null, { status:302, headers });
   }
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     const session = await getSession(request, env);
@@ -128,8 +128,7 @@ async function handle(request, env) {
   if (url.pathname === "/api/me") {
     const session = await getSession(request, env);
     if (!session) return withCors(json({ok:true, authenticated:false}),request,env);
-    const full = await env.DB.prepare("SELECT s.csrf_token, u.github_login FROM sessions s JOIN admins u ON u.id=s.admin_id WHERE s.id=?").bind(session.id).first();
-    return withCors(json({ok:true,authenticated:true,login:full.github_login,csrf:full.csrf_token}),request,env);
+    return withCors(json({ok:true,authenticated:true,login:session.github_login,csrf:session.csrf_token}),request,env);
   }
   if (url.pathname === "/api/check" && request.method === "GET") {
     const code = (url.searchParams.get("code") || "").trim();
