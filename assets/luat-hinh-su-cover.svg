@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="440" viewBox="0 0 700 440">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263f59"/><stop offset="1" stop-color="#547b83"/></linearGradient></defs>
+<rect width="700" height="440" rx="24" fill="url(#g)"/>
+<g fill="none" stroke="#d6e3ee" stroke-width="4" opacity=".75"><path d="M350 142V180H145V220M350 180H350V220M350 180H555V220M145 280V308H240V330M350 280V330M555 280V308H460V330"/></g>
+<g fill="#fff" stroke="#d6e3ee" stroke-width="2"><rect x="165" y="42" width="370" height="100" rx="18"/><rect x="35" y="220" width="220" height="60" rx="14"/><rect x="240" y="220" width="220" height="60" rx="14"/><rect x="445" y="220" width="220" height="60" rx="14"/><rect x="125" y="330" width="230" height="55" rx="14"/><rect x="345" y="330" width="230" height="55" rx="14"/></g>
+<g fill="#263f59" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle"><text x="350" y="82" font-size="25">LUẬT HÌNH SỰ</text><text x="350" y="113" font-size="19">Mind map · Chương 2</text><text x="145" y="257" font-size="18">Tội phạm</text><text x="350" y="257" font-size="18">Cấu thành</text><text x="555" y="257" font-size="18">TNHS</text><text x="240" y="363" font-size="17">Lỗi · Giai đoạn</text><text x="460" y="363" font-size="17">Đồng phạm</text></g>
+</svg>
