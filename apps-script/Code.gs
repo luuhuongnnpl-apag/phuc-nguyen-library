@@ -136,6 +136,28 @@ function xuLy(p) {
         })
       };
     }
+    if (a === "admin_bulk_create") {
+      const prefix = chuanMa(p.prefix), count = parseInt(p.count, 10), han = String(p.han || ""), max = parseInt(p.max, 10);
+      const rawScope = String(p.courses || "").trim(), scope = phamVi_(rawScope);
+      if (!/^[A-Z0-9][A-Z0-9_-]{1,19}$/.test(prefix)) return { ok: false, why: "badprefix" };
+      if (!(count >= 1 && count <= 100)) return { ok: false, why: "badcount" };
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(han) || !validISODate_(han) || han < ngayISO(new Date())) return { ok: false, why: "badhan" };
+      if (!(max >= 1 && max <= 1000)) return { ok: false, why: "badmax" };
+      if (!rawScope || !scope.length || (rawScope !== "*" && scope.length !== rawScope.split(",").filter(Boolean).length)) return { ok: false, why: "badcourses" };
+      const codes = Array.from({length: count}, (_, i) => prefix + String(i + 1));
+      if (codes.some(ma => ma.length > 24 || !/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(ma))) return { ok: false, why: "badcode" };
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        const existing = new Set(dongDuLieu(SH_MA).map(r => chuanMa(r[0])));
+        if (codes.some(ma => existing.has(ma)) || new Set(codes).size !== codes.length) return { ok: false, why: "exists" };
+        const s = sh(SH_MA);
+        if (!s) return { ok: false, why: "sheet" };
+        const rows = codes.map(ma => [ma, String(p.note || "").slice(0, 80), han, max, new Date(), scope.includes("*") ? "*" : scope.join(",")]);
+        s.getRange(s.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+      } finally { lock.releaseLock(); }
+      return { ok: true, codes: codes, courses: scope };
+    }
     if (a === "admin_create") {
       let ma = chuanMa(p.code);
       const han = String(p.han || "");
@@ -144,7 +166,7 @@ function xuLy(p) {
       if (!rawScope) return { ok: false, why: "badcourses" };
       const scope = phamVi_(rawScope);
       if (!ma) ma = "PN-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12).toUpperCase();
-      if (!/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(ma)) return { ok: false, why: "badcode" };
+      if (!/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(ma)) return { ok: false, why: "badcode" };
       if (!/^\d{4}-\d{2}-\d{2}$/.test(han) || !validISODate_(han)) return { ok: false, why: "badhan" };
       if (han < ngayISO(new Date())) return { ok: false, why: "badhan" };
       if (!(max >= 1 && max <= 1000)) return { ok: false, why: "badmax" };
