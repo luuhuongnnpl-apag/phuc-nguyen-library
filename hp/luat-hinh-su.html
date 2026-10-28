@@ -1,4 +1,28 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><script id="PNLIB_COURSE_GATE">
+(function(){
+  const courseId="luat-hinh-su";
+  function today(){
+    const d=new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  let access=false;
+  try{
+    const raw=localStorage.getItem("pnlib-ma-lop");
+    const session=raw?JSON.parse(raw):null;
+    const scopes=session&&Array.isArray(session.courses)?session.courses:null;
+    access=!!(session&&session.code&&session.han&&today()<=session.han&&(!scopes||!scopes.length||scopes.includes("*")||scopes.includes(courseId)));
+  }catch(e){access=false}
+  if(!access){
+    document.documentElement.style.visibility="hidden";
+    if(window.top!==window.self){
+      window.parent.postMessage({pn:"home",course:courseId},"*");
+    }else{
+      window.location.replace("../index.html#"+courseId);
+    }
+  }
+})();
+</script>
+
 <title>Ôn tập Luật Hình sự</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
