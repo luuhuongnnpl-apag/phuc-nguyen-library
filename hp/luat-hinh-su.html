@@ -238,7 +238,7 @@ tr.tot td{font-weight:700;background:var(--bg)}
 <script>
 (function(){
 function decode(s){const k='TTDS-APAG-2026';const b=atob(s.trim());const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i)^k.charCodeAt(i%k.length);return JSON.parse(new TextDecoder().decode(u))}
-const D=decode(document.getElementById('data').textContent);const X=JSON.parse(document.getElementById('pn-extra-data').textContent);D.meta.asof=X.meta.asof;D.meta.draft=X.meta.draft;D.meta.lawnote=X.meta.lawnote;D.chapters.push(...X.chapters);D.chapters.sort((a,b)=>a.ch-b.ch);D.chapters.sort((a,b)=>a.ch-b.ch);X.items.forEach(q=>{if(q.th)q.k=q.th+'.'+q.k.split('.').pop()});D.items.push(...X.items);Object.assign(D.th,X.th);D.sets.push(...X.sets);D.kn.ch.push(...X.kn.ch);D.kn.updT=X.kn.updT;D.kn.upd=X.kn.upd;D.vb=X.vb;
+const D=decode(document.getElementById('data').textContent);const X=JSON.parse(document.getElementById('pn-extra-data').textContent);D.meta.asof=X.meta.asof;D.meta.draft=X.meta.draft;D.meta.lawnote=X.meta.lawnote;D.chapters.push(...X.chapters);D.chapters.sort((a,b)=>a.ch-b.ch);D.chapters.sort((a,b)=>a.ch-b.ch);X.items.forEach(q=>{if(q.th)q.k=q.th+'.'+q.k.split('.').pop()});D.items.push(...X.items);Object.assign(D.th,X.th);D.sets.push(...X.sets);D.kn.ch.push(...X.kn.ch);D.kn.ch.sort((a,b)=>parseInt(a.t)-parseInt(b.t));D.kn.updT=X.kn.updT;D.kn.upd=X.kn.upd;D.vb=X.vb;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=x=>(Math.round(x*100)/100).toString().replace('.',',');
@@ -342,15 +342,15 @@ ltList();thList();
  const show=(title,crumb,c,color,kids)=>{kp.style.setProperty('--bc',color);const li=a=>'<ul>'+a.map(x=>Array.isArray(x)?`<li><b>${esc(x[0])}</b>${li(x[1])}</li>`:`<li>${esc(x)}</li>`).join('')+'</ul>';kp.innerHTML=`<div class="crumb">${esc(crumb)}</div><h3>${esc(title)}</h3>${li(c)}${kids||''}`;
   kp.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const n=mm.querySelector(`[data-n="${b.dataset.go}"]`);n&&n.click()});
   if(window.matchMedia('(max-width:760px)').matches)kp.scrollIntoView({behavior:'smooth',block:'start'})};
- mm.innerHTML=`<button class="rootn" data-n="root">${esc(K.root)}</button><ul>${K.ch.map((c,i)=>`<li style="--bc:${col(i)}"><button class="mn chn" data-n="c${i}" aria-expanded="false">${esc(c.t)}</button><ul hidden>${c.k.map((k,j)=>`<li><button class="mn" data-n="c${i}k${j}">${esc(k.t)}</button></li>`).join('')}</ul></li>`).join('')}<li><button class="mn upd" data-n="upd">${esc(K.updT||'Điểm cập nhật so với slide')}</button></li></ul>`;
+ mm.innerHTML=`<button class="rootn" data-n="root">${esc(K.root)}</button><ul>${K.ch.map((c,i)=>`<li style="--bc:${col(i)}"><button class="mn chn" data-n="c${i}" aria-expanded="false">${esc(c.t)}</button><ul hidden>${(c.k||[]).map((k,j)=>`<li><button class="mn" data-n="c${i}k${j}">${esc(k.t)}</button></li>`).join('')}</ul></li>`).join('')}<li><button class="mn upd" data-n="upd">${esc(K.updT||'Điểm cập nhật so với slide')}</button></li></ul>`;
  const cur=b=>{mm.querySelectorAll('[aria-current]').forEach(x=>x.removeAttribute('aria-current'));b.setAttribute('aria-current','true')};
  mm.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const n=b.dataset.n;cur(b);
   if(n==='root'){show(K.root,'Học phần',[K.sub].concat(K.ch.map(c=>c.t)),'var(--navy)');return}
   if(n==='upd'){show(K.updT||'Điểm cập nhật so với slide','Ghi chú biên tập',K.upd,'var(--seal)');return}
   const m=n.match(/^c(\d+)(?:k(\d+))?$/),i=+m[1],c=K.ch[i];
   if(m[2]===undefined){const ul=b.nextElementSibling;const open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',open);ul.hidden=!open;
-   show(c.t,'Chương',c.c,col(i),`<div class="kids">${c.k.map((k,j)=>`<button class="mn" style="--bc:${col(i)}" data-go="c${i}k${j}">${esc(k.t)}</button>`).join('')}</div>`);return}
-  const k=c.k[+m[2]];const ul=mm.querySelector(`[data-n="c${i}"]`);ul.setAttribute('aria-expanded','true');ul.nextElementSibling.hidden=false;show(k.t,c.t,k.c,col(i))});
+   show(c.t,'Chương',c.c,col(i),`<div class="kids">${(c.k||[]).map((k,j)=>`<button class="mn" style="--bc:${col(i)}" data-go="c${i}k${j}">${esc(k.t)}</button>`).join('')}</div>`);return}
+  const k=(c.k||[])[+m[2]];const ul=mm.querySelector(`[data-n="c${i}"]`);ul.setAttribute('aria-expanded','true');ul.nextElementSibling.hidden=false;show(k.t,c.t,k.c,col(i))});
  mm.querySelector('[data-n="root"]').click();})();
 
 window.PN_renderList=renderList;
