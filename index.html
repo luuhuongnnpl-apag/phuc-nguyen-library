@@ -538,9 +538,13 @@ function needsCode(id){if(FREE.includes(id))return false;if(!session)return true
 function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
 function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
 function renderWho(){const w=$("#who");
-  if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';
-    $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")}}
-  else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>',$("#login").onclick=()=>{pending=null;showGate()}}
+  if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';}
+  else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>';
+  w.insertAdjacentHTML("beforeend",'<br><button type="button" id="manage-codes">Quản lý mã</button>');
+  if($("#logout"))$("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")};
+  if($("#login"))$("#login").onclick=()=>{pending=null;showGate()};
+  $("#manage-codes").onclick=()=>route("quan-ly-ma");
+}
 function enter(sv){session=sv;store.set(KEY,JSON.stringify(sv));hideGate();renderWho();
   if(pending){const t=pending;pending=null;route(t)}}
 $("#gate-x").onclick=()=>{pending=null;hideGate()};
