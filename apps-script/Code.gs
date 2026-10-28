@@ -85,6 +85,7 @@ function ngayISO(d) {
   return Utilities.formatDate(new Date(d), "Asia/Ho_Chi_Minh", "yyyy-MM-dd");
 }
 function hetHan(han) { return ngayISO(new Date()) > ngayISO(han); }
+function validISODate_(s) { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s || ""))) return false; const d = new Date(String(s) + "T12:00:00+07:00"); return !isNaN(d.getTime()) && Utilities.formatDate(d, "Asia/Ho_Chi_Minh", "yyyy-MM-dd") === s; }
 function demLuot(ma) { return dongDuLieu(SH_LUOT).filter(r => chuanMa(r[0]) === ma).length; }
 function phamVi_(raw) {
   if (raw === null || raw === undefined || String(raw).trim() === "" || String(raw).trim() === "*") return ["*"];
@@ -139,15 +140,15 @@ function xuLy(p) {
       let ma = chuanMa(p.code);
       const han = String(p.han || "");
       const max = parseInt(p.max, 10);
-      const scope = phamVi_(p.courses);
+      const rawScope = String(p.courses || "").trim();
+      if (!rawScope) return { ok: false, why: "badcourses" };
+      const scope = phamVi_(rawScope);
       if (!ma) ma = "PN-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12).toUpperCase();
       if (!/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(ma)) return { ok: false, why: "badcode" };
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(han) || ngayISO(new Date(han + "T00:00:00")) !== han) return { ok: false, why: "badhan" };
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(han) || !validISODate_(han)) return { ok: false, why: "badhan" };
       if (han < ngayISO(new Date())) return { ok: false, why: "badhan" };
       if (!(max >= 1 && max <= 1000)) return { ok: false, why: "badmax" };
-      if (!scope.length || (String(p.courses || "").trim() !== "*" && !Array.isArray(p.courses) && String(p.courses || "").trim() && scope.length !== String(p.courses).split(",").filter(Boolean).length)) {
-        return { ok: false, why: "badcourses" };
-      }
+      if (!scope.length || (rawScope !== "*" && scope.length !== rawScope.split(",").filter(Boolean).length)) return { ok: false, why: "badcourses" };
       const lock = LockService.getScriptLock();
       lock.waitLock(10000);
       try {
