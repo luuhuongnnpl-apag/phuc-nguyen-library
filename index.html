@@ -985,7 +985,7 @@ function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
   else m.innerHTML=tlHomeHTML(p.k);
   return true}
 
-window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home")route("home")});
+window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const target=String(e.data.course||"");route("home");if(target){pending=target;showGate("Nhập mã có quyền truy cập học phần này để tiếp tục.")}}});
 (async function boot(){
   session=loadSession();
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
