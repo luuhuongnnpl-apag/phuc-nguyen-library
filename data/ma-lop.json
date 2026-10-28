@@ -2,7 +2,7 @@
  "v": 2,
  "ghi_chu": "Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",
  "salt": "hkY/fsp9kdC9LWSbdR+Jzg==",
- "updated": "2026-10-28T13:48:58.806Z",
+ "updated": "2026-10-28T13:49:01.719Z",
  "codes": [
   {
    "h": "901af43855e968e732fe2c2148a4f465e6c1ccfaffed9ddecdb70b983bbe39ca",
@@ -11,20 +11,12 @@
     "*"
    ],
    "note": ""
-  },
-  {
-   "h": "fde1acf6b4991e5d1aa58ccb4f96b4f9abd7db37d9ae9d34d57668f0b16f4688",
-   "han": "2027-02-28",
-   "courses": [
-    "*"
-   ],
-   "note": ""
   }
  ],
  "admin": {
-  "salt": "eqxIlFd24Zb888PsWKVdtw==",
+  "salt": "+/T8GstIVJ6u3JnduvqXRg==",
   "iter": 250000,
-  "iv": "WWAs5zClm1Rv2Inv",
-  "data": "aq2vA+LDkO1k32pFMoAcfDBzNYSshsg1WWeJRMOQ2N9hJdBvKeoOSFzEGCxIZ7RGVin90AtD75pDZrDRocU6KKyFvCKqrpAZTzdJa04rA3Jqo/z57soWf9LA52rJx+UCRk+TN7ZR1cPYjJ+DPYmPt57mgn9qDXL8DqIUtdp+3im+SyzUhgRqgYNuEFII+9vY3aHSeTcpbBLjbrV0xTozLJRyKwbINFpncokZGvj/AVho1/0Zp70mXUl7jlWq4wMBuKeU7qdeHdPB3xEs6Hc/2YzIqtlCQuIIvu+cu0RNRkGhm4z9vzVC"
+  "iv": "bK1+T36Ekj3Qqljv",
+  "data": "gojFUGl2x72SwaB2E6aIFPsylgQGrzRO7GNVpQY8goF59wY2rSwm9vlrYqEdgAOANLmSWaeqXhWEqpZMrgisAdd90ujMF1l6MxzNobk/iywKxg7hdRUjUplQSQvIOto4MVnHJ/uQD9z5O6HLM7uV5cjzG2G6F8JdJnM2jk+2JIaP"
  }
 }
