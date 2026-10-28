@@ -342,14 +342,15 @@ async function luotDocs(){try{return (await DB.collection("luot").get()).docs.ma
 async function dbCall(p){const a=p.action;
   if(a==="check"){const code=norm(p.code);if(!okCode(code))return {ok:false,why:"notfound"};
     const m=await DB.doc("ma/"+code).get();if(!m.exists)return {ok:false,why:"notfound"};
-    const x=m.data()||{};if(todayISO()>x.han)return {ok:false,why:"expired",han:x.han};
-    if(!UID)return {ok:true,han:x.han,note:x.note,max:x.max};
+    const x=m.data()||{}, courses=Array.isArray(x.courses)&&x.courses.length?x.courses:["*"];if(todayISO()>x.han)return {ok:false,why:"expired",han:x.han};
+    if(p.course&& !courses.includes("*")&&!courses.includes(p.course))return {ok:false,why:"course",courses};
+    if(!UID)return {ok:true,han:x.han,note:x.note,max:x.max,courses};
     const mine=DB.doc("luot/"+UID);let codes=[];try{const s=await mine.get();if(s.exists)codes=((s.data()||{}).codes||[]).slice()}catch(e){}
-    if(codes.includes(code))return {ok:true,han:x.han,note:x.note,max:x.max};
+    if(codes.includes(code))return {ok:true,han:x.han,note:x.note,max:x.max,courses};
     const all=await luotDocs();const used=all?all.filter(d=>(d.x.codes||[]).includes(code)).length:0;
     if(all&&x.max&&used>=x.max)return {ok:false,why:"full",max:x.max};
     try{await mine.set({codes:codes.concat(code),t:Date.now()})}catch(e){}
-    return {ok:true,han:x.han,note:x.note,used:used+1,max:x.max}}
+    return {ok:true,han:x.han,note:x.note,used:used+1,max:x.max,courses}}
   if(a==="stats"){const all=await luotDocs();let fb=0;try{(await DB.collection("gopy").get()).docs.forEach(d=>{fb+=((d.data()||{}).items||[]).length})}catch(e){}
     return {ok:true,users:all?all.length:null,feedback:fb}}
   if(a==="fb_list"){const items=[];(await DB.collection("gopy").get()).docs.forEach(d=>((d.data()||{}).items||[]).forEach(x=>items.push(x)));
@@ -359,11 +360,11 @@ async function dbCall(p){const a=p.action;
     await ref.set({items});return {ok:true}}
   if(a.indexOf("admin_")===0){if(!isOwner)return {ok:false,why:"key"};
     if(a==="admin_list"){const ms=await DB.collection("ma").get(),all=await luotDocs()||[];
-      return {ok:true,items:ms.docs.map(d=>{const x=d.data()||{};return {code:d.id,note:x.note||"",han:x.han,max:x.max||0,used:all.filter(l=>(l.x.codes||[]).includes(d.id)).length,created:x.created||""}}).sort((u,v)=>String(u.created).localeCompare(String(v.created)))}}
+      return {ok:true,items:ms.docs.map(d=>{const x=d.data()||{};return {code:d.id,note:x.note||"",han:x.han,max:x.max||0,courses:Array.isArray(x.courses)&&x.courses.length?x.courses:["*"],used:all.filter(l=>(l.x.codes||[]).includes(d.id)).length,created:x.created||""}}).sort((u,v)=>String(u.created).localeCompare(String(v.created)))}}
     if(a==="admin_create"){const code=norm(p.code),max=parseInt(p.max,10);
       if(!okCode(code))return {ok:false,why:"badcode"};if(!/^\d{4}-\d{2}-\d{2}$/.test(p.han||""))return {ok:false,why:"badhan"};if(!(max>=1&&max<=1000))return {ok:false,why:"badmax"};
       if((await DB.doc("ma/"+code).get()).exists)return {ok:false,why:"exists"};
-      await DB.doc("ma/"+code).set({note:String(p.note||"").slice(0,80),han:p.han,max,created:new Date().toISOString()});return {ok:true}}
+      const courses=String(p.courses||"*")==="*"?["*"]:String(p.courses||"").split(",").filter(x=>COURSES.some(c=>c.id===x));if(!courses.length)return {ok:false,why:"badcourses"};await DB.doc("ma/"+code).set({note:String(p.note||"").slice(0,80),han:p.han,max,courses,created:new Date().toISOString()});return {ok:true,code,courses}}
     if(a==="admin_delete"){const code=norm(p.code);await DB.doc("ma/"+code).delete();
       const all=await luotDocs()||[];for(const d of all){const cs=d.x.codes||[];if(cs.includes(code)){const rest=cs.filter(c=>c!==code);
         if(rest.length)await DB.doc("luot/"+d.id).set(Object.assign({},d.x,{codes:rest}));else await DB.doc("luot/"+d.id).delete()}}
@@ -371,13 +372,13 @@ async function dbCall(p){const a=p.action;
   return {ok:false,why:"action"}}
 
 function legacyS(p){const d=new Date(2000+p.yy,p.mm,0);return {code:p.code,label:p.lop==="DEMO"?"Mã dùng thử":"Lớp "+p.lop,han:d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}}
-async function checkCode(raw){const code=norm(raw);
-  if(BE()){let r;try{r=await call({action:"check",code,dev:getDev()})}catch(e){return {ok:false,why:"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."}}
-    if(r&&r.ok)return {ok:true,s:{code,label:r.note?String(r.note):"Mã "+code,han:r.han}};
-    const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã dùng đủ "+(r&&r.max||"")+" người. Hỏi giảng viên."};
-    if(r&&r.why==="notfound"&&DB){const v=valid(code);if(v.ok)return {ok:true,s:legacyS(v.p)}}
+async function checkCode(raw,courseId){const code=norm(raw);
+  if(BE()){let r;try{r=await call({action:"check",code,dev:getDev(),course:courseId||""})}catch(e){return {ok:false,why:"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."}}
+    if(r&&r.ok)return {ok:true,s:{code,label:r.note?String(r.note):"Mã "+code,han:r.han,courses:Array.isArray(r.courses)&&r.courses.length?r.courses:["*"]}};
+    const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã dùng đủ "+(r&&r.max||"")+" người. Hỏi giảng viên.",course:"Mã này không có quyền truy cập học phần đang chọn. Hãy nhập mã phù hợp."};
+    if(r&&r.why==="notfound"&&DB){const v=valid(code);if(v.ok)return {ok:true,s:Object.assign(legacyS(v.p),{courses:["*"]})}}
     return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
-  const k=await maTinh(code);if(k){if(todayISO()>k.han)return {ok:false,expired:true,why:"Mã đã hết hạn ngày "+fmtDate(k.han)+". Hỏi giảng viên mã mới."};return {ok:true,s:{code,label:k.note?String(k.note):"Mã "+code,han:k.han}}}
+  const k=await maTinh(code);if(k){if(todayISO()>k.han)return {ok:false,expired:true,why:"Mã đã hết hạn ngày "+fmtDate(k.han)+". Hỏi giảng viên mã mới."};return {ok:true,s:{code,label:k.note?String(k.note):"Mã "+code,han:k.han,courses:["*"]}}}
   const v=valid(code);if(!v.ok)return /^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)&&!parse(code)?{ok:false,why:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên."}:v;return {ok:true,s:legacyS(v.p)}}
 /* Mã lớp giảng viên tạo, đồng bộ sang file codes.js (chỉ lưu dấu băm, không lộ mã) */
 async function bam(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
@@ -391,70 +392,120 @@ let stats=null,fbItems=null,fbLoadErr="";
 async function loadStats(){if(!BE())return;try{const r=await call({action:"stats"});if(r&&r.ok)stats=r}catch(e){}}
 async function loadFb(){if(!BE())return;try{const r=await call({action:"fb_list"});if(r&&r.ok){fbItems=r.items;fbLoadErr=""}}catch(e){fbLoadErr="Không tải được danh sách góp ý lúc này. Thử lại sau."}}
 
-/* ===== Quản lý mã lớp trên bản web (cần mật khẩu quản lý) ===== */
-const AKEY="pnlib-admin-key";
-function admin2HTML(){const k=DB?(isOwner?"owner":null):store.get(AKEY);const head=`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã lớp</h2></div></div>`;
-  if(!k&&DB)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã lớp</div><p class="msg">Chỉ giảng viên (chủ trang) mới quản lý được mã lớp.</p></section></main>`;
-  if(!k)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản lý</div>
-    <form id="ak-form" novalidate class="admin"><p class="msg">Nhập mật khẩu quản lý đã đặt trong Google Apps Script.</p>
-    <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản lý</label><input type="password" id="ak-in" autocomplete="current-password"></div></div>
-    <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form></section></main>`;
+/* ===== Quản lý mã truy cập — phiên quản trị máy chủ ===== */
+const AKEY="pnlib-admin-session";
+function adminToken(){
+  try{const x=JSON.parse(store.get(AKEY)||"null");return x&&x.token&&x.exp>Date.now()?x.token:""}catch(e){return ""}
+}
+function adminScopeLabel(xs){
+  if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return "Tất cả học phần";
+  return xs.map(id=>{const c=course(id);return c?c.name:id}).join(", ");
+}
+function admin2HTML(){
+  const owner=!!(DB&&isOwner), token=adminToken();
+  const head=`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã truy cập</h2></div></div>`;
+  if(DB&&!owner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã truy cập</div><p class="msg">Chỉ chủ trang mới được quản lý mã truy cập.</p></section></main>`;
+  if(!owner&&!token)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
+    <form id="ak-form" novalidate class="admin"><p class="msg">Nhập mật khẩu quản trị mới đã thiết lập cho Phúc Nguyên Library.</p>
+    <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
+    <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form>
+    <p class="msg">Nếu mật khẩu chưa được khởi tạo, cần chạy hàm <b>caiDatMatKhauQuanLy</b> trong Google Apps Script một lần, sau đó cập nhật deployment Web app.</p></section></main>`;
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  const courseChoices=COURSES.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}${c.src?"":" (chưa có trang ôn tập)"}</span></label>`).join("");
   return head+`<main class="wrap admin">
-  <section class="frame"><div class="ftitle">Tạo mã lớp</div>
-    <form id="c-form" novalidate class="admin"><p class="msg">Sếp tự đặt mã ngắn, ví dụ <b>K25D-LDS</b>. Mã giữ nguyên như đã gõ (chữ in hoa, không dấu, có thể có dấu gạch ngang).</p>
+  <section class="frame"><div class="ftitle">Cấp mã truy cập mới</div>
+    <form id="c-form" novalidate class="admin">
+      <p class="msg">Có thể để trống mã để hệ thống tự sinh mã ngẫu nhiên, hoặc tự đặt mã riêng. Mã mới chỉ có quyền vào những học phần được chọn.</p>
       <div class="row">
-        <div><label class="lab" for="c-code">Mã</label><input type="text" id="c-code" placeholder="K25D-LDS" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.05em"></div>
-        <div><label class="lab" for="c-note">Lớp / ghi chú</label><input type="text" id="c-note" placeholder="K25D Luật Dân sự" maxlength="80"></div>
+        <div><label class="lab" for="c-code">Mã truy cập (không bắt buộc)</label><input type="text" id="c-code" placeholder="Để trống để tự sinh mã" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
+        <div><label class="lab" for="c-note">Tên lớp / ghi chú</label><input type="text" id="c-note" placeholder="K25D Luật Dân sự" maxlength="80"></div>
       </div>
       <div class="row">
-        <div><label class="lab" for="c-han">Dùng đến hết ngày</label><input type="date" id="c-han" value="${def}"></div>
-        <div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40"></div>
+        <div><label class="lab" for="c-han">Có hiệu lực đến hết ngày</label><input type="date" id="c-han" value="${def}" required></div>
+        <div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40" required></div>
+      </div>
+      <div class="field"><span class="lab">Phạm vi học phần</span>
+        <label class="admin-course admin-all"><input type="checkbox" id="c-all-courses" checked><span><b>Tất cả học phần</b></span></label>
+        <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div>
       </div>
       <div class="err" id="c-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Tạo mã</button><span class="msg" id="c-msg"></span></div>
-      <p class="msg">Mỗi trình duyệt trên một thiết bị tính là một người. Nên đặt dư so với sĩ số lớp.</p></form></section>
-  <section class="frame"><div class="ftitle">Danh sách mã</div>
-    <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại</button>${DB?"":'<button class="btn" type="button" id="l-out">Đăng xuất quản lý</button>'}<span class="msg" id="l-msg"></span></div>
-    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="6" class="msg">Đang tải…</td></tr></tbody></table></div>
-    <p class="msg" style="margin-top:8px">Xóa mã sẽ xóa luôn các lượt đã dùng mã đó; sinh viên đang dùng mã sẽ phải nhập mã mới.</p></section></main>`}
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã mới</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
+      <p class="msg">Một trình duyệt trên một thiết bị được tính là một lượt người dùng. Mã hết hạn sau ngày đã chọn; số người đã sử dụng được theo dõi tại máy chủ.</p>
+    </form></section>
+  <section class="frame"><div class="ftitle">Danh sách mã đã cấp</div>
+    <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại danh sách</button>${owner?"":'<button class="btn" type="button" id="l-out">Đăng xuất quản trị</button>'}<span class="msg" id="l-msg" aria-live="polite"></span></div>
+    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Phạm vi học phần</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
+    <p class="msg" style="margin-top:8px">Xóa mã sẽ thu hồi quyền truy cập của mã đó và xóa các lượt sử dụng gắn với mã. Các mã cũ được giữ nguyên; mã cũ chưa có phạm vi được xem là áp dụng cho tất cả học phần để tránh làm gián đoạn quyền truy cập hiện tại.</p>
+  </section></main>`;
+}
 async function admin2Bind(){
   const af=$("#ak-form");
-  if(af){af.addEventListener("submit",async e=>{e.preventDefault();const k=$("#ak-in").value.trim();if(!k){$("#ak-err").textContent="Nhập mật khẩu quản lý.";return}
-      $("#ak-err").textContent="Đang kiểm tra…";
-      try{const r=await call({action:"admin_list",key:k});if(r&&r.ok){store.set(AKEY,k);route("quan-ly-ma")}else $("#ak-err").textContent=r&&r.why==="key"?"Mật khẩu không đúng.":"Chưa đăng nhập được, thử lại sau."}
-      catch(err){$("#ak-err").textContent="Không kết nối được máy chủ."}});
-    $("#ak-in").addEventListener("input",()=>$("#ak-err").textContent="");return}
-  const key=DB?"owner":store.get(AKEY);
-  async function list(){$("#l-msg").textContent="Đang tải…";
-    try{const r=await call({action:"admin_list",key});
-      if(!r||!r.ok){if(r&&r.why==="key"){store.del(AKEY);route("quan-ly-ma");return}$("#l-msg").textContent="Chưa tải được danh sách.";return}
-      $("#l-msg").textContent=r.items.length+" mã";const t=todayISO();
-      $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{const exp=t>x.han,full=x.used>=x.max;
-        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${fmtDate(x.han)}</td><td>${x.used} / ${x.max}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đã đủ người</span>':'<span class="ok">Đang dùng</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Xóa</button></td></tr>`}).join("")
-        :`<tr><td colspan="6" class="msg">Chưa có mã nào. Tạo mã đầu tiên ở khung bên trên.</td></tr>`;
+  if(af){
+    af.addEventListener("submit",async e=>{
+      e.preventDefault();const k=$("#ak-in").value;
+      if(!k){$("#ak-err").textContent="Nhập mật khẩu quản trị.";return}
+      $("#ak-err").textContent="Đang xác thực…";
+      try{
+        const r=await call({action:"admin_login",key:k});
+        if(r&&r.ok&&r.token){store.set(AKEY,JSON.stringify({token:r.token,exp:Date.now()+(r.expiresIn||14400)*1000}));route("quan-ly-ma")}
+        else $("#ak-err").textContent=r&&r.why==="setup"?"Mật khẩu quản trị chưa được khởi tạo ở máy chủ. Chạy hàm caiDatMatKhauQuanLy rồi cập nhật deployment.":r&&r.why==="key"?"Mật khẩu không đúng.":"Chưa đăng nhập được; kiểm tra kết nối máy chủ rồi thử lại.";
+      }catch(err){$("#ak-err").textContent="Không kết nối được máy chủ."}
+    });
+    $("#ak-in").addEventListener("input",()=>$("#ak-err").textContent="");
+    return;
+  }
+  const owner=!!(DB&&isOwner), token=adminToken(), auth=owner?"owner":token;
+  async function list(){
+    $("#l-msg").textContent="Đang tải…";
+    try{
+      const r=await call({action:"admin_list",token:auth});
+      if(!r||!r.ok){
+        if(r&&r.why==="key"){store.del(AKEY);route("quan-ly-ma");return}
+        $("#l-msg").textContent="Chưa tải được danh sách mã.";return;
+      }
+      $("#l-msg").textContent=r.items.length+" mã";
+      const t=todayISO();
+      $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{
+        const exp=t>x.han,full=x.used>=x.max;
+        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td><td>${x.used} / ${x.max}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Thu hồi</button></td></tr>`;
+      }).join(""):`<tr><td colspan="7" class="msg">Chưa có mã nào. Có thể cấp mã đầu tiên ở khung bên trên.</td></tr>`;
       $("#l-body").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
-        if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để xóa";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Xóa";b.classList.remove("primary")}},4000);return}
-        b.disabled=true;b.textContent="Đang xóa…";
-        try{const r=await call({action:"admin_delete",key,code:b.dataset.del});if(r&&r.ok){$("#l-msg").textContent="Đã xóa mã "+b.dataset.del;list()}else{b.textContent="Lỗi, thử lại";b.disabled=false}}
-        catch(e){b.textContent="Lỗi, thử lại";b.disabled=false}})}
-    catch(e){$("#l-msg").textContent="Không kết nối được máy chủ."}}
+        if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để thu hồi";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Thu hồi";b.classList.remove("primary")}},4000);return}
+        b.disabled=true;b.textContent="Đang thu hồi…";
+        try{const rr=await call({action:"admin_delete",token:auth,code:b.dataset.del});if(rr&&rr.ok){$("#l-msg").textContent="Đã thu hồi mã "+b.dataset.del;list()}else{b.textContent="Thử lại";b.disabled=false}}
+        catch(e){b.textContent="Lỗi kết nối";b.disabled=false}
+      });
+    }catch(e){$("#l-msg").textContent="Không kết nối được máy chủ."}
+  }
   $("#l-reload").onclick=list;
   if($("#l-out"))$("#l-out").onclick=()=>{store.del(AKEY);route("quan-ly-ma")};
-  $("#c-form").addEventListener("submit",async e=>{e.preventDefault();
-    const code=norm($("#c-code").value),note=$("#c-note").value.trim(),han=$("#c-han").value,max=parseInt($("#c-max").value,10);
-    if(!/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, dấu gạch ngang.";return}
+  $("#c-all-courses").addEventListener("change",()=>{
+    document.querySelectorAll(".c-course").forEach(x=>{x.disabled=$("#c-all-courses").checked;if(x.disabled)x.checked=false});
+  });
+  $("#c-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    let code=norm($("#c-code").value);
+    if(!code){const bytes=crypto.getRandomValues(new Uint8Array(6));code="PN-"+Array.from(bytes).map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase()}
+    const note=$("#c-note").value.trim(),han=$("#c-han").value,max=parseInt($("#c-max").value,10);
+    const all=$("#c-all-courses").checked;
+    const selected=[...document.querySelectorAll(".c-course:checked")].map(x=>x.value);
+    const courses=all?"*":selected.join(",");
+    if(!/^[A-Z0-9][A-Z0-9-]{2,23}$/.test(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số và dấu gạch ngang.";return}
     if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
-    if(!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa từ 1 đến 1000.";return}
-    $("#c-err").textContent="";$("#c-msg").textContent="Đang tạo…";
-    try{const r=await call({action:"admin_create",key,code,note,han,max});
-      if(r&&r.ok){$("#c-msg").textContent="Đã tạo mã "+code+".";$("#c-code").value="";$("#c-note").value="";list()}
-      else{$("#c-msg").textContent="";$("#c-err").textContent=({exists:"Mã này đã có, hãy đặt mã khác.",badcode:"Mã chưa đúng dạng.",badhan:"Ngày hết hạn chưa đúng.",badmax:"Số người chưa đúng.",key:"Phiên quản lý đã hết, đăng nhập lại."})[r&&r.why]||"Chưa tạo được mã."}}
-    catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Không kết nối được máy chủ."}});
+    if(!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
+    if(!all&&!selected.length){$("#c-err").textContent="Chọn ít nhất một học phần hoặc bật Tất cả học phần.";return}
+    $("#c-err").textContent="";$("#c-msg").textContent="Đang cấp mã…";
+    try{
+      const r=await call({action:"admin_create",token:auth,code,note,han,max,courses});
+      if(r&&r.ok){$("#c-msg").textContent="Đã cấp mã "+(r.code||code)+".";$("#c-code").value="";$("#c-note").value="";list()}
+      else{$("#c-msg").textContent="";$("#c-err").textContent=({exists:"Mã này đã tồn tại; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Phiên quản trị đã hết hạn; đăng nhập lại."})[r&&r.why]||"Chưa cấp được mã."}
+    }catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Không kết nối được máy chủ."}
+  });
   ["c-code","c-note","c-han","c-max"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#c-err").textContent=""));
-  list()}
+  list();
+}
 
-/* Trang góp ý khi dùng máy chủ */
+/* Trang góp ý khi dùng máy chủ *//* Trang góp ý khi dùng máy chủ */
 function fbApiHTML(){
   const opts=['<option value="Chung">Góp ý chung</option>'].concat(COURSES.filter(c=>c.src).map(c=>`<option>${esc(c.name)}</option>`)).join("");
   const list=fbItems==null?`<div class="info">${fbLoadErr||"Đang tải góp ý…"}</div>`:(fbItems.length?`<div class="fb-list">${fbItems.slice().reverse().map(r=>`<div class="fb-item"><div class="m">${esc(fmtDate(r.time))}${r.course?" · "+esc(r.course):""}</div><p>${esc(r.text)}</p></div>`).join("")}</div>`:`<div class="info">Chưa có góp ý nào. Hãy là người đầu tiên gửi góp ý.</div>`);
@@ -482,13 +533,18 @@ function fbApiBind(){
 /* Trang chủ mở tự do; lần đầu bấm vào nội dung (học phần, tài liệu, chương) mới hỏi mã */
 const FREE=["home","gop-y","quan-ly-ma"];
 let pending=null,gateReturn=null,expiredMsg="";
-function needsCode(id){return !FREE.includes(id)}
+function scopeForRoute(id){const p=tlParse(id);if(p)return p.k;return course(id)?id:""}
+function needsCode(id){if(FREE.includes(id))return false;if(!session)return true;const xs=session.courses;if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return false;const target=scopeForRoute(id);return !!target&&!xs.includes(target)}
 function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
 function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
 function renderWho(){const w=$("#who");
-  if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';
-    $("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")}}
-  else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>',$("#login").onclick=()=>{pending=null;showGate()}}
+  if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';}
+  else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>';
+  w.insertAdjacentHTML("beforeend",'<br><button type="button" id="manage-codes">Quản lý mã</button>');
+  if($("#logout"))$("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")};
+  if($("#login"))$("#login").onclick=()=>{pending=null;showGate()};
+  $("#manage-codes").onclick=()=>route("quan-ly-ma");
+}
 function enter(sv){session=sv;store.set(KEY,JSON.stringify(sv));hideGate();renderWho();
   if(pending){const t=pending;pending=null;route(t)}}
 $("#gate-x").onclick=()=>{pending=null;hideGate()};
@@ -497,19 +553,19 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#gate").hidden)
 $("#gate-form").addEventListener("submit",async e=>{e.preventDefault();
   if(!$("#code-in").value.trim()){$("#code-err").textContent="Nhập mã lớp trước khi vào.";return}
   const btn=$("#gate-form button[type=submit]");btn.disabled=true;const old=btn.textContent;btn.textContent="Đang kiểm tra…";
-  const v=await checkCode($("#code-in").value);btn.disabled=false;btn.textContent=old;
+  const p=tlParse(pending||"");const target=p?p.k:(course(pending)?pending:"");
+  const v=await checkCode($("#code-in").value,target);btn.disabled=false;btn.textContent=old;
   if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.s)});
 $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 
 let cur="home";
-function route(id){if(needsCode(id)&&!session){pending=id;showGate(expiredMsg);return}
+function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"&&BE()){m.innerHTML=admin2HTML();admin2Bind()}
-  else if(id==="quan-ly-ma"&&isOwner){m.innerHTML=adminHTML();bindAdmin()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
     if(c.src&&c.skin){document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${c.src}" title="Ôn tập ${c.name}"></iframe></section>`}
@@ -577,30 +633,7 @@ async function loadVisits(){ if(!CONFIG.goatcounter)return;
   try{const s=document.createElement("script");s.async=true;s.dataset.goatcounter=`https://${CONFIG.goatcounter}.goatcounter.com/count`;s.src="https://gc.zgo.at/count.js";document.head.appendChild(s);
     const r=await fetch(`https://${CONFIG.goatcounter}.goatcounter.com/counter/TOTAL.json`);const j=await r.json();visits=parseInt(String(j.count).replace(/\D/g,""),10)}catch(e){}}
 
-/* ===== Quản lý mã lớp (chỉ hiện cho chủ trang khi mở trên Claude) ===== */
-let issued=[];try{issued=JSON.parse(store.get("pnlib-ma-da-cap")||"[]")}catch(e){issued=[]}
-function adminHTML(){const n=new Date(),d=new Date(n.getFullYear(),n.getMonth()+4,1),def=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-  return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã lớp</h2></div></div>
-  <main class="wrap admin"><section class="frame"><div class="ftitle">Tạo mã cho lớp</div>
-    <form id="gen-form" novalidate class="admin"><p class="msg">Mã dạng LỚP-MMYY-KKK: MMYY là tháng hết hạn, KKK là mã kiểm tra. Mã dùng được ngay trên mọi bản của web.</p>
-      <div class="row"><div><label class="lab" for="g-lop">Tên lớp (không dấu)</label><input type="text" id="g-lop" placeholder="K24LUAT1" maxlength="12"></div><div><label class="lab" for="g-han">Dùng đến hết tháng</label><input type="month" id="g-han" value="${def}"></div></div>
-      <div class="err" id="g-err" role="alert"></div><div><button class="btn primary" type="submit">Tạo mã</button></div>
-      <div id="g-res" hidden><div class="lab">Mã của lớp</div><div class="big" id="g-code"></div><div class="msg" id="g-han-t"></div><button class="btn" type="button" id="g-copy" style="margin-top:8px">Sao chép mã</button></div></form></section>
-  <section class="frame"><div class="ftitle">Kiểm tra mã</div><input type="text" id="k-in" placeholder="K24LUAT1-0127-CCQ" autocomplete="off" spellcheck="false"><div id="k-out" class="msg" aria-live="polite" style="margin-top:8px"></div></section>
-  <section class="frame"><div class="ftitle">Mã đã tạo trên máy này</div><div class="tbl"><table><thead><tr><th>Lớp</th><th>Mã</th><th>Hạn dùng</th><th>Trạng thái</th></tr></thead><tbody id="iss"></tbody></table></div></section></main>`}
-function renderIssued(){const b=$("#iss");if(!b)return;b.innerHTML=issued.length?issued.map(c=>{const p=parse(c),v=valid(c);return `<tr><td>${esc(p.lop)}</td><td><b>${esc(c)}</b></td><td>${hanText(p.mm,p.yy)}</td><td>${v.ok?'<span class="ok">Còn hạn</span>':'<span class="bad">Hết hạn</span>'}</td></tr>`}).join(""):`<tr><td colspan="4" class="msg">Chưa tạo mã nào.</td></tr>`}
-function bindAdmin(){renderIssued();
-  $("#gen-form").addEventListener("submit",e=>{e.preventDefault();const lop=norm($("#g-lop").value).replace(/-/g,""),m=/^(\d{4})-(\d{2})$/.exec($("#g-han").value);
-    if(!/^[A-Z0-9]{2,12}$/.test(lop)){$("#g-err").textContent="Tên lớp gồm 2–12 chữ cái hoặc chữ số, không dấu, không khoảng trắng.";return}
-    if(!m){$("#g-err").textContent="Chọn tháng hết hạn.";return}
-    const yy=+m[1]-2000,mm=+m[2];if(new Date()>=endOf(mm,yy)){$("#g-err").textContent="Tháng hết hạn phải từ tháng này trở đi.";return}
-    $("#g-err").textContent="";const mmyy=String(mm).padStart(2,"0")+String(yy).padStart(2,"0"),code=lop+"-"+mmyy+"-"+chk(lop,mmyy);
-    $("#g-code").textContent=code;$("#g-han-t").textContent="Dùng được đến hết ngày "+hanText(mm,yy)+".";$("#g-res").hidden=false;
-    if(!issued.includes(code)){issued.unshift(code);store.set("pnlib-ma-da-cap",JSON.stringify(issued.slice(0,200)))}renderIssued()});
-  ["g-lop","g-han"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#g-err").textContent=""));
-  $("#g-copy").onclick=()=>navigator.clipboard.writeText($("#g-code").textContent).then(()=>$("#g-han-t").textContent="Đã sao chép mã.",()=>$("#g-han-t").textContent="Trình duyệt chặn sao chép, bôi đen mã để sao chép.");
-  $("#k-in").addEventListener("input",()=>{const v=$("#k-in").value.trim();if(!v){$("#k-out").textContent="";return}const r=valid(v),p=parse(v);
-    $("#k-out").innerHTML=r.ok?`<span class="ok">Hợp lệ</span> · lớp ${esc(r.p.lop)} · dùng đến ${hanText(r.p.mm,r.p.yy)}`:(r.expired?`<span class="bad">Hết hạn</span> · lớp ${esc(p.lop)}`:`<span class="bad">Không hợp lệ.</span> ${esc(r.why)}`)})}
+/* ===== Bộ quản lý mã cũ đã được thay bằng công cụ quản trị máy chủ ===== */
 
 /* ===== TÀI LIỆU HỌC TẬP: LUẬT DÂN SỰ ===== */
 /* Sơ đồ: {h1,h2,r?,c:[...]}; nút: {t, d?, c?, l?} — l: "row" | "stack" | "cols2" | "cols3" */
@@ -973,5 +1006,6 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home")route("home"
 })();
 </script>
 
+<link rel="stylesheet" href="assets/pnlib-standard.css">
 </body>
 </html>
