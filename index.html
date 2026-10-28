@@ -264,15 +264,15 @@ ul.mm-d li{margin:1px 0}
   <div id="main"></div>
 </div>
 
-<script src="codes.js"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
-  api:"https://script.google.com/macros/s/AKfycby4m-p0WjFp0hiIHTRQtc30Rh_RB835tVwUxpg8gVfFAkEYkzMaLIGwVQ3kdIIcU7RE/exec",              /* Link Ứng dụng web Google Apps Script (kết thúc bằng /exec): mã lớp, lượt truy cập, góp ý */
   formUrl:"",          /* Link Google Form "Gửi góp ý" */
   responsesCsvUrl:"",  /* Link CSV của trang tính câu trả lời (Xuất bản lên web, định dạng CSV) */
   goatcounter:""       /* Tên mã GoatCounter, ví dụ "phucnguyen" */
 };
+/* Nơi lưu danh sách mã lớp trên GitHub (trang Quản lý mã lớp ghi vào file này) */
+const GH={repo:"luuhuongnnpl-apag/phuc-nguyen-library",branch:"main",path:"data/ma-lop.json"};
 const COURSES=[
   {id:"luat-dan-su",name:"Luật Dân sự",c:"#6fa8d6",src:"hp/luat-dan-su.html",skin:true},
   {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",c:"#3d7fc1",src:"hp/to-tung-dan-su.html",skin:true},
@@ -301,20 +301,8 @@ const ALL=[...COURSES,{id:"dam-phan-hop-dong",name:"Đàm phán, soạn thảo h
 const course=id=>ALL.find(c=>c.id===id);
 const book=c=>`<svg class="book" viewBox="0 0 30 24" aria-hidden="true"><path d="M3 5 L15 2 L27 5 L27 19 L15 22 L3 19 Z" fill="${c}"/><path d="M15 2 L15 22" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/><path d="M5 18 L15 20.5 L25 18" stroke="#fff" stroke-width="1.4" fill="none" opacity=".85"/><path d="M3 5 L15 2 L27 5 L15 8 Z" fill="#fff" opacity=".35"/></svg>`;
 
-/* ===== Mã lớp: LỚP-MMYY-KKK (MMYY: tháng hết hạn; KKK: mã kiểm tra) ===== */
-const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",SALT="PN-LIB-2026",REVOKED=[];
-function fnv(s){let h=0x811c9dc5;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,0x01000193)>>>0}return h}
-function chk(l,b){let h=fnv(SALT+"|"+l+"|"+b),o="";for(let i=0;i<3;i++){o+=A[h%32];h=Math.floor(h/32)}return o}
-function norm(s){return String(s||"").toUpperCase().replace(/\s+/g,"").replace(/[–—_]/g,"-")}
-function endOf(mm,yy){return new Date(2000+yy,mm,1)}
-function hanText(mm,yy){const d=new Date(2000+yy,mm,0);return d.getDate()+"/"+String(mm).padStart(2,"0")+"/"+(2000+yy)}
-function parse(code){const m=/^([A-Z0-9]{2,12})-(\d{2})(\d{2})-([A-Z0-9]{3})$/.exec(norm(code));if(!m)return null;const mm=+m[2],yy=+m[3];if(mm<1||mm>12)return null;return {lop:m[1],mmyy:m[2]+m[3],mm,yy,ck:m[4],code:m[1]+"-"+m[2]+m[3]+"-"+m[4]}}
-function valid(code){const p=parse(code);
-  if(!p)return {ok:false,why:"Mã chưa đúng dạng, ví dụ K24LUAT1-0127-CCQ."};
-  if(chk(p.lop,p.mmyy)!==p.ck)return {ok:false,why:"Mã không đúng. Kiểm tra lại từng ký tự hoặc hỏi giảng viên."};
-  if(REVOKED.includes(p.code))return {ok:false,why:"Mã này đã bị khóa. Hỏi giảng viên mã mới của lớp."};
-  if(new Date()>=endOf(p.mm,p.yy))return {ok:false,expired:true,why:"Mã của lớp đã hết hạn ngày "+hanText(p.mm,p.yy)+". Hỏi giảng viên mã mới."};
-  return {ok:true,p}}
+/* ===== Chuẩn hóa mã lớp ===== */
+function norm(s){return String(s||"").toUpperCase().replace(/\s+/g,"").replace(/[–—]/g,"-")}
 
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const KEY="pnlib-ma-lop";
@@ -322,21 +310,14 @@ let session=null,isOwner=false,visits=null,feedback=null,fbErr="",cmt=null;
 const onClaude=!!(window.claude&&window.claude.use);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-/* ===== Máy chủ mã lớp (Google Apps Script) — chỉ dùng trên bản web GitHub ===== */
-const API=onClaude?"":(CONFIG.api||"");
+/* ===== Tiện ích ngày tháng ===== */
 const pad2=n=>String(n).padStart(2,"0");
 function fmtDate(iso){const p=String(iso||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:iso}
 function todayISO(){const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
-function getDev(){let d=store.get("pnlib-dev");if(!d){d=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));store.set("pnlib-dev",d)}return d}
-function jsonp(params){return new Promise((res,rej)=>{const cb="pncb"+Math.random().toString(36).slice(2),s=document.createElement("script");
-  const t=setTimeout(()=>{done();rej(new Error("timeout"))},20000);
-  function done(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove()}
-  window[cb]=d=>{done();res(d)};s.onerror=()=>{done();rej(new Error("net"))};
-  s.src=API+"?"+new URLSearchParams(Object.assign({},params,{callback:cb})).toString();document.head.appendChild(s)})}
 /* ===== Kho dữ liệu trên Claude: mã lớp, lượt dùng, góp ý (thay cho máy chủ Google khi mở trên Claude) ===== */
-let DB=null,UID=null;
-const BE=()=>!!(API||DB);
-function call(params){return API?jsonp(params):(DB?dbCall(params):Promise.reject(new Error("nobackend")))}
+let DB=null,UID=null,dbReadyRes;const dbReady=new Promise(r=>dbReadyRes=r);
+const BE=()=>!!DB;
+function call(params){return DB?dbCall(params):Promise.reject(new Error("nobackend"))}
 const okCode=c=>/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(c);
 async function luotDocs(){try{return (await DB.collection("luot").get()).docs.map(d=>({id:d.id,x:d.data()||{}}))}catch(e){return null}}
 async function dbCall(p){const a=p.action;
@@ -371,180 +352,242 @@ async function dbCall(p){const a=p.action;
       return {ok:true}}}
   return {ok:false,why:"action"}}
 
-function legacyS(p){const d=new Date(2000+p.yy,p.mm,0);return {code:p.code,label:p.lop==="DEMO"?"Mã dùng thử":"Lớp "+p.lop,han:d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}}
+/* ===== Mã lớp trên bản web: đọc data/ma-lop.json (chỉ chứa dấu băm của mã) ===== */
+let MA=null;
+async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+const codeHash=(salt,code)=>sha("PNLIB2|"+salt+"|"+norm(code));
+async function loadMa(force){if(MA&&!force)return MA;const r=await fetch(GH.path+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error("ma");MA=await r.json();return MA}
+async function staticCheck(code,courseId){const d=await loadMa();const h=await codeHash(d.salt,code);const k=(d.codes||[]).find(x=>x.h===h);
+  if(!k)return {ok:false,why:"notfound"};if(todayISO()>k.han)return {ok:false,why:"expired",han:k.han};
+  const cs=Array.isArray(k.courses)&&k.courses.length?k.courses:["*"];
+  if(courseId&&!cs.includes("*")&&!cs.includes(courseId))return {ok:false,why:"course",courses:cs};
+  return {ok:true,han:k.han,note:k.note,courses:cs}}
 async function checkCode(raw,courseId){const code=norm(raw);
-  if(BE()){let r;try{r=await call({action:"check",code,dev:getDev(),course:courseId||""})}catch(e){return {ok:false,why:"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."}}
-    if(r&&r.ok)return {ok:true,s:{code,label:r.note?String(r.note):"Mã "+code,han:r.han,courses:Array.isArray(r.courses)&&r.courses.length?r.courses:["*"]}};
-    const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã dùng đủ "+(r&&r.max||"")+" người. Hỏi giảng viên.",course:"Mã này không có quyền truy cập học phần đang chọn. Hãy nhập mã phù hợp."};
-    if(r&&r.why==="notfound"&&DB){const v=valid(code);if(v.ok)return {ok:true,s:Object.assign(legacyS(v.p),{courses:["*"]})}}
-    return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
-  const k=await maTinh(code);if(k){if(todayISO()>k.han)return {ok:false,expired:true,why:"Mã đã hết hạn ngày "+fmtDate(k.han)+". Hỏi giảng viên mã mới."};return {ok:true,s:{code,label:k.note?String(k.note):"Mã "+code,han:k.han,courses:["*"]}}}
-  const v=valid(code);if(!v.ok)return /^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code)&&!parse(code)?{ok:false,why:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên."}:v;return {ok:true,s:legacyS(v.p)}}
-/* Mã lớp giảng viên tạo, đồng bộ sang file codes.js (chỉ lưu dấu băm, không lộ mã) */
-async function bam(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
-async function maTinh(code){const L=window.PN_CODES||[];if(!L.length||!(window.crypto&&crypto.subtle))return null;const h=await bam("PNLIB|"+code);return L.find(x=>x.h===h)||null}
-function loadSession(){const raw=store.get(KEY);if(!raw)return null;
-  try{const s=JSON.parse(raw);if(s&&s.code&&s.han)return s}catch(e){}
-  const v=valid(raw);return v.ok?legacyS(v.p):null}
+  if(!okCode(code))return {ok:false,why:"Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới."};
+  if(onClaude)await dbReady;
+  let r;try{r=DB?await dbCall({action:"check",code,course:courseId||""}):await staticCheck(code,courseId||"")}catch(e){r={ok:false,why:"net"}}
+  if(r&&r.ok)return {ok:true,s:{code,label:r.note?String(r.note):"Mã "+code,han:r.han,courses:Array.isArray(r.courses)&&r.courses.length?r.courses:["*"]}};
+  const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã dùng đủ "+(r&&r.max||"")+" người. Hỏi giảng viên.",course:"Mã này không có quyền truy cập học phần đang chọn. Hãy nhập mã phù hợp.",net:"Chưa tải được danh sách mã lớp. Kiểm tra mạng rồi thử lại."};
+  return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
+function loadSession(){const raw=store.get(KEY);if(!raw)return null;try{const s=JSON.parse(raw);if(s&&s.code&&s.han)return s}catch(e){}return null}
 
 /* Thống kê và góp ý qua máy chủ */
 let stats=null,fbItems=null,fbLoadErr="";
 async function loadStats(){if(!BE())return;try{const r=await call({action:"stats"});if(r&&r.ok)stats=r}catch(e){}}
 async function loadFb(){if(!BE())return;try{const r=await call({action:"fb_list"});if(r&&r.ok){fbItems=r.items;fbLoadErr=""}}catch(e){fbLoadErr="Không tải được danh sách góp ý lúc này. Thử lại sau."}}
 
-/* ===== Quản lý mã truy cập — phiên quản trị máy chủ ===== */
-const AKEY="pnlib-admin-session";
-function adminToken(){
-  try{const x=JSON.parse(store.get(AKEY)||"null");return x&&x.token&&x.exp>Date.now()?x.token:""}catch(e){return ""}
-}
+/* ===== Quản lý mã lớp =====
+   Bản web GitHub: mã lưu trong data/ma-lop.json. Học sinh chỉ thấy dấu băm của mã;
+   danh sách mã gốc được mã hóa bằng mật khẩu quản trị. Lưu thay đổi lên GitHub bằng token cá nhân của giảng viên.
+   Bản Claude: chủ trang quản lý mã trong kho dữ liệu của artifact. */
+const TKEY="pnlib-gh-token";
+let ST=null; /* phiên quản trị trên bản web: {pw,list,salt,sha,dirty} */
 function adminScopeLabel(xs){
   if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return "Tất cả học phần";
   return xs.map(id=>{const c=course(id);return c?c.name:id}).join(", ");
 }
+const ghTok=()=>store.get(TKEY)||"";
+const b64e=u8=>{let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
+const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
+async function pwKey(pw,salt,iter){const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64d(salt),iterations:iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function openVault(admin,pw){const k=await pwKey(pw,admin.salt,admin.iter);
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(admin.iv)},k,b64d(admin.data));return JSON.parse(new TextDecoder().decode(pt))}
+async function sealVault(obj,pw){const salt=b64e(rnd(16)),iv=b64e(rnd(12)),iter=250000,k=await pwKey(pw,salt,iter);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:b64d(iv)},k,new TextEncoder().encode(JSON.stringify(obj)));return {salt,iter,iv,data:b64e(new Uint8Array(ct))}}
+async function buildFile(){const codes=[];
+  for(const x of ST.list)codes.push({h:await codeHash(ST.salt,x.code),han:x.han,courses:x.courses,note:x.note||""});
+  return {v:2,ghi_chu:"Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",salt:ST.salt,updated:new Date().toISOString(),codes,admin:await sealVault({codes:ST.list},ST.pw)}}
+const ghURL=()=>`https://api.github.com/repos/${GH.repo}/contents/${GH.path}`;
+const ghHead=t=>({Authorization:"Bearer "+t,Accept:"application/vnd.github+json"});
+async function ghGet(t){const r=await fetch(ghURL()+"?ref="+GH.branch+"&t="+Date.now(),{headers:ghHead(t),cache:"no-store"});
+  if(r.status===404)return null;if(!r.ok)throw new Error("gh"+r.status);const j=await r.json();
+  return {sha:j.sha,data:JSON.parse(new TextDecoder().decode(b64d(String(j.content||"").replace(/\s/g,""))))}}
+async function ghPut(t,obj,sha){const body={message:"Cập nhật mã lớp",branch:GH.branch,content:b64e(new TextEncoder().encode(JSON.stringify(obj,null,1)+"\n"))};if(sha)body.sha=sha;
+  const r=await fetch(ghURL(),{method:"PUT",headers:Object.assign(ghHead(t),{"Content-Type":"application/json"}),body:JSON.stringify(body)});
+  if(!r.ok)throw new Error("gh"+r.status);return (await r.json()).content.sha}
+const ghErr=e=>{const m=String(e&&e.message||"");return m==="gh401"?"Token GitHub sai hoặc đã hết hạn. Vào mục Cài đặt lưu để nhập token mới.":(m==="gh403"||m==="gh404")?"Token GitHub chưa có quyền ghi (Contents: Read and write) cho kho phuc-nguyen-library.":m==="gh409"||m==="gh422"?"Dữ liệu trên GitHub vừa thay đổi ở nơi khác. Đăng xuất rồi đăng nhập lại để tải bản mới nhất.":"Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."};
+async function persist(){const file=await buildFile();MA=file;
+  const t=ghTok();if(!t){ST.dirty=true;return {ok:true,saved:false}}
+  try{ST.sha=await ghPut(t,file,ST.sha);ST.dirty=false;return {ok:true,saved:true}}catch(e){ST.dirty=true;return {ok:false,why:ghErr(e)}}}
+function downloadFile(){buildFile().then(f=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(f,null,1)+"\n"],{type:"application/json"}));a.download="ma-lop.json";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)})}
+function randomCode(){return "PN-"+Array.from(rnd(3)).map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase()}
+
+/* Bộ điều hợp: cùng một giao diện cho bản web (file JSON) và bản Claude (kho dữ liệu) */
+const ADM={
+  web:()=>!DB,
+  async list(){if(!DB)return {ok:true,items:ST.list.slice()};return dbCall({action:"admin_list"})},
+  async create(o){if(DB)return dbCall(Object.assign({action:"admin_create"},o,{courses:o.courses.join(",")||"*"}));
+    if(ST.list.some(x=>x.code===o.code))return {ok:false,why:"exists"};
+    ST.list.push({code:o.code,note:o.note,han:o.han,courses:o.courses.length?o.courses:["*"],created:new Date().toISOString()});const r=await persist();return Object.assign({code:o.code},r)},
+  async bulk(o){const codes=Array.from({length:o.count},(_,i)=>o.prefix+(i+1));
+    if(DB){const have=new Set(((await dbCall({action:"admin_list"})).items||[]).map(x=>x.code));if(codes.some(c=>have.has(c)))return {ok:false,why:"exists"};
+      for(const c of codes){const r=await dbCall({action:"admin_create",code:c,note:o.note,han:o.han,max:o.max,courses:o.courses.join(",")||"*"});if(!r||!r.ok)return r||{ok:false}}return {ok:true,codes}}
+    if(codes.some(c=>ST.list.some(x=>x.code===c)))return {ok:false,why:"exists"};
+    const now=new Date().toISOString();codes.forEach(c=>ST.list.push({code:c,note:o.note,han:o.han,courses:o.courses.length?o.courses:["*"],created:now}));
+    const r=await persist();return Object.assign({codes},r)},
+  async del(code){if(DB)return dbCall({action:"admin_delete",code});ST.list=ST.list.filter(x=>x.code!==code);return persist()}
+};
+
+function adminHead(){return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã lớp</h2></div></div>`}
 function admin2HTML(){
-  const owner=!!(DB&&isOwner), token=adminToken();
-  const head=`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Quản lý mã truy cập</h2></div></div>`;
-  if(DB&&!owner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã truy cập</div><p class="msg">Chỉ chủ trang mới được quản lý mã truy cập.</p></section></main>`;
-  if(!owner&&!token)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
-    <form id="ak-form" novalidate class="admin"><p class="msg">Nhập mật khẩu quản trị mới đã thiết lập cho Phúc Nguyên Library.</p>
+  const head=adminHead();
+  if(DB&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã lớp</div><p class="msg">Chỉ chủ trang mới được quản lý mã lớp.</p></section></main>`;
+  if(!DB&&!ST)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
+    <form id="ak-form" novalidate class="admin"><p class="msg">Tài khoản quản trị dành cho giảng viên. Nhập mật khẩu quản trị để vào phần cấp mã lớp.</p>
     <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
-    <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form>
-    <p class="msg">Nếu mật khẩu chưa được khởi tạo, cần chạy hàm <b>caiDatMatKhauQuanLy</b> trong Google Apps Script một lần, sau đó cập nhật deployment Web app.</p></section></main>`;
+    <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form></section></main>`;
+  const web=!DB, t=web?ghTok():"";
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
-  const courseChoices=COURSES.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}${c.src?"":" (chưa có trang ôn tập)"}</span></label>`).join("");
-  const bulkCourseChoices=COURSES.map(c=>`<option value="${esc(c.id)}"${c.id==="luat-dan-su"?" selected":""}>${esc(c.name)}</option>`).join("");
-  return head+`<main class="wrap admin">
-  <section class="frame"><div class="ftitle">Cấp mã truy cập mới</div>
+  const live=COURSES.filter(c=>c.src);
+  const courseChoices=live.map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
+  const bulkChoices=live.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+  const sel='style="width:100%;font:500 15px var(--f-body);padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"';
+  const maxField=web?"":`<div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40" required></div>`;
+  const bulkMax=web?"":`<div><label class="lab" for="bulk-max">Số người tối đa mỗi mã</label><input type="number" id="bulk-max" min="1" max="1000" value="40" required></div>`;
+  const saveBox=!web?"":t
+    ?`<section class="frame"><div class="ftitle">Trạng thái lưu</div><p class="msg" id="s-state"><span class="ok">Đã bật lưu tự động lên GitHub trên trình duyệt này.</span> Mỗi lần cấp hoặc xóa mã, trang tự lưu; mã có hiệu lực với sinh viên sau khoảng 1–2 phút.</p></section>`
+    :`<section class="frame"><div class="ftitle">Trạng thái lưu</div>
+      <p class="msg" id="s-state"><span class="bad">Trình duyệt này chưa bật lưu tự động.</span> Thay đổi về mã mới chỉ nằm trên máy này cho đến khi được lưu lên GitHub.</p>
+      <p class="msg">Cách 1 (khuyến nghị, làm một lần cho mỗi máy): nhập token GitHub ở mục <b>Cài đặt lưu</b> bên dưới. Cách 2: bấm <b>Tải file ma-lop.json</b>, rồi trên github.com vào kho phuc-nguyen-library → thư mục <b>data</b> → Add file → Upload files → kéo file vừa tải vào → Commit changes.</p>
+      <div class="row"><button class="btn primary" type="button" id="s-dl">Tải file ma-lop.json</button></div></section>`;
+  return head+`<main class="wrap admin">${saveBox}
+  <section class="frame"><div class="ftitle">Cấp mã lớp mới</div>
     <form id="c-form" novalidate class="admin">
-      <p class="msg">Có thể để trống mã để hệ thống tự sinh mã ngẫu nhiên, hoặc tự đặt mã riêng. Mã mới chỉ có quyền vào những học phần được chọn.</p>
+      <p class="msg">Tự đặt mã ngắn (ví dụ <b>K25D-LDS</b>) hoặc để trống để hệ thống tự sinh. Mã chỉ mở được những học phần đã chọn.</p>
       <div class="row">
-        <div><label class="lab" for="c-code">Mã truy cập (không bắt buộc)</label><input type="text" id="c-code" placeholder="Để trống để tự sinh mã" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
+        <div><label class="lab" for="c-code">Mã lớp</label><input type="text" id="c-code" placeholder="Để trống để tự sinh" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
         <div><label class="lab" for="c-note">Tên lớp / ghi chú</label><input type="text" id="c-note" placeholder="K25D Luật Dân sự" maxlength="80"></div>
       </div>
-      <div class="row">
-        <div><label class="lab" for="c-han">Có hiệu lực đến hết ngày</label><input type="date" id="c-han" value="${def}" required></div>
-        <div><label class="lab" for="c-max">Số người tối đa</label><input type="number" id="c-max" min="1" max="1000" value="40" required></div>
-      </div>
+      <div class="row"><div><label class="lab" for="c-han">Có hiệu lực đến hết ngày</label><input type="date" id="c-han" value="${def}" required></div>${maxField}</div>
       <div class="field"><span class="lab">Phạm vi học phần</span>
         <label class="admin-course admin-all"><input type="checkbox" id="c-all-courses" checked><span><b>Tất cả học phần</b></span></label>
-        <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div>
-      </div>
+        <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div></div>
       <div class="err" id="c-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã mới</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
-      <p class="msg">Một trình duyệt trên một thiết bị được tính là một lượt người dùng. Mã hết hạn sau ngày đã chọn; số người đã sử dụng được theo dõi tại máy chủ.</p>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
     </form></section>
   <section class="frame"><div class="ftitle">Cấp mã hàng loạt</div>
     <form id="bulk-form" novalidate class="admin">
-      <p class="msg">Tạo nhiều mã theo tiền tố và số thứ tự. Ví dụ tiền tố <b>LDS_25_</b> tạo LDS_25_1, LDS_25_2…; tiền tố <b>PNL_</b> tạo PNL_1, PNL_2… Mỗi mã có hạn dùng, phạm vi học phần và giới hạn người dùng riêng.</p>
+      <p class="msg">Tạo nhiều mã theo tiền tố và số thứ tự. Ví dụ tiền tố <b>LDS25-</b> và số lượng 5 tạo LDS25-1 … LDS25-5.</p>
       <div class="row">
-        <div><label class="lab" for="bulk-prefix">Tiền tố mã</label><input id="bulk-prefix" value="LDS_25_" maxlength="20" required autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
-        <div><label class="lab" for="bulk-count">Số lượng mã cần tạo</label><input type="number" id="bulk-count" min="1" max="100" value="10" required></div>
+        <div><label class="lab" for="bulk-prefix">Tiền tố mã</label><input type="text" id="bulk-prefix" placeholder="LDS25-" maxlength="20" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em"></div>
+        <div><label class="lab" for="bulk-count">Số lượng mã</label><input type="number" id="bulk-count" min="1" max="100" value="5" required></div>
       </div>
+      <div class="row"><div><label class="lab" for="bulk-han">Có hiệu lực đến hết ngày</label><input type="date" id="bulk-han" value="${def}" required></div>${bulkMax}</div>
       <div class="row">
-        <div><label class="lab" for="bulk-han">Có hiệu lực đến hết ngày</label><input type="date" id="bulk-han" value="2026-11-30" required></div>
-        <div><label class="lab" for="bulk-max">Số người tối đa cho mỗi mã</label><input type="number" id="bulk-max" min="1" max="1000" value="20" required></div>
-      </div>
-      <div class="row">
-        <div><label class="lab" for="bulk-course">Phạm vi học phần</label><select id="bulk-course" style="width:100%;font:500 15px var(--f-body);padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"><option value="*">Tất cả học phần (ví dụ PNL_1)</option>${bulkCourseChoices}</select></div>
-        <div><label class="lab" for="bulk-note">Tên lớp / ghi chú</label><input id="bulk-note" maxlength="80" placeholder="Ví dụ: K25D Luật Dân sự"></div>
+        <div><label class="lab" for="bulk-course">Phạm vi học phần</label><select id="bulk-course" ${sel}><option value="*">Tất cả học phần</option>${bulkChoices}</select></div>
+        <div><label class="lab" for="bulk-note">Tên lớp / ghi chú</label><input type="text" id="bulk-note" maxlength="80" placeholder="K25D Luật Dân sự"></div>
       </div>
       <div class="err" id="bulk-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Tạo hàng loạt mã</button><span class="msg" id="bulk-msg" aria-live="polite"></span></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Tạo hàng loạt</button><span class="msg" id="bulk-msg" aria-live="polite"></span></div>
       <div id="bulk-result" class="msg" aria-live="polite"></div>
-    </form>
-  </section>
+    </form></section>
   <section class="frame"><div class="ftitle">Danh sách mã đã cấp</div>
-    <div class="row" style="align-items:center;margin-bottom:10px"><button class="btn" type="button" id="l-reload">Tải lại danh sách</button>${owner?"":'<button class="btn" type="button" id="l-out">Đăng xuất quản trị</button>'}<span class="msg" id="l-msg" aria-live="polite"></span></div>
-    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Phạm vi học phần</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
-    <p class="msg" style="margin-top:8px">Xóa mã sẽ thu hồi quyền truy cập của mã đó và xóa các lượt sử dụng gắn với mã. Các mã cũ được giữ nguyên; mã cũ chưa có phạm vi được xem là áp dụng cho tất cả học phần để tránh làm gián đoạn quyền truy cập hiện tại.</p>
-  </section></main>`;
+    <div class="row" style="align-items:center;margin-bottom:10px"><span class="msg" id="l-msg" aria-live="polite"></span></div>
+    <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Phạm vi học phần</th><th>Hạn dùng</th>${web?"":"<th>Đã dùng</th>"}<th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
+    <p class="msg" style="margin-top:8px">Xóa mã sẽ thu hồi quyền truy cập: sinh viên đang dùng mã đó sẽ phải nhập mã mới ở lần mở trang kế tiếp.</p>
+  </section>
+  ${web?`<section class="frame"><div class="ftitle">Cài đặt lưu</div>
+    <form id="t-form" novalidate class="admin">
+      <p class="msg">Token GitHub chỉ lưu trong trình duyệt của máy này, không đưa lên trang web. Tạo token: github.com → ảnh đại diện → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token; Repository access: <b>Only select repositories</b> → phuc-nguyen-library; Permissions → Repository permissions → <b>Contents: Read and write</b>; Generate token rồi dán vào ô dưới.</p>
+      <div class="row"><div><label class="lab" for="t-in">Token GitHub</label><input type="password" id="t-in" autocomplete="off" placeholder="${t?"Đã lưu trên máy này – dán token mới để thay":"github_pat_…"}"></div></div>
+      <div class="err" id="t-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Lưu token và lưu dữ liệu</button>${t?'<button class="btn" type="button" id="t-clear">Xóa token khỏi máy này</button>':""}<span class="msg" id="t-msg" aria-live="polite"></span></div>
+    </form></section>
+  <section class="frame"><div class="ftitle">Đổi mật khẩu quản trị</div>
+    <form id="p-form" novalidate class="admin">
+      <div class="row"><div><label class="lab" for="p-new">Mật khẩu mới (ít nhất 10 ký tự)</label><input type="password" id="p-new" autocomplete="new-password"></div>
+      <div><label class="lab" for="p-new2">Nhập lại mật khẩu mới</label><input type="password" id="p-new2" autocomplete="new-password"></div></div>
+      <div class="err" id="p-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Đổi mật khẩu</button><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button><span class="msg" id="p-msg" aria-live="polite"></span></div>
+    </form></section>`:""}
+  </main>`;
 }
+function savedNote(r){return r.saved?" Đã lưu lên GitHub; sinh viên dùng được sau khoảng 1–2 phút.":" Chưa lưu lên GitHub – xem khung Trạng thái lưu."}
 async function admin2Bind(){
   const af=$("#ak-form");
   if(af){
-    af.addEventListener("submit",async e=>{
-      e.preventDefault();const k=$("#ak-in").value;
-      if(!k){$("#ak-err").textContent="Nhập mật khẩu quản trị.";return}
+    af.addEventListener("submit",async e=>{e.preventDefault();const pw=$("#ak-in").value;
+      if(!pw){$("#ak-err").textContent="Nhập mật khẩu quản trị.";return}
       $("#ak-err").textContent="Đang xác thực…";
-      try{
-        const r=await call({action:"admin_login",key:k});
-        if(r&&r.ok&&r.token){store.set(AKEY,JSON.stringify({token:r.token,exp:Date.now()+(r.expiresIn||14400)*1000}));route("quan-ly-ma")}
-        else $("#ak-err").textContent=r&&r.why==="setup"?"Mật khẩu quản trị chưa được khởi tạo ở máy chủ. Chạy hàm caiDatMatKhauQuanLy rồi cập nhật deployment.":r&&r.why==="key"?"Mật khẩu không đúng.":"Chưa đăng nhập được; kiểm tra kết nối máy chủ rồi thử lại.";
-      }catch(err){$("#ak-err").textContent="Không kết nối được máy chủ."}
-    });
+      let src;try{const t=ghTok();if(t){const g=await ghGet(t);src=g?{d:g.data,sha:g.sha}:null}else src={d:await loadMa(true),sha:null}}
+      catch(err){$("#ak-err").textContent=String(err.message||"").indexOf("gh")===0?ghErr(err):"Chưa tải được dữ liệu mã lớp. Kiểm tra mạng rồi thử lại.";return}
+      if(!src||!src.d||!src.d.admin){$("#ak-err").textContent="Chưa có dữ liệu quản trị trên trang.";return}
+      try{const v=await openVault(src.d.admin,pw);ST={pw,list:Array.isArray(v.codes)?v.codes:[],salt:src.d.salt,sha:src.sha,dirty:false};MA=src.d;route("quan-ly-ma")}
+      catch(err){$("#ak-err").textContent="Mật khẩu không đúng."}});
     $("#ak-in").addEventListener("input",()=>$("#ak-err").textContent="");
     return;
   }
-  const owner=!!(DB&&isOwner), token=adminToken(), auth=owner?"owner":token;
+  if(!$("#c-form"))return;
+  const web=ADM.web();
+  const markDirty=()=>{if(web&&ST&&ST.dirty&&$("#s-state"))$("#s-state").innerHTML='<span class="bad">Có thay đổi chưa lưu lên GitHub.</span> Nhập token ở mục Cài đặt lưu, hoặc bấm Tải file ma-lop.json và tải lên thư mục data trên GitHub.'};
   async function list(){
     $("#l-msg").textContent="Đang tải…";
-    try{
-      const r=await call({action:"admin_list",token:auth});
-      if(!r||!r.ok){
-        if(r&&r.why==="key"){store.del(AKEY);route("quan-ly-ma");return}
-        $("#l-msg").textContent="Chưa tải được danh sách mã.";return;
-      }
-      $("#l-msg").textContent=r.items.length+" mã";
-      const t=todayISO();
-      $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{
-        const exp=t>x.han,full=x.used>=x.max;
-        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td><td>${x.used} / ${x.max}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Thu hồi</button></td></tr>`;
-      }).join(""):`<tr><td colspan="7" class="msg">Chưa có mã nào. Có thể cấp mã đầu tiên ở khung bên trên.</td></tr>`;
+    try{const r=await ADM.list();if(!r||!r.ok){$("#l-msg").textContent="Chưa tải được danh sách mã.";return}
+      $("#l-msg").textContent=r.items.length+" mã";const t=todayISO();
+      $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{const exp=t>x.han,full=!web&&x.max&&x.used>=x.max;
+        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td>${web?"":`<td>${x.used} / ${x.max}</td>`}<td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Xóa</button></td></tr>`}).join("")
+        :`<tr><td colspan="7" class="msg">Chưa có mã nào. Cấp mã đầu tiên ở khung bên trên.</td></tr>`;
       $("#l-body").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
-        if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để thu hồi";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Thu hồi";b.classList.remove("primary")}},4000);return}
-        b.disabled=true;b.textContent="Đang thu hồi…";
-        try{const rr=await call({action:"admin_delete",token:auth,code:b.dataset.del});if(rr&&rr.ok){$("#l-msg").textContent="Đã thu hồi mã "+b.dataset.del;list()}else{b.textContent="Thử lại";b.disabled=false}}
-        catch(e){b.textContent="Lỗi kết nối";b.disabled=false}
-      });
-    }catch(e){$("#l-msg").textContent="Không kết nối được máy chủ."}
+        if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để xóa";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Xóa";b.classList.remove("primary")}},4000);return}
+        b.disabled=true;b.textContent="Đang xóa…";
+        try{const rr=await ADM.del(b.dataset.del);await list();$("#l-msg").textContent=rr&&rr.ok?"Đã xóa mã "+b.dataset.del+"."+(web?savedNote(rr):""):(rr&&rr.why)||"Chưa xóa được.";markDirty()}
+        catch(err){b.textContent="Thử lại";b.disabled=false}});
+    }catch(err){$("#l-msg").textContent="Chưa tải được danh sách mã."}
   }
-  $("#l-reload").onclick=list;
-  if($("#l-out"))$("#l-out").onclick=()=>{store.del(AKEY);route("quan-ly-ma")};
-  $("#c-all-courses").addEventListener("change",()=>{
-    document.querySelectorAll(".c-course").forEach(x=>{x.disabled=$("#c-all-courses").checked;if(x.disabled)x.checked=false});
-  });
-  $("#bulk-form").addEventListener("submit",async e=>{
-    e.preventDefault();
-    const prefix=norm($("#bulk-prefix").value),count=parseInt($("#bulk-count").value,10),han=$("#bulk-han").value,max=parseInt($("#bulk-max").value,10),courses=$("#bulk-course").value,note=$("#bulk-note").value.trim();
-    if(!/^[A-Z0-9][A-Z0-9_-]{1,19}$/.test(prefix)){$("#bulk-err").textContent="Tiền tố gồm 2–20 ký tự: chữ cái không dấu, chữ số, gạch dưới hoặc gạch ngang.";return}
-    if(!(count>=1&&count<=100)){$("#bulk-err").textContent="Số lượng mã phải từ 1 đến 100.";return}
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#bulk-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
-    if(!(max>=1&&max<=1000)){$("#bulk-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
-    if((prefix+String(count)).length>24){$("#bulk-err").textContent="Tiền tố quá dài so với số lượng mã.";return}
-    $("#bulk-err").textContent="";$("#bulk-msg").textContent="Đang tạo "+count+" mã…";$("#bulk-result").textContent="";
-    const btn=$("#bulk-form button[type=submit]");btn.disabled=true;
-    try{
-      const r=await call({action:"admin_bulk_create",token:auth,prefix,count,han,max,courses,note});
-      if(r&&r.ok){$("#bulk-msg").textContent="Đã tạo "+r.codes.length+" mã.";$("#bulk-result").innerHTML="<b>Mã đã tạo (mỗi mã dùng tối đa "+max+" người, hết hạn "+fmtDate(han)+"):</b><br>"+r.codes.map(x=>esc(x)).join("<br>");list()}
-      else{$("#bulk-msg").textContent="";$("#bulk-err").textContent=({badprefix:"Tiền tố mã không hợp lệ.",badcount:"Số lượng mã không hợp lệ.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",exists:"Một hoặc nhiều mã đã tồn tại; chưa tạo mã nào. Hãy đổi tiền tố.",badcode:"Mã sinh ra vượt quá 24 ký tự.",key:"Phiên quản trị đã hết hạn; đăng nhập lại."})[r&&r.why]||"Chưa tạo được mã."}
-    }catch(err){$("#bulk-msg").textContent="";$("#bulk-err").textContent="Không kết nối được máy chủ."}
-    finally{btn.disabled=false}
-  });
-  ["bulk-prefix","bulk-count","bulk-han","bulk-max","bulk-course","bulk-note"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#bulk-err").textContent=""));
-  $("#c-form").addEventListener("submit",async e=>{
-    e.preventDefault();
-    let code=norm($("#c-code").value);
-    if(!code){const bytes=crypto.getRandomValues(new Uint8Array(6));code="PN-"+Array.from(bytes).map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase()}
-    const note=$("#c-note").value.trim(),han=$("#c-han").value,max=parseInt($("#c-max").value,10);
-    const all=$("#c-all-courses").checked;
-    const selected=[...document.querySelectorAll(".c-course:checked")].map(x=>x.value);
-    const courses=all?"*":selected.join(",");
-    if(!/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số và dấu gạch ngang.";return}
+  $("#c-all-courses").addEventListener("change",()=>document.querySelectorAll(".c-course").forEach(x=>{x.disabled=$("#c-all-courses").checked;if(x.disabled)x.checked=false}));
+  const WHY={exists:"Mã đã tồn tại; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Chỉ chủ trang mới được cấp mã."};
+  $("#c-form").addEventListener("submit",async e=>{e.preventDefault();
+    const code=norm($("#c-code").value)||randomCode(),note=$("#c-note").value.trim(),han=$("#c-han").value,max=web?0:parseInt($("#c-max").value,10);
+    const all=$("#c-all-courses").checked,courses=all?[]:[...document.querySelectorAll(".c-course:checked")].map(x=>x.value);
+    if(!okCode(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới.";return}
     if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
-    if(!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
-    if(!all&&!selected.length){$("#c-err").textContent="Chọn ít nhất một học phần hoặc bật Tất cả học phần.";return}
-    $("#c-err").textContent="";$("#c-msg").textContent="Đang cấp mã…";
-    try{
-      const r=await call({action:"admin_create",token:auth,code,note,han,max,courses});
-      if(r&&r.ok){$("#c-msg").textContent="Đã cấp mã "+(r.code||code)+".";$("#c-code").value="";$("#c-note").value="";list()}
-      else{$("#c-msg").textContent="";$("#c-err").textContent=({exists:"Mã này đã tồn tại; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Phiên quản trị đã hết hạn; đăng nhập lại."})[r&&r.why]||"Chưa cấp được mã."}
-    }catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Không kết nối được máy chủ."}
-  });
-  ["c-code","c-note","c-han","c-max"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#c-err").textContent=""));
-  list();
+    if(!web&&!(max>=1&&max<=1000)){$("#c-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
+    if(!all&&!courses.length){$("#c-err").textContent="Chọn ít nhất một học phần hoặc bật Tất cả học phần.";return}
+    $("#c-err").textContent="";$("#c-msg").textContent="Đang cấp mã…";const btn=$("#c-form button[type=submit]");btn.disabled=true;
+    try{const r=await ADM.create({code,note,han,max,courses});
+      if(r&&r.ok){$("#c-msg").textContent="Đã cấp mã "+code+"."+(web?savedNote(r):"");$("#c-code").value="";$("#c-note").value="";list();markDirty()}
+      else{$("#c-msg").textContent="";$("#c-err").textContent=WHY[r&&r.why]||(r&&r.why)||"Chưa cấp được mã.";list();markDirty()}}
+    catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Chưa cấp được mã. Thử lại."}finally{btn.disabled=false}});
+  $("#bulk-form").addEventListener("submit",async e=>{e.preventDefault();
+    const prefix=norm($("#bulk-prefix").value),count=parseInt($("#bulk-count").value,10),han=$("#bulk-han").value,max=web?0:parseInt($("#bulk-max").value,10),cv=$("#bulk-course").value,note=$("#bulk-note").value.trim();
+    if(!/^[A-Z0-9][A-Z0-9_-]{1,19}$/.test(prefix)){$("#bulk-err").textContent="Tiền tố gồm 2–20 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới.";return}
+    if(!(count>=1&&count<=100)){$("#bulk-err").textContent="Số lượng mã từ 1 đến 100.";return}
+    if((prefix+count).length>24){$("#bulk-err").textContent="Tiền tố quá dài so với số lượng mã.";return}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#bulk-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
+    if(!web&&!(max>=1&&max<=1000)){$("#bulk-err").textContent="Số người tối đa phải từ 1 đến 1000.";return}
+    $("#bulk-err").textContent="";$("#bulk-msg").textContent="Đang tạo "+count+" mã…";$("#bulk-result").textContent="";const btn=$("#bulk-form button[type=submit]");btn.disabled=true;
+    try{const r=await ADM.bulk({prefix,count,han,max,note,courses:cv==="*"?[]:[cv]});
+      if(r&&r.codes){$("#bulk-msg").textContent="Đã tạo "+r.codes.length+" mã."+(web?savedNote(r):"");$("#bulk-result").innerHTML="<b>Mã đã tạo (hết hạn "+fmtDate(han)+"):</b><br>"+r.codes.map(esc).join("<br>");list();markDirty();if(r.why)$("#bulk-err").textContent=r.why}
+      else{$("#bulk-msg").textContent="";$("#bulk-err").textContent=WHY[r&&r.why]||"Chưa tạo được mã."}}
+    catch(err){$("#bulk-msg").textContent="";$("#bulk-err").textContent="Chưa tạo được mã. Thử lại."}finally{btn.disabled=false}});
+  ["c-code","c-note","c-han"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#c-err").textContent=""));
+  ["bulk-prefix","bulk-count","bulk-han","bulk-note"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#bulk-err").textContent=""));
+  if(web){
+    if($("#s-dl"))$("#s-dl").onclick=downloadFile;
+    $("#t-form").addEventListener("submit",async e=>{e.preventDefault();const t=$("#t-in").value.trim()||ghTok();
+      if(!t){$("#t-err").textContent="Dán token GitHub vào ô trên.";return}
+      $("#t-err").textContent="";$("#t-msg").textContent="Đang kiểm tra token…";
+      try{const g=await ghGet(t);store.set(TKEY,t);ST.sha=g?g.sha:null;const r=await persist();
+        if(r.ok){$("#t-in").value="";route("quan-ly-ma");setTimeout(()=>{if($("#t-msg"))$("#t-msg").textContent="Đã lưu token và lưu dữ liệu lên GitHub."},0)}
+        else{$("#t-msg").textContent="";$("#t-err").textContent=r.why}}
+      catch(err){$("#t-msg").textContent="";$("#t-err").textContent=ghErr(err)}});
+    if($("#t-clear"))$("#t-clear").onclick=()=>{store.del(TKEY);route("quan-ly-ma")};
+    $("#p-form").addEventListener("submit",async e=>{e.preventDefault();const a=$("#p-new").value,b=$("#p-new2").value;
+      if(a.length<10){$("#p-err").textContent="Mật khẩu mới cần ít nhất 10 ký tự.";return}
+      if(a!==b){$("#p-err").textContent="Hai lần nhập mật khẩu chưa khớp.";return}
+      $("#p-err").textContent="";$("#p-msg").textContent="Đang đổi mật khẩu…";const old=ST.pw;ST.pw=a;
+      const r=await persist();
+      if(r.ok&&r.saved){$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi mật khẩu. Từ nay đăng nhập bằng mật khẩu mới."}
+      else if(r.ok){$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi trên máy này. Mật khẩu mới chỉ có hiệu lực sau khi lưu dữ liệu lên GitHub.";markDirty()}
+      else{ST.pw=old;$("#p-msg").textContent="";$("#p-err").textContent=r.why}});
+    $("#l-out").onclick=()=>{if(ST&&ST.dirty&&!confirm("Còn thay đổi chưa lưu lên GitHub. Vẫn đăng xuất?"))return;ST=null;route("quan-ly-ma")};
+  }
+  list();markDirty();
 }
 
-/* Trang góp ý khi dùng máy chủ *//* Trang góp ý khi dùng máy chủ */
+/* Trang góp ý khi dùng máy chủ */
 function fbApiHTML(){
   const opts=['<option value="Chung">Góp ý chung</option>'].concat(COURSES.filter(c=>c.src).map(c=>`<option>${esc(c.name)}</option>`)).join("");
   const list=fbItems==null?`<div class="info">${fbLoadErr||"Đang tải góp ý…"}</div>`:(fbItems.length?`<div class="fb-list">${fbItems.slice().reverse().map(r=>`<div class="fb-item"><div class="m">${esc(fmtDate(r.time))}${r.course?" · "+esc(r.course):""}</div><p>${esc(r.text)}</p></div>`).join("")}</div>`:`<div class="info">Chưa có góp ý nào. Hãy là người đầu tiên gửi góp ý.</div>`);
@@ -604,7 +647,7 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else m.innerHTML=fbHTML()}
-  else if(id==="quan-ly-ma"&&BE()){m.innerHTML=admin2HTML();admin2Bind()}
+  else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
     if(c.src&&c.skin){document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${c.src}" title="Ôn tập ${c.name}"></iframe></section>`}
@@ -635,7 +678,7 @@ function homeHTML(){
     <section class="frame" data-comment-target><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
       <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}${BE()&&stats&&visits!=null?'<span class="val na">người đã dùng mã</span>':''}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
       <div class="fb"><div class="bubble" aria-hidden="true">“</div>${sendLink()}</div>
-      ${(API||isOwner)?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
+      ${(!onClaude||isOwner)?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
     </section>
   </div></main>`}
 function sendLink(){if(BE())return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
@@ -1033,8 +1076,8 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
   const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
   try{DB=onClaude?await window.claude.use("db"):null}catch(e){DB=null}
-  if(!BE()&&session&&!valid(session.code).ok){maTinh(session.code).then(k=>{if(!k){store.del(KEY);session=null;expiredMsg="Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho()}})}
-  if(BE()&&session&&!valid(session.code).ok){call({action:"check",code:session.code,dev:getDev()}).then(r=>{if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
+  dbReadyRes();
+  if(session){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(r=>{if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
       store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
       if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
   await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
