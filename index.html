@@ -996,12 +996,35 @@ TL["luat-thuong-mai"]={
  ["Luật Hợp tác xã số 17/2023/QH15","20/06/2023","Tổ chức và hoạt động hợp tác xã"],
  ["Bộ luật Dân sự số 91/2015/QH13","24/11/2015","Quy định chung về hợp đồng, nghĩa vụ và đại diện"],
  ["Luật Phá sản số 51/2014/QH13","19/06/2014","Thủ tục phá sản và tuyên bố phá sản"],
- ["Luật Bảo vệ quyền lợi người tiêu dùng số 19/2023/QH15","20/06/2023","Bảo vệ người tiêu dùng trong giao dịch"]
+ ["Luật Bảo vệ quyền lợi người tiêu dùng số 19/2023/QH15","20/06/2023","Bảo vệ người tiêu dùng trong giao dịch"],
+ ["Luật Thương mại điện tử số 122/2025/QH15","10/12/2025; hiệu lực 01/07/2026","Thương mại điện tử; đối chiếu Nghị định 248/2026/NĐ-CP"],
+ ["Văn bản hợp nhất 60/VBHN-VPQH về Luật Trọng tài thương mại","15/08/2025","Bản hợp nhất tra cứu; không phải luật sửa đổi độc lập"]
  ]}],
  cases:[],
  refs:[{g:"Nguồn học liệu",items:["Đề cương chi tiết học phần Pháp luật thương mại và chủ thể kinh doanh, Mục 9.","Nội dung tổng hợp mới biên soạn, trạng thái chờ giảng viên duyệt."]}]
 };
 
+
+// Bổ sung mind map theo Chương 3–4 của đề cương Pháp luật thương mại và chủ thể kinh doanh.
+TL["luat-thuong-mai"].chapters.push(
+ {n:3,t:"Chế tài thương mại",img:"assets/hop-dong.jpg",maps:[
+  {k:"Chế tài thương mại",h1:"Chế tài",h2:"thương mại",src:"new",r:"Chế tài thương mại",c:[
+   {t:"Căn cứ áp dụng",l:"row",c:[{t:"Quan hệ và nghĩa vụ",d:"Hợp đồng · luật điều chỉnh · nghĩa vụ cụ thể"},{t:"Hành vi vi phạm",d:"Đối chiếu thực tế với cam kết"},{t:"Chứng cứ",d:"Thông báo · biên bản · chứng từ · thiệt hại"}]},
+   {t:"Buộc thực hiện đúng hợp đồng",d:"Yêu cầu tiếp tục thực hiện hoặc khắc phục trong điều kiện luật định"},
+   {t:"Chế tài vật chất",l:"cols2",c:[{t:"Phạt vi phạm",d:"Cần có thỏa thuận; kiểm tra trần phạt theo Điều 301 LTM"},{t:"Bồi thường",d:"Thiệt hại thực tế · trực tiếp · quan hệ nhân quả · hạn chế tổn thất"}]},
+   {t:"Chế tài tác động việc tiếp tục hợp đồng",l:"cols3",c:[{t:"Tạm ngừng",d:"Tạm thời không thực hiện nghĩa vụ"},{t:"Đình chỉ",d:"Chấm dứt thực hiện theo điều kiện luật định"},{t:"Hủy bỏ",d:"Hậu quả riêng về hiệu lực và hoàn trả"}]},
+   {t:"Miễn trách nhiệm",l:"row",c:[{t:"Bất khả kháng",d:"Chứng minh sự kiện, tác động và thông báo"},{t:"Lỗi của bên kia",d:"Kiểm tra quan hệ nhân quả"},{t:"Thỏa thuận/ quyết định nhà nước",d:"Đúng điều kiện luật định"}]},
+   {t:"Đối chiếu quốc tế",c:[{t:"CISG",d:"Vi phạm cơ bản · dự liệu thiệt hại · hạn chế tổn thất"},{t:"PICC 2016",d:"Favor contractus · hardship · force majeure"}]}
+  ]}]},
+ {n:4,t:"Giải quyết tranh chấp thương mại",img:"assets/to-tung-dan-su.jpg",maps:[
+  {k:"Giải quyết tranh chấp",h1:"Giải quyết tranh chấp",h2:"thương mại",src:"new",r:"Tranh chấp thương mại",c:[
+   {t:"Nhận diện tranh chấp",l:"row",c:[{t:"Chủ thể và quan hệ",d:"Hoạt động thương mại · hợp đồng · yếu tố nước ngoài"},{t:"Yêu cầu và chứng cứ",d:"Nghĩa vụ · vi phạm · thiệt hại"},{t:"Luật và thẩm quyền",d:"Điều khoản · quy phạm xung đột · thời hiệu"}]},
+   {t:"Phương thức trong nước",l:"cols2",c:[{t:"Thương lượng",d:"Các bên tự thỏa thuận"},{t:"Hòa giải",d:"Người trung lập hỗ trợ"},{t:"Trọng tài",d:"Cần thỏa thuận hợp lệ; phán quyết chung thẩm theo luật"},{t:"Tòa án",d:"Thẩm quyền và thủ tục tố tụng"}]},
+   {t:"Hòa giải thương mại",l:"row",c:[{t:"Nguyên tắc",d:"Tự nguyện · bình đẳng · bảo mật theo luật"},{t:"Trình tự",d:"Yêu cầu · hòa giải viên · phiên hòa giải · thỏa thuận thành"}]},
+   {t:"Trọng tài thương mại",l:"row",c:[{t:"Thỏa thuận",d:"Hình thức · hiệu lực · phạm vi"},{t:"Tố tụng",d:"Thành lập hội đồng · chứng cứ · phán quyết"},{t:"Tòa án hỗ trợ",d:"Biện pháp khẩn cấp · hủy · thi hành theo luật"}]},
+   {t:"Tranh chấp quốc tế",l:"cols2",c:[{t:"Chọn luật và cơ quan",d:"Điều khoản chọn luật · Tòa án/trọng tài"},{t:"Công ước New York 1958",d:"Công nhận và thi hành phán quyết trọng tài nước ngoài"},{t:"WTO DSU",d:"Tranh chấp giữa thành viên WTO"},{t:"Thi hành xuyên biên giới",d:"Xác định nơi có tài sản · điều ước · căn cứ từ chối"}]}
+  ]}]}
+);
 function tlParse(id){ if(!id||id.indexOf("tl-")!==0)return null;
   for(const k in TL){ if(id==="tl-"+k)return {k}; if(id.indexOf("tl-"+k+"-")===0){const p=id.slice(k.length+4).split("-").map(Number);return {k,ch:p[0],mi:(p[1]||1)-1}} }
   return null}
