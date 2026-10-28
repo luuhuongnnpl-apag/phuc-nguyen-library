@@ -238,7 +238,7 @@ tr.tot td{font-weight:700;background:var(--bg)}
 <script>
 (function(){
 function decode(s){const k='TTDS-APAG-2026';const b=atob(s.trim());const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i)^k.charCodeAt(i%k.length);return JSON.parse(new TextDecoder().decode(u))}
-const D=decode(document.getElementById('data').textContent);const X=JSON.parse(document.getElementById('pn-extra-data').textContent);D.meta.asof=X.meta.asof;D.meta.draft=X.meta.draft;D.meta.lawnote=X.meta.lawnote;D.chapters.push(...X.chapters);D.items.push(...X.items);Object.assign(D.th,X.th);D.sets.push(...X.sets);D.kn.ch.push(...X.kn.ch);D.kn.updT=X.kn.updT;D.kn.upd=X.kn.upd;D.vb=X.vb;
+const D=decode(document.getElementById('data').textContent);const X=JSON.parse(document.getElementById('pn-extra-data').textContent);D.meta.asof=X.meta.asof;D.meta.draft=X.meta.draft;D.meta.lawnote=X.meta.lawnote;D.chapters.push(...X.chapters);X.items.forEach(q=>{if(q.th)q.k=q.th+'.'+q.k.split('.').pop()});D.items.push(...X.items);Object.assign(D.th,X.th);D.sets.push(...X.sets);D.kn.ch.push(...X.kn.ch);D.kn.updT=X.kn.updT;D.kn.upd=X.kn.upd;D.vb=X.vb;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=x=>(Math.round(x*100)/100).toString().replace('.',',');
