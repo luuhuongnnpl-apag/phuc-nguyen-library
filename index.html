@@ -392,6 +392,7 @@ async function loadFb(){if(!BE())return;try{const r=await call({action:"fb_list"
    từ đó mỗi lần cấp hoặc xóa mã, trang tự lưu ngược lên GitHub.
    Bản Claude: chủ trang quản lý mã trong kho dữ liệu của artifact. */
 let ST=null; /* phiên quản trị trên bản web: {pw,list,salt,sha,tok} */
+const AKEY="pnlib-quan-tri"; /* ghi nhớ đăng nhập quản trị trên trình duyệt này */
 function adminScopeLabel(xs){
   if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return "Tất cả học phần";
   return xs.map(id=>{const c=course(id);return c?c.name:id}).join(", ");
@@ -452,10 +453,11 @@ function admin2HTML(){
   if(!DB&&!ST)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
     <form id="ak-form" novalidate class="admin"><p class="msg">Tài khoản quản trị dành cho giảng viên. Nhập mật khẩu quản trị để vào phần cấp mã lớp.</p>
     <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
-    <div class="err" id="ak-err" role="alert"></div><div><button class="btn primary" type="submit">Đăng nhập</button></div></form></section></main>`;
+    <label class="admin-course" style="border:0;padding:0"><input type="checkbox" id="ak-keep" checked><span>Ghi nhớ đăng nhập trên máy này (không dùng trên máy dùng chung)</span></label>
+    <div class="err" id="ak-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
   const web=!DB;
   if(web&&!ST.tok)return head+`<main class="wrap admin">${connectBox(true)}
-    <section class="frame"><div class="row"><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button></div></section></main>`;
+    <section class="frame"><div class="row"><button class="btn" type="button" data-home>Về trang chủ</button><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button></div></section></main>`;
   const d=new Date();d.setMonth(d.getMonth()+4);const def=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
   const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=`<div><label class="lab" for="c-max">Số người được dùng mã</label><input type="number" id="c-max" min="1" max="1000" value="20" required></div>`;
@@ -473,7 +475,7 @@ function admin2HTML(){
         <label class="admin-course admin-all"><input type="checkbox" id="c-all-courses" checked><span><b>Tất cả học phần</b></span></label>
         <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div></div>
       <div class="err" id="c-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã</button><button class="btn" type="button" data-home>Về trang chủ</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
     </form></section>
   <section class="frame"><div class="ftitle">Danh sách mã lớp</div>
     <div class="row" style="align-items:center;margin-bottom:10px"><span class="msg" id="l-msg" aria-live="polite"></span></div>
@@ -502,19 +504,21 @@ function bindToken(){const f=$("#t-form");if(!f)return;
 async function admin2Bind(){
   const af=$("#ak-form");
   if(af){
-    af.addEventListener("submit",async e=>{e.preventDefault();const pw=$("#ak-in").value;
-      if(!pw){$("#ak-err").textContent="Nhập mật khẩu quản trị.";return}
-      $("#ak-err").textContent="Đang xác thực…";
+    async function login(pw,auto){
+      $("#ak-err").textContent=auto?"Đang tự đăng nhập…":"Đang xác thực…";
       let d,v;try{d=await loadMa(true)}catch(err){$("#ak-err").textContent="Chưa tải được dữ liệu mã lớp. Kiểm tra mạng rồi thử lại.";return}
-      try{v=await openVault(d.admin,pw)}catch(err){$("#ak-err").textContent="Mật khẩu không đúng.";return}
+      try{v=await openVault(d.admin,pw)}catch(err){store.del(AKEY);$("#ak-err").textContent=auto?"Mật khẩu đã lưu không còn đúng. Nhập lại mật khẩu quản trị.":"Mật khẩu không đúng.";return}
       let sha=null;
       if(v.tok){try{const g=await ghGet(v.tok);if(g){sha=g.sha;d=g.data;v=await openVault(d.admin,pw)}}catch(err){$("#ak-err").textContent=ghErr(err);v.tok="";}}
-      ST={pw,list:Array.isArray(v.codes)?v.codes:[],salt:d.salt,sha,tok:v.tok||""};MA=d;route("quan-ly-ma")});
+      if(!auto&&$("#ak-keep").checked)store.set(AKEY,pw);
+      ST={pw,list:Array.isArray(v.codes)?v.codes:[],salt:d.salt,sha,tok:v.tok||""};MA=d;route("quan-ly-ma")}
+    af.addEventListener("submit",e=>{e.preventDefault();const pw=$("#ak-in").value;if(!pw){$("#ak-err").textContent="Nhập mật khẩu quản trị.";return}login(pw,false)});
+    const saved=store.get(AKEY);if(saved)login(saved,true);
     $("#ak-in").addEventListener("input",()=>$("#ak-err").textContent="");
     return;
   }
   bindToken();
-  if($("#l-out"))$("#l-out").onclick=()=>{ST=null;route("quan-ly-ma")};
+  if($("#l-out"))$("#l-out").onclick=()=>{ST=null;store.del(AKEY);route("quan-ly-ma")};
   if(!$("#c-form"))return;
   const web=ADM.web();
   async function list(){
@@ -551,7 +555,7 @@ async function admin2Bind(){
     if(a!==b){$("#p-err").textContent="Hai lần nhập mật khẩu chưa khớp.";return}
     $("#p-err").textContent="";$("#p-msg").textContent="Đang đổi mật khẩu…";const old=ST.pw;ST.pw=a;
     const r=await persist(()=>{ST.pw=old});
-    if(r.ok){$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi mật khẩu. Từ nay đăng nhập bằng mật khẩu mới."}
+    if(r.ok){if(store.get(AKEY))store.set(AKEY,a);$("#p-new").value="";$("#p-new2").value="";$("#p-msg").textContent="Đã đổi mật khẩu. Từ nay đăng nhập bằng mật khẩu mới."}
     else{$("#p-msg").textContent="";$("#p-err").textContent=r.why}});
   list();
 }
