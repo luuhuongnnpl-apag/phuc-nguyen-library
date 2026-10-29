@@ -620,7 +620,7 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
   if(id==="home") m.innerHTML=homeHTML();
-  else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else m.innerHTML=fbHTML()}
+  else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
@@ -639,7 +639,7 @@ function homeHTML(){
     return `<div class="doc${has?"":" soon"}" data-comment-target><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="tl-${d.tl}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
   if(BE()&&stats){visits=stats.users}
   const vTxt=BE()&&!stats?'<span class="val na">đang tải…</span>':visits!=null?`<span class="val">${visits.toLocaleString("vi-VN")}</span>`:(CONFIG.goatcounter?`<a class="val na" href="https://${esc(CONFIG.goatcounter)}.goatcounter.com" target="_blank" rel="noopener">xem thống kê</a>`:(onClaude?'<span class="val na">thống kê trên bản web</span>':'<span class="val na">chưa kết nối bộ đếm</span>'));
-  const fTxt=BE()?(stats?`<span class="val">${stats.feedback}</span>`:'<span class="val na">đang tải…</span>'):cmt?'<span class="val na">xem ở khung Bình luận</span>':(feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`);
+  const fTxt=BE()?(stats?`<span class="val">${stats.feedback}</span>`:'<span class="val na">đang tải…</span>'):cmt?'<span class="val na">xem ở khung Bình luận</span>':!onClaude?'<span class="val na">gửi trực tiếp tới giảng viên</span>':(feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`);
   return `<main class="wrap">
   <div class="grid-top">
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
@@ -655,7 +655,7 @@ function homeHTML(){
       ${(!onClaude||isOwner)?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
     </section>
   </div></main>`}
-function sendLink(){if(BE())return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
+function sendLink(){if(BE()||!onClaude)return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
 async function sendFeedback(btn){
   if(cmt){const target=btn.closest("[data-comment-target]")||btn;
     try{const r=await cmt.openComposer({element:target}); if(r&&r.opened===false) note(btn,"Bấm lại một lần nữa để mở khung góp ý.")}
@@ -664,6 +664,28 @@ async function sendFeedback(btn){
   route("gop-y")}
 function note(btn,t){let n=btn.parentElement.parentElement.querySelector(".fbnote");if(!n){n=document.createElement("p");n.className="msg fbnote";btn.parentElement.after(n)}n.textContent=t}
 
+/* Góp ý trên bản web GitHub: gửi thẳng về email giảng viên (FormSubmit) */
+const FB_TO="luuhuong.nnpl@gmail.com";
+function fbMailHTML(){
+  const opts=['<option value="Chung">Góp ý chung</option>'].concat(COURSES.filter(c=>c.src).map(c=>`<option>${esc(c.name)}</option>`)).join("");
+  const sel='style="width:100%;font:500 15px var(--f-body);padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)"';
+  return `<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>Phản hồi góp ý</h2></div></div>
+  <main class="wrap"><section class="frame"><div class="ftitle">Gửi góp ý, báo lỗi</div>
+    <form id="fm-form" novalidate class="admin"><p class="msg">Góp ý về nội dung cần cập nhật, câu hỏi chưa chính xác hoặc đề xuất cải thiện. Góp ý được gửi trực tiếp tới giảng viên. Trong từng học phần còn có nút <b>Báo lỗi câu này</b> ngay dưới mỗi câu hỏi.</p>
+      <div class="row"><div><label class="lab" for="fm-course">Học phần</label><select id="fm-course" ${sel}>${opts}</select></div><div><label class="lab" for="fm-name">Họ tên, lớp (không bắt buộc)</label><input type="text" id="fm-name" maxlength="80"></div></div>
+      <div><label class="lab" for="fm-text">Nội dung góp ý</label><textarea id="fm-text" rows="5" maxlength="2000" ${sel}></textarea></div>
+      <div class="err" id="fm-err" role="alert"></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Gửi góp ý</button><span class="msg" id="fm-msg" aria-live="polite"></span></div></form></section></main>`}
+function fbMailBind(){const f=$("#fm-form");if(!f)return;
+  f.addEventListener("submit",async e=>{e.preventDefault();const text=$("#fm-text").value.trim();
+    if(text.length<5){$("#fm-err").textContent="Viết nội dung góp ý trước khi gửi.";return}
+    $("#fm-err").textContent="";$("#fm-msg").textContent="Đang gửi…";const btn=f.querySelector("button[type=submit]");btn.disabled=true;
+    const body={_subject:"[Phúc Nguyên Library] Góp ý – "+$("#fm-course").value,_template:"box",_captcha:"false","Học phần":$("#fm-course").value,"Nội dung":text,"Người gửi":$("#fm-name").value.trim()||"(không ghi tên)","Thời điểm":new Date().toLocaleString("vi-VN")};
+    let ok=false;try{const r=await fetch("https://formsubmit.co/ajax/"+FB_TO,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));ok=r.ok&&String(j.success)==="true"}catch(err){}
+    btn.disabled=false;
+    if(ok){$("#fm-msg").textContent="Đã gửi. Cảm ơn bạn!";$("#fm-text").value=""}
+    else{$("#fm-msg").textContent="";$("#fm-err").innerHTML='Chưa gửi được qua web. Bấm <a href="mailto:'+FB_TO+'?subject='+encodeURIComponent(body._subject)+'&body='+encodeURIComponent(text)+'">gửi bằng email</a>.'}});
+  $("#fm-text").addEventListener("input",()=>$("#fm-err").textContent="")}
 function fbHTML(){
   let body;
   if(onClaude) body=`<div class="info">Toàn bộ góp ý của sinh viên hiển thị trong khung <b>Bình luận</b> của Claude (biểu tượng bình luận ở góc trên trang). Bấm vào một góp ý để xem chỗ được góp ý và trả lời.</div>`;
