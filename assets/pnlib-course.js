@@ -27,6 +27,10 @@ const GROUPS=D.chapters||[];const GN={};GROUPS.forEach(g=>GN[g.n]=g.name);
 const Q=(D.q||[]).map(x=>Object.assign({},x,{key:x.id+"@"+fnv(x.q+"|"+x.o.join("|")+"|"+x.a)}));
 const byKey={};Q.forEach(q=>byKey[q.key]=q);
 const isRight=(q,c)=>c!==undefined&&c!==null&&c===q.a;
+const byId={};Q.forEach(q=>byId[q.id]=q);
+/* Câu hỏi gắn với tình huống: q.cid trỏ tới tình huống (th[].items[].cid) */
+const CTX={};(D.th||[]).forEach(t=>t.items.forEach(c=>{if(c.cid)CTX[c.cid]={title:c.title,text:c.text}}));
+const QT=Q.filter(q=>!q.cid), HASCASEQ=Q.some(q=>q.cid);
 
 /* ---------- Liên kết văn bản pháp luật ---------- */
 const DOCS=[];/* {re, url} từ danh mục văn bản */
@@ -80,10 +84,10 @@ function head(v,intro){const t=(VIEWS.find(x=>x[0]===v)||[])[1]||"";return `<div
 
 /* ---------- Hiển thị một câu hỏi ---------- */
 function qHTML(q,c,mode,num){/* mode: "exam" (chưa chấm) | "practice" | "review" */
-  const answered=c!==undefined&&c!==null, reveal=mode==="review"||(mode==="practice"&&answered);
+  const answered=c!==undefined&&c!==null, reveal=mode==="review"||((mode==="practice"||mode==="case")&&answered);
   const ok=isRight(q,c);
   let h=`<div class="qmeta"><span class="qnum">${num||("Câu "+esc(q.id))}</span><span class="tag">${esc(GN[q.g]?("Chương "+q.g+". "+GN[q.g]):"")}</span>${q.lv?`<span class="tag lv">${LV[q.lv]}</span>`:""}<span class="sp"></span>${reveal?`<button type="button" class="linkbtn report-btn" data-report="${esc(q.key)}">Báo lỗi câu này</button>`:""}</div>
-  <p class="qtext">${esc(q.q)}</p><div class="opts">`;
+  ${q.cid&&CTX[q.cid]&&mode!=="case"?`<div class="qctx"><b>Tình huống: ${esc(CTX[q.cid].title)}</b><p>${esc(CTX[q.cid].text)}</p></div>`:""}<p class="qtext">${esc(q.q)}</p><div class="opts">`;
   h+=q.o.map((o,i)=>{let cls="opt",mk="";
     if(reveal){if(i===q.a){cls+=" right";mk=i===c?"Bạn chọn · Đúng":"Đáp án đúng"}else if(i===c){cls+=" wrong";mk="Bạn chọn"}}
     else if(answered&&i===c)cls+=" sel";
@@ -95,9 +99,9 @@ function bindReport(root){$$("[data-report]",root).forEach(b=>b.onclick=()=>{con
 
 /* ---------- Thi thử ---------- */
 let exam=store.get("exam",null),tick=null,exI=0,reviewFilter="all";
-const cfg=Object.assign({n:30,min:30,lv:["NB","TH","VD"],groups:GROUPS.map(g=>g.n)},store.get("cfg",{}));
+const cfg=Object.assign({n:30,min:30,lv:["NB","TH","VD"],groups:GROUPS.map(g=>g.n),th:true},store.get("cfg",{}));
 function stopTimer(){clearInterval(tick);tick=null}
-function pool(groups,lvs){return Q.filter(q=>groups.includes(q.g)&&(!q.lv||lvs.includes(q.lv)))}
+function pool(groups,lvs){return Q.filter(q=>groups.includes(q.g)&&(!q.lv||lvs.includes(q.lv))&&(!q.cid||cfg.th))}
 function buildExam(){
   const p=pool(cfg.groups,cfg.lv),n=Math.min(cfg.n,p.length);
   /* Rải đều theo chương và mức độ đã chọn */
@@ -119,18 +123,19 @@ function examSetup(){
     <div class="field"><span class="lab">Số câu</span><div class="row"><div class="chips" id="c-n">${[10,20,30,40,50].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="5" max="${Q.length}" value="${cfg.n}"></div></div>
     <div class="field"><span class="lab">Thời gian làm bài</span><div class="row"><div class="chips" id="c-min">${[15,30,45,60].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.min===v}">${v} phút</button>`).join("")}</div><label class="lab" for="c-min-in">hoặc nhập</label><input type="number" id="c-min-in" min="5" max="180" value="${cfg.min}"></div></div>
     <div class="field"><span class="lab">Mức độ câu hỏi</span><div class="picks" id="c-lv">${LVK.map(l=>`<label><input type="checkbox" value="${l}" ${cfg.lv.includes(l)?"checked":""}><span>${LV[l]} <small>(${cnt(null,l)} câu)</small></span></label>`).join("")}</div></div>
+    ${HASCASEQ?`<div class="field"><span class="lab">Dạng câu hỏi</span><div class="picks"><label><input type="checkbox" id="c-th" ${cfg.th?"checked":""}><span>Gồm câu hỏi gắn với tình huống <small>(${Q.length-QT.length} câu)</small></span></label></div></div>`:""}
     <div class="field"><span class="lab">Phạm vi nội dung</span><div class="chips"><button type="button" class="chip" id="g-all">Chọn tất cả</button><button type="button" class="chip" id="g-none">Bỏ chọn</button></div>
       <div class="picks" id="c-g">${GROUPS.map(g=>`<label><input type="checkbox" value="${g.n}" ${cfg.groups.includes(g.n)?"checked":""}><span>Chương ${g.n}. ${esc(g.name)} <small>(${cnt(g.n,null)} câu)</small></span></label>`).join("")}</div></div>
     <div class="nav-row" style="margin-top:0"><span class="intro" id="cfg-note" style="margin:0"></span><button type="button" class="btn primary" id="go">Bắt đầu làm bài</button></div>
   </div>`;
-  const sync=()=>{cfg.lv=$$("#c-lv input").filter(x=>x.checked).map(x=>x.value);cfg.groups=$$("#c-g input").filter(x=>x.checked).map(x=>+x.value);
+  const sync=()=>{if($("#c-th"))cfg.th=$("#c-th").checked;cfg.lv=$$("#c-lv input").filter(x=>x.checked).map(x=>x.value);cfg.groups=$$("#c-g input").filter(x=>x.checked).map(x=>+x.value);
     cfg.n=Math.max(5,Math.min(+$("#c-n-in").value||30,Q.length));cfg.min=Math.max(5,Math.min(+$("#c-min-in").value||30,180));store.set("cfg",cfg);
     $$("#c-n .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.n)));$$("#c-min .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.min)));
     const have=pool(cfg.groups,cfg.lv).length;$("#go").disabled=!have;
     $("#cfg-note").textContent=!cfg.groups.length?"Chọn ít nhất một chương.":!cfg.lv.length?"Chọn ít nhất một mức độ.":have<cfg.n?`Phạm vi đã chọn có ${have} câu; đề sẽ gồm ${have} câu.`:`Đề gồm ${cfg.n} câu, làm trong ${cfg.min} phút.`};
   $$("#c-n .chip").forEach(b=>b.onclick=()=>{$("#c-n-in").value=b.dataset.v;sync()});
   $$("#c-min .chip").forEach(b=>b.onclick=()=>{$("#c-min-in").value=b.dataset.v;sync()});
-  $("#c-n-in").oninput=sync;$("#c-min-in").oninput=sync;$$("#c-lv input,#c-g input").forEach(x=>x.onchange=sync);
+  $("#c-n-in").oninput=sync;$("#c-min-in").oninput=sync;$$("#c-lv input,#c-g input,#c-th").forEach(x=>x.onchange=sync);
   $("#g-all").onclick=()=>{$$("#c-g input").forEach(x=>x.checked=true);sync()};$("#g-none").onclick=()=>{$$("#c-g input").forEach(x=>x.checked=false);sync()};
   $("#go").onclick=()=>{exam=buildExam();exI=0;store.set("exam",exam);examRun();scrollTo(0,0)};
   sync()}
@@ -181,8 +186,8 @@ function examResult(e,current){
 let ans=store.get("ans",{});
 const st={g:"",lv:"",mode:"seq",list:[],i:0};
 R.luyentap=function(){
-  CTRL.innerHTML=head("luyentap",`${Q.length} câu trắc nghiệm theo chương và mức độ. Chọn đáp án để xem ngay đúng hay sai, kèm giải thích và căn cứ pháp lý; có thể <b>Làm lại câu này</b>. Kết quả lưu trên trình duyệt của bạn.`)+
-  `<div class="toolbar"><label class="lab" for="f-g">Chương</label><select id="f-g"><option value="">Tất cả các chương (${Q.length} câu)</option>${GROUPS.map(g=>`<option value="${g.n}" ${String(g.n)===st.g?"selected":""}>Chương ${g.n}. ${esc(g.name)}</option>`).join("")}</select></div>
+  CTRL.innerHTML=head("luyentap",`${QT.length} câu trắc nghiệm theo chương và mức độ. Chọn đáp án để xem ngay đúng hay sai, kèm giải thích và căn cứ pháp lý; có thể <b>Làm lại câu này</b>. Kết quả lưu trên trình duyệt của bạn.`)+
+  `<div class="toolbar"><label class="lab" for="f-g">Chương</label><select id="f-g"><option value="">Tất cả các chương (${QT.length} câu)</option>${GROUPS.map(g=>`<option value="${g.n}" ${String(g.n)===st.g?"selected":""}>Chương ${g.n}. ${esc(g.name)}</option>`).join("")}</select></div>
   <div class="toolbar"><div class="chips" id="f-lv">${[["","Mọi mức độ"]].concat(LVK.map(l=>[l,LV[l]])).map(([v,t])=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${st.lv===v}">${t}</button>`).join("")}</div>
   <div class="chips" id="f-mode"><button type="button" class="chip" data-v="seq" aria-pressed="${st.mode==="seq"}">Lần lượt</button><button type="button" class="chip" data-v="wrong" aria-pressed="${st.mode==="wrong"}">Ôn câu đã làm sai</button></div></div>
   <div class="stats" id="stats"></div><div class="bar"><i id="pbar"></i></div>`;
@@ -190,7 +195,7 @@ R.luyentap=function(){
   $$("#f-lv .chip").forEach(b=>b.onclick=()=>{st.lv=b.dataset.v;$$("#f-lv .chip").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));rebuild()});
   $$("#f-mode .chip").forEach(b=>b.onclick=()=>{st.mode=b.dataset.v;$$("#f-mode .chip").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));rebuild()});
   rebuild()};
-function rebuild(){const p=Q.filter(q=>(!st.g||q.g==st.g)&&(!st.lv||q.lv===st.lv));
+function rebuild(){const p=QT.filter(q=>(!st.g||q.g==st.g)&&(!st.lv||q.lv===st.lv));
   if(st.mode==="wrong"){st.list=p.filter(q=>q.key in ans&&!isRight(q,ans[q.key])).map(q=>q.key);st.i=0}
   else{st.list=p.map(q=>q.key);const k=st.list.findIndex(id=>!(id in ans));st.i=k<0?0:k}
   practice()}
@@ -226,21 +231,27 @@ document.addEventListener("keydown",e=>{if(/TEXTAREA|SELECT|INPUT/.test(e.target
 let drafts=store.get("drafts",{}),opened=store.get("opened",{}),cg="";
 const CASES=[];(D.th||[]).forEach((t,gi)=>t.items.forEach((c,i)=>CASES.push(Object.assign({},c,{id:(gi+1)+"."+(i+1),g:gi+1,gname:t.name}))));
 R.tinhhuong=function(){
-  CTRL.innerHTML=head("tinhhuong","Tự giải theo trình tự: xác định vấn đề pháp lý, nêu căn cứ (điều, khoản), áp dụng vào dữ kiện, kết luận. Ghi bài làm vào ô nháp rồi bấm <b>Xem hướng dẫn giải</b> để đối chiếu. Bài nháp chỉ lưu trên trình duyệt của bạn.")+
+  CTRL.innerHTML=head("tinhhuong",HASCASEQ?"Đọc tình huống rồi trả lời từng câu hỏi; chọn đáp án để xem ngay đúng hay sai, kèm giải thích và căn cứ pháp lý. Kết quả lưu trên trình duyệt của bạn.":"Tự giải theo trình tự: xác định vấn đề pháp lý, nêu căn cứ (điều, khoản), áp dụng vào dữ kiện, kết luận. Ghi bài làm vào ô nháp rồi bấm <b>Xem hướng dẫn giải</b> để đối chiếu. Bài nháp chỉ lưu trên trình duyệt của bạn.")+
   `<div class="toolbar"><div class="chips" id="c-group"><button type="button" class="chip" data-g="" aria-pressed="${!cg}">Tất cả</button>${(D.th||[]).map((t,i)=>`<button type="button" class="chip" data-g="${i+1}" aria-pressed="${cg==String(i+1)}">Nhóm ${i+1}. ${esc(t.name)}</button>`).join("")}</div></div>
   <div class="toolbar"><label class="lab" for="c-jump">Chuyển nhanh</label><select id="c-jump"></select></div><div class="stats" id="c-stats"></div>`;
   $$("#c-group .chip").forEach(b=>b.onclick=()=>{cg=b.dataset.g;$$("#c-group .chip").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));cases()});
   cases()};
 function cases(){const list=CASES.filter(c=>!cg||c.g==cg);
-  $("#c-stats").innerHTML=`<span>Đã xem hướng dẫn <b>${list.filter(c=>opened[c.id]).length}</b>/${list.length} tình huống</span>`;
+  const cqk=list.flatMap(c=>(c.mcq||[]).map(id=>byId[id]).filter(Boolean).map(q=>q.key));
+  $("#c-stats").innerHTML=`<span>Tình huống <b>${list.length}</b></span>${cqk.length?`<span>Đã làm <b>${cqk.filter(k=>ans[k]!==undefined).length}</b>/${cqk.length} câu, đúng <b>${cqk.filter(k=>isRight(byKey[k],ans[k])).length}</b></span>`:""}${list.some(c=>(c.guide||[]).length)?`<span>Đã xem hướng dẫn <b>${list.filter(c=>opened[c.id]).length}</b>/${list.length}</span>`:""}`;
   $("#c-jump").innerHTML='<option value="">— Chọn tình huống —</option>'+list.map(c=>`<option value="${c.id}">${c.id}. ${esc(c.title)}</option>`).join("");
   $("#c-jump").onchange=e=>{const el=document.getElementById("case-"+e.target.value.replace(".","-"));if(el)el.scrollIntoView({behavior:"smooth",block:"start"})};
   BODY.innerHTML=list.map(c=>{const k=c.id.replace(".","-");return `<article class="case" id="case-${k}">
     <h3>Tình huống ${c.id}. ${esc(c.title)}${opened[c.id]?'<span class="done">Đã đối chiếu</span>':""}</h3>
-    <p>${esc(c.text)}</p><div class="q-list"><span class="lab">Yêu cầu</span><ol>${c.ask.map(a=>`<li>${esc(a)}</li>`).join("")}</ol></div>
-    <label class="draft-label" for="d-${k}">Bài làm nháp</label><textarea id="d-${k}" data-id="${c.id}" placeholder="Vấn đề pháp lý → Căn cứ → Áp dụng → Kết luận">${esc(drafts[c.id]||"")}</textarea>
-    <div class="case-actions"><button type="button" class="btn primary" data-toggle="${c.id}" aria-expanded="false">Xem hướng dẫn giải</button><span class="saved" data-saved="${c.id}"></span><span style="flex:1"></span><button type="button" class="linkbtn report-btn" data-report="Tình huống ${c.id}" data-text="${esc(c.title+"\n"+c.text)}">Báo lỗi tình huống</button></div>
-    <div class="answer" data-ans="${c.id}" hidden><h4>Hướng dẫn giải</h4><ul>${c.guide.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><p class="basis"><b>Căn cứ chính:</b> ${lawHTML(c.basis)}</p></div></article>`}).join("");
+    <p style="white-space:pre-line">${esc(c.text)}</p>
+    ${(c.mcq||[]).length?`<div class="cqs">${c.mcq.map((id,j)=>{const q=byId[id];return q?`<div class="cq" data-qk="${esc(q.key)}" data-num="Câu ${j+1}">${qHTML(q,ans[q.key],"case","Câu "+(j+1))}</div>`:""}).join("")}</div>`:""}
+    ${(c.ask||[]).length?`<div class="q-list"><span class="lab">Yêu cầu</span><ol>${c.ask.map(a=>`<li>${esc(a)}</li>`).join("")}</ol></div>
+    <label class="draft-label" for="d-${k}">Bài làm nháp</label><textarea id="d-${k}" data-id="${c.id}" placeholder="Vấn đề pháp lý → Căn cứ → Áp dụng → Kết luận">${esc(drafts[c.id]||"")}</textarea>`:""}
+    <div class="case-actions">${(c.guide||[]).length?`<button type="button" class="btn primary" data-toggle="${c.id}" aria-expanded="false">Xem hướng dẫn giải</button><span class="saved" data-saved="${c.id}"></span>`:""}<span style="flex:1"></span><button type="button" class="linkbtn report-btn" data-report="Tình huống ${c.id}" data-text="${esc(c.title+"\n"+c.text)}">Báo lỗi tình huống</button></div>
+    ${(c.guide||[]).length?`<div class="answer" data-ans="${c.id}" hidden><h4>Hướng dẫn giải</h4><ul>${c.guide.map(x=>`<li style="white-space:pre-line">${esc(x)}</li>`).join("")}</ul>${c.basis?`<p class="basis"><b>Căn cứ chính:</b> ${lawHTML(c.basis)}</p>`:""}</div>`:""}</article>`}).join("");
+  const bindCq=box=>{$$(".opt",box).forEach(b=>b.onclick=()=>{const key=box.dataset.qk;if(ans[key]!==undefined)return;ans[key]=+b.dataset.v;store.set("ans",ans);box.innerHTML=qHTML(byKey[key],ans[key],"case",box.dataset.num)+`<p style="margin:8px 0 0"><button type="button" class="linkbtn" data-redo>Làm lại câu này</button></p>`;bindCq(box);bindReport(box)});
+    const rd=$("[data-redo]",box);if(rd)rd.onclick=()=>{delete ans[box.dataset.qk];store.set("ans",ans);box.innerHTML=qHTML(byKey[box.dataset.qk],undefined,"case",box.dataset.num);bindCq(box)}};
+  $$(".cq",BODY).forEach(bindCq);
   $$("textarea",BODY).forEach(t=>{let tm;t.oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>{drafts[t.dataset.id]=t.value;store.set("drafts",drafts);const s=$(`[data-saved="${t.dataset.id}"]`);if(s)s.textContent="Đã lưu nháp"},400)}});
   $$("[data-toggle]",BODY).forEach(b=>b.onclick=()=>{const id=b.dataset.toggle,a=$(`[data-ans="${id}"]`);a.hidden=!a.hidden;b.setAttribute("aria-expanded",String(!a.hidden));b.textContent=a.hidden?"Xem hướng dẫn giải":"Ẩn hướng dẫn giải";if(!a.hidden&&!opened[id]){opened[id]=1;store.set("opened",opened)}});
   bindReport(BODY)}

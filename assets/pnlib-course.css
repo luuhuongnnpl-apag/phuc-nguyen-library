@@ -169,6 +169,11 @@ tr:last-child td{border-bottom:0}
 .law h2:first-child{margin-top:0}
 
 /* Tình huống */
+.qctx{background:var(--tint);border-left:3px solid var(--acc);border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px;font-size:14.5px}
+.qctx b{display:block;color:var(--head);margin-bottom:4px}.qctx p{margin:0;white-space:pre-line}
+.cqs{display:grid;gap:12px;margin:12px 0}
+.cq{border:1px solid var(--line);border-radius:12px;padding:14px clamp(12px,3vw,18px);background:var(--bg)}
+.cq .qtext{font-size:16px;margin:2px 0 12px}
 .case{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px clamp(16px,4vw,26px);margin-bottom:16px;scroll-margin-top:12px}
 .case h3{font-family:var(--f-display);font-size:18px;margin:0 0 8px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;text-wrap:balance}
 .case h3 .done{font:600 12px var(--f-body);color:var(--ok);border:1px solid var(--ok);border-radius:4px;padding:0 6px}
