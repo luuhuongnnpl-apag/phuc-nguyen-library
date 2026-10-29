@@ -21,6 +21,6 @@ File chỉ chứa dấu băm của mã (sinh viên không đọc được mã). 
 - `assets/pnlib-course.js` + `assets/pnlib-course.css`: khuôn dùng chung cho mọi học phần (mẫu: Luật Dân sự).
   Mỗi trang `hp/<id>.html` chỉ chứa khối dữ liệu `<script id="pn-data" type="application/json">`.
 - Chức năng: thi thử tùy chọn số câu, thời gian, mức độ (Nhận biết, Thông hiểu, Vận dụng), chương; xem lại toàn bộ bài có giải thích và căn cứ;
-  lịch sử làm bài trên thiết bị; luyện tập từng câu; tình huống; văn bản, án lệ có link; tóm tắt lý thuyết có mục lục và nút mục trước/sau;
+  lịch sử làm bài trên thiết bị; luyện tập từng câu; tình huống vận dụng (mỗi chương 3 tình huống, mỗi tình huống 4 câu ABCD nối tiếp, có đề thi gồm cả lý thuyết và tình huống); văn bản, án lệ có link; tóm tắt lý thuyết có mục lục và nút mục trước/sau;
   nút báo lỗi ở từng câu, gửi về email giảng viên qua FormSubmit (lần đầu cần bấm xác nhận trong thư FormSubmit gửi tới).
 - Đã chuyển: Luật Dân sự, Luật Thương mại. Các học phần khác chuyển dần theo cùng khuôn.

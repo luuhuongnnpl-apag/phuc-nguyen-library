@@ -31,6 +31,8 @@ const byId={};Q.forEach(q=>byId[q.id]=q);
 /* Câu hỏi gắn với tình huống: q.cid trỏ tới tình huống (th[].items[].cid) */
 const CTX={};(D.th||[]).forEach(t=>t.items.forEach(c=>{if(c.cid)CTX[c.cid]={title:c.title,text:c.text}}));
 const QT=Q.filter(q=>!q.cid), HASCASEQ=Q.some(q=>q.cid);
+/* Tình huống có câu ABCD: dùng để bốc nguyên tình huống vào đề thi thử */
+const CASEQ=[];(D.th||[]).forEach(t=>t.items.forEach(c=>{const qs=(c.mcq||[]).map(id=>Q.find(q=>q.id===id)).filter(Boolean);if(qs.length)CASEQ.push({cid:c.cid,g:qs[0].g,keys:qs.map(q=>q.key)})}));
 
 /* ---------- Liên kết văn bản pháp luật ---------- */
 const DOCS=[];/* {re, url} từ danh mục văn bản */
@@ -99,16 +101,22 @@ function bindReport(root){$$("[data-report]",root).forEach(b=>b.onclick=()=>{con
 
 /* ---------- Thi thử ---------- */
 let exam=store.get("exam",null),tick=null,exI=0,reviewFilter="all";
-const cfg=Object.assign({n:30,min:30,lv:["NB","TH","VD"],groups:GROUPS.map(g=>g.n),th:true},store.get("cfg",{}));
+const cfg=Object.assign({n:20,min:30,lv:["NB","TH","VD"],groups:GROUPS.map(g=>g.n),nc:2},store.get("cfg",{}));
+if(cfg.nc===undefined)cfg.nc=2;delete cfg.th;
 function stopTimer(){clearInterval(tick);tick=null}
-function pool(groups,lvs){return Q.filter(q=>groups.includes(q.g)&&(!q.lv||lvs.includes(q.lv))&&(!q.cid||cfg.th))}
+function pool(groups,lvs){return QT.filter(q=>groups.includes(q.g)&&(!q.lv||lvs.includes(q.lv)))}
+function casePool(groups){return CASEQ.filter(c=>groups.includes(c.g))}
+/* Bốc nguyên tình huống, rải đều các chương; câu hỏi giữ đúng thứ tự trong tình huống */
+function pickCases(groups,k){const by={};shuffle(casePool(groups)).forEach(c=>(by[c.g]=by[c.g]||[]).push(c));
+  const gs=shuffle(Object.keys(by)),out=[];let j=0;while(out.length<k&&gs.some(g=>by[g].length)){const g=gs[j%gs.length];if(by[g].length)out.push(by[g].shift());j++}return out}
 function buildExam(){
   const p=pool(cfg.groups,cfg.lv),n=Math.min(cfg.n,p.length);
   /* Rải đều theo chương và mức độ đã chọn */
   const buckets={};p.forEach(q=>{const k=q.g+"|"+(q.lv||"");(buckets[k]=buckets[k]||[]).push(q)});
   const keys=shuffle(Object.keys(buckets));keys.forEach(k=>buckets[k]=shuffle(buckets[k]));
   const pick=[];let j=0;while(pick.length<n){const k=keys[j%keys.length];const q=buckets[k].shift();if(q)pick.push(q.key);j++;if(j>keys.length*400)break}
-  return {ids:shuffle(pick),c:{},start:Date.now(),end:Date.now()+cfg.min*60000,min:cfg.min,cfg:JSON.parse(JSON.stringify(cfg)),done:false}
+  const cs=pickCases(cfg.groups,cfg.nc||0);
+  return {ids:shuffle(pick).concat(cs.flatMap(c=>c.keys)),nt:pick.length,c:{},start:Date.now(),end:Date.now()+cfg.min*60000,min:cfg.min,cfg:JSON.parse(JSON.stringify(cfg)),done:false}
 }
 R.thithu=function(){
   if(exam&&!exam.done&&exam.ids.some(k=>!byKey[k])){exam=null;store.del("exam")}
@@ -117,25 +125,28 @@ R.thithu=function(){
   if(Date.now()>=exam.end)return submit();
   examRun()};
 function examSetup(){
-  CTRL.innerHTML=head("thithu","Đề thi thử trộn ngẫu nhiên từ ngân hàng câu hỏi theo số câu, thời gian, mức độ và chương bạn chọn. Đáp án chỉ hiện sau khi <b>nộp bài</b>; khi xem lại, mỗi câu có đáp án đúng, giải thích và căn cứ pháp lý (bấm để mở văn bản).");
-  const cnt=(g,l)=>Q.filter(q=>(g==null||q.g===g)&&(l==null||q.lv===l)).length;
+  CTRL.innerHTML=head("thithu","Đề thi thử gồm hai phần: <b>câu hỏi lý thuyết</b> trộn ngẫu nhiên theo mức độ và chương bạn chọn, sau đó là <b>tình huống</b> (mỗi tình huống một vụ việc, các câu hỏi nối tiếp nhau theo trình tự giải). Đáp án chỉ hiện sau khi <b>nộp bài</b>; khi xem lại, mỗi câu có đáp án đúng, giải thích và căn cứ pháp lý (bấm để mở văn bản).");
+  const cnt=(g,l)=>QT.filter(q=>(g==null||q.g===g)&&(l==null||q.lv===l)).length;
+  const ncnt=g=>CASEQ.filter(c=>c.g===g).length;
   BODY.innerHTML=`<div class="card setup">
-    <div class="field"><span class="lab">Số câu</span><div class="row"><div class="chips" id="c-n">${[10,20,30,40,50].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="5" max="${Q.length}" value="${cfg.n}"></div></div>
+    <div class="field"><span class="lab">Số câu lý thuyết</span><div class="row"><div class="chips" id="c-n">${[10,20,30,40,50].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="0" max="${QT.length}" value="${cfg.n}"></div></div>
+    ${CASEQ.length?`<div class="field"><span class="lab">Số tình huống</span><div class="row"><div class="chips" id="c-nc">${[0,1,2,3].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.nc===v}">${v?v+" tình huống":"Không có"}</button>`).join("")}</div></div></div>`:""}
     <div class="field"><span class="lab">Thời gian làm bài</span><div class="row"><div class="chips" id="c-min">${[15,30,45,60].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.min===v}">${v} phút</button>`).join("")}</div><label class="lab" for="c-min-in">hoặc nhập</label><input type="number" id="c-min-in" min="5" max="180" value="${cfg.min}"></div></div>
     <div class="field"><span class="lab">Mức độ câu hỏi</span><div class="picks" id="c-lv">${LVK.map(l=>`<label><input type="checkbox" value="${l}" ${cfg.lv.includes(l)?"checked":""}><span>${LV[l]} <small>(${cnt(null,l)} câu)</small></span></label>`).join("")}</div></div>
-    ${HASCASEQ?`<div class="field"><span class="lab">Dạng câu hỏi</span><div class="picks"><label><input type="checkbox" id="c-th" ${cfg.th?"checked":""}><span>Gồm câu hỏi gắn với tình huống <small>(${Q.length-QT.length} câu)</small></span></label></div></div>`:""}
     <div class="field"><span class="lab">Phạm vi nội dung</span><div class="chips"><button type="button" class="chip" id="g-all">Chọn tất cả</button><button type="button" class="chip" id="g-none">Bỏ chọn</button></div>
-      <div class="picks" id="c-g">${GROUPS.map(g=>`<label><input type="checkbox" value="${g.n}" ${cfg.groups.includes(g.n)?"checked":""}><span>Chương ${g.n}. ${esc(g.name)} <small>(${cnt(g.n,null)} câu)</small></span></label>`).join("")}</div></div>
+      <div class="picks" id="c-g">${GROUPS.map(g=>`<label><input type="checkbox" value="${g.n}" ${cfg.groups.includes(g.n)?"checked":""}><span>Chương ${g.n}. ${esc(g.name)} <small>(${cnt(g.n,null)} câu${ncnt(g.n)?", "+ncnt(g.n)+" tình huống":""})</small></span></label>`).join("")}</div></div>
     <div class="nav-row" style="margin-top:0"><span class="intro" id="cfg-note" style="margin:0"></span><button type="button" class="btn primary" id="go">Bắt đầu làm bài</button></div>
   </div>`;
-  const sync=()=>{if($("#c-th"))cfg.th=$("#c-th").checked;cfg.lv=$$("#c-lv input").filter(x=>x.checked).map(x=>x.value);cfg.groups=$$("#c-g input").filter(x=>x.checked).map(x=>+x.value);
-    cfg.n=Math.max(5,Math.min(+$("#c-n-in").value||30,Q.length));cfg.min=Math.max(5,Math.min(+$("#c-min-in").value||30,180));store.set("cfg",cfg);
-    $$("#c-n .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.n)));$$("#c-min .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.min)));
-    const have=pool(cfg.groups,cfg.lv).length;$("#go").disabled=!have;
-    $("#cfg-note").textContent=!cfg.groups.length?"Chọn ít nhất một chương.":!cfg.lv.length?"Chọn ít nhất một mức độ.":have<cfg.n?`Phạm vi đã chọn có ${have} câu; đề sẽ gồm ${have} câu.`:`Đề gồm ${cfg.n} câu, làm trong ${cfg.min} phút.`};
+  const sync=()=>{cfg.lv=$$("#c-lv input").filter(x=>x.checked).map(x=>x.value);cfg.groups=$$("#c-g input").filter(x=>x.checked).map(x=>+x.value);
+    const nv=parseInt($("#c-n-in").value,10);cfg.n=Math.max(0,Math.min(isNaN(nv)?20:nv,QT.length));cfg.min=Math.max(5,Math.min(+$("#c-min-in").value||30,180));store.set("cfg",cfg);
+    $$("#c-n .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.n)));$$("#c-min .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.min)));$$("#c-nc .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.nc)));
+    const have=Math.min(cfg.n,cfg.lv.length?pool(cfg.groups,cfg.lv).length:0),hc=Math.min(cfg.nc||0,casePool(cfg.groups).length),hq=pickCasesCount(hc);$("#go").disabled=!(have+hc);
+    $("#cfg-note").textContent=!cfg.groups.length?"Chọn ít nhất một chương.":!(have+hc)?"Chọn ít nhất một mức độ hoặc một tình huống.":`Đề gồm ${have} câu lý thuyết${hc?` và ${hc} tình huống (khoảng ${hq} câu)`:""}${have<cfg.n?` (phạm vi đã chọn chỉ có ${have} câu lý thuyết)`:""}${hc<(cfg.nc||0)?` (phạm vi đã chọn chỉ có ${hc} tình huống)`:""}, làm trong ${cfg.min} phút.`};
+  const pickCasesCount=k=>{const p=casePool(cfg.groups);return p.length?Math.round(p.reduce((a,c)=>a+c.keys.length,0)/p.length*k):0};
+  $$("#c-nc .chip").forEach(b=>b.onclick=()=>{cfg.nc=+b.dataset.v;sync()});
   $$("#c-n .chip").forEach(b=>b.onclick=()=>{$("#c-n-in").value=b.dataset.v;sync()});
   $$("#c-min .chip").forEach(b=>b.onclick=()=>{$("#c-min-in").value=b.dataset.v;sync()});
-  $("#c-n-in").oninput=sync;$("#c-min-in").oninput=sync;$$("#c-lv input,#c-g input,#c-th").forEach(x=>x.onchange=sync);
+  $("#c-n-in").oninput=sync;$("#c-min-in").oninput=sync;$$("#c-lv input,#c-g input").forEach(x=>x.onchange=sync);
   $("#g-all").onclick=()=>{$$("#c-g input").forEach(x=>x.checked=true);sync()};$("#g-none").onclick=()=>{$$("#c-g input").forEach(x=>x.checked=false);sync()};
   $("#go").onclick=()=>{exam=buildExam();exI=0;store.set("exam",exam);examRun();scrollTo(0,0)};
   sync()}
@@ -145,7 +156,7 @@ function examRun(){
   CTRL.innerHTML=head("thithu","Chọn một phương án cho mỗi câu. Lựa chọn được tô <b>màu tím</b> và có thể đổi trước khi nộp; đáp án đúng chỉ hiện sau khi nộp bài. Bài tự nộp khi hết giờ.")+
     `<div class="stats"><span>Đã trả lời <b>${nA}</b>/${e.ids.length}</span><span>Thời gian <b>${e.min}</b> phút</span></div><div class="bar"><i style="width:${nA*100/e.ids.length}%"></i></div>`;
   BODY.innerHTML=`<div class="examhead"><div><span class="lab">Thời gian còn lại</span><div class="timer" id="timer">${fmtTime(e.end-Date.now())}</div></div><div id="sub-box"><button type="button" class="btn primary" id="sub">Nộp bài</button></div></div>
-  <div class="card">${qHTML(q,c,"exam",`Câu ${i+1}/${e.ids.length}`)}
+  <div class="card">${e.nt!==undefined&&i===e.nt?`<p class="intro" style="margin:0 0 10px"><b>Phần tình huống.</b> Các câu hỏi dưới đây gắn với cùng một vụ việc, làm theo thứ tự.</p>`:""}${qHTML(q,c,"exam",`Câu ${i+1}/${e.ids.length}`)}
   <div class="nav-row"><button type="button" class="btn ghost" id="eprev" ${i===0?"disabled":""}>← Câu trước</button>${c!==undefined?`<button type="button" class="linkbtn" id="eclear">Bỏ chọn</button>`:""}<button type="button" class="btn primary" id="enext" ${i===e.ids.length-1?"disabled":""}>Câu tiếp →</button></div></div>
   <div class="grid-title">Phiếu trả lời</div>
   <div class="qgrid">${e.ids.map((k,j)=>`<button type="button" class="${e.c[k]!==undefined?"a":""}${j===i?" cur":""}" data-j="${j}" aria-label="Câu ${j+1}">${j+1}</button>`).join("")}</div>
@@ -231,8 +242,8 @@ document.addEventListener("keydown",e=>{if(/TEXTAREA|SELECT|INPUT/.test(e.target
 let drafts=store.get("drafts",{}),opened=store.get("opened",{}),cg="";
 const CASES=[];(D.th||[]).forEach((t,gi)=>t.items.forEach((c,i)=>CASES.push(Object.assign({},c,{id:(gi+1)+"."+(i+1),g:gi+1,gname:t.name}))));
 R.tinhhuong=function(){
-  CTRL.innerHTML=head("tinhhuong",HASCASEQ?"Đọc tình huống rồi trả lời từng câu hỏi; chọn đáp án để xem ngay đúng hay sai, kèm giải thích và căn cứ pháp lý. Kết quả lưu trên trình duyệt của bạn.":"Tự giải theo trình tự: xác định vấn đề pháp lý, nêu căn cứ (điều, khoản), áp dụng vào dữ kiện, kết luận. Ghi bài làm vào ô nháp rồi bấm <b>Xem hướng dẫn giải</b> để đối chiếu. Bài nháp chỉ lưu trên trình duyệt của bạn.")+
-  `<div class="toolbar"><div class="chips" id="c-group"><button type="button" class="chip" data-g="" aria-pressed="${!cg}">Tất cả</button>${(D.th||[]).map((t,i)=>`<button type="button" class="chip" data-g="${i+1}" aria-pressed="${cg==String(i+1)}">Nhóm ${i+1}. ${esc(t.name)}</button>`).join("")}</div></div>
+  CTRL.innerHTML=head("tinhhuong",HASCASEQ?"Mỗi tình huống là một vụ việc; các câu hỏi nối tiếp nhau theo trình tự giải: xác định vấn đề → áp dụng quy định vào dữ kiện → kết luận → hướng xử lý. Chọn đáp án để xem ngay đúng hay sai, kèm giải thích và căn cứ pháp lý."+(CASES.some(c=>(c.guide||[]).length)?" Sau đó tự giải phần <b>Yêu cầu</b> vào ô nháp rồi bấm <b>Xem hướng dẫn giải</b> để đối chiếu.":"")+" Kết quả lưu trên trình duyệt của bạn.":"Tự giải theo trình tự: xác định vấn đề pháp lý, nêu căn cứ (điều, khoản), áp dụng vào dữ kiện, kết luận. Ghi bài làm vào ô nháp rồi bấm <b>Xem hướng dẫn giải</b> để đối chiếu. Bài nháp chỉ lưu trên trình duyệt của bạn.")+
+  `<div class="toolbar"><div class="chips" id="c-group"><button type="button" class="chip" data-g="" aria-pressed="${!cg}">Tất cả</button>${(D.th||[]).map((t,i)=>`<button type="button" class="chip" data-g="${i+1}" aria-pressed="${cg==String(i+1)}">${/^Chương/.test(t.name)?esc(t.name):"Nhóm "+(i+1)+". "+esc(t.name)}</button>`).join("")}</div></div>
   <div class="toolbar"><label class="lab" for="c-jump">Chuyển nhanh</label><select id="c-jump"></select></div><div class="stats" id="c-stats"></div>`;
   $$("#c-group .chip").forEach(b=>b.onclick=()=>{cg=b.dataset.g;$$("#c-group .chip").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));cases()});
   cases()};
