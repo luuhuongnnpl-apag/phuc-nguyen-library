@@ -278,8 +278,7 @@ const COURSES=[
   {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",c:"#3d7fc1",src:"hp/to-tung-dan-su.html",skin:true},
   {id:"luat-hinh-su",name:"Luật Hình sự",c:"#3e4a57",src:"hp/luat-hinh-su.html",skin:true},
   {id:"to-tung-hinh-su",name:"Luật Tố tụng hình sự",c:"#56626e"},
-  {id:"luat-hanh-chinh",name:"Luật Hành chính",c:"#b9bfc7"},
-  {id:"to-tung-hanh-chinh",name:"Luật Tố tụng hành chính",c:"#d0d4da"},
+  {id:"luat-hanh-chinh-va-to-tung-hanh-chinh",name:"Luật Hành chính và Luật Tố tụng hành chính",c:"#607d8b",src:"hp/luat-hanh-chinh-va-to-tung-hanh-chinh.html",skin:true},
   {id:"luat-doanh-nghiep",name:"Luật Doanh nghiệp",c:"#8a5a1e"},
   {id:"so-huu-tri-tue",name:"Luật Sở hữu trí tuệ",c:"#7aa62e"},
   {id:"luat-dat-dai",name:"Luật Đất đai",c:"#c0392b",src:"hp/luat-dat-dai.html",skin:true},
@@ -292,6 +291,7 @@ const DOCS=[
   {id:"luat-dan-su",name:"Luật Dân sự",img:"assets/dan-su.jpg",tl:"luat-dan-su"},
   {id:"to-tung-dan-su",name:"Luật Tố tụng dân sự",img:"assets/to-tung-dan-su.jpg",tl:"to-tung-dan-su"},
   {id:"luat-hinh-su",name:"Luật Hình sự",img:"assets/luat-hinh-su-cover.svg",tl:"luat-hinh-su"},
+  {id:"luat-hanh-chinh-va-to-tung-hanh-chinh",name:"Luật Hành chính và Luật Tố tụng hành chính",img:"assets/luat-hanh-chinh-tthc-cover.svg",tl:"luat-hanh-chinh-va-to-tung-hanh-chinh"},
   {id:"luat-dat-dai",name:"Luật Đất đai",img:"assets/dat-dai.jpg"},
   {id:"cong-chung-chung-thuc",name:"Công chứng, chứng thực",img:"assets/cong-chung.jpg"},
   {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",img:"assets/ky-nang-tu-van.jpg"},
@@ -716,6 +716,43 @@ async function loadVisits(){ if(!CONFIG.goatcounter)return;
 /* ===== TÀI LIỆU HỌC TẬP: LUẬT DÂN SỰ ===== */
 /* Sơ đồ: {h1,h2,r?,c:[...]}; nút: {t, d?, c?, l?} — l: "row" | "stack" | "cols2" | "cols3" */
 const TL={};
+TL["luat-hanh-chinh-va-to-tung-hanh-chinh"]={
+ name:"Luật Hành chính và Luật Tố tụng hành chính",review:"luat-hanh-chinh-va-to-tung-hanh-chinh",
+ chapters:[
+  {n:1,t:"Khái quát chung về Luật Hành chính",maps:[]},
+  {n:2,t:"Chủ thể quản lý hành chính nhà nước",maps:[]},
+  {n:3,t:"Điều chỉnh pháp luật hành chính và cung ứng dịch vụ công",maps:[]},
+  {n:4,t:"Quyết định hành chính và thủ tục hành chính",maps:[]},
+  {n:5,t:"Vi phạm pháp luật hành chính, trách nhiệm hành chính và biện pháp cưỡng chế hành chính",maps:[]},
+  {n:6,t:"Kiểm soát quyền lực hành chính",maps:[]},
+  {n:7,t:"Khái quát chung về Luật Tố tụng hành chính",maps:[]},
+  {n:8,t:"Thẩm quyền xét xử hành chính của Tòa án nhân dân",maps:[]},
+  {n:9,t:"Chủ thể tiến hành tố tụng và chủ thể tham gia tố tụng hành chính",maps:[]},
+  {n:10,t:"Thủ tục xét xử vụ án hành chính",maps:[]}
+ ],
+ laws:[
+  {name:"I. Văn bản nền tảng theo đề cương nguồn · cần rà soát hiệu lực",open:true,rows:[
+   ["Hiến pháp nước Cộng hòa xã hội chủ nghĩa Việt Nam","2013","Cơ sở hiến định về tổ chức quyền lực nhà nước, quyền con người, quyền công dân"],
+   ["Luật Tố tụng hành chính","2015; đề cương nguồn ghi sửa đổi, bổ sung năm 2025","Tổ chức và hoạt động tố tụng hành chính; cần cập nhật văn bản hợp nhất và luật sửa đổi"],
+   ["Luật Khiếu nại","2011; đề cương nguồn ghi sửa đổi, bổ sung năm 2025","Khiếu nại quyết định hành chính, hành vi hành chính"],
+   ["Luật Tố cáo","2018; đề cương nguồn ghi sửa đổi, bổ sung năm 2025","Tố cáo và giải quyết tố cáo"],
+   ["Luật Tổ chức Chính phủ","2025","Tổ chức, nhiệm vụ, quyền hạn của Chính phủ"],
+   ["Luật Tổ chức chính quyền địa phương","2025","Tổ chức chính quyền địa phương"],
+   ["Luật Ban hành văn bản quy phạm pháp luật","2025","Hoạt động xây dựng, ban hành văn bản quy phạm pháp luật"],
+   ["Luật Cán bộ, công chức","2025","Chế độ pháp lý đối với cán bộ, công chức"]
+  ]},
+  {name:"II. Giáo trình theo đề cương nguồn",open:false,rows:[
+   ["Học viện Hành chính Quốc gia (2020), Giáo trình Luật Hành chính","2020","Tài liệu bắt buộc theo đề cương nguồn"],
+   ["Trường Đại học Luật Hà Nội (2021), Giáo trình Luật Hành chính Việt Nam","2021","Tài liệu tham khảo theo đề cương nguồn"],
+   ["ĐHQG Hà Nội (2019), Giáo trình Luật Tố tụng hành chính Việt Nam","2019","Tài liệu tham khảo theo đề cương nguồn"]
+  ]}
+ ],
+ cases:[],
+ refs:[
+  {g:"Tài liệu đầu vào",items:["Đề cương chi tiết học phần Luật Hành chính và tố tụng hành chính, 24 trang, do giảng viên cung cấp.","Khung chương và phân bố nội dung được giữ theo Mục 9 của đề cương nguồn; chưa biên soạn câu hỏi, tình huống hoặc sơ đồ chi tiết."]},
+  {g:"Trạng thái biên soạn",items:["Khung học phần mới · chờ giảng viên duyệt.","Danh mục văn bản đang phản ánh tài liệu nguồn, chưa phải danh mục pháp luật đã xác minh hiệu lực tại thời điểm hiện hành."]}
+ ]
+};
 TL["luat-dan-su"]={
  name:"Luật Dân sự", review:"luat-dan-su",
  chapters:[
