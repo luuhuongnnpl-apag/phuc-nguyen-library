@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tài liệu Luật Hành chính và Luật Tố tụng hành chính · Phúc Nguyên Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="../assets/pnlib-course.css">
+</head><body><script id="PNLIB_COURSE_GATE">
+(function(){
+  const courseId="luat-hanh-chinh-va-to-tung-hanh-chinh";
+  function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+  let access=false;
+  try{const raw=localStorage.getItem("pnlib-ma-lop");const session=raw?JSON.parse(raw):null;const scopes=session&&Array.isArray(session.courses)?session.courses:null;
+    access=!!(session&&session.code&&session.han&&today()<=session.han&&(!scopes||!scopes.length||scopes.includes("*")||scopes.includes(courseId)));
+  }catch(e){access=false}
+  if(!access){document.documentElement.style.visibility="hidden";if(window.top!==window.self){window.parent.postMessage({pn:"home",course:courseId},"*")}else{window.location.replace("../index.html#"+courseId)}}
+})();
+</script>
+<div id="pn-app"></div>
+<script id="pn-data" type="application/json">
+{
+ "meta":{
+  "id":"luat-hanh-chinh-va-to-tung-hanh-chinh",
+  "name":"Luật Hành chính và Luật Tố tụng hành chính",
+  "title":"Tài liệu Luật Hành chính và Luật Tố tụng hành chính",
+  "menuTitle":"Luật Hành chính và Luật Tố tụng hành chính",
+  "asof":"30/10/2026",
+  "note":"KHUNG HỌC PHẦN ĐANG XÂY DỰNG. Nội dung chương được cấu trúc theo Mục 9 của đề cương chi tiết do giảng viên cung cấp. Ngân hàng câu hỏi, tình huống, tóm tắt lý thuyết và danh mục văn bản đã xác minh sẽ được bổ sung ở các giai đoạn tiếp theo."
+ },
+ "chapters":[
+  {"n":1,"name":"Khái quát chung về Luật Hành chính","ch":"Phần Luật Hành chính"},
+  {"n":2,"name":"Chủ thể quản lý hành chính nhà nước","ch":"Phần Luật Hành chính"},
+  {"n":3,"name":"Điều chỉnh pháp luật hành chính và cung ứng dịch vụ công","ch":"Phần Luật Hành chính"},
+  {"n":4,"name":"Quyết định hành chính và thủ tục hành chính","ch":"Phần Luật Hành chính"},
+  {"n":5,"name":"Vi phạm pháp luật hành chính, trách nhiệm hành chính và biện pháp cưỡng chế hành chính","ch":"Phần Luật Hành chính"},
+  {"n":6,"name":"Kiểm soát quyền lực hành chính","ch":"Phần Luật Hành chính"},
+  {"n":7,"name":"Khái quát chung về Luật Tố tụng hành chính","ch":"Phần Luật Tố tụng hành chính"},
+  {"n":8,"name":"Thẩm quyền xét xử hành chính của Tòa án nhân dân","ch":"Phần Luật Tố tụng hành chính"},
+  {"n":9,"name":"Chủ thể tiến hành tố tụng và chủ thể tham gia tố tụng hành chính","ch":"Phần Luật Tố tụng hành chính"},
+  {"n":10,"name":"Thủ tục xét xử vụ án hành chính","ch":"Phần Luật Tố tụng hành chính"}
+ ],
+ "q":[],
+ "th":[],
+ "vb":[],
+ "al":[]
+}
+</script>
+<script src="../assets/pnlib-course.js"></script>
+</body></html>
