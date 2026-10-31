@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="../assets/pnlib-course.css">
 </head><body><script id="PNLIB_COURSE_GATE">
 (function(){
-  const courseId="luat-hanh-chinh-va-to-tung-hanh-chinh";
+  const courseId="so-huu-tri-tue";
   function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   let access=false;
   try{const raw=localStorage.getItem("pnlib-ma-lop");const session=raw?JSON.parse(raw):null;const scopes=session&&Array.isArray(session.courses)?session.courses:null;
@@ -54,11 +54,11 @@
       "q": "Nhận định nào phân biệt đúng tài sản trí tuệ với quyền sở hữu trí tuệ?",
       "o": [
         "Tài sản trí tuệ chỉ gồm sáng chế đã được cấp bằng độc quyền",
-        "Tài sản trí tuệ là kết quả hoặc đối tượng có giá trị trí tuệ; quyền SHTT là quyền pháp lý của chủ thể đối với đối tượng thuộc phạm vi luật bảo hộ",
         "Hai thuật ngữ luôn đồng nhất và được Luật SHTT định nghĩa như nhau",
+        "Tài sản trí tuệ là kết quả hoặc đối tượng có giá trị trí tuệ; quyền SHTT là quyền pháp lý của chủ thể đối với đối tượng thuộc phạm vi luật bảo hộ",
         "Quyền SHTT chỉ phát sinh khi đối tượng được ghi nhận thành tài sản trong sổ kế toán"
       ],
-      "a": 1,
+      "a": 2,
       "e": "Tài sản trí tuệ là khái niệm rộng về đối tượng/kết quả trí tuệ; quyền SHTT là địa vị quyền pháp lý. Luật định nghĩa quyền SHTT tại khoản 1 Điều 4, không đặt ra định nghĩa riêng khái quát cho “tài sản trí tuệ”.",
       "b": "Khoản 1 Điều 4 Luật SHTT; Điều 105, Điều 115 BLDS",
       "lv": "TH"
@@ -114,13 +114,13 @@
       "q": "Trong ba nhóm quyền SHTT, nhóm nào bao gồm sáng chế, kiểu dáng công nghiệp, nhãn hiệu và chỉ dẫn địa lý?",
       "o": [
         "Quyền tác giả",
-        "Quyền sở hữu công nghiệp",
+        "Quyền liên quan",
         "Quyền đối với giống cây trồng",
-        "Quyền liên quan"
+        "Quyền sở hữu công nghiệp"
       ],
-      "a": 1,
+      "a": 3,
       "e": "Sáng chế, kiểu dáng công nghiệp, nhãn hiệu, chỉ dẫn địa lý thuộc nhóm quyền sở hữu công nghiệp theo cấu trúc Luật SHTT.",
-      "b": "Khoản 2 Điều 4 Luật SHTT",
+      "b": "Khoản 4 Điều 4 Luật SHTT",
       "lv": "NB"
     },
     {
@@ -645,6 +645,27 @@
           "org": "Quốc hội",
           "note": "Liên quan đến kết quả nhiệm vụ khoa học, công nghệ và đổi mới sáng tạo, quản lý và khai thác quyền SHTT; cần đối chiếu điều khoản cụ thể khi học các chương sau.",
           "url": "https://vanban.chinhphu.vn/"
+        },
+        {
+          "t": "Luật số 134/2025/QH15 về Trí tuệ nhân tạo",
+          "d": "10/12/2025; hiệu lực 01/03/2026",
+          "org": "Quốc hội",
+          "note": "Khung pháp lý liên ngành cần đọc cùng Luật SHTT khi nghiên cứu việc tạo lập, sử dụng hệ thống AI.",
+          "url": "https://vanban.chinhphu.vn/?classid=1&docid=216334&pageid=27160"
+        },
+        {
+          "t": "Văn bản hợp nhất số 6154/2026/VBHN-NĐ-BVHTTDL về quy định chi tiết Luật SHTT về quyền tác giả, quyền liên quan",
+          "d": "25/09/2026",
+          "org": "Bộ Văn hóa, Thể thao và Du lịch",
+          "note": "Bản hợp nhất cập nhật văn bản hướng dẫn quyền tác giả, quyền liên quan tại ngày cắt dữ liệu.",
+          "url": "https://vanban.chinhphu.vn/?docid=219630&pageid=27160"
+        },
+        {
+          "t": "Văn bản hợp nhất số 06/VBHN-BKHCN về quy định chi tiết Luật SHTT về sở hữu công nghiệp, quyền đối với giống cây trồng và quản lý nhà nước",
+          "d": "24/06/2026",
+          "org": "Bộ Khoa học và Công nghệ",
+          "note": "Hợp nhất Nghị định 65/2023/NĐ-CP và các văn bản sửa đổi năm 2026; dùng khi triển khai Chương 2 và Chương 4.",
+          "url": "https://vanban.chinhphu.vn/he-thong-van-ban?classid=2629&mode=1"
         }
       ]
     },
