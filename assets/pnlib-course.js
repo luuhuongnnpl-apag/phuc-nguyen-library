@@ -101,7 +101,7 @@ function bindReport(root){$$("[data-report]",root).forEach(b=>b.onclick=()=>{con
 
 /* ---------- Thi thử ---------- */
 let exam=store.get("exam",null),tick=null,exI=0,reviewFilter="all";
-const cfg=Object.assign({n:20,min:30,lv:["NB","TH","VD"],groups:GROUPS.map(g=>g.n),nc:2},store.get("cfg",{}));
+const cfg=Object.assign({n:(M.exam&&M.exam.n)||20,min:(M.exam&&M.exam.min)||30,lv:["NB","TH","VD"],groups:GROUPS.map(g=>g.n),nc:(M.exam&&M.exam.nc!==undefined)?M.exam.nc:2},store.get("cfg",{}));
 if(cfg.nc===undefined)cfg.nc=2;delete cfg.th;
 function stopTimer(){clearInterval(tick);tick=null}
 function pool(groups,lvs){return QT.filter(q=>groups.includes(q.g)&&(!q.lv||lvs.includes(q.lv)))}
@@ -129,9 +129,9 @@ function examSetup(){
   const cnt=(g,l)=>QT.filter(q=>(g==null||q.g===g)&&(l==null||q.lv===l)).length;
   const ncnt=g=>CASEQ.filter(c=>c.g===g).length;
   BODY.innerHTML=`<div class="card setup">
-    <div class="field"><span class="lab">Số câu lý thuyết</span><div class="row"><div class="chips" id="c-n">${[10,20,30,40,50].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="0" max="${QT.length}" value="${cfg.n}"></div></div>
+    <div class="field"><span class="lab">Số câu lý thuyết</span><div class="row"><div class="chips" id="c-n">${((M.exam&&M.exam.sizes)||[10,20,30,40,50]).map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="0" max="${QT.length}" value="${cfg.n}"></div></div>
     ${CASEQ.length?`<div class="field"><span class="lab">Số tình huống</span><div class="row"><div class="chips" id="c-nc">${[0,1,2,3].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.nc===v}">${v?v+" tình huống":"Không có"}</button>`).join("")}</div></div></div>`:""}
-    <div class="field"><span class="lab">Thời gian làm bài</span><div class="row"><div class="chips" id="c-min">${[15,30,45,60].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.min===v}">${v} phút</button>`).join("")}</div><label class="lab" for="c-min-in">hoặc nhập</label><input type="number" id="c-min-in" min="5" max="180" value="${cfg.min}"></div></div>
+    <div class="field"><span class="lab">Thời gian làm bài</span><div class="row"><div class="chips" id="c-min">${((M.exam&&M.exam.times)||[15,30,45,60]).map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.min===v}">${v} phút</button>`).join("")}</div><label class="lab" for="c-min-in">hoặc nhập</label><input type="number" id="c-min-in" min="5" max="180" value="${cfg.min}"></div></div>
     <div class="field"><span class="lab">Mức độ câu hỏi</span><div class="picks" id="c-lv">${LVK.map(l=>`<label><input type="checkbox" value="${l}" ${cfg.lv.includes(l)?"checked":""}><span>${LV[l]} <small>(${cnt(null,l)} câu)</small></span></label>`).join("")}</div></div>
     <div class="field"><span class="lab">Phạm vi nội dung</span><div class="chips"><button type="button" class="chip" id="g-all">Chọn tất cả</button><button type="button" class="chip" id="g-none">Bỏ chọn</button></div>
       <div class="picks" id="c-g">${GROUPS.map(g=>`<label><input type="checkbox" value="${g.n}" ${cfg.groups.includes(g.n)?"checked":""}><span>Chương ${g.n}. ${esc(g.name)} <small>(${cnt(g.n,null)} câu${ncnt(g.n)?", "+ncnt(g.n)+" tình huống":""})</small></span></label>`).join("")}</div></div>
