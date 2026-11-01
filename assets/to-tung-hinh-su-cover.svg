@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263f58"/><stop offset="1" stop-color="#627a8c"/></linearGradient></defs>
+<rect width="1200" height="900" fill="#eef2f6"/><rect x="52" y="52" width="1096" height="796" rx="34" fill="url(#g)"/>
+<path d="M600 170 L780 235 V390 C780 520 700 610 600 665 C500 610 420 520 420 390 V235 Z" fill="none" stroke="#e8eef4" stroke-width="18"/>
+<path d="M520 390 L575 445 L690 320" fill="none" stroke="#e8eef4" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="600" y="730" text-anchor="middle" font-family="Arial,sans-serif" font-size="52" font-weight="700" fill="#fff">LUẬT TỐ TỤNG HÌNH SỰ</text>
+<text x="600" y="790" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" fill="#dce6ef">PHÚC NGUYÊN LIBRARY</text></svg>
