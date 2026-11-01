@@ -1,0 +1,542 @@
+{
+  "meta": {
+    "id": "luat-doanh-nghiep",
+    "name": "Luật Doanh nghiệp",
+    "title": "Tài liệu Luật Doanh nghiệp",
+    "menuTitle": "Luật Doanh nghiệp",
+    "note": "Chương 1 – Địa vị pháp lý của doanh nghiệp và những vấn đề chung.",
+    "laws": [
+      {
+        "re": "Luật Doanh nghiệp",
+        "doc": "https://thuvienphapluat.vn/van-ban/Doanh-nghiep/Van-ban-hop-nhat-67-VBHN-VPQH-2025-Luat-Doanh-nghiep-671127.aspx"
+      },
+      {
+        "re": "Luật Thương mại",
+        "doc": "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=26117"
+      },
+      {
+        "re": "Hiến pháp",
+        "doc": "https://vanban.chinhphu.vn/"
+      },
+      {
+        "re": "Luật Đầu tư",
+        "doc": "https://vanban.chinhphu.vn/?docid=216524&pageid=27160"
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "n": 1,
+      "name": "Địa vị pháp lý của doanh nghiệp và những vấn đề chung"
+    }
+  ],
+  "q": [
+    {
+      "id": "LDN101",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 1",
+      "q": "Theo Luật Doanh nghiệp, phạm vi điều chỉnh tập trung vào nhóm vấn đề nào?",
+      "o": [
+        "Thành lập, tổ chức quản lý, tổ chức lại, giải thể và hoạt động liên quan của doanh nghiệp",
+        "Mọi hoạt động đầu tư của mọi chủ thể",
+        "Toàn bộ quan hệ hợp đồng giữa thương nhân",
+        "Chỉ việc đăng ký thuế"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN102",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 2",
+      "q": "Đối tượng áp dụng của Luật Doanh nghiệp bao gồm chủ thể nào?",
+      "o": [
+        "Chỉ doanh nghiệp đã hoạt động đủ một năm",
+        "Doanh nghiệp và cơ quan, tổ chức, cá nhân có liên quan đến việc thành lập, quản lý, tổ chức lại, giải thể và hoạt động của doanh nghiệp",
+        "Chỉ cơ quan đăng ký kinh doanh",
+        "Chỉ chủ sở hữu doanh nghiệp"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN103",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 3",
+      "q": "Khi một vấn đề về doanh nghiệp được luật chuyên ngành quy định khác với Luật Doanh nghiệp, cách áp dụng nào phù hợp?",
+      "o": [
+        "Luôn ưu tiên điều lệ doanh nghiệp",
+        "Luôn ưu tiên Luật Doanh nghiệp",
+        "Xác định quy tắc áp dụng luật theo Điều 3 và quy định của luật có liên quan",
+        "Tự lựa chọn quy định có lợi hơn"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN104",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 1; Luật Thương mại 2005, Điều 6",
+      "q": "Đặc điểm nào giúp phân biệt doanh nghiệp với thương nhân?",
+      "o": [
+        "Doanh nghiệp là tổ chức được thành lập, đăng ký theo pháp luật doanh nghiệp; thương nhân là tư cách chủ thể theo pháp luật thương mại",
+        "Mọi thương nhân đều là công ty cổ phần",
+        "Doanh nghiệp chỉ có thể do cá nhân thành lập",
+        "Thương nhân luôn phải có tư cách pháp nhân"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN105",
+      "g": 1,
+      "lv": "Luật Thương mại 2005, Điều 6",
+      "q": "Theo Luật Thương mại, thương nhân có thể là cá nhân khi đáp ứng điều kiện nào?",
+      "o": [
+        "Có quốc tịch Việt Nam và có vốn điều lệ",
+        "Đủ 18 tuổi và có tài khoản ngân hàng",
+        "Hoạt động thương mại độc lập, thường xuyên và có đăng ký kinh doanh theo quy định",
+        "Có ít nhất hai người lao động"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN106",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 1",
+      "q": "Bốn loại hình doanh nghiệp được Luật Doanh nghiệp điều chỉnh trực tiếp gồm nhóm nào?",
+      "o": [
+        "Doanh nghiệp tư nhân, công ty hợp danh, công ty TNHH, công ty cổ phần",
+        "Hộ kinh doanh, hợp tác xã, công ty TNHH, công ty cổ phần",
+        "Công ty nhà nước, hộ kinh doanh, hợp tác xã, doanh nghiệp tư nhân",
+        "Công ty hợp danh, tổ hợp tác, hộ kinh doanh, công ty cổ phần"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN107",
+      "g": 1,
+      "lv": "Hiến pháp 2013, Điều 33",
+      "q": "Quyền tự do kinh doanh được Hiến pháp ghi nhận theo cách hiểu nào?",
+      "o": [
+        "Chỉ được kinh doanh ngành nghề do cơ quan hành chính cho phép",
+        "Mọi cá nhân đều được kinh doanh mọi ngành nghề không có giới hạn",
+        "Được tự do kinh doanh trong những ngành nghề mà pháp luật không cấm",
+        "Chỉ doanh nghiệp đã niêm yết mới có quyền kinh doanh"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN108",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 7",
+      "q": "Quyền của doanh nghiệp theo Luật Doanh nghiệp bao gồm nội dung nào?",
+      "o": [
+        "Tự miễn trừ mọi nghĩa vụ thuế",
+        "Tự chủ kinh doanh và lựa chọn hình thức, phương thức huy động, phân bổ và sử dụng vốn theo luật",
+        "Tự quyết định không thực hiện nghĩa vụ báo cáo",
+        "Được sử dụng tài sản của chủ sở hữu không cần căn cứ"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN109",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 8",
+      "q": "Nghĩa vụ cơ bản nào thuộc về doanh nghiệp?",
+      "o": [
+        "Chỉ thực hiện nghĩa vụ khi có yêu cầu riêng của cơ quan nhà nước",
+        "Không phải lưu giữ hồ sơ nếu đã đăng ký điện tử",
+        "Tổ chức công tác kế toán, nộp thuế và thực hiện nghĩa vụ tài chính theo luật",
+        "Công khai mọi bí mật kinh doanh"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN110",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 16",
+      "q": "Hành vi nào thuộc nhóm bị nghiêm cấm trong hoạt động doanh nghiệp?",
+      "o": [
+        "Kê khai khống vốn điều lệ hoặc không góp đủ vốn điều lệ như đã đăng ký",
+        "Thay đổi địa chỉ trụ sở và đăng ký theo luật",
+        "Mở chi nhánh khi đáp ứng điều kiện",
+        "Sử dụng con dấu theo điều lệ"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN111",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 17",
+      "q": "Chủ thể nào về nguyên tắc có quyền thành lập và quản lý doanh nghiệp tại Việt Nam?",
+      "o": [
+        "Chỉ công dân Việt Nam có hộ khẩu thường trú",
+        "Tổ chức, cá nhân có quyền theo luật, trừ các trường hợp bị cấm hoặc hạn chế tại Điều 17",
+        "Chỉ người đã có bằng đại học kinh tế",
+        "Chỉ người đang là thương nhân"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN112",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 17, được sửa đổi bởi Luật 76/2025/QH15",
+      "q": "Một cán bộ, công chức muốn thành lập và quản lý doanh nghiệp tư nhân để kinh doanh riêng. Cần đánh giá vấn đề nào trước tiên?",
+      "o": [
+        "Chỉ cần xem người đó có đủ vốn hay không",
+        "Chỉ cần được gia đình đồng ý",
+        "Đối chiếu trường hợp bị hạn chế quyền thành lập, quản lý doanh nghiệp theo Điều 17 đã được sửa đổi",
+        "Được quyền thành lập vì doanh nghiệp tư nhân không có tư cách pháp nhân"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "V"
+    },
+    {
+      "id": "LDN113",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 37, 38, 39",
+      "q": "Tên doanh nghiệp phải được đặt theo nguyên tắc nào?",
+      "o": [
+        "Gồm loại hình doanh nghiệp và tên riêng; không thuộc trường hợp bị cấm hoặc gây nhầm lẫn theo luật",
+        "Có thể trùng hoàn toàn với doanh nghiệp đã đăng ký nếu khác tỉnh",
+        "Bắt buộc phải có tên tiếng Anh",
+        "Được sử dụng tên cơ quan nhà nước nếu có sự đồng ý miệng"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN114",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 42",
+      "q": "Trụ sở chính của doanh nghiệp được xác định như thế nào?",
+      "o": [
+        "Là nơi ở của người đại diện theo pháp luật trong mọi trường hợp",
+        "Là địa chỉ liên lạc của doanh nghiệp trên lãnh thổ Việt Nam, được xác định theo địa giới đơn vị hành chính và có thông tin liên hệ theo luật",
+        "Là địa điểm có nhiều lao động nhất",
+        "Là nơi đặt tài khoản ngân hàng"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN115",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 43",
+      "q": "Về con dấu của doanh nghiệp, nguyên tắc nào phù hợp với Luật Doanh nghiệp?",
+      "o": [
+        "Mọi doanh nghiệp bắt buộc dùng mẫu dấu do công an cấp",
+        "Con dấu chỉ được tạo bằng kim loại",
+        "Doanh nghiệp quyết định loại dấu, số lượng, hình thức và nội dung dấu theo luật và điều lệ",
+        "Mỗi hợp đồng đều phải đóng dấu mới có hiệu lực"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN116",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 12",
+      "q": "Người đại diện theo pháp luật của doanh nghiệp có vai trò cơ bản nào?",
+      "o": [
+        "Đại diện doanh nghiệp thực hiện quyền, nghĩa vụ phát sinh từ giao dịch và đại diện trong tố tụng, trọng tài theo luật",
+        "Đương nhiên là chủ sở hữu duy nhất",
+        "Chỉ ký hợp đồng lao động",
+        "Chỉ thực hiện nhiệm vụ kế toán"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "B"
+    },
+    {
+      "id": "LDN117",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 12",
+      "q": "Khi doanh nghiệp có nhiều người đại diện theo pháp luật, nội dung nào cần được xác định rõ?",
+      "o": [
+        "Chỉ định một người được nhận lương cao nhất",
+        "Phân chia quyền, nghĩa vụ của từng người trong điều lệ và bảo đảm quy tắc đại diện theo luật",
+        "Mỗi người chỉ đại diện cho một khách hàng",
+        "Không cần đăng ký thông tin người đại diện"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "V"
+    },
+    {
+      "id": "LDN118",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 4, được sửa đổi bởi Luật 76/2025/QH15",
+      "q": "Chủ sở hữu hưởng lợi của doanh nghiệp được nhận diện chủ yếu dựa trên yếu tố nào?",
+      "o": [
+        "Người giữ chức danh giám đốc trong mọi trường hợp",
+        "Người trực tiếp ký mọi hợp đồng",
+        "Cá nhân có quyền sở hữu thực tế vốn điều lệ hoặc có quyền chi phối doanh nghiệp theo tiêu chí luật định",
+        "Người đứng tên thuê trụ sở"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "H"
+    },
+    {
+      "id": "LDN119",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 4, Điều 8 và quy định sửa đổi tại Luật 76/2025/QH15",
+      "q": "Thông tin về chủ sở hữu hưởng lợi có ý nghĩa pháp lý nào?",
+      "o": [
+        "Làm rõ cá nhân thực sự sở hữu hoặc chi phối doanh nghiệp, phục vụ minh bạch thông tin và quản lý nhà nước",
+        "Thay thế toàn bộ thông tin thành viên, cổ đông",
+        "Tự động chuyển quyền sở hữu vốn cho người được kê khai",
+        "Là căn cứ duy nhất xác định người đại diện theo pháp luật"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "V"
+    },
+    {
+      "id": "LDN120",
+      "g": 1,
+      "lv": "Luật Doanh nghiệp 2020, Điều 46, 74, 111, 177 và Điều 188",
+      "q": "Doanh nghiệp đăng ký thành lập hợp pháp có tư cách pháp lý nào?",
+      "o": [
+        "Mọi loại hình doanh nghiệp đều có tư cách pháp nhân",
+        "Doanh nghiệp tư nhân và công ty hợp danh đều là pháp nhân",
+        "Tư cách pháp nhân được xác định theo loại hình; công ty TNHH, công ty cổ phần, công ty hợp danh có tư cách pháp nhân, doanh nghiệp tư nhân không có",
+        "Chỉ doanh nghiệp nhà nước có tư cách pháp nhân"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "V"
+    },
+    {
+      "id": "LDNCASE101",
+      "g": 1,
+      "lv": "TH",
+      "cid": "TH1.01",
+      "q": "Ai có thể là chủ sở hữu hưởng lợi của Công ty An Phát theo dữ kiện?",
+      "o": [
+        "Chỉ bà Hà vì là người đại diện theo pháp luật",
+        "Chỉ ông Quân vì đứng tên góp 40% vốn",
+        "Cá nhân thực tế sở hữu vốn hoặc có quyền chi phối theo tiêu chí luật định, dù không đứng tên",
+        "Người chuyển tiền trong mọi trường hợp"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "Luật Doanh nghiệp 2020, Điều 4"
+    },
+    {
+      "id": "LDNCASE102",
+      "g": 1,
+      "lv": "TH",
+      "cid": "TH1.01",
+      "q": "Việc ông Quân đứng tên góp vốn trong khi người khác thực tế góp và chi phối có thể đặt ra vấn đề pháp lý nào?",
+      "o": [
+        "Có dấu hiệu kê khai không trung thực và đứng tên hộ để che giấu chủ thể thực sự",
+        "Đương nhiên làm phát sinh tư cách cổ đông cho người chuyển tiền",
+        "Không liên quan đến pháp luật doanh nghiệp",
+        "Làm công ty tự động mất tư cách pháp nhân"
+      ],
+      "a": 0,
+      "e": "",
+      "b": "Luật Doanh nghiệp 2020, Điều 16, Điều 17; Nghị định 168/2025/NĐ-CP, được sửa đổi bởi Nghị định 296/2026/NĐ-CP"
+    },
+    {
+      "id": "LDNCASE103",
+      "g": 1,
+      "lv": "TH",
+      "cid": "TH1.01",
+      "q": "Đối tác muốn xác định thông tin chủ sở hữu hưởng lợi nên yêu cầu công ty thực hiện việc nào?",
+      "o": [
+        "Chỉ cung cấp hợp đồng thuê trụ sở",
+        "Rà soát, kê khai, lưu giữ và cập nhật thông tin chủ sở hữu hưởng lợi theo quy định",
+        "Thay đổi ngay người đại diện theo pháp luật",
+        "Hủy Giấy chứng nhận đăng ký doanh nghiệp"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "Luật Doanh nghiệp 2020, Điều 8 và quy định sửa đổi tại Luật 76/2025/QH15"
+    },
+    {
+      "id": "LDNCASE201",
+      "g": 1,
+      "lv": "TH",
+      "cid": "TH1.02",
+      "q": "Ông Bảo có được thành lập, quản lý và điều hành công ty như dự định không?",
+      "o": [
+        "Được, vì có quyền tự do kinh doanh tuyệt đối",
+        "Được nếu chỉ nắm dưới 65% cổ phần",
+        "Không, vì cán bộ, công chức thuộc trường hợp bị hạn chế quyền thành lập và quản lý doanh nghiệp, trừ ngoại lệ luật định",
+        "Được nếu công ty đăng ký tại tỉnh khác"
+      ],
+      "a": 2,
+      "e": "",
+      "b": "Luật Doanh nghiệp 2020, Điều 17, được sửa đổi bởi Luật 76/2025/QH15"
+    },
+    {
+      "id": "LDNCASE202",
+      "g": 1,
+      "lv": "TH",
+      "cid": "TH1.02",
+      "q": "Đối với dự định kinh doanh dịch vụ bảo vệ của bà Anh, cách xác định nào đúng?",
+      "o": [
+        "Chỉ cần đăng ký ngành nghề, không cần điều kiện nào khác",
+        "Phải đối chiếu danh mục ngành, nghề đầu tư kinh doanh có điều kiện và đáp ứng điều kiện chuyên ngành hiện hành",
+        "Dịch vụ bảo vệ là ngành nghề bị cấm tuyệt đối",
+        "Chỉ cần có vốn điều lệ trên 10 tỷ đồng"
+      ],
+      "a": 1,
+      "e": "",
+      "b": "Luật Đầu tư 143/2025/QH15, được sửa đổi bởi Luật 24/2026/QH16; pháp luật chuyên ngành về an ninh, trật tự"
+    },
+    {
+      "id": "LDNCASE203",
+      "g": 1,
+      "lv": "TH",
+      "cid": "TH1.02",
+      "q": "Giấy chứng nhận đăng ký doanh nghiệp có ý nghĩa nào đối với hoạt động kinh doanh có điều kiện?",
+      "o": [
+        "Thay thế mọi giấy phép và điều kiện chuyên ngành",
+        "Chỉ có ý nghĩa xác nhận mã số thuế",
+        "Không có ý nghĩa pháp lý",
+        "Không đồng nhất với việc đáp ứng giấy phép, điều kiện kinh doanh chuyên ngành"
+      ],
+      "a": 3,
+      "e": "",
+      "b": "Luật Doanh nghiệp 2020, Điều 1, Điều 8; Luật Đầu tư 143/2025/QH15"
+    }
+  ],
+  "th": [
+    {
+      "items": [
+        {
+          "cid": "TH1.01",
+          "title": "Công ty An Phát và việc xác định chủ thể kinh doanh",
+          "text": "Ngày 12/9/2026, bà Nguyễn Thu Hà cùng ông Trần Minh Quân thành lập Công ty TNHH An Phát tại thành phố Bắc Ninh, tỉnh Bắc Ninh, hoạt động trong lĩnh vực phân phối thiết bị văn phòng. Công ty được cấp Giấy chứng nhận đăng ký doanh nghiệp ngày 18/9/2026. Bà Hà là Giám đốc và người đại diện theo pháp luật; ông Quân góp 40% vốn điều lệ. Trong hồ sơ, ông Quân kê khai mình là người trực tiếp góp vốn, nhưng thực tế toàn bộ số tiền góp vốn do một cá nhân khác chuyển và người này có thỏa thuận chi phối các quyết định quan trọng của công ty. Ngày 20/10/2026, đối tác đặt vấn đề xác định ai là chủ sở hữu hưởng lợi và trách nhiệm kê khai thông tin.",
+          "mcq": [
+            "LDNCASE101",
+            "LDNCASE102",
+            "LDNCASE103"
+          ]
+        },
+        {
+          "cid": "TH1.02",
+          "title": "Quyền thành lập doanh nghiệp và giới hạn kinh doanh",
+          "text": "Ngày 5/10/2026, ông Lê Quốc Bảo, đang là công chức tại một cơ quan chuyên môn thuộc UBND tỉnh, dự định cùng em gái thành lập công ty cổ phần kinh doanh dịch vụ tư vấn đầu tư. Ông Bảo dự kiến nắm 60% cổ phần, giữ chức Chủ tịch Hội đồng quản trị và trực tiếp điều hành công ty. Cùng thời điểm, bà Lê Mai Anh, em gái ông Bảo, dự định đăng ký doanh nghiệp kinh doanh dịch vụ bảo vệ nhưng chưa tìm hiểu điều kiện kinh doanh chuyên ngành. Hai người cho rằng chỉ cần được cấp Giấy chứng nhận đăng ký doanh nghiệp là có thể triển khai mọi hoạt động.",
+          "mcq": [
+            "LDNCASE201",
+            "LDNCASE202",
+            "LDNCASE203"
+          ]
+        }
+      ]
+    }
+  ],
+  "vb": [
+    {
+      "t": "I. Hiến pháp, luật và văn bản hợp nhất",
+      "rows": [
+        [
+          "Hiến pháp nước CHXHCN Việt Nam năm 2013 (được sửa đổi, bổ sung năm 2025)",
+          "28/11/2013",
+          "Căn cứ quyền tự do kinh doanh; Điều 33."
+        ],
+        [
+          "Luật Doanh nghiệp số 59/2020/QH14",
+          "17/06/2020",
+          "Có hiệu lực từ 01/01/2021; đã được sửa đổi, bổ sung."
+        ],
+        [
+          "Luật số 03/2022/QH15",
+          "11/01/2022",
+          "Sửa đổi, bổ sung một số luật, trong đó có Luật Doanh nghiệp."
+        ],
+        [
+          "Luật số 76/2025/QH15",
+          "17/06/2025",
+          "Sửa đổi, bổ sung Luật Doanh nghiệp; hiệu lực 01/07/2025."
+        ],
+        [
+          "Văn bản hợp nhất số 67/VBHN-VPQH",
+          "15/08/2025",
+          "Văn bản hợp nhất Luật Doanh nghiệp; sử dụng để tra cứu nội dung sau sửa đổi."
+        ],
+        [
+          "Luật Thương mại số 36/2005/QH11",
+          "14/06/2005",
+          "Căn cứ nhận diện thương nhân và hoạt động thương mại; Điều 3, Điều 6."
+        ],
+        [
+          "Luật Đầu tư số 143/2025/QH15",
+          "11/12/2025",
+          "Hiệu lực 01/03/2026; được sửa đổi, bổ sung bởi Luật 24/2026/QH16."
+        ],
+        [
+          "Nghị định số 168/2025/NĐ-CP",
+          "30/06/2025",
+          "Đăng ký doanh nghiệp; hiệu lực 01/07/2025."
+        ],
+        [
+          "Nghị định số 296/2026/NĐ-CP",
+          "23/07/2026",
+          "Sửa đổi, bổ sung Nghị định 168/2025/NĐ-CP; hiệu lực 23/07/2026."
+        ]
+      ]
+    }
+  ],
+  "sets": [
+    {
+      "id": 1,
+      "ch": 1,
+      "label": "Đề luyện tập Chương 1",
+      "qs": [
+        "LDN101",
+        "LDN102",
+        "LDN103",
+        "LDN104",
+        "LDN105",
+        "LDN106",
+        "LDN107",
+        "LDN108",
+        "LDN109",
+        "LDN110",
+        "LDN111",
+        "LDN112",
+        "LDN113",
+        "LDN114",
+        "LDN115",
+        "LDN116",
+        "LDN117",
+        "LDN118",
+        "LDN119",
+        "LDN120"
+      ],
+      "th": [
+        "TH1.01",
+        "TH1.02"
+      ]
+    }
+  ]
+}
