@@ -59,7 +59,7 @@ const ICON={
  vanban:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 8h22a5 5 0 0 1 0 10H12z" fill="#e8d3a0"/><path d="M12 8c-3 0-5 2-5 5s2 5 5 5h3V8z" fill="#c9a96a"/><path d="M15 18h19v18a5 5 0 0 1-5 5H15z" fill="#f3e4bd"/><path d="M15 36a5 5 0 1 0 10 0" fill="#c9a96a"/><path d="M19 24h11M19 29h11M19 34h7" stroke="#8a6a2a" stroke-width="2" stroke-linecap="round"/><path d="M38 30l3 10-4-2-3 3-1-10z" fill="#c0392b"/></svg>',
  tomtat:'<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="36" rx="3" fill="#e9824a"/><rect x="13" y="12" width="22" height="28" rx="1.5" fill="#fff"/><rect x="18" y="4" width="12" height="7" rx="2" fill="#7a8794"/><path d="M17 19h14M17 25h14M17 31h10" stroke="#e9824a" stroke-width="2.4" stroke-linecap="round"/></svg>',
  lichsu:'<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="25" cy="25" r="16" fill="#dbe7f3" stroke="#2f6db0" stroke-width="2.5"/><path d="M25 16v10l7 4" stroke="#1f3a5a" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M6 22l4 5 5-5" stroke="#c0392b" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>'};
-const VIEWS=[["thithu","Thi thử"],["luyentap","Lý thuyết"],["tinhhuong","Tình huống"],["vanban","Văn bản, án lệ"],["tomtat","Tóm tắt lý thuyết"],["lichsu","Lịch sử làm bài"]]
+const VIEWS=[["thithu","Thi thử"],["luyentap","Lý thuyết"],["tinhhuong","Tình huống"],["vanban","Văn bản, án lệ"],["tomtat",M.mindmapTitle||"Tóm tắt lý thuyết"],["lichsu","Lịch sử làm bài"]]
   .filter(([v])=>v!=="tinhhuong"||(D.th&&D.th.length)).filter(([v])=>v!=="tomtat"||D.ly);
 document.title=(M.title||("Tài liệu "+M.name))+" · Phúc Nguyên Library";
 const app=document.getElementById("pn-app");
@@ -283,7 +283,7 @@ R.vanban=function(){
 /* ---------- Tóm tắt lý thuyết ---------- */
 R.tomtat=function(){
   const K=D.ly,ix={},order=[];
-  CTRL.innerHTML=head("tomtat",`Sơ đồ ý chính toàn học phần theo bài giảng. Bấm vào một ý để đọc nội dung và cơ sở pháp lý ở khung bên cạnh. Dùng <b>Mục lục</b> hoặc nút <b>Mục trước / Mục sau</b> để chuyển nhanh giữa các mục mà không phải quay lại từ đầu.`)+
+  CTRL.innerHTML=head("tomtat",M.mindmapIntro||`Sơ đồ ý chính toàn học phần theo bài giảng. Bấm vào một ý để đọc nội dung và cơ sở pháp lý ở khung bên cạnh. Dùng <b>Mục lục</b> hoặc nút <b>Mục trước / Mục sau</b> để chuyển nhanh giữa các mục mà không phải quay lại từ đầu.`)+
     `<div class="kbar"><label class="lab" for="k-jump">Mục lục</label><select id="k-jump"></select></div><div class="kbar"><button type="button" class="btn ghost sm" id="kn-open">Mở tất cả các nhánh</button><button type="button" class="btn ghost sm" id="kn-close">Thu gọn</button></div>`;
   const col=i=>`var(--b${i%7+1})`,cols=i=>`var(--b${i%7+1}s)`;
   function li(n,id,path,ci,parent){ix[id]={n,path,ci,parent};order.push(id);
