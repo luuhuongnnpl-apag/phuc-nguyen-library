@@ -5,7 +5,7 @@
 **Mốc dữ liệu:** 01/11/2026  
 **Căn cứ trọng tâm:** Luật Doanh nghiệp số 59/2020/QH14, được sửa đổi, bổ sung bởi Luật số 03/2022/QH15 và Luật số 76/2025/QH15; VBHN 67/VBHN-VPQH ngày 15/08/2025. Phần đăng ký doanh nghiệp sử dụng VBHN 29/2026/VBHN-NĐ-BTC ngày 28/08/2026.
 
-> Tài liệu này là phần diễn giải nền tảng để mở rộng các chủ đề doanh nghiệp đã xuất hiện trong Luật Thương mại. Vì chưa có đề cương và slide riêng, nội dung chưa được xem là bài giảng chính thức hoặc được dùng để tự động sinh ngân hàng câu hỏi.
+> Tài liệu này là phần diễn giải nền tảng để mở rộng các chủ đề doanh nghiệp đã xuất hiện trong Luật Thương mại. Theo xác nhận của giảng viên, học phần không có đề cương riêng. Nội dung được dựng từ phần doanh nghiệp trong Chương 1 Luật Thương mại và phát triển chuyên sâu theo Luật Doanh nghiệp; đây là học liệu độc lập chờ duyệt.
 
 ## I. Doanh nghiệp trong hệ thống chủ thể kinh doanh
 
@@ -182,4 +182,4 @@ Mọi nội dung chi tiết về thời hạn, chủ thể nộp đơn, điều 
 6. Rà soát luật chứng khoán nếu mở rộng chào bán chứng khoán, công ty đại chúng và quản trị công ty đại chúng.
 7. Đối chiếu đề cương và slide riêng của học phần Luật Doanh nghiệp để giữ đúng tên chương, mục, tiểu mục; không dùng khung đề xuất này thay thế tài liệu giảng viên.
 
-**Kết luận biên soạn:** Bản nội dung đã mở rộng các điểm về loại hình doanh nghiệp, chế độ trách nhiệm, đăng ký, đại diện, quản trị, giải thể và phá sản từ Luật Thương mại thành một chuyên đề độc lập. Tuy nhiên, đây vẫn là nội dung nền tảng chờ đối chiếu đề cương chính thức và thẩm định pháp lý trước khi chuyển thành JSON, ngân hàng câu hỏi hoặc dữ liệu hiển thị trên website.
+**Kết luận biên soạn:** Bản nội dung đã mở rộng các điểm về loại hình doanh nghiệp, chế độ trách nhiệm, đăng ký, đại diện, quản trị, giải thể và phá sản từ phần doanh nghiệp của Luật Thương mại thành học phần độc lập. Có thể tiếp tục chuyển hóa thành JSON, ngân hàng câu hỏi, tình huống và mind map theo cấu trúc 07 chương; mọi nội dung mới vẫn chờ giảng viên duyệt và phải qua kiểm tra pháp lý.
