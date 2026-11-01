@@ -11,7 +11,7 @@ Dữ liệu Luật Thương mại đang có trên Phúc Nguyên Library mang tê
 
 Bản thảo này mở rộng riêng phần pháp luật doanh nghiệp theo hướng đi từ nhận diện doanh nghiệp trong quan hệ thương mại sang nghiên cứu cấu trúc pháp lý, thành lập, tổ chức quản trị, vốn, quyền và nghĩa vụ của thành viên/cổ đông, tổ chức lại và chấm dứt hoạt động.
 
-**Giới hạn nguồn:** Project hiện chưa có đề cương chi tiết và slide riêng của học phần Luật Doanh nghiệp. Vì vậy, khung dưới đây là khung chuyên đề đề xuất được xây dựng từ các chủ đề đã có trong Chương 1 Luật Thương mại và hệ thống chương của Luật Doanh nghiệp; chưa được coi là Mục 9 chính thức của đề cương học phần. Không tự đặt số lượng câu hỏi, tình huống, buổi học hoặc chuẩn đầu ra khi chưa có đề cương.
+**Cơ sở xác lập phạm vi theo xác nhận của giảng viên:** Học phần Luật Doanh nghiệp không có đề cương riêng. Lấy phần doanh nghiệp trong Chương 1 “Địa vị pháp lý của các chủ thể kinh doanh” của học phần Luật Thương mại làm nguồn xác định phạm vi; phát triển thành học phần độc lập bằng cách hệ thống hóa theo nhóm chế định của Luật Doanh nghiệp. Khung 07 chương dưới đây là cấu trúc biên soạn nội bộ, không phải đề cương chính thức do cơ sở đào tạo ban hành. Không tự đặt số buổi học hoặc chuẩn đầu ra chính thức.
 
 ## 2. Mục tiêu học tập dự kiến
 
