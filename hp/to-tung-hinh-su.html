@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tài liệu Luật Tố tụng hình sự · Phúc Nguyên Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Merriweather:wght@700;900&display=swap">
+<link rel="stylesheet" href="../assets/pnlib-course.css">
+</head><body><script id="PNLIB_COURSE_GATE">
+(function(){
+  const courseId="to-tung-hinh-su";
+  function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  let access=false;
+  try{const raw=localStorage.getItem("pnlib-ma-lop");const session=raw?JSON.parse(raw):null;const scopes=session&&Array.isArray(session.courses)?session.courses:null;access=!!(session&&session.code&&session.han&&today()<=session.han&&(!scopes||!scopes.length||scopes.includes("*")||scopes.includes(courseId)));}catch(e){access=false;}
+  if(!access){document.documentElement.style.visibility="hidden";if(window.top!==window.self){window.parent.postMessage({pn:"home",course:courseId},"*");}else{window.location.replace("../index.html#"+courseId);}}
+})();
+</script>
+<div id="pn-app"></div>
+<script id="pn-data" type="application/json">
+{"meta":{"id":"to-tung-hinh-su","name":"Luật Tố tụng hình sự","title":"Tài liệu Luật Tố tụng hình sự","menuTitle":"Luật Tố tụng hình sự","asof":"01/11/2026","laws":[{"re":"BLTTHS|Bộ luật Tố tụng hình sự","doc":"https://congbao.chinhphu.vn/van-ban/van-ban-hop-nhat-172-2026-vbhn-lq-vpqh-49537.htm"}],"note":"Khung học phần được thiết lập theo Đề cương chi tiết học phần Luật Tố tụng hình sự. Nội dung lý thuyết, sơ đồ tư duy và ngân hàng câu hỏi sẽ được cập nhật theo từng chương sau khi đối chiếu văn bản pháp luật có hiệu lực tại ngày 01/11/2026."},"chapters":[{"n":1,"name":"Khái quát chung về luật tố tụng hình sự Việt Nam"},{"n":2,"name":"Cơ quan tiến hành tố tụng, người tiến hành tố tụng và người tham gia tố tụng"},{"n":3,"name":"Chứng minh, chứng cứ và các biện pháp ngăn chặn, biện pháp cưỡng chế trong tố tụng hình sự"},{"n":4,"name":"Khởi tố, điều tra, truy tố"},{"n":5,"name":"Xét xử sơ thẩm vụ án hình sự"},{"n":6,"name":"Xét xử phúc thẩm vụ án hình sự"},{"n":7,"name":"Thi hành bản án, quyết định của Tòa án"},{"n":8,"name":"Thủ tục xét lại bản án, quyết định đã có hiệu lực pháp luật"}],"q":[]}
+</script>
+<script src="../assets/pnlib-course.js"></script>
+</body></html>
