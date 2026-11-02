@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="440" viewBox="0 0 700 440">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1d4f45"/><stop offset="1" stop-color="#4c9a86"/></linearGradient></defs>
+<rect width="700" height="440" rx="24" fill="url(#g)"/>
+<g fill="none" stroke="#e6ecf2" stroke-width="4" opacity=".75"><path d="M350 152V190H145V240M350 190V240M350 190H555V240"/></g>
+<g fill="#fff" stroke="#e6ecf2" stroke-width="2"><rect x="145" y="32" width="410" height="120" rx="18"/><rect x="35" y="240" width="220" height="64" rx="14"/><rect x="240" y="240" width="220" height="64" rx="14"/><rect x="445" y="240" width="220" height="64" rx="14"/></g>
+<g fill="#1d4f45" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle"><text x="350" y="70" font-size="21">PHÁP LUẬT LAO ĐỘNG VÀ AN</text><text x="350" y="95" font-size="21">SINH XÃ HỘI</text><text x="350" y="138" font-size="16" font-weight="400">Mind map · 7 chương</text><text x="145" y="279" font-size="17">Hợp đồng lao động</text><text x="350" y="279" font-size="17">Kỷ luật lao động</text><text x="555" y="279" font-size="17">An sinh xã hội</text></g>
+<text x="350" y="380" fill="#fff" font-family="Arial,sans-serif" font-size="18" text-anchor="middle" opacity=".9">Đang biên soạn</text>
+</svg>

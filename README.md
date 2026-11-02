@@ -32,3 +32,9 @@ File chỉ chứa dấu băm của mã (sinh viên không đọc được mã). 
 - Không ghi số điều luật trên sơ đồ (trừ khi số điều chính là nội dung, ví dụ danh sách tội bỏ tử hình); cơ sở pháp lý xem ở Tóm tắt lý thuyết.
 - Chia tờ theo bề rộng đo thực tế để chữ không nhỏ hơn khoảng 60% khi vừa khung; tên thẻ ghi mục có trong tờ.
 - Sửa nội dung: sửa Tóm tắt lý thuyết trước, rồi sinh lại mind map — không sửa tay riêng sơ đồ.
+
+## Học phần khung chờ (thêm 02/11/2026)
+
+Đã có mục trong danh sách học phần ("Sắp có") và trang Mind-map với khung chương theo đề cương chi tiết ("Đang biên soạn"):
+Pháp luật lao động và an sinh xã hội (7 chương), Lý luận Nhà nước và Pháp luật (8 chương), Pháp luật về doanh nghiệp và thương mại, thương mại điện tử (3 chương), Xây dựng lập luận pháp lý và viết trong nghề luật (3 chương).
+Luật Hiến pháp: chưa có đề cương, mới có mục chờ. Khi biên soạn: thêm `hp/<id>.html` (gắn `src` vào COURSES) và Tóm tắt lý thuyết, rồi sinh mind map theo chuẩn ở trên.
