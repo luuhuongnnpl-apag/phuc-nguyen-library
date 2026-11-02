@@ -37,4 +37,10 @@ File chỉ chứa dấu băm của mã (sinh viên không đọc được mã). 
 
 Đã có mục trong danh sách học phần ("Sắp có") và trang Mind-map với khung chương theo đề cương chi tiết ("Đang biên soạn"):
 Pháp luật lao động và an sinh xã hội (7 chương), Lý luận Nhà nước và Pháp luật (8 chương), Pháp luật về doanh nghiệp và thương mại, thương mại điện tử (3 chương), Xây dựng lập luận pháp lý và viết trong nghề luật (3 chương).
-Luật Hiến pháp: chưa có đề cương, mới có mục chờ. Khi biên soạn: thêm `hp/<id>.html` (gắn `src` vào COURSES) và Tóm tắt lý thuyết, rồi sinh mind map theo chuẩn ở trên.
+Luật Hiến pháp (9 chương, thêm khung chương cùng ngày). Khi biên soạn: thêm `hp/<id>.html` (gắn `src` vào COURSES) và Tóm tắt lý thuyết, rồi sinh mind map theo chuẩn ở trên.
+
+## Cập nhật 02/11/2026 (tối)
+
+- Bỏ mục Mind-map "Đàm phán, soạn thảo hợp đồng" (không có học phần này).
+- Kỹ năng tư vấn pháp luật dân sự: có mind map 6 chương, sinh từ khung Tóm tắt lý thuyết của học phần (hiện mới có đề mục; khi Tóm tắt có nội dung thì sinh lại để đi sâu theo mẫu).
+- Luật Hiến pháp: thêm khung 9 chương theo đề cương chi tiết.
