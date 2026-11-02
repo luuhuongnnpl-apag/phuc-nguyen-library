@@ -211,7 +211,7 @@ th{background:var(--tint);font-size:11.5px;text-transform:uppercase;letter-spaci
 .mm-title .h1{font:900 46px/1.1 var(--f-display);text-transform:uppercase;color:#12395c;letter-spacing:.01em}
 .mm-title .h2{font:900 24px/1.2 var(--f-display);text-transform:uppercase;color:#12395c;margin-top:4px}
 .mm-tree{display:flex;justify-content:center}
-.mm-node{display:flex;flex-direction:column;align-items:center}
+.mm-node{display:flex;flex-direction:column;align-items:center}.mm-expand{margin-top:6px;border:1px solid #c7d2df;background:#f3f7fb;color:#244b6d;border-radius:999px;padding:4px 10px;font:600 11.5px/1.3 var(--f-body);cursor:pointer;white-space:nowrap}.mm-expand:hover{background:#e5eef7}.mm-expand:focus-visible{outline:3px solid #6fa8d6;outline-offset:2px}.mm-branch[hidden]{display:none!important}.mm-tools .mm-action{font-size:12px;padding:0 9px}
 .mm-box{position:relative;background:#fff;border:1.5px solid #8592a3;border-radius:14px;padding:7px 11px;font:700 13.5px/1.32 var(--f-display);color:#14304f;text-align:center;max-width:140px}
 .mm-box.d0{font-size:21px;padding:10px 46px;border-radius:16px;max-width:none;border-color:#6b7787}
 .mm-box.d1{font-size:18px;padding:10px 16px;border-radius:20px;max-width:230px;border-color:#6b7787;border-width:1.8px}
@@ -13577,7 +13577,7 @@ function mmBox(n,depth){const items=n.d?n.d.split(" · "):null;
 function mmNode(n,depth){const kids=n.c||[];const box=mmBox(n,depth);
   if(!kids.length)return `<div class="mm-node">${box}</div>`;
   const l=n.l||(depth<=1&&kids.some(k=>k.c&&k.c.length)?"row":"stack");
-  return `<div class="mm-node">${box}${mmKids(kids,l,depth)}</div>`}
+  return `<div class="mm-node">${box}<button type="button" class="mm-expand" data-mm-toggle aria-expanded="false">＋ Mở nút con (${kids.length})</button><div class="mm-branch" hidden>${mmKids(kids,l,depth)}</div></div>`}
 function mmKids(kids,l,depth){
   if(l.indexOf("cols")===0){const N=+l.slice(4)||2,cols=[...Array(N)].map(()=>[]);kids.forEach((k,i)=>cols[i%N].push(k));
     return `<div class="mm-kids row">${cols.filter(c=>c.length).map(col=>`<div class="mm-kid"><div class="mm-col">${col.map((k,i)=>i?`<div class="mm-sk">${mmNode(k,depth+1)}</div>`:mmNode(k,depth+1)).join("")}</div></div>`).join("")}</div>`}
@@ -13596,7 +13596,7 @@ function tlChapterHTML(k,n,mi){const T=TL[k],c=T.chapters.find(x=>x.n===n);if(!c
   <section class="sheet">
     <div class="sheet-deco" aria-hidden="true"></div><img class="sheet-logo" src="assets/logo.png" alt="">
     
-    <div class="mm-tools"><button type="button" data-z="-1" aria-label="Thu nhỏ">−</button><button type="button" data-z="0">Vừa khung</button><button type="button" data-z="1" aria-label="Phóng to">+</button></div>
+    <div class="mm-tools"><button type="button" class="mm-action" data-mm-all="open">Mở tất cả</button><button type="button" class="mm-action" data-mm-all="close">Thu gọn</button><button type="button" data-z="-1" aria-label="Thu nhỏ">−</button><button type="button" data-z="0">Vừa khung</button><button type="button" data-z="1" aria-label="Phóng to">+</button></div>
     <div class="mm-vp"><div class="mm-sizer"><div class="mm-canvas">${mmHTML(m)}</div></div></div>
   </section>
   <div class="ch-pager">${prev?`<button type="button" class="btn" data-go="tl-${k}-${prev.n}">← Chương ${prev.n}</button>`:"<span></span>"}${next?`<button type="button" class="btn" data-go="tl-${k}-${next.n}">Chương ${next.n} →</button>`:"<span></span>"}</div>
@@ -13609,8 +13609,11 @@ function mmFit(){const vp=document.querySelector(".mm-vp");if(!vp)return;const s
   if(mmZoom==null)s=Math.max(s,vp.clientWidth<700?.5:.74);
   cv.style.transform=`scale(${s})`;sz.style.width=Math.ceil(w*s)+"px";sz.style.height=Math.ceil(h*s)+"px";vp.dataset.s=s;vp.scrollLeft=Math.max(0,(w*s-vp.clientWidth)/2)}
 function bindMM(){mmZoom=null;
+  const refresh=()=>requestAnimationFrame(mmFit);
   document.querySelectorAll(".mm-tools [data-z]").forEach(b=>b.onclick=()=>{const z=+b.dataset.z,vp=document.querySelector(".mm-vp"),s=+vp.dataset.s||1;
     mmZoom=z===0?null:Math.max(.3,Math.min(2,s*(z>0?1.25:.8)));mmFit()});
+  document.querySelectorAll(".mm-expand[data-mm-toggle]").forEach(b=>b.onclick=()=>{const branch=b.nextElementSibling,open=branch.hidden;branch.hidden=!open;b.setAttribute("aria-expanded",String(open));b.textContent=open?"− Thu gọn nút con":"＋ Mở nút con ("+branch.querySelectorAll(":scope > .mm-kids > .mm-kid, :scope > .mm-kids > .mm-sk").length+")";refresh()});
+  document.querySelectorAll(".mm-tools [data-mm-all]").forEach(b=>b.onclick=()=>{const open=b.dataset.mmAll==="open";document.querySelectorAll(".mm-branch").forEach(x=>x.hidden=!open);document.querySelectorAll(".mm-expand[data-mm-toggle]").forEach(x=>{x.setAttribute("aria-expanded",String(open));const n=x.nextElementSibling.querySelectorAll(":scope > .mm-kids > .mm-kid, :scope > .mm-kids > .mm-sk").length;x.textContent=open?"− Thu gọn nút con":"＋ Mở nút con ("+n+")"});refresh()});
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(mmFit);mmFit()}
 window.addEventListener("resize",()=>{if(document.querySelector(".mm-vp"))mmFit()});
 
