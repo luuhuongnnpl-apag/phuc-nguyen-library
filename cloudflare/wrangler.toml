@@ -1,0 +1,9 @@
+name = "phuc-nguyen-library-api"
+main = "src/index.js"
+compatibility_date = "2026-10-28"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "phuc-nguyen-library"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
