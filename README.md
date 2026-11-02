@@ -25,11 +25,10 @@ File chỉ chứa dấu băm của mã (sinh viên không đọc được mã). 
   nút báo lỗi ở từng câu, gửi về email giảng viên qua FormSubmit (lần đầu cần bấm xác nhận trong thư FormSubmit gửi tới).
 - Đã chuyển: Luật Dân sự, Luật Thương mại; khung học phần Luật Tố tụng hình sự đang được bổ sung theo đề cương 2026. Các học phần khác chuyển dần theo cùng khuôn.
 
-## Chuẩn mind map (thống nhất từ 02/11/2026)
+## Chuẩn mind map (thống nhất từ 02/11/2026, theo mẫu Chương 2 Luật Dân sự)
 
-- Mind map của mỗi chương **sinh từ Tóm tắt lý thuyết** (`ly` trong `hp/<id>.html`): cùng tên mục, cùng thứ tự, cùng cấp; tên chương trùng giữa trang Mind-map, sơ đồ và Tóm tắt lý thuyết.
-- Một cách thể hiện cho mọi học phần: tiêu đề "Chương n" + tên chương; nhánh chính là các mục cấp 1, nhánh con là tiểu mục.
-- Mục cấp 1 trước đây chỉ có các đoạn ý đã được tách thành tiểu mục (giữ nguyên câu chữ; cơ sở pháp lý lấy từ chính câu đó, nếu không có thì theo căn cứ của mục).
-- Không ghi điều luật, văn bản trên nút; cơ sở pháp lý xem ở Tóm tắt lý thuyết.
-- Mỗi sơ đồ tối đa 5 nhánh chính (khoảng 40 ô; 5 nhánh dày đặc thì tách đôi); chương dài tách thành "Sơ đồ 1/N, 2/N…", dòng phụ dưới tiêu đề ghi các mục có trong sơ đồ.
-- Sửa nội dung: sửa Tóm tắt lý thuyết trước, sau đó sinh lại mind map — không sửa tay riêng mind map.
+- Mind map sinh từ **Tóm tắt lý thuyết** (`ly` trong `hp/<id>.html`): đủ mọi mục, tiểu mục, đúng thứ tự; tên chương trùng nhau ở trang Mind-map, sơ đồ và Tóm tắt.
+- Đi sâu tới nội dung như mẫu Canva: dưới mỗi tiểu mục là các ý cụ thể (điều kiện, các loại, quyền, nghĩa vụ, thời hạn…) rút từ chính Tóm tắt; ý chi tiết nằm thành danh sách đánh số trong ô; các mục cùng cấp dàn ngang.
+- Không ghi số điều luật trên sơ đồ (trừ khi số điều chính là nội dung, ví dụ danh sách tội bỏ tử hình); cơ sở pháp lý xem ở Tóm tắt lý thuyết.
+- Chia tờ theo bề rộng đo thực tế để chữ không nhỏ hơn khoảng 60% khi vừa khung; tên thẻ ghi mục có trong tờ.
+- Sửa nội dung: sửa Tóm tắt lý thuyết trước, rồi sinh lại mind map — không sửa tay riêng sơ đồ.
