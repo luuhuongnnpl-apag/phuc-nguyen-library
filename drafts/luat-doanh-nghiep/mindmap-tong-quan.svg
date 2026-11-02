@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1180" viewBox="0 0 1800 1180" role="img" aria-labelledby="title desc">
+<title id="title">Mind map tổng quan Luật Doanh nghiệp – chuyên đề mở rộng</title>
+<desc id="desc">Bảy nhánh kiến thức: địa vị pháp lý, thành lập và đăng ký, công ty trách nhiệm hữu hạn, công ty cổ phần, công ty hợp danh và doanh nghiệp tư nhân, quản trị doanh nghiệp, tổ chức lại và chấm dứt.</desc>
+<defs>
+ <style>
+  .bg{fill:#fbfaf7}.line{stroke:#65758b;stroke-width:4;fill:none;stroke-linecap:round}
+  .center{fill:#153a5b;stroke:#0d2a43;stroke-width:3}.branch{fill:#fff;stroke:#52708d;stroke-width:3}
+  .sub{fill:#f2f5f8;stroke:#9aabba;stroke-width:2}
+  .ct{font:700 34px 'Arial',sans-serif;fill:#fff;text-anchor:middle}
+  .bt{font:700 25px 'Arial',sans-serif;fill:#153a5b;text-anchor:middle}
+  .st{font:400 19px 'Arial',sans-serif;fill:#31465a;text-anchor:middle}
+  .small{font:400 16px 'Arial',sans-serif;fill:#526274;text-anchor:middle}
+ </style>
+</defs>
+<rect class="bg" width="1800" height="1180"/>
+<text x="900" y="54" class="bt" style="font-size:30px">LUẬT DOANH NGHIỆP · CHUYÊN ĐỀ MỞ RỘNG</text>
+<text x="900" y="84" class="small">Mốc pháp lý: 01/11/2026 · Bản thảo chờ giảng viên duyệt</text>
+<!-- central -->
+<rect class="center" x="675" y="500" width="450" height="150" rx="28"/>
+<text class="ct" x="900" y="558">ĐỊA VỊ PHÁP LÝ</text><text class="ct" x="900" y="603">VÀ QUẢN TRỊ DOANH NGHIỆP</text>
+<!-- branches -->
+<path class="line" d="M675 535 C560 470 500 300 390 245"/>
+<path class="line" d="M675 575 C520 575 450 570 330 570"/>
+<path class="line" d="M715 650 C610 760 520 830 410 875"/>
+<path class="line" d="M900 650 C900 760 900 810 900 875"/>
+<path class="line" d="M1085 650 C1190 760 1280 830 1390 875"/>
+<path class="line" d="M1125 575 C1280 575 1350 570 1470 570"/>
+<path class="line" d="M1125 535 C1240 470 1300 300 1410 245"/>
+<!-- node 1 -->
+<rect class="branch" x="100" y="130" width="590" height="190" rx="22"/>
+<text class="bt" x="395" y="175">1. ĐỊA VỊ PHÁP LÝ DOANH NGHIỆP</text>
+<text class="st" x="395" y="215">Doanh nghiệp và thương nhân · quyền kinh doanh</text>
+<text class="st" x="395" y="246">người đại diện · chủ sở hữu hưởng lợi</text>
+<text class="small" x="395" y="284">Phân biệt tư cách chủ thể và loại hình tổ chức</text>
+<!-- node 2 -->
+<rect class="branch" x="40" y="475" width="580" height="190" rx="22"/>
+<text class="bt" x="330" y="520">2. THÀNH LẬP VÀ ĐĂNG KÝ</text>
+<text class="st" x="330" y="560">Điều kiện · hồ sơ · thủ tục · vốn góp</text>
+<text class="st" x="330" y="591">đăng ký điện tử · chủ sở hữu hưởng lợi</text>
+<text class="small" x="330" y="630">NĐ 168/2025 · NĐ 296/2026 · VBHN 29/2026</text>
+<!-- node 3 -->
+<rect class="branch" x="100" y="790" width="590" height="190" rx="22"/>
+<text class="bt" x="395" y="835">3. CÔNG TY TNHH</text>
+<text class="st" x="395" y="875">Một thành viên · hai thành viên trở lên</text>
+<text class="st" x="395" y="906">vốn góp · chuyển nhượng · cơ cấu quản trị</text>
+<text class="small" x="395" y="945">Trách nhiệm hữu hạn và quyền thành viên</text>
+<!-- node 4 -->
+<rect class="branch" x="605" y="880" width="590" height="190" rx="22"/>
+<text class="bt" x="900" y="925">4. CÔNG TY CỔ PHẦN</text>
+<text class="st" x="900" y="965">Cổ phần · cổ đông · huy động vốn</text>
+<text class="st" x="900" y="996">ĐHĐCĐ · HĐQT · bảo vệ cổ đông</text>
+<text class="small" x="900" y="1035">Quản trị và kiểm soát xung đột lợi ích</text>
+<!-- node 5 -->
+<rect class="branch" x="1110" y="790" width="590" height="190" rx="22"/>
+<text class="bt" x="1405" y="835">5. HỢP DANH VÀ DNTN</text>
+<text class="st" x="1405" y="875">Thành viên hợp danh · thành viên góp vốn</text>
+<text class="st" x="1405" y="906">chủ DNTN · trách nhiệm bằng toàn bộ tài sản</text>
+<text class="small" x="1405" y="945">Đối chiếu trách nhiệm hữu hạn / vô hạn</text>
+<!-- node 6 -->
+<rect class="branch" x="1180" y="475" width="580" height="190" rx="22"/>
+<text class="bt" x="1470" y="520">6. QUẢN TRỊ DOANH NGHIỆP</text>
+<text class="st" x="1470" y="560">đại diện · nghĩa vụ người quản lý</text>
+<text class="st" x="1470" y="591">giao dịch liên quan · công ty mẹ – con</text>
+<text class="small" x="1470" y="630">Kiểm soát nội bộ và trách nhiệm giải trình</text>
+<!-- node 7 -->
+<rect class="branch" x="1110" y="130" width="590" height="190" rx="22"/>
+<text class="bt" x="1405" y="175">7. TỔ CHỨC LẠI VÀ CHẤM DỨT</text>
+<text class="st" x="1405" y="215">chia · tách · hợp nhất · sáp nhập · chuyển đổi</text>
+<text class="st" x="1405" y="246">giải thể · phục hồi · phá sản</text>
+<text class="small" x="1405" y="284">Bảo vệ chủ nợ, người lao động, thành viên/cổ đông</text>
+<text x="900" y="1135" class="small">Sơ đồ định hướng theo khung chuyên đề đề xuất; cần đối chiếu đề cương chính thức trước khi phát hành.</text>
+</svg>
