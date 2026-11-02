@@ -13572,7 +13572,7 @@ TL["luat-dat-dai"]={
 };;
 
 function mmBox(n,depth){return `<div class="mm-box d${Math.min(depth,4)}">${esc(n.t)}</div>`}
-function mmDetails(n,depth){if(!n.d)return "";const items=n.d.split(/\\s*·\\s*|\\s*;\\s*/).map(x=>x.trim()).filter(Boolean);if(items.length<2)return `<div class="mm-detail-single">${esc(n.d)}</div>`;return `<div class="mm-detail-branches">${items.map(x=>`<div class="mm-detail-node"><div class="mm-detail-box">${esc(x)}</div></div>`).join("")}</div>`}
+function mmDetails(n,depth){if(!n.d)return "";const items=n.d.split(/\s*·\s*|\s*;\s*/).map(x=>x.trim()).filter(Boolean);if(items.length<2)return `<div class="mm-detail-single">${esc(n.d)}</div>`;return `<div class="mm-detail-branches">${items.map(x=>`<div class="mm-detail-node"><div class="mm-detail-box">${esc(x)}</div></div>`).join("")}</div>`}
 function mmNode(n,depth){const kids=n.c||[];const l=n.l||(depth<=1&&kids.some(k=>k.c&&k.c.length)?"row":"stack");
   return `<div class="mm-node">${mmBox(n,depth)}${mmDetails(n,depth)}${kids.length?mmKids(kids,l,depth):""}</div>`}
 function mmKids(kids,l,depth){
