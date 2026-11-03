@@ -74,11 +74,23 @@ app.innerHTML=`<header class="pn-band"><div class="pn-wrap"><img class="pn-logo"
 <dialog class="pn-dialog" id="pn-dlg"></dialog>`;
 $("#pn-home").addEventListener("click",e=>{if(window.parent&&window.parent!==window){e.preventDefault();try{window.parent.postMessage({pn:"home"},"*")}catch(err){}}});
 const CTRL=$("#pn-ctrl"),BODY=$("#pn-body");
-let view="";const R={};
-function show(v,noScroll){if(!R[v])v="thithu";view=v;store.set("tab",v);
-  $$(".pn-menu [data-pn]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.pn===v)));
-  stopTimer();R[v]();if(!noScroll&&window.innerWidth<820)CTRL.scrollIntoView({behavior:"smooth",block:"start"})}
-$$(".pn-menu [data-pn]").forEach(b=>b.onclick=()=>show(b.dataset.pn));
+let view="";const R={};let tabIndex=0,tabMax=0;
+function reportTabHistory(){if(window.parent!==window)window.parent.postMessage({pn:"history-state",course:M.id,canBack:tabIndex>0,canForward:tabIndex<tabMax},"*")}
+function show(v,noScroll,historyMode){if(!R[v])v="thithu";
+  if(historyMode!=="none"){
+    if(historyMode==="replace"){tabIndex=0;tabMax=0;history.replaceState({pnCourseTab:v,pnCourseIndex:0},"",location.href)}
+    else if(v!==view){tabIndex++;tabMax=tabIndex;history.pushState({pnCourseTab:v,pnCourseIndex:tabIndex},"",location.href)}
+  }
+  view=v;store.set("tab",v);
+  $(".pn-menu [data-pn]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.pn===v)));
+  stopTimer();R[v]();reportTabHistory();
+  if(!noScroll&&window.innerWidth<820)CTRL.scrollIntoView({behavior:"smooth",block:"start"})}
+window.addEventListener("popstate",function(event){
+  const st=event.state;
+  if(st&&st.pnCourseTab){tabIndex=Number.isInteger(st.pnCourseIndex)?st.pnCourseIndex:0;show(st.pnCourseTab,true,"none")}
+  reportTabHistory();
+});
+$(".pn-menu [data-pn]").forEach(b=>b.onclick=()=>show(b.dataset.pn));
 function head(v,intro){const t=(VIEWS.find(x=>x[0]===v)||[])[1]||"";return `<div class="pn-vh">${t}</div>${intro?`<p class="intro">${intro}</p>`:""}`}
 
 /* Lượt truy cập trên thiết bị */
@@ -360,5 +372,5 @@ function report(ctx){
 $("#pn-report-general").onclick=()=>report({kind:"Mục",ref:(VIEWS.find(v=>v[0]===view)||["","Chung"])[1],text:""});
 
 /* ---------- Khởi động ---------- */
-const h0=(location.hash||"").slice(1);show(R[h0]?h0:store.get("tab","thithu"),true);
+const h0=(location.hash||"").slice(1);show(R[h0]?h0:store.get("tab","thithu"),true,"replace");
 })();

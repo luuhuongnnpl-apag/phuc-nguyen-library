@@ -881,11 +881,26 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
 <link rel="stylesheet" href="assets/pnlib-standard.css">
 
 <script id="pn-history-nav-script">
-(()=>{const back=document.getElementById('pn-history-back'),forward=document.getElementById('pn-history-forward');if(!back||!forward)return;let canForward=false;const refresh=()=>{back.disabled=history.length<=1;forward.disabled=!canForward};back.addEventListener('click',()=>{if(history.length>1)history.back()});forward.addEventListener('click',()=>{if(canForward)history.forward()});addEventListener('popstate',()=>{canForward=true;refresh()});addEventListener('hashchange',refresh);const push=history.pushState.bind(history),replace=history.replaceState.bind(history);history.pushState=function(){const r=push(...arguments);canForward=false;refresh();return r};history.replaceState=function(){const r=replace(...arguments);refresh();return r};document.addEventListener('click',e=>{if(e.target.closest('a[href]')){canForward=false;refresh()}});refresh()})();
+(()=>{
+const back=document.getElementById('pn-history-back'),forward=document.getElementById('pn-history-forward');if(!back||!forward)return;
+let canForward=false,childBack=false,childForward=false;
+const frame=()=>document.querySelector('#main iframe');
+const refresh=()=>{back.disabled=!(childBack||history.length>1);forward.disabled=!(childForward||canForward)};
+const child=()=>{const f=frame();try{return f&&f.contentWindow&&f.contentWindow.location.origin===location.origin?f.contentWindow:null}catch(e){return null}};
+back.addEventListener('click',()=>{const w=child();if(w&&childBack){w.history.back();return}if(history.length>1)history.back()});
+forward.addEventListener('click',()=>{const w=child();if(w&&childForward){w.history.forward();return}if(canForward)history.forward()});
+addEventListener('message',e=>{if(e.origin!==location.origin)return;const w=child();if(!w||e.source!==w||!e.data||e.data.pn!=="history-state")return;childBack=!!e.data.canBack;childForward=!!e.data.canForward;refresh()});
+addEventListener('popstate',e=>{canForward=true;childBack=false;childForward=false;const id=e.state&&e.state.pnRoute?e.state.pnRoute:decodeURIComponent((location.hash||"").slice(1));route(course(id)||tlParse(id)||id==="gop-y"||id==="quan-ly-ma"?id:"home","none");refresh()});
+addEventListener('hashchange',refresh);
+const push=history.pushState.bind(history),replace=history.replaceState.bind(history);
+history.pushState=function(){const r=push(...arguments);canForward=false;childBack=false;childForward=false;refresh();return r};
+history.replaceState=function(){const r=replace(...arguments);refresh();return r};
+document.addEventListener('click',e=>{if(e.target.closest('a[href]')){canForward=false;childBack=false;childForward=false;refresh()}});
+const observer=new MutationObserver(()=>{childBack=false;childForward=false;refresh()});
+const main=document.getElementById('main');if(main)observer.observe(main,{childList:true,subtree:true});
+refresh();
+})();
 
-<script id="pn-history-popstate">
-addEventListener("popstate",e=>{const id=e.state&&e.state.pnRoute?e.state.pnRoute:decodeURIComponent((location.hash||"").slice(1));route(course(id)||tlParse(id)||id==="gop-y"||id==="quan-ly-ma"?id:"home","none")});
-</script>
 </script>
 </body>
 </html>
