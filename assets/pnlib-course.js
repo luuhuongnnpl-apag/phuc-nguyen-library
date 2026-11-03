@@ -66,7 +66,6 @@ const app=document.getElementById("pn-app");
 app.innerHTML=`<header class="pn-band"><div class="pn-wrap"><img class="pn-logo" src="../assets/logo.png" alt="Logo Phúc Nguyên Library"><div class="pn-titles"><div class="pn-kicker">Thư viện Phúc Nguyên</div><h1>${esc(M.title||("Tài liệu "+M.name))}</h1><div class="pn-copy">Bản quyền thuộc Phúc Nguyên</div></div></div></header>
 <div class="pn-layout pn-wrap">
   <div class="pn-homebar"><a class="pn-home" href="../index.html" id="pn-home"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z" fill="currentColor"/></svg></span>Trang chủ</a><button type="button" class="linkbtn report-btn" id="pn-report-general">Báo lỗi, góp ý học phần</button></div>
-  ${M.note?`<p class="pn-note">${esc(M.note)}</p>`:""}
   <div class="pn-top"><aside class="pn-frame pn-menu"><div class="pn-ftitle">${esc(M.menuTitle||M.name)}</div><ul>${VIEWS.map(([v,t])=>`<li><button type="button" data-pn="${v}">${ICON[v]}<span>${t}</span></button></li>`).join("")}</ul></aside>
   <section class="pn-frame pn-ctrl" id="pn-ctrl" aria-live="polite"></section></div>
   <section class="pn-frame pn-body" id="pn-body"></section>
