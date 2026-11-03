@@ -51,3 +51,4 @@ Luật Hiến pháp (9 chương, thêm khung chương cùng ngày). Khi biên so
 - Mỗi lần đẩy lên `main`, GitHub Actions (`.github/workflows/deploy.yml`) chạy: `tools/xay_dung.py` (dựng Tóm tắt + mind map, chỉ chương thay đổi) → `tools/kiem_tra.py` (mở thử mọi trang trên trình duyệt ảo) → chỉ khi đạt mới đăng GitHub Pages. Không đạt: web giữ bản cũ. Kết quả ghi `noi-dung/KET-QUA.md`.
 - Mind map chia tờ theo bề rộng đo thực tế (tách mục rộng quá 1.500 px, gộp các mục nhỏ liền nhau tới 1.720 px).
 - ChatGPT và người soạn nội dung chỉ sửa trong `noi-dung/`. `tools/xuat_noi_dung.py` xuất lại Tóm tắt đang có ra file nguồn khi cần.
+- Nguồn đăng GitHub Pages: GitHub Actions (đổi 03/11/2026) — chỉ bản đã chạy thử đạt mới được đăng.
