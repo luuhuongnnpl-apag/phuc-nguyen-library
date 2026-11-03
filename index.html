@@ -252,6 +252,10 @@ ol.mm-d li{margin:1px 0}
 .mm-box.kw{border-style:dashed;border-color:#9aa8b8;background:#f4f7fb;font:600 12.5px/1.35 var(--f-body);color:#2b4260;max-width:170px;border-radius:10px}
 .mm-note{position:relative;z-index:1;margin:14px auto 0;max-width:760px;text-align:center;font:400 12.5px/1.5 var(--f-body);color:#5a6b80}
 </style>
+
+<style id="pn-history-nav-style">
+.pn-history-nav{display:flex;align-items:center;gap:7px;min-height:42px;padding:5px max(16px,calc((100vw - 1180px)/2));background:var(--band-2);color:var(--on-band);border-top:1px solid rgba(255,255,255,.12)}.pn-history-nav .pn-history-spacer{flex:1}.pn-history-nav button{width:32px;height:30px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.36);border-radius:8px;background:transparent;color:#fff;font:700 20px/1 var(--f-body);cursor:pointer}.pn-history-nav button:hover:not(:disabled){background:rgba(255,255,255,.14)}.pn-history-nav button:disabled{opacity:.35;cursor:not-allowed}.pn-history-nav .pn-history-label{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--on-band-2)}@media(max-width:560px){.pn-history-nav{padding-inline:16px}}
+</style>
 </head>
 <body>
 
@@ -277,6 +281,7 @@ ol.mm-d li{margin:1px 0}
     <div class="titles"><div class="kicker">Thư viện Phúc Nguyên</div><h1>Tài liệu luật học</h1><div class="copy">Bản quyền thuộc Phúc Nguyên</div></div>
     <div class="who" id="who"></div>
   </div></header>
+  <div class="pn-history-nav" id="pn-history-nav" role="toolbar" aria-label="Điều hướng trang"><span class="pn-history-label">ĐIỀU HƯỚNG</span><span class="pn-history-spacer"></span><button type="button" id="pn-history-back" aria-label="Quay lại" title="Quay lại" disabled>‹</button><button type="button" id="pn-history-forward" aria-label="Tiến tới" title="Tiến tới" disabled>›</button></div>
   <div id="main"></div>
 </div>
 
@@ -873,5 +878,9 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
 </script>
 
 <link rel="stylesheet" href="assets/pnlib-standard.css">
+
+<script id="pn-history-nav-script">
+(()=>{const back=document.getElementById('pn-history-back'),forward=document.getElementById('pn-history-forward');if(!back||!forward)return;let canForward=false;const refresh=()=>{back.disabled=history.length<=1;forward.disabled=!canForward};back.addEventListener('click',()=>{if(history.length>1)history.back()});forward.addEventListener('click',()=>{if(canForward)history.forward()});addEventListener('popstate',()=>{canForward=true;refresh()});addEventListener('hashchange',refresh);const push=history.pushState.bind(history),replace=history.replaceState.bind(history);history.pushState=function(){const r=push(...arguments);canForward=false;refresh();return r};history.replaceState=function(){const r=replace(...arguments);refresh();return r};document.addEventListener('click',e=>{if(e.target.closest('a[href]')){canForward=false;refresh()}});refresh()})();
+</script>
 </body>
 </html>
