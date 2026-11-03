@@ -1,15 +1,13 @@
-# Kết quả dựng nội dung — 10:57 03/11/2026
+# Kết quả dựng nội dung — 10:59 03/11/2026
 
-**Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
+**KHÔNG ĐẠT — web giữ nguyên bản cũ.** Sửa các LỖI dưới đây trong file nội dung rồi đẩy lại.
 
-## Bước 2/2 — Chạy thử hiển thị: ĐẠT, web đã được cập nhật
+## LỖI (phải sửa)
 
-- Đã mở thử 10 trang học phần, trang chủ và 158 tờ mind map.
+- luat-dan-su/chuong-07.md dòng 69: nhảy cấp đề mục (từ ### sang ######) ở 'Đề mục nhảy cấp sai'
 
-## Cảnh báo về file bị sửa
+## Đã dựng
 
-    Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - hp/luat-dan-su.html
-      - index.html
+- luat-dan-su · Chương 7. Quan hệ pháp luật dân sự có yếu tố nước ngoài — 2 tờ mind map
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/41575236637 · commit 5a685d5
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/41575361534 · commit b39e07b
