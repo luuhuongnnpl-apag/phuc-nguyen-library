@@ -7,25 +7,16 @@
 </head><body><script id="PNLIB_COURSE_GATE">
 (function(){
   const courseId="luat-dat-dai";
-  function today(){
-    const d=new Date();
-    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  }
+  // Library parent checks the class code before creating this same-origin iframe.
+  let embeddedSameOrigin=false;
+  try{embeddedSameOrigin=window.top!==window.self&&window.top.location.origin===window.location.origin}catch(e){}
+  if(embeddedSameOrigin)return;
+  function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   let access=false;
-  try{
-    const raw=localStorage.getItem("pnlib-ma-lop");
-    const session=raw?JSON.parse(raw):null;
-    const scopes=session&&Array.isArray(session.courses)?session.courses:null;
+  try{const raw=localStorage.getItem("pnlib-ma-lop");const session=raw?JSON.parse(raw):null;const scopes=session&&Array.isArray(session.courses)?session.courses:null;
     access=!!(session&&session.code&&session.han&&today()<=session.han&&(!scopes||!scopes.length||scopes.includes("*")||scopes.includes(courseId)));
   }catch(e){access=false}
-  if(!access){
-    document.documentElement.style.visibility="hidden";
-    if(window.top!==window.self){
-      window.parent.postMessage({pn:"home",course:courseId},"*");
-    }else{
-      window.location.replace("../index.html#"+courseId);
-    }
-  }
+  if(!access){document.documentElement.style.visibility="hidden";window.location.replace("../index.html#"+courseId)}
 })();
 </script>
 <div id="pn-app"></div>
