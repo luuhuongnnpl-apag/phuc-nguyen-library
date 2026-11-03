@@ -252,10 +252,6 @@ ol.mm-d li{margin:1px 0}
 .mm-box.kw{border-style:dashed;border-color:#9aa8b8;background:#f4f7fb;font:600 12.5px/1.35 var(--f-body);color:#2b4260;max-width:170px;border-radius:10px}
 .mm-note{position:relative;z-index:1;margin:14px auto 0;max-width:760px;text-align:center;font:400 12.5px/1.5 var(--f-body);color:#5a6b80}
 </style>
-
-<style id="pn-history-nav-style">
-.pn-history-nav{display:flex;align-items:center;gap:7px;min-height:42px;padding:5px max(16px,calc((100vw - 1180px)/2));background:var(--band-2);color:var(--on-band);border-top:1px solid rgba(255,255,255,.12)}.pn-history-nav .pn-history-spacer{flex:1}.pn-history-nav button{width:32px;height:30px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.36);border-radius:8px;background:transparent;color:#fff;font:700 20px/1 var(--f-body);cursor:pointer}.pn-history-nav button:hover:not(:disabled){background:rgba(255,255,255,.14)}.pn-history-nav button:disabled{opacity:.35;cursor:not-allowed}.pn-history-nav .pn-history-label{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--on-band-2)}@media(max-width:560px){.pn-history-nav{padding-inline:16px}}
-</style>
 </head>
 <body>
 
@@ -281,7 +277,6 @@ ol.mm-d li{margin:1px 0}
     <div class="titles"><div class="kicker">Thư viện Phúc Nguyên</div><h1>Tài liệu luật học</h1><div class="copy">Bản quyền thuộc Phúc Nguyên</div></div>
     <div class="who" id="who"></div>
   </div></header>
-  <div class="pn-history-nav" id="pn-history-nav" role="toolbar" aria-label="Điều hướng trang"><span class="pn-history-label">ĐIỀU HƯỚNG</span><span class="pn-history-spacer"></span><button type="button" id="pn-history-back" aria-label="Quay lại" title="Quay lại" disabled>‹</button><button type="button" id="pn-history-forward" aria-label="Tiến tới" title="Tiến tới" disabled>›</button></div>
   <div id="main"></div>
 </div>
 
@@ -648,11 +643,10 @@ $("#gate-form").addEventListener("submit",async e=>{e.preventDefault();
 $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 
 let cur="home";
-function route(id,historyMode){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
+function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
-  if(historyMode!=="none"){const url="#"+encodeURIComponent(id);if(historyMode==="replace"||(history.state&&history.state.pnRoute===id&&location.hash===url))history.replaceState({pnRoute:id},"",url);else history.pushState({pnRoute:id},"",url)}
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
@@ -863,7 +857,7 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
   else if(!session&&store.get(KEY))store.del(KEY);
   $("#app").hidden=false;renderWho();
-  const h0=decodeURIComponent((location.hash||"").slice(1));const initialRoute=course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home";route(initialRoute,"replace");
+  const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
   try{DB=onClaude?await window.claude.use("db"):null}catch(e){DB=null}
   dbReadyRes();
@@ -879,28 +873,5 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
 </script>
 
 <link rel="stylesheet" href="assets/pnlib-standard.css">
-
-<script id="pn-history-nav-script">
-(()=>{
-const back=document.getElementById('pn-history-back'),forward=document.getElementById('pn-history-forward');if(!back||!forward)return;
-let canForward=false,childBack=false,childForward=false;
-const frame=()=>document.querySelector('#main iframe');
-const refresh=()=>{back.disabled=!(childBack||history.length>1);forward.disabled=!(childForward||canForward)};
-const child=()=>{const f=frame();try{return f&&f.contentWindow&&f.contentWindow.location.origin===location.origin?f.contentWindow:null}catch(e){return null}};
-back.addEventListener('click',()=>{const w=child();if(w&&childBack){w.history.back();return}if(history.length>1)history.back()});
-forward.addEventListener('click',()=>{const w=child();if(w&&childForward){w.history.forward();return}if(canForward)history.forward()});
-addEventListener('message',e=>{if(e.origin!==location.origin)return;const w=child();if(!w||e.source!==w||!e.data||e.data.pn!=="history-state")return;childBack=!!e.data.canBack;childForward=!!e.data.canForward;refresh()});
-addEventListener('popstate',e=>{canForward=true;childBack=false;childForward=false;const id=e.state&&e.state.pnRoute?e.state.pnRoute:decodeURIComponent((location.hash||"").slice(1));route(course(id)||tlParse(id)||id==="gop-y"||id==="quan-ly-ma"?id:"home","none");refresh()});
-addEventListener('hashchange',refresh);
-const push=history.pushState.bind(history),replace=history.replaceState.bind(history);
-history.pushState=function(){const r=push(...arguments);canForward=false;childBack=false;childForward=false;refresh();return r};
-history.replaceState=function(){const r=replace(...arguments);refresh();return r};
-document.addEventListener('click',e=>{if(e.target.closest('a[href]')){canForward=false;childBack=false;childForward=false;refresh()}});
-const observer=new MutationObserver(()=>{childBack=false;childForward=false;refresh()});
-const main=document.getElementById('main');if(main)observer.observe(main,{childList:true,subtree:true});
-refresh();
-})();
-
-</script>
 </body>
 </html>
