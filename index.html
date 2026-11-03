@@ -648,10 +648,11 @@ $("#gate-form").addEventListener("submit",async e=>{e.preventDefault();
 $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 
 let cur="home";
-function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
+function route(id,historyMode){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
+  if(historyMode!=="none"){const url="#"+encodeURIComponent(id);if(historyMode==="replace"||(history.state&&history.state.pnRoute===id&&location.hash===url))history.replaceState({pnRoute:id},"",url);else history.pushState({pnRoute:id},"",url)}
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
@@ -862,7 +863,7 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
   else if(!session&&store.get(KEY))store.del(KEY);
   $("#app").hidden=false;renderWho();
-  const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
+  const h0=decodeURIComponent((location.hash||"").slice(1));const initialRoute=course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home";route(initialRoute,"replace");
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
   try{DB=onClaude?await window.claude.use("db"):null}catch(e){DB=null}
   dbReadyRes();
@@ -881,6 +882,10 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
 
 <script id="pn-history-nav-script">
 (()=>{const back=document.getElementById('pn-history-back'),forward=document.getElementById('pn-history-forward');if(!back||!forward)return;let canForward=false;const refresh=()=>{back.disabled=history.length<=1;forward.disabled=!canForward};back.addEventListener('click',()=>{if(history.length>1)history.back()});forward.addEventListener('click',()=>{if(canForward)history.forward()});addEventListener('popstate',()=>{canForward=true;refresh()});addEventListener('hashchange',refresh);const push=history.pushState.bind(history),replace=history.replaceState.bind(history);history.pushState=function(){const r=push(...arguments);canForward=false;refresh();return r};history.replaceState=function(){const r=replace(...arguments);refresh();return r};document.addEventListener('click',e=>{if(e.target.closest('a[href]')){canForward=false;refresh()}});refresh()})();
+
+<script id="pn-history-popstate">
+addEventListener("popstate",e=>{const id=e.state&&e.state.pnRoute?e.state.pnRoute:decodeURIComponent((location.hash||"").slice(1));route(course(id)||tlParse(id)||id==="gop-y"||id==="quan-ly-ma"?id:"home","none")});
+</script>
 </script>
 </body>
 </html>
