@@ -44,7 +44,7 @@
 - Trường hợp chuyển mục đích phải xin phép, người sử dụng đất chỉ được thực hiện mục đích mới sau khi có quyết định cho phép và hoàn thành nghĩa vụ theo quy định; việc tự ý chuyển mục đích có thể bị xử lý và buộc khôi phục tình trạng hoặc thực hiện biện pháp khắc phục theo pháp luật.
 - Cần phân biệt quyết định giao đất, cho thuê đất, cho phép chuyển mục đích với thủ tục đăng ký đất đai, cấp Giấy chứng nhận; đây là các khâu pháp lý liên quan nhưng có đối tượng và ý nghĩa pháp lý khác nhau.
 
-### 2.2.3. Cấp Giấy chứng nhận quyền sử dụng đất và quyền sở hữu tài sản gắn liền với đất
+### 2.2.3. Cấp Giấy chứng nhận
 > CS: Luật Đất đai 2024, các quy định về đăng ký đất đai, tài sản gắn liền với đất và cấp Giấy chứng nhận; Nghị định 101/2024/NĐ-CP được sửa đổi, bổ sung; Văn bản hợp nhất 83/VBHN-BNNMT ngày 09/12/2025.
 
 - Đăng ký đất đai là việc kê khai, ghi nhận tình trạng pháp lý về quyền sử dụng đất, quyền sở hữu tài sản gắn liền với đất và các thông tin liên quan trong hồ sơ địa chính, cơ sở dữ liệu đất đai.
