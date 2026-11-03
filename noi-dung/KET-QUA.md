@@ -1,19 +1,23 @@
-# Kết quả dựng nội dung — 10:43 03/11/2026
+# Kết quả dựng nội dung — 10:56 03/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
+## Cảnh báo (nên sửa, không chặn đăng)
+
+- luat-dan-su/chuong-07.md: 'Chương 7. Quan hệ pháp luật dân sự có yếu tố nước ngoài › Hôn nhân và gia đình có yếu tố nước ngoài › Ly hôn › Mục nhảy cấp sai' thiếu dòng CS
+
+## Đã dựng
+
+- luat-dan-su · Chương 7. Quan hệ pháp luật dân sự có yếu tố nước ngoài — 2 tờ mind map
+
 ## Bước 2/2 — Chạy thử hiển thị: ĐẠT, web đã được cập nhật
 
-- Đã mở thử 10 trang học phần, trang chủ và 158 tờ mind map.
+- Đã mở thử 10 trang học phần, trang chủ và 159 tờ mind map.
 
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - .github/workflows/deploy.yml
-      - README.md
+      - .gitignore
       - tools/__pycache__/xay_dung.cpython-313.pyc
-      - tools/kiem_tra.py
-      - tools/xay_dung.py
-      - tools/xuat_noi_dung.py
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/41573876080 · commit 17f0676
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/41575112749 · commit 62d1f5d
