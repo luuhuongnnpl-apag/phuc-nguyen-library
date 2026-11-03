@@ -65,6 +65,3 @@
 ### Ly hôn
 > CS: Điều 127 Luật HNGĐ 2014
 - Ly hôn (Điều 127); đăng ký tại Ủy ban nhân dân cấp xã theo Nghị định 120/2025/NĐ-CP.
-
-#### Mục nhảy cấp sai
-- Ý thử.
