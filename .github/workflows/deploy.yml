@@ -75,11 +75,27 @@ jobs:
           fi
           git diff --cached --quiet && exit 0
           git commit -q -m "$MSG [skip ci]"
-          for i in 1 2 3; do
-            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+          # Cất bản đã dựng ra ngoài để không bao giờ bị trộn lẫn khi kho vừa có thay đổi mới
+          # (03/11/2026: đẩy nhiều chương liền nhau làm lần ghi bị xung đột, bản hỏng bị đăng lên web).
+          rm -rf /tmp/ban-dung && mkdir -p /tmp/ban-dung
+          git ls-files -z hp index.html noi-dung/KET-QUA.md | xargs -0 -I{} cp --parents {} /tmp/ban-dung/
+          for i in 1 2 3 4 5; do
+            git rebase --abort 2>/dev/null || true
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            cp -r /tmp/ban-dung/. .
+            git add hp index.html noi-dung/KET-QUA.md
+            git diff --cached --quiet && break
+            git commit -q -m "$MSG [skip ci]"
+            git push -q origin HEAD:main && break
             sleep 5
           done
-          echo "Không ghi được kết quả về kho (bị trùng thay đổi)."
+
+      - name: Soát bản sắp đăng không lẫn ký hiệu xung đột
+        run: |
+          if grep -lE '^(<<<<<<<|>>>>>>>) ' index.html hp/*.html; then
+            echo "Bản sắp đăng có ký hiệu xung đột — dừng, web giữ bản cũ."; exit 1
+          fi
 
       - name: Chuẩn bị đăng
         uses: actions/configure-pages@v5
