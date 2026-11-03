@@ -409,8 +409,8 @@ def viet_bao_cao(ok, chi_kiem):
         out += ["", "## LỖI (phải sửa)", ""] + [f"- {x}" for x in loi]
     if canh_bao:
         out += ["", "## Cảnh báo (nên sửa, không chặn đăng)", ""] + [f"- {x}" for x in canh_bao]
-    if da_lam:
-        out += ["", "## Đã dựng", ""] + [f"- {x}" for x in da_lam]
+    if da_lam and ok:
+        out += ["", "## Đã dựng" + (" (chỉ soát, chưa ghi)" if chi_kiem else ""), ""] + [f"- {x}" for x in da_lam]
     (SRC / "KET-QUA.md").write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
