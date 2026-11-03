@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 21:47 03/11/2026
+# Kết quả dựng nội dung — 21:53 03/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -11,4 +11,4 @@
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
       - data/ma-lop.json
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/41656819355 · commit cea6ee8
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/41658056176 · commit f1a5299
