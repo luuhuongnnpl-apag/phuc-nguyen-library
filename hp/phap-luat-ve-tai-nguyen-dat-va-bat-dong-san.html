@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tài liệu Pháp luật về tài nguyên đất và bất động sản · Phúc Nguyên Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Merriweather:wght@700;900&display=swap">
+<link rel="stylesheet" href="../assets/pnlib-course.css">
+</head><body><script id="PNLIB_COURSE_GATE">
+(function(){
+  const courseId="phap-luat-ve-tai-nguyen-dat-va-bat-dong-san";
+  function today(){
+    const d=new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  let access=false;
+  try{
+    const raw=localStorage.getItem("pnlib-ma-lop");
+    const session=raw?JSON.parse(raw):null;
+    const scopes=session&&Array.isArray(session.courses)?session.courses:null;
+    access=!!(session&&session.code&&session.han&&today()<=session.han&&(!scopes||!scopes.length||scopes.includes("*")||scopes.includes(courseId)));
+  }catch(e){access=false}
+  if(!access){
+    document.documentElement.style.visibility="hidden";
+    if(window.top!==window.self){
+      window.parent.postMessage({pn:"home",course:courseId},"*");
+    }else{
+      window.location.replace("../index.html#"+courseId);
+    }
+  }
+})();
+</script>
+<div id="pn-app"></div>
+<script id="pn-data" type="application/json">{"meta":{"id":"phap-luat-ve-tai-nguyen-dat-va-bat-dong-san","name":"Pháp luật về tài nguyên đất và bất động sản","title":"Tài liệu Pháp luật về tài nguyên đất và bất động sản","menuTitle":"Pháp luật về tài nguyên đất và bất động sản","asof":"03/11/2026","laws":[{"re":"Hiến pháp|Nghị quyết 203/2025/QH15","doc":"https://thuvienphapluat.vn/page/tim-van-ban.aspx?keyword=203%2F2025%2FQH15&match=True"},{"re":"Luật Đất đai|44/VBHN-VPQH","doc":"https://thuvienphapluat.vn/van-ban/Bat-dong-san/Integrated-document-44-VBHN-VPQH-2026-Land-Law-713351.aspx"},{"re":"Bộ luật Dân sự|BLDS","doc":"https://thuvienphapluat.vn/van-ban/Quyen-dan-su/Bo-luat-Dan-su-2015-296215.aspx"},{"re":"Luật Kinh doanh bất động sản|29/2023/QH15","doc":"https://thuvienphapluat.vn/van-ban/Bat-dong-san/Luat-kinh-doanh-bat-dong-san-29-2023-QH15-530116.aspx"},{"re":"Luật Nhà ở|79/VBHN-VPQH","doc":"https://thuvienphapluat.vn/van-ban/Xay-dung-Do-thi/Van-ban-hop-nhat-79-VBHN-VPQH-2026-Luat-Nha-o-701174.aspx"}],"note":"Mốc dữ liệu pháp lý: 03/11/2026. Cấu trúc học phần bám sát Đề cương chi tiết SLF25-2011, gồm 05 chương. Nội dung tóm tắt và mind map được dựng từ file chương trong noi-dung/; ngân hàng câu hỏi và tình huống sẽ được bổ sung theo từng giai đoạn."},"chapters":[{"n":1,"name":"Tổng quan pháp luật về tài nguyên đất và bất động sản"},{"n":2,"name":"Quản lý nhà nước trong lĩnh vực đất đai"},{"n":3,"name":"Địa vị pháp lý của người sử dụng đất"},{"n":4,"name":"Pháp luật về kinh doanh bất động sản"},{"n":5,"name":"Kiểm tra, thanh tra và giải quyết tranh chấp đất đai"}],"q":[],"th":[],"vb":[{"name":"Hiến pháp và luật","rows":[{"t":"Hiến pháp nước Cộng hòa xã hội chủ nghĩa Việt Nam năm 2013 (đã được sửa đổi, bổ sung năm 2025)","d":"28/11/2013; sửa đổi 16/06/2025","org":"Quốc hội","note":"Đọc cùng Nghị quyết 203/2025/QH15; căn cứ hiến định về sở hữu toàn dân đối với đất đai tại Điều 53.","url":"https://thuvienphapluat.vn/page/tim-van-ban.aspx?keyword=203%2F2025%2FQH15&match=True"},{"t":"Luật Đất đai số 31/2024/QH15","d":"18/01/2024","org":"Quốc hội","note":"Tra cứu nội dung đã hợp nhất tại Văn bản hợp nhất 44/VBHN-VPQH ngày 16/03/2026.","url":"https://thuvienphapluat.vn/van-ban/Bat-dong-san/Integrated-document-44-VBHN-VPQH-2026-Land-Law-713351.aspx"},{"t":"Bộ luật Dân sự số 91/2015/QH13","d":"24/11/2015","org":"Quốc hội","note":"Căn cứ chung về tài sản, bất động sản, quyền sở hữu và giao dịch dân sự.","url":"https://thuvienphapluat.vn/van-ban/Quyen-dan-su/Bo-luat-Dan-su-2015-296215.aspx"},{"t":"Luật Kinh doanh bất động sản số 29/2023/QH15","d":"28/11/2023","org":"Quốc hội","note":"Đã được sửa đổi, bổ sung bởi Luật số 43/2024/QH15.","url":"https://thuvienphapluat.vn/van-ban/Bat-dong-san/Luat-kinh-doanh-bat-dong-san-29-2023-QH15-530116.aspx"},{"t":"Luật Nhà ở số 27/2023/QH15","d":"27/11/2023","org":"Quốc hội","note":"Đã được sửa đổi, bổ sung bởi Luật số 43/2024/QH15; tra cứu Văn bản hợp nhất 79/VBHN-VPQH ngày 26/03/2026.","url":"https://thuvienphapluat.vn/van-ban/Xay-dung-Do-thi/Van-ban-hop-nhat-79-VBHN-VPQH-2026-Luat-Nha-o-701174.aspx"}]},{"name":"Nghị quyết và chủ trương có liên quan","rows":[{"t":"Nghị quyết số 18-NQ/TW ngày 16/06/2022","d":"16/06/2022","org":"Ban Chấp hành Trung ương Đảng","note":"Định hướng tiếp tục đổi mới, hoàn thiện thể chế, chính sách, nâng cao hiệu lực, hiệu quả quản lý và sử dụng đất.","url":"https://thuvienphapluat.vn/page/tim-van-ban.aspx?keyword=18-NQ%2FTW&match=True"},{"t":"Nghị quyết số 66-NQ/TW ngày 30/04/2025","d":"30/04/2025","org":"Bộ Chính trị","note":"Chủ trương đổi mới công tác xây dựng và thi hành pháp luật.","url":"https://thuvienphapluat.vn/page/tim-van-ban.aspx?keyword=66-NQ%2FTW&match=True"},{"t":"Nghị quyết số 68-NQ/TW ngày 04/05/2025","d":"04/05/2025","org":"Bộ Chính trị","note":"Chủ trương phát triển kinh tế tư nhân; có liên hệ với môi trường kinh doanh bất động sản.","url":"https://thuvienphapluat.vn/page/tim-van-ban.aspx?keyword=68-NQ%2FTW&match=True"}]},{"name":"Văn bản hướng dẫn trọng tâm","rows":[{"t":"Nghị định số 96/2024/NĐ-CP","d":"24/07/2024","org":"Chính phủ","note":"Quy định chi tiết một số điều của Luật Kinh doanh bất động sản; tra cứu bản hợp nhất 124/2026/VBHN-NĐ-BXD ngày 30/09/2026.","url":"https://thuvienphapluat.vn/van-ban/bat-dong-san/Van-ban-hop-nhat-124-2026-VBHN-ND-BXD-Nghi-dinh-huong-dan-Luat-Kinh-doanh-bat-dong-san-727620.aspx"},{"t":"Nghị định số 95/2024/NĐ-CP","d":"24/07/2024","org":"Chính phủ","note":"Quy định chi tiết một số điều của Luật Nhà ở.","url":"https://thuvienphapluat.vn/page/tim-van-ban.aspx?keyword=95%2F2024%2FN%C4%90-CP&match=True"}]}],"al":[],"ly":{"root":"Pháp luật về tài nguyên đất và bất động sản","ch":[]}}</script>
+<script src="../assets/pnlib-course.js"></script>
+</body></html>
