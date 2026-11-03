@@ -2,7 +2,7 @@
  "v": 2,
  "ghi_chu": "Tự sinh bởi trang Quản lý mã lớp. Không sửa tay.",
  "salt": "hkY/fsp9kdC9LWSbdR+Jzg==",
- "updated": "2026-11-03T13:41:32.557Z",
+ "updated": "2026-11-03T13:46:22.449Z",
  "codes": [
   {
    "h": "f89967ddbc13578afa5e8bb290ff029d68d6f0b4ea00f4109b7df8f33796efa3",
@@ -64,12 +64,22 @@
    "note": "",
    "k": "pnl-50aa81265e6a8154",
    "max": 70
+  },
+  {
+   "h": "8c0a87618176371fa85b9185b1854e8db3a459042a2724b8e38b3b86d1e15d43",
+   "han": "2027-03-03",
+   "courses": [
+    "luat-dan-su"
+   ],
+   "note": "",
+   "k": "pnl-643cfeaa61bf45d0",
+   "max": 300
   }
  ],
  "admin": {
-  "salt": "d8ZRtvPItO0X0WdygmFiVA==",
+  "salt": "K4YGTkRXit8dp6vKsSxR9g==",
   "iter": 250000,
-  "iv": "Vhds0NwC+9FYC03X",
-  "data": "U2/Q02I0rQeEFpaj9Fjazu3dCEgG+kUN/6R65uKbFPU4VdNkPx3L/M/YduW7f8FW6reQT+c9FqsmHw/kwntPCrE/b9KhS2tC8ZeHounGDNvD0NToDSaomVWYJWCJncbEAKiydVQ4SfrIDkA64Kakgvu8hHMNeZEOTm/nk8fwgNw6uIhG9/Qv5gY580mX5WV4RnvAP6aSYpkm4VosehCT+JPtaVEQqtW3Hv+l//swsKGqUQCgw6M0Ug1/++skw8UiPj++SMR72bwszfZigTJfP7nEIQnv/g/qvs1uHZ2DYc5i5yaCPnwYE7AKiTSe0WSNi5EBzbf/PJSwd82wNnxX92pJ/VlCOghzSgZxCJlfnRcR1amBBD13g7RGcbpLG/veSBiL0fCQMmfSSeWfIZNrxqnGMtUMT5L+F+crGRiakW+r4XSlU5HjWWvcWvPfwoE9ugGH6z/jWHy97UVf/pnrIwN5L7lLck2rHQPQladgJj5BcDBmwpeFbJezdGQhsnC9gKiCEdlZHS5DFLyjE1vE39jgFG7lP0PzNgk6W/1YWZIosgxcgVFfRQvZ463OPnNRxTdq554PDSMX4obuTS5L0khlT3/xPoo5eNb0YcNPnkVD/4BH2YtF6nZ+njHSS8oVTKMhedrfbkGf7Gc52Bk4Y2iyr86uExU5UrY5bT2r1AocoSlkVNSwHMCwUhKG/ecTXemKK/SZ6+yd6SykEyl71a/5fjCjJZcrStxhMGKlBCbvx1TtP+nXf3vogn7yg1IOd8dw2Lw+4N6xNNr2k41+gTefVLDsFKMmPjzqHM+eylN7q61vm9Dg9HUawnZI3EarHdPrWLOOTE+xYbsIstiNWJPki6v04EOi/Iw+RpEg/Y2ucK92b3AETlvTaN0eSMj3IHQGaRGEXF+HeB+i7byZmzbk2+iaiS1i1/47P12IliTawFNTqV2ujdqvDxTdxUFgoS867P0z5ZWUQS5s+pl1XDYh8Mbh7av6e1Sa87VA1oLioOA/ifNT6h/3C3WzeyvbT5nYQifYA+VaRr5XY7sqSr94qw7MaEsnA3wGqZR+fxLeFil2WB9t7YsF+2j5Uf1Xyd9Ytb8ijSQ0q7cJ5sBAQKdLzJeBrDlxypXeZbtwxsqj/SACOmqCl4JJdWj60uLKYxOEPZqRZ128OLlQpNgmkEoVgICFq90MSdIw8F1FV73QhNIStGSs4tPiHQCmrXiybGHfxZ8BnI0TPULDrUEvA4TAFOCcxalwGi/FTbwg9avYIiXcRDEYnCUgkhl/niY3LsU7q7B5ouIu7Ev65bSgZsYfPWKTewnVm4qLG7JUCixG0w=="
+  "iv": "JjQh2WQuvqy4QNd2",
+  "data": "+qcTllMbYMcovQppmJCujck3SmfzYqzFs813eTEz8PmU0yuhsz3nqophbtGJ4xUwnuF2MCjPE/H2zT6gNj1gtPLcdH/si5abaqxARQ1M8Z8JeVp0RpbgABipoJabHIDxVK9iIAU0JyyiaL5wBmRnMZ8/wcRbcedWc2yKnmFc9DFc78XmM+P3QWTV8g7UAEdNdAxJdIqDynsulK7+oVwDBAwaKFOb1HVpJ0EWvL36Y2fpLr23cvt05+d0cTrKwzPNe5XxB7MXwItONmTCKRMyfqVipq0ysctorXggkgorOhOQ3mMUzAj74wAvlPbrKbR1Is0uU2+ZMJzuxUiByaY7h4IsBOHohPDTnKc8OMOmA1QYRrfwla/0k3h5vn75qADmdv5lhH+NqBqE//NLrOfhjZy4dvqUOx/pFEBA9eD5ceA1tgE139Da/U7ip7Xb+wkzgSLvyotV7nMjJQkrKoRaRZK71bP2SYqzDnBlnROE9MOfvWszZ2VxIg7j43Nbo0QAU44xpo2sEvsySgr2Rfe/BkvWtDUYD/jLz/90CZjpc9kva3z2ujcP+iNnmpG2+VA5A6zuDH5vR35PEWCGiMrdI/DWgnd5b1ZIv5qpWqC6bZcEqu6qk6BMuBmO5E5eQIIEQHSzt9IJuRM/uVsNn/zHff9mfuW/YrdbZE5cAJFMwWcNJJ9v1vBKJbGsdpZFdNECDV1n3UXBD5L8cUlaZmIJdf8IdE1HdS4sfzaFZ3gZyVx7Kgb0OyUsrzxRTRvlgNTUX7eD8Tr+3HX0iSdM7ZchpQfPcURX4XN1djo8OMaiBj8hNnbZ1F/igx+psmSJ5xgJi6YmhURTXMjGEJ7HgsynD6PI05jwJM0MdJ9Ozwmygi9ekOuKRjdB+XyeAPSMut6HbKiZSfi5q5e38RXAyZ0mIV4YEydokMUe/s1iPa8pSu848Qt+Y+e3UT4tOXOjybdODaKaxffGnt+vZuO6gNPlGfyNog35Im81VlNkWWfEYu1RlDHEl+EfFuujKl4pc36nxYNFZSCaA1KyN+Ol7Vs/9gJJE++GlUVTgdS2pYCO6ywpz5+yuLTeYyn7225F3SavLqYL9ghqLqCbT/58EmWw8YKOlOIUeWNAShjO3iqk6YHV8HdQOSCkqpA9gIfVVG1s+VH26L5ykWYtjtSGxfVIREf6rtQcMi37OCHaDTQnelKrK8EloiRKAjV6CEntfPVix65O8pI2iYV11fT48jZVTu4cm5GbE4hxOVzp++b8OEMdWn6b2m/XS3Zw9VR2UVu/zInGXKL7yu4iU0Bqx4B2AzNA3mqgNr3ZCBAOfF0OzZZDK6yH5B5j5FN0NxVTn/Vh6l05Wc/K0bHcn3IEOE+KTgMb0lLo4Z24e3BarNNJspf+eUdJbvlJ6Oql4MXCgu/B+LVm9G2JJ+PIaUxAwPQ4zyzpi+8Wo3AuQ2adpeGnOygQk38TEHSCYTMAKb5Au5CGODYV+uAp+7ZlEHV3cHHk9rSj/aXdvjPN8eopbho/b5OpR5y0bNY="
  }
 }
