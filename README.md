@@ -44,3 +44,10 @@ Luật Hiến pháp (9 chương, thêm khung chương cùng ngày). Khi biên so
 - Bỏ mục Mind-map "Đàm phán, soạn thảo hợp đồng" (không có học phần này).
 - Kỹ năng tư vấn pháp luật dân sự: có mind map 6 chương, sinh từ khung Tóm tắt lý thuyết của học phần (hiện mới có đề mục; khi Tóm tắt có nội dung thì sinh lại để đi sâu theo mẫu).
 - Luật Hiến pháp: thêm khung 9 chương theo đề cương chi tiết.
+
+## Soạn nội dung qua thư mục `noi-dung/` (từ 03/11/2026)
+
+- Tóm tắt lý thuyết và mind map của mọi học phần sinh từ một nguồn: `noi-dung/<mã-học-phần>/chuong-NN.md` (định dạng ở `noi-dung/README.md`).
+- Mỗi lần đẩy lên `main`, GitHub Actions (`.github/workflows/deploy.yml`) chạy: `tools/xay_dung.py` (dựng Tóm tắt + mind map, chỉ chương thay đổi) → `tools/kiem_tra.py` (mở thử mọi trang trên trình duyệt ảo) → chỉ khi đạt mới đăng GitHub Pages. Không đạt: web giữ bản cũ. Kết quả ghi `noi-dung/KET-QUA.md`.
+- Mind map chia tờ theo bề rộng đo thực tế (tách mục rộng quá 1.500 px, gộp các mục nhỏ liền nhau tới 1.720 px).
+- ChatGPT và người soạn nội dung chỉ sửa trong `noi-dung/`. `tools/xuat_noi_dung.py` xuất lại Tóm tắt đang có ra file nguồn khi cần.

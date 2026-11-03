@@ -1,4 +1,10 @@
-name: Deploy Phuc Nguyen Library to GitHub Pages
+name: Dựng, chạy thử và đăng Phúc Nguyên Library
+
+# Mỗi lần có thay đổi trên main:
+#   1. Dựng Tóm tắt lý thuyết + mind map từ noi-dung/ (tools/xay_dung.py)
+#   2. Chạy thử toàn bộ web trên trình duyệt ảo (tools/kiem_tra.py)
+#   3. Chỉ khi cả hai ĐẠT mới đăng lên GitHub Pages. Không đạt: web giữ nguyên bản cũ.
+# Kết quả luôn ghi vào noi-dung/KET-QUA.md.
 
 on:
   push:
@@ -6,29 +12,81 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 concurrency:
   group: github-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  dung-kiem-dang:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Lấy mã nguồn
         uses: actions/checkout@v4
-      - name: Setup Pages
+        with:
+          fetch-depth: 2
+
+      - name: Cài Python và trình duyệt kiểm thử
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install --quiet playwright
+          if ! command -v google-chrome >/dev/null; then python -m playwright install --with-deps chromium; fi
+
+      - name: Soát file bị sửa ngoài thư mục nội dung
+        if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+        run: |
+          mkdir -p noi-dung
+          git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -v '^noi-dung/' > /tmp/ngoai.txt || true
+          if [ -s /tmp/ngoai.txt ]; then
+            { echo "Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):"; sed 's/^/  - /' /tmp/ngoai.txt; } > /tmp/canh-bao-file.txt
+            cat /tmp/canh-bao-file.txt
+          fi
+
+      - name: Bước 1 — Dựng nội dung
+        id: dung
+        run: python3 tools/xay_dung.py
+
+      - name: Bước 2 — Chạy thử hiển thị
+        id: kiem
+        run: python3 tools/kiem_tra.py
+
+      - name: Ghi kết quả (và nội dung đã dựng nếu đạt)
+        if: always()
+        run: |
+          if [ -f /tmp/canh-bao-file.txt ]; then { echo; echo "## Cảnh báo về file bị sửa"; echo; sed 's/^/    /' /tmp/canh-bao-file.txt; } >> noi-dung/KET-QUA.md; fi
+          echo "" >> noi-dung/KET-QUA.md
+          echo "Lần chạy: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} · commit ${GITHUB_SHA::7}" >> noi-dung/KET-QUA.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add noi-dung/KET-QUA.md
+          if [ "${{ steps.dung.outcome }}" = "success" ] && [ "${{ steps.kiem.outcome }}" = "success" ]; then
+            git add hp index.html
+            MSG="Dựng nội dung và chạy thử: ĐẠT"
+          else
+            MSG="Dựng nội dung và chạy thử: KHÔNG ĐẠT (web giữ bản cũ)"
+          fi
+          git diff --cached --quiet && exit 0
+          git commit -q -m "$MSG [skip ci]"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          echo "Không ghi được kết quả về kho (bị trùng thay đổi)."
+
+      - name: Chuẩn bị đăng
         uses: actions/configure-pages@v5
-      - name: Upload site files
+      - name: Đóng gói trang web
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - name: Deploy to GitHub Pages
+      - name: Đăng lên GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
