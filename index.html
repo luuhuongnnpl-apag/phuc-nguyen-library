@@ -890,7 +890,7 @@ const child=()=>{const f=frame();try{return f&&f.contentWindow&&f.contentWindow.
 back.addEventListener('click',()=>{const w=child();if(w&&childBack){w.history.back();return}if(history.length>1)history.back()});
 forward.addEventListener('click',()=>{const w=child();if(w&&childForward){w.history.forward();return}if(canForward)history.forward()});
 addEventListener('message',e=>{if(e.origin!==location.origin)return;const w=child();if(!w||e.source!==w||!e.data||e.data.pn!=="history-state")return;childBack=!!e.data.canBack;childForward=!!e.data.canForward;refresh()});
-addEventListener('popstate',()=>{canForward=true;childBack=false;childForward=false;refresh()});
+addEventListener('popstate',e=>{canForward=true;childBack=false;childForward=false;const id=e.state&&e.state.pnRoute?e.state.pnRoute:decodeURIComponent((location.hash||"").slice(1));route(course(id)||tlParse(id)||id==="gop-y"||id==="quan-ly-ma"?id:"home","none");refresh()});
 addEventListener('hashchange',refresh);
 const push=history.pushState.bind(history),replace=history.replaceState.bind(history);
 history.pushState=function(){const r=push(...arguments);canForward=false;childBack=false;childForward=false;refresh();return r};
@@ -901,9 +901,6 @@ const main=document.getElementById('main');if(main)observer.observe(main,{childL
 refresh();
 })();
 
-<script id="pn-history-popstate">
-addEventListener("popstate",e=>{const id=e.state&&e.state.pnRoute?e.state.pnRoute:decodeURIComponent((location.hash||"").slice(1));route(course(id)||tlParse(id)||id==="gop-y"||id==="quan-ly-ma"?id:"home","none")});
-</script>
 </script>
 </body>
 </html>
