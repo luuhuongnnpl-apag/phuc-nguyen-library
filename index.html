@@ -652,7 +652,7 @@ function route(id,historyMode){if(needsCode(id)){pending=id;showGate(session?"MÃ
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
-  if(historyMode!=="none"){const url="#"+encodeURIComponent(id);if(historyMode==="replace")history.replaceState({pnRoute:id},"",url);else history.pushState({pnRoute:id},"",url)}
+  if(historyMode!=="none"){const url="#"+encodeURIComponent(id);if(historyMode==="replace"||(history.state&&history.state.pnRoute===id&&location.hash===url))history.replaceState({pnRoute:id},"",url);else history.pushState({pnRoute:id},"",url)}
   if(id==="home") m.innerHTML=homeHTML();
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
