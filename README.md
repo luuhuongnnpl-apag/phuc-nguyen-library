@@ -7,14 +7,16 @@ Trang ôn tập luật học theo học phần. © Bản quyền thuộc Phúc N
 - `assets/`: logo và ảnh minh họa
 - `data/ma-lop.json`: danh sách mã lớp. **Không sửa tay** — file do trang *Quản lý mã lớp* tự sinh.
 
-## Mã lớp
+## Mã lớp (Firebase, từ 04/11/2026)
 
-Không dùng Google Sheets / Apps Script. Mỗi lớp một mã, cả lớp dùng chung.
+Mã lớp, số người dùng mã và góp ý lưu trên **Firebase Firestore** (dự án `phuc-nguyen-library`, collection `pnl_ma`, `pnl_ma/{mã}/luot`, `pnl_gopy`). Mỗi lớp một mã, cả lớp dùng chung.
 
-Giảng viên vào trang chủ → **Quản lý mã lớp** → đăng nhập bằng mật khẩu quản trị → cấp hoặc xóa mã. Mỗi lần cấp/xóa, trang tự lưu ngược lên GitHub.
-Lần đầu đăng nhập cần kết nối GitHub một lần (token Fine-grained, chỉ kho này, quyền *Contents: Read and write*); token được mã hóa bằng mật khẩu quản trị và lưu cùng dữ liệu, nên đăng nhập ở máy nào cũng tự lưu.
-
-File chỉ chứa dấu băm của mã (sinh viên không đọc được mã). Trang web tĩnh nên không giới hạn được số người dùng một mã; mã được kiểm soát bằng hạn dùng và học phần được mở.
+- Giảng viên: trang chủ → **Quản lý mã lớp** → đăng nhập bằng email và mật khẩu admin (Firebase). Máy nhớ đăng nhập. Cấp, sửa, xóa mã có hiệu lực ngay, không qua GitHub.
+- Lần đầu: trang hỏi **mật khẩu quản trị cũ** để chuyển toàn bộ mã cũ (kèm số người đã dùng) từ `data/ma-lop.json` sang Firebase. Nếu máy đã ghi nhớ mật khẩu cũ, việc chuyển tự chạy.
+- Sinh viên: đăng nhập ẩn danh tự động (không phải tạo tài khoản); mỗi trình duyệt được tính một lượt cho mỗi mã; người vượt quá số người cho phép bị chặn.
+- Quy tắc bảo mật: chỉ tra được mã khi biết đúng mã, không xem được danh sách mã; chỉ admin cấp/sửa/xóa.
+- `data/ma-lop.json` (bản cũ, chỉ chứa dấu băm): giữ làm dự phòng cho tới khi chuyển xong, sau đó không dùng nữa. Bản trước khi chuyển: nhánh `backup-truoc-firebase-20261104`.
+- Bản mở trên Claude vẫn dùng kho dữ liệu của artifact như trước.
 
 ## Khuôn web học phần (thống nhất từ 29/10/2026)
 

@@ -283,6 +283,9 @@ ol.mm-d li{margin:1px 0}
   <div id="main"></div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -290,7 +293,11 @@ const CONFIG={
   responsesCsvUrl:"",  /* Link CSV của trang tính câu trả lời (Xuất bản lên web, định dạng CSV) */
   goatcounter:""       /* Tên mã GoatCounter, ví dụ "phucnguyen" */
 };
-/* Nơi lưu danh sách mã lớp trên GitHub (trang Quản lý mã lớp ghi vào file này) */
+/* Firebase (bản web GitHub): mã lớp, lượt dùng, góp ý lưu trên Firestore dự án phuc-nguyen-library */
+const FB_CFG={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
+const FB_ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1"; /* luuhuong.nnpl@gmail.com */
+let FBW=false,fbAuth=null,MIGRATED=false; /* FBW: đang chạy bản web có Firebase */
+/* Bản cũ trên GitHub (chỉ đọc, dự phòng trước khi chuyển xong): data/ma-lop.json */
 const GH={repo:"luuhuongnnpl-apag/phuc-nguyen-library",branch:"main",path:"data/ma-lop.json"};
 const COURSES=[
   {id:"luat-hanh-chinh-va-to-tung-hanh-chinh",name:"Luật Hành chính và Luật Tố tụng hành chính",c:"#607d8b",src:"hp/luat-hanh-chinh-va-to-tung-hanh-chinh.html",skin:true},
@@ -360,12 +367,17 @@ async function dbCall(p){const a=p.action;
     const x=m.data()||{}, courses=Array.isArray(x.courses)&&x.courses.length?x.courses:["*"];if(todayISO()>x.han)return {ok:false,why:"expired",han:x.han};
     if(p.course&& !courses.includes("*")&&!courses.includes(p.course))return {ok:false,why:"course",courses};
     if(!UID)return {ok:true,han:x.han,note:x.note,max:x.max,courses};
+    if(FBW){const seat=DB.doc("ma/"+code+"/luot/"+UID);if((await seat.get()).exists)return {ok:true,han:x.han,note:x.note,max:x.max,courses};
+      const used=(await DB.collection("ma/"+code+"/luot").get()).size+(x.usedBefore|0);if(x.max&&used>=x.max)return {ok:false,why:"full",max:x.max};
+      await seat.set({t:Date.now()});return {ok:true,han:x.han,note:x.note,used:used+1,max:x.max,courses}}
     const mine=DB.doc("luot/"+UID);let codes=[];try{const s=await mine.get();if(s.exists)codes=((s.data()||{}).codes||[]).slice()}catch(e){}
     if(codes.includes(code))return {ok:true,han:x.han,note:x.note,max:x.max,courses};
     const all=await luotDocs();const used=all?all.filter(d=>(d.x.codes||[]).includes(code)).length:0;
     if(all&&x.max&&used>=x.max)return {ok:false,why:"full",max:x.max};
     try{await mine.set({codes:codes.concat(code),t:Date.now()})}catch(e){}
     return {ok:true,han:x.han,note:x.note,used:used+1,max:x.max,courses}}
+  if(a==="stats"&&FBW){let users=null,fb=0;if(isOwner){users=0;for(const d of (await DB.collection("ma").get()).docs)users+=(await DB.collection("ma/"+d.id+"/luot").get()).size+((d.data()||{}).usedBefore|0)}
+    try{(await DB.collection("gopy").get()).docs.forEach(d=>{fb+=((d.data()||{}).items||[]).length})}catch(e){}return {ok:true,users,feedback:fb}}
   if(a==="stats"){const all=await luotDocs();let fb=0;try{(await DB.collection("gopy").get()).docs.forEach(d=>{fb+=((d.data()||{}).items||[]).length})}catch(e){}
     return {ok:true,users:all?all.length:null,feedback:fb}}
   if(a==="fb_list"){const items=[];(await DB.collection("gopy").get()).docs.forEach(d=>((d.data()||{}).items||[]).forEach(x=>items.push(x)));
@@ -374,6 +386,9 @@ async function dbCall(p){const a=p.action;
     items.push({time:todayISO(),ts:new Date().toISOString(),course:String(p.course||"").slice(0,80),text:String(p.text||"").slice(0,1500)});if(items.length>40)items=items.slice(-40);
     await ref.set({items});return {ok:true}}
   if(a.indexOf("admin_")===0){if(!isOwner)return {ok:false,why:"key"};
+    if(a==="admin_list"&&FBW){const ms=await DB.collection("ma").get();const items=[];
+      for(const d of ms.docs){const x=d.data()||{};items.push({code:d.id,note:x.note||"",han:x.han,max:x.max||0,courses:Array.isArray(x.courses)&&x.courses.length?x.courses:["*"],used:(await DB.collection("ma/"+d.id+"/luot").get()).size+(x.usedBefore|0),created:x.created||""})}
+      return {ok:true,items:items.sort((u,v)=>String(u.created).localeCompare(String(v.created)))}}
     if(a==="admin_list"){const ms=await DB.collection("ma").get(),all=await luotDocs()||[];
       return {ok:true,items:ms.docs.map(d=>{const x=d.data()||{};return {code:d.id,note:x.note||"",han:x.han,max:x.max||0,courses:Array.isArray(x.courses)&&x.courses.length?x.courses:["*"],used:all.filter(l=>(l.x.codes||[]).includes(d.id)).length,created:x.created||""}}).sort((u,v)=>String(u.created).localeCompare(String(v.created)))}}
     if(a==="admin_create"){const code=norm(p.code),max=parseInt(p.max,10);
@@ -384,6 +399,7 @@ async function dbCall(p){const a=p.action;
       if(!cur.exists)return {ok:false,why:"missing"};if(!/^\d{4}-\d{2}-\d{2}$/.test(p.han||""))return {ok:false,why:"badhan"};if(!(max>=1&&max<=1000))return {ok:false,why:"badmax"};
       const courses=String(p.courses||"*")==="*"?["*"]:String(p.courses||"").split(",").filter(x=>COURSES.some(c=>c.id===x));if(!courses.length)return {ok:false,why:"badcourses"};
       await ref.set(Object.assign({},cur.data()||{},{note:String(p.note||"").slice(0,80),han:p.han,max,courses,updated:new Date().toISOString()}));return {ok:true,code,courses}}
+    if(a==="admin_delete"&&FBW){const code=norm(p.code);for(const d of (await DB.collection("ma/"+code+"/luot").get()).docs)await DB.doc("ma/"+code+"/luot/"+d.id).delete();await DB.doc("ma/"+code).delete();return {ok:true}}
     if(a==="admin_delete"){const code=norm(p.code);await DB.doc("ma/"+code).delete();
       const all=await luotDocs()||[];for(const d of all){const cs=d.x.codes||[];if(cs.includes(code)){const rest=cs.filter(c=>c!==code);
         if(rest.length)await DB.doc("luot/"+d.id).set(Object.assign({},d.x,{codes:rest}));else await DB.doc("luot/"+d.id).delete()}}
@@ -412,8 +428,11 @@ async function staticCheck(code,courseId){const d=await loadMa();const h=await c
 async function checkCode(raw,courseId){const code=norm(raw);
   if(!okCode(code))return {ok:false,why:"Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới."};
   if(onClaude)await dbReady;
+  if(!onClaude)await dbReady;
   let r;try{r=DB?await dbCall({action:"check",code,course:courseId||""}):await staticCheck(code,courseId||"")}catch(e){r={ok:false,why:"net"}}
-  if(r&&r.ok&&!DB){const c=await claimSeat(r.k,r.max);if(!c.ok)r=c}
+  let viaStatic=!DB;
+  if(FBW&&!MIGRATED&&r&&!r.ok&&(r.why==="notfound"||r.why==="net")){try{const s2=await staticCheck(code,courseId||"");if(s2.ok||r.why==="net"){r=s2;viaStatic=true}}catch(e){}}
+  if(r&&r.ok&&viaStatic){const c=await claimSeat(r.k,r.max);if(!c.ok)r=c}
   if(r&&r.ok)return {ok:true,s:{code,label:r.note?String(r.note):"Mã "+code,han:r.han,courses:Array.isArray(r.courses)&&r.courses.length?r.courses:["*"]}};
   const W={notfound:"Mã không đúng hoặc đã bị xóa. Kiểm tra lại hoặc hỏi giảng viên.",expired:"Mã đã hết hạn"+(r&&r.han?" ngày "+fmtDate(r.han):"")+". Hỏi giảng viên mã mới.",full:"Mã này đã đủ "+(r&&r.max||"")+" người sử dụng. Hỏi giảng viên.",course:"Mã này không có quyền truy cập học phần đang chọn. Hãy nhập mã phù hợp.",net:"Chưa tải được danh sách mã lớp. Kiểm tra mạng rồi thử lại."};
   return {ok:false,expired:r&&r.why==="expired",why:W[r&&r.why]||"Chưa kiểm tra được mã, thử lại sau."}}
@@ -491,7 +510,17 @@ function connectBox(first){return `<section class="frame"><div class="ftitle">${
     </form></section>`}
 function admin2HTML(){
   const head=adminHead();
+  if(FBW&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
+    <form id="fa-form" novalidate class="admin"><p class="msg">Đăng nhập bằng tài khoản quản trị (Firebase). Máy này sẽ nhớ đăng nhập cho đến khi bấm Đăng xuất.</p>
+    <div class="row"><div><label class="lab" for="fa-email">Email</label><input type="email" id="fa-email" autocomplete="username" required></div>
+    <div><label class="lab" for="fa-pw">Mật khẩu</label><input type="password" id="fa-pw" autocomplete="current-password" required></div></div>
+    <div class="err" id="fa-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
   if(DB&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã lớp</div><p class="msg">Chỉ chủ trang mới được quản lý mã lớp.</p></section></main>`;
+  if(FBW&&!MIGRATED)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Chuyển mã lớp cũ sang Firebase (làm một lần)</div>
+    <form id="mg-form" novalidate class="admin"><p class="msg">Danh sách mã lớp cũ trên GitHub được khóa bằng <b>mật khẩu quản trị cũ</b>. Nhập mật khẩu đó để chuyển toàn bộ mã (kèm số người đã dùng) sang Firebase. Sinh viên đang dùng mã không phải nhập lại.</p>
+    <div class="row"><div><label class="lab" for="mg-pw">Mật khẩu quản trị cũ</label><input type="password" id="mg-pw" autocomplete="off"></div></div>
+    <div class="err" id="mg-err" role="alert"></div><div class="row" style="align-items:center"><button class="btn primary" type="submit">Chuyển mã lớp</button><button class="btn" type="button" id="mg-skip">Bỏ qua (bắt đầu danh sách mới)</button><span class="msg" id="mg-msg" aria-live="polite"></span></div></form></section>
+    <section class="frame"><div class="row"><button class="btn" type="button" data-home>Về trang chủ</button><button class="btn" type="button" id="fa-out">Đăng xuất quản trị</button></div></section></main>`;
   if(!DB&&!ST)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
     <form id="ak-form" novalidate class="admin"><p class="msg">Tài khoản quản trị dành cho giảng viên. Nhập mật khẩu quản trị để vào phần cấp mã lớp.</p>
     <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
@@ -544,7 +573,24 @@ function bindToken(){const f=$("#t-form");if(!f)return;
       if(r.ok){route("quan-ly-ma");setTimeout(()=>{if($("#c-msg"))$("#c-msg").textContent="Đã kết nối GitHub. Từ nay mỗi lần cấp mã sẽ tự lưu."},0)}
       else{$("#t-msg").textContent="";$("#t-err").textContent=r.why}}
     catch(err){$("#t-msg").textContent="";$("#t-err").textContent=ghErr(err)}})}
+async function migrateOld(pw){const d=await loadMa(true);const v=await openVault(d.admin,pw);let n=0;
+  for(const x of (Array.isArray(v.codes)?v.codes:[])){const code=norm(x.code);if(!okCode(code))continue;const used=x.k?await cntGet(x.k):0;
+    await DB.doc("ma/"+code).set({note:String(x.note||"").slice(0,80),han:x.han,max:x.max|0||20,courses:Array.isArray(x.courses)&&x.courses.length?x.courses:["*"],created:x.created||new Date().toISOString(),usedBefore:used|0,from:"ma-lop.json"});n++}
+  await DB.doc("meta/migrated").set({at:new Date().toISOString(),codes:n});MIGRATED=true;return n}
 async function admin2Bind(){
+  const fa=$("#fa-form");
+  if(fa){fa.addEventListener("submit",async e=>{e.preventDefault();const em=$("#fa-email").value.trim(),pw=$("#fa-pw").value;if(!em||!pw){$("#fa-err").textContent="Nhập email và mật khẩu.";return}
+      $("#fa-err").textContent="Đang đăng nhập…";
+      try{const r=await fbAuth.signInWithEmailAndPassword(em,pw);UID=r.user.uid;isOwner=UID===FB_ADMIN_UID;if(!isOwner){await fbAuth.signOut();$("#fa-err").textContent="Tài khoản này không phải quản trị.";return}renderWho();route("quan-ly-ma")}
+      catch(err){$("#fa-err").textContent=/invalid|wrong|not-found/.test(err.code||"")?"Email hoặc mật khẩu chưa đúng.":err.code==="auth/too-many-requests"?"Sai quá nhiều lần, chờ ít phút rồi thử lại.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}});return}
+  const mg=$("#mg-form");
+  if(mg){const run=async(pw,auto)=>{$("#mg-err").textContent="";$("#mg-msg").textContent="Đang chuyển mã lớp…";
+      try{const n=await migrateOld(pw);$("#mg-msg").textContent="";route("quan-ly-ma");setTimeout(()=>{if($("#c-msg"))$("#c-msg").textContent="Đã chuyển "+n+" mã lớp cũ sang Firebase."},0)}
+      catch(err){$("#mg-msg").textContent="";$("#mg-err").textContent=auto?"Chưa tự chuyển được, hãy nhập mật khẩu quản trị cũ.":"Mật khẩu chưa đúng hoặc chưa tải được dữ liệu cũ."}};
+    mg.addEventListener("submit",e=>{e.preventDefault();const pw=$("#mg-pw").value;if(!pw){$("#mg-err").textContent="Nhập mật khẩu quản trị cũ.";return}run(pw,false)});
+    $("#mg-skip").onclick=async()=>{if(!confirm("Bỏ qua mã cũ? Sinh viên đang dùng mã cũ sẽ phải nhập mã mới."))return;await DB.doc("meta/migrated").set({at:new Date().toISOString(),codes:0,skipped:true});MIGRATED=true;route("quan-ly-ma")};
+    $("#fa-out").onclick=async()=>{await fbAuth.signOut();isOwner=false;UID=null;route("quan-ly-ma")};
+    const saved=store.get(AKEY);if(saved)run(saved,true);return}
   const af=$("#ak-form");
   if(af){
     async function login(pw,auto){
@@ -561,7 +607,7 @@ async function admin2Bind(){
     return;
   }
   bindToken();
-  if($("#l-out"))$("#l-out").onclick=()=>{ST=null;store.del(AKEY);route("quan-ly-ma")};
+  if($("#l-out"))$("#l-out").onclick=async()=>{ST=null;store.del(AKEY);if(FBW&&fbAuth){await fbAuth.signOut();isOwner=false;try{UID=(await fbAuth.signInAnonymously()).user.uid}catch(e){}}route("quan-ly-ma")};
   if(!$("#c-form"))return;
   const web=ADM.web();
   let ITEMS=[],EDIT=null;
@@ -899,8 +945,16 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
   const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
   try{DB=onClaude?await window.claude.use("db"):null}catch(e){DB=null}
+  if(!onClaude&&window.firebase){try{
+    firebase.initializeApp(FB_CFG);const fs=firebase.firestore();fbAuth=firebase.auth();
+    DB={doc:p=>fs.doc("pnl_"+p),collection:p=>fs.collection("pnl_"+p)};FBW=true;
+    let u=await new Promise(res=>{const off=fbAuth.onAuthStateChanged(x=>{off();res(x)})});
+    if(!u)u=(await fbAuth.signInAnonymously()).user;
+    UID=u.uid;isOwner=u.uid===FB_ADMIN_UID;
+    MIGRATED=(await DB.doc("meta/migrated").get()).exists}
+  catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
   dbReadyRes();
-  if(session){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(r=>{if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
+  if(session){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(async r=>{if(FBW&&!MIGRATED&&r&&!r.ok&&r.why==="notfound"){try{r=await staticCheck(session.code,"")}catch(e){}}if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
       store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
       if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
   await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
