@@ -251,6 +251,9 @@ ol.mm-d li{margin:1px 0}
 .mm-box .mm-d{font-weight:400}
 .mm-box.kw{border-style:dashed;border-color:#9aa8b8;background:#f4f7fb;font:600 12.5px/1.35 var(--f-body);color:#2b4260;max-width:170px;border-radius:10px}
 .mm-note{position:relative;z-index:1;margin:14px auto 0;max-width:760px;text-align:center;font:400 12.5px/1.5 var(--f-body);color:#5a6b80}
+#c-frame.editing{box-shadow:0 0 0 3px #e3a43b inset}
+#c-frame.editing .ftitle{color:#b06a00}
+#c-code[readonly]{opacity:.7;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -377,6 +380,10 @@ async function dbCall(p){const a=p.action;
       if(!okCode(code))return {ok:false,why:"badcode"};if(!/^\d{4}-\d{2}-\d{2}$/.test(p.han||""))return {ok:false,why:"badhan"};if(!(max>=1&&max<=1000))return {ok:false,why:"badmax"};
       if((await DB.doc("ma/"+code).get()).exists)return {ok:false,why:"exists"};
       const courses=String(p.courses||"*")==="*"?["*"]:String(p.courses||"").split(",").filter(x=>COURSES.some(c=>c.id===x));if(!courses.length)return {ok:false,why:"badcourses"};await DB.doc("ma/"+code).set({note:String(p.note||"").slice(0,80),han:p.han,max,courses,created:new Date().toISOString()});return {ok:true,code,courses}}
+    if(a==="admin_update"){const code=norm(p.code),max=parseInt(p.max,10),ref=DB.doc("ma/"+code),cur=await ref.get();
+      if(!cur.exists)return {ok:false,why:"missing"};if(!/^\d{4}-\d{2}-\d{2}$/.test(p.han||""))return {ok:false,why:"badhan"};if(!(max>=1&&max<=1000))return {ok:false,why:"badmax"};
+      const courses=String(p.courses||"*")==="*"?["*"]:String(p.courses||"").split(",").filter(x=>COURSES.some(c=>c.id===x));if(!courses.length)return {ok:false,why:"badcourses"};
+      await ref.set(Object.assign({},cur.data()||{},{note:String(p.note||"").slice(0,80),han:p.han,max,courses,updated:new Date().toISOString()}));return {ok:true,code,courses}}
     if(a==="admin_delete"){const code=norm(p.code);await DB.doc("ma/"+code).delete();
       const all=await luotDocs()||[];for(const d of all){const cs=d.x.codes||[];if(cs.includes(code)){const rest=cs.filter(c=>c!==code);
         if(rest.length)await DB.doc("luot/"+d.id).set(Object.assign({},d.x,{codes:rest}));else await DB.doc("luot/"+d.id).delete()}}
@@ -461,6 +468,10 @@ const ADM={
     if(ST.list.some(x=>x.code===o.code))return {ok:false,why:"exists"};
     const item={code:o.code,note:o.note,han:o.han,max:o.max,courses:o.courses.length?o.courses:["*"],k:"pnl-"+Array.from(rnd(8)).map(x=>x.toString(16).padStart(2,"0")).join(""),created:new Date().toISOString()};
     ST.list.push(item);return persist(()=>{ST.list=ST.list.filter(x=>x!==item)})},
+  async update(o){if(DB)return dbCall(Object.assign({action:"admin_update"},o,{courses:o.courses.join(",")||"*"}));
+    const i=ST.list.findIndex(x=>x.code===o.code);if(i<0)return {ok:false,why:"missing"};
+    const before=ST.list[i];ST.list=ST.list.slice();ST.list[i]=Object.assign({},before,{note:o.note,han:o.han,max:o.max,courses:o.courses.length?o.courses:["*"],updated:new Date().toISOString()});
+    const keep=ST.list;return persist(()=>{if(ST.list===keep){ST.list=ST.list.slice();ST.list[i]=before}})},
   async del(code){if(DB)return dbCall({action:"admin_delete",code});const before=ST.list;ST.list=ST.list.filter(x=>x.code!==code);return persist(()=>{ST.list=before})}
 };
 
@@ -493,9 +504,10 @@ function admin2HTML(){
   const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=`<div><label class="lab" for="c-max">Số người được dùng mã</label><input type="number" id="c-max" min="1" max="1000" value="20" required></div>`;
   return head+`<main class="wrap admin">
-  <section class="frame"><div class="ftitle">Cấp mã</div>
+  <section class="frame" id="c-frame"><div class="ftitle" id="c-title">Cấp mã</div>
     <form id="c-form" novalidate class="admin">
-      <p class="msg">Một mã dùng chung cho nhiều sinh viên. Ghi số người được dùng mã (ví dụ 20): người thứ 21 nhập mã sẽ bị từ chối. Mã có thể mở một hoặc nhiều học phần. Bấm <b>Cấp mã</b> là mã được lưu lên GitHub, sinh viên dùng được sau khoảng 1–2 phút.</p>
+      <p class="msg" id="c-edit-note" hidden></p>
+      <p class="msg" id="c-help">Một mã dùng chung cho nhiều sinh viên. Ghi số người được dùng mã (ví dụ 20): người thứ 21 nhập mã sẽ bị từ chối. Mã có thể mở một hoặc nhiều học phần. Bấm <b>Cấp mã</b> là mã được lưu lên GitHub, sinh viên dùng được sau khoảng 1–2 phút.</p>
       <div class="row">
         <div><label class="lab" for="c-code">Mã</label><input type="text" id="c-code" placeholder="Ví dụ: PNL2026" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.04em" required></div>
         ${maxField}
@@ -506,7 +518,7 @@ function admin2HTML(){
         <label class="admin-course admin-all"><input type="checkbox" id="c-all-courses" checked><span><b>Tất cả học phần</b></span></label>
         <div class="admin-course-grid" id="c-course-grid">${courseChoices}</div></div>
       <div class="err" id="c-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Cấp mã</button><button class="btn" type="button" data-home>Về trang chủ</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" id="c-submit">Cấp mã</button><button class="btn" type="button" id="c-cancel" hidden>Hủy sửa</button><button class="btn" type="button" data-home id="c-home">Về trang chủ</button><span class="msg" id="c-msg" aria-live="polite"></span></div>
     </form></section>
   <section class="frame"><div class="ftitle">Danh sách mã lớp</div>
     <div class="row" style="align-items:center;margin-bottom:10px"><span class="msg" id="l-msg" aria-live="polite"></span></div>
@@ -552,30 +564,54 @@ async function admin2Bind(){
   if($("#l-out"))$("#l-out").onclick=()=>{ST=null;store.del(AKEY);route("quan-ly-ma")};
   if(!$("#c-form"))return;
   const web=ADM.web();
+  let ITEMS=[],EDIT=null;
+  function setCourses(cs){const all=!Array.isArray(cs)||!cs.length||cs.includes("*");$("#c-all-courses").checked=all;
+    document.querySelectorAll(".c-course").forEach(x=>{x.disabled=all;x.checked=!all&&cs.includes(x.value)})}
+  function startEdit(x){if(!x)return;EDIT=x.code;
+    $("#c-title").textContent="Sửa mã "+x.code;$("#c-help").hidden=true;
+    const n=$("#c-edit-note");n.hidden=false;n.innerHTML=`Đổi số người, hạn dùng, ghi chú hoặc học phần được mở của mã <b>${esc(x.code)}</b>. Mã giữ nguyên, sinh viên đang dùng không phải nhập lại${x.used!=null?`; đã có <b>${x.used}</b> người dùng`:""}.`;
+    $("#c-code").value=x.code;$("#c-code").readOnly=true;$("#c-max").value=x.max||20;$("#c-han").value=x.han;$("#c-note").value=x.note||"";setCourses(x.courses);
+    $("#c-submit").textContent="Lưu thay đổi";$("#c-cancel").hidden=false;$("#c-err").textContent="";$("#c-msg").textContent="";
+    $("#c-frame").classList.add("editing");$("#c-frame").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>$("#c-max").focus({preventScroll:true}),350)}
+  function stopEdit(){EDIT=null;$("#c-title").textContent="Cấp mã";$("#c-help").hidden=false;$("#c-edit-note").hidden=true;
+    $("#c-code").readOnly=false;$("#c-code").value="";$("#c-note").value="";$("#c-max").value=20;
+    const d=new Date();d.setMonth(d.getMonth()+4);$("#c-han").value=d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());setCourses(["*"]);
+    $("#c-submit").textContent="Cấp mã";$("#c-cancel").hidden=true;$("#c-err").textContent="";$("#c-frame").classList.remove("editing")}
+  $("#c-cancel").onclick=()=>{stopEdit();$("#c-msg").textContent=""};
   async function list(){
     try{const r=await ADM.list();if(!r||!r.ok){$("#l-msg").textContent="Chưa tải được danh sách mã.";return}
       $("#l-msg").textContent=r.items.length?r.items.length+" mã":"";const t=todayISO();
       $("#l-body").innerHTML=r.items.length?r.items.slice().reverse().map(x=>{const exp=t>x.han,full=x.max&&x.used!=null&&x.used>=x.max;
-        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td><td>${x.used==null?"?":Math.min(x.used,x.max)} / ${x.max||"—"}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Xóa</button></td></tr>`}).join("")
+        return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note||"")}</td><td>${esc(adminScopeLabel(x.courses))}</td><td>${fmtDate(x.han)}</td><td>${x.used==null?"?":Math.min(x.used,x.max)} / ${x.max||"—"}</td><td>${exp?'<span class="bad">Hết hạn</span>':full?'<span class="bad">Đủ số người</span>':'<span class="ok">Đang hiệu lực</span>'}</td><td style="white-space:nowrap"><button type="button" class="btn" data-edit="${esc(x.code)}" style="padding:5px 10px;margin-right:6px">Sửa</button><button type="button" class="btn" data-del="${esc(x.code)}" style="padding:5px 10px">Xóa</button></td></tr>`}).join("")
         :`<tr><td colspan="7" class="msg">Chưa có mã nào. Cấp mã đầu tiên ở khung bên trên.</td></tr>`;
+      ITEMS=r.items;
+      $("#l-body").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(ITEMS.find(x=>x.code===b.dataset.edit)));
       $("#l-body").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
         if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Bấm lần nữa để xóa";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Xóa";b.classList.remove("primary")}},4000);return}
-        b.disabled=true;b.textContent="Đang xóa…";
+        b.disabled=true;b.textContent="Đang xóa…";if(EDIT===b.dataset.del)stopEdit();
         try{const rr=await ADM.del(b.dataset.del);await list();$("#l-msg").textContent=rr&&rr.ok?"Đã xóa mã "+b.dataset.del+(web?" và lưu lên GitHub.":"."):(rr&&rr.why)||"Chưa xóa được."}
         catch(err){b.textContent="Thử lại";b.disabled=false}});
     }catch(err){$("#l-msg").textContent="Chưa tải được danh sách mã."}
   }
   $("#c-all-courses").addEventListener("change",()=>document.querySelectorAll(".c-course").forEach(x=>{x.disabled=$("#c-all-courses").checked;if(x.disabled)x.checked=false}));
-  const WHY={exists:"Mã này đã có trong danh sách; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Chỉ chủ trang mới được cấp mã."};
+  const WHY={missing:"Mã này không còn trong danh sách (có thể đã bị xóa).",exists:"Mã này đã có trong danh sách; hãy đặt mã khác.",badcode:"Mã chưa đúng định dạng.",badhan:"Ngày hết hạn không hợp lệ.",badmax:"Số người tối đa không hợp lệ.",badcourses:"Phạm vi học phần không hợp lệ.",key:"Chỉ chủ trang mới được cấp mã."};
   $("#c-form").addEventListener("submit",async e=>{e.preventDefault();
     const code=norm($("#c-code").value),note=$("#c-note").value.trim(),han=$("#c-han").value,max=parseInt($("#c-max").value,10);
     const all=$("#c-all-courses").checked,courses=all?[]:[...document.querySelectorAll(".c-course:checked")].map(x=>x.value);
     if(!code){$("#c-err").textContent="Nhập mã, ví dụ PNL2026.";return}
     if(!okCode(code)){$("#c-err").textContent="Mã gồm 3–24 ký tự: chữ cái không dấu, chữ số, gạch ngang hoặc gạch dưới.";return}
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi.";return}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<todayISO()){$("#c-err").textContent="Chọn ngày hết hạn từ hôm nay trở đi."+(EDIT?" Muốn khóa mã ngay thì bấm Xóa.":"");return}
     if(!(max>=1&&max<=1000)){$("#c-err").textContent="Số người được dùng mã phải từ 1 đến 1000.";return}
     if(!all&&!courses.length){$("#c-err").textContent="Chọn ít nhất một học phần hoặc bật Tất cả học phần.";return}
-    $("#c-err").textContent="";$("#c-msg").textContent=web?"Đang cấp mã và lưu lên GitHub…":"Đang cấp mã…";const btn=$("#c-form button[type=submit]");btn.disabled=true;
+    if(EDIT){const cur=ITEMS.find(x=>x.code===EDIT);
+      if(cur&&cur.used!=null&&max<cur.used&&!confirm("Mã "+EDIT+" đã có "+cur.used+" người dùng, nhiều hơn "+max+". Những người đã vào vẫn dùng được; chỉ người mới bị chặn. Vẫn lưu?"))return;
+      $("#c-err").textContent="";$("#c-msg").textContent=web?"Đang lưu thay đổi lên GitHub…":"Đang lưu thay đổi…";const btn=$("#c-submit");btn.disabled=true;
+      try{const code=EDIT,r=await ADM.update({code,note,han,max,courses});
+        if(r&&r.ok){stopEdit();$("#c-msg").textContent="Đã cập nhật mã "+code+(web?" và lưu lên GitHub. Thay đổi có hiệu lực sau khoảng 1–2 phút.":".");list()}
+        else{$("#c-msg").textContent="";$("#c-err").textContent=WHY[r&&r.why]||(r&&r.why)||"Chưa lưu được thay đổi."}}
+      catch(err){$("#c-msg").textContent="";$("#c-err").textContent="Chưa lưu được thay đổi. Thử lại."}finally{btn.disabled=false}
+      return}
+    $("#c-err").textContent="";$("#c-msg").textContent=web?"Đang cấp mã và lưu lên GitHub…":"Đang cấp mã…";const btn=$("#c-submit");btn.disabled=true;
     try{const r=await ADM.create({code,note,han,max,courses});
       if(r&&r.ok){$("#c-msg").textContent="Đã cấp mã "+code+(web?" và lưu lên GitHub. Sinh viên dùng được sau khoảng 1–2 phút.":".");$("#c-code").value="";$("#c-note").value="";list()}
       else{$("#c-msg").textContent="";$("#c-err").textContent=WHY[r&&r.why]||(r&&r.why)||"Chưa cấp được mã."}}
