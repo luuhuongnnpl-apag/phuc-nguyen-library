@@ -104,7 +104,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .dlg.sm{max-width:460px}
 footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
 @media (max-width:640px){h1{font-size:21px}.brand span{font-size:14px}.card{padding:16px}.timer{top:60px}}
-@media print{.band,.timer,.navq,footer{display:none}}
+@media print{.band,.timer,.navq,footer{display:none}body.modal-open #app{display:none}body.modal-open #modal{position:static;background:none;padding:0;overflow:visible}body.modal-open .dlg{box-shadow:none;max-width:none}body.modal-open .dlg .btn{display:none}}
 </style>
 </head>
 <body>
@@ -216,8 +216,8 @@ function chamTL(c,essay){
 }
 
 /* ====== HỘP THOẠI ====== */
-function modal(html,cls){const m=$("#modal");m.innerHTML='<div class="dlg '+(cls||"")+'" role="dialog" aria-modal="true">'+html+'</div>';m.hidden=false;document.body.style.overflow="hidden";const f=m.querySelector("button,input,textarea,select");if(f)setTimeout(()=>f.focus(),20);return m}
-function closeModal(){const m=$("#modal");m.hidden=true;m.innerHTML="";document.body.style.overflow=""}
+function modal(html,cls){const m=$("#modal");m.innerHTML='<div class="dlg '+(cls||"")+'" role="dialog" aria-modal="true">'+html+'</div>';m.hidden=false;document.body.style.overflow="hidden";document.body.classList.add("modal-open");const f=m.querySelector("button,input,textarea,select");if(f)setTimeout(()=>f.focus(),20);return m}
+function closeModal(){const m=$("#modal");m.hidden=true;m.innerHTML="";document.body.style.overflow="";document.body.classList.remove("modal-open")}
 function ask(title,text,okLabel,danger){return new Promise(res=>{const m=modal('<h2>'+esc(title)+'</h2><p>'+text+'</p><div class="row" style="justify-content:flex-end"><button class="btn" id="m-no">Quay lại</button><button class="btn '+(danger?"danger":"primary")+'" id="m-ok">'+esc(okLabel||"Đồng ý")+'</button></div>',"sm");
   m.querySelector("#m-no").onclick=()=>{closeModal();res(false)};m.querySelector("#m-ok").onclick=()=>{closeModal();res(true)}})}
 
@@ -456,7 +456,8 @@ function tabDiem(){
     ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${r.b?`<a href="#" data-sv="${esc(r.sv.mssv)}">${esc(r.sv.hoTen)}</a>`:esc(r.sv.hoTen)}</td>
       <td>${!r.b?'<span class="msg">Chưa làm</span>':r.b.status==="da-nop"?'<span class="pill open">Đã nộp</span>':'<span class="pill wait">Đang làm</span>'}</td>
       <td class="num">${r.b?r.lt:""}</td><td class="num">${r.b?r.th:""}</td><td class="num">${r.b?String(r.tl).replace(".",",")+(r.xn?"":' <span class="msg">gợi ý</span>'):""}</td><td class="num">${r.b?String(r.tong).replace(".",","):""}</td><td class="num"><b>${r.b?String(r.t10).replace(".",","):""}</b></td><td class="num">${r.b?r.b.roiTrang|0:""}</td>
-      <td>${r.b?`<button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
+      <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> <button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
+  $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
   $("#d-re").onclick=()=>classView(AD.ma);$("#d-xls").onclick=()=>exportXls(rows);
   $$("[data-sv]").forEach(a=>a.onclick=e=>{e.preventDefault();gradeView(a.dataset.sv)});
   $$("[data-reset]").forEach(b=>b.onclick=async()=>{const sv=b.dataset.reset;const r=rows.find(x=>x.sv.mssv===sv);
@@ -493,6 +494,32 @@ function gradeView(mssv){
     try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,diem:tl,xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
       AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,diem:tl,xacNhan:true,luc:TS.now()};closeModal();tabDiem()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
+function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
+  const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';
+  return t+` <button class="btn small" data-paper="${esc(mssv)}">Xem bài</button>`}
+function paperView(mssv){
+  const b=AD.bai[mssv];if(!b)return;const B=AD.B,de=b.de,sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};
+  const r=ketQua(sv);const ans=b.answers||{};let n=0,dung=0;
+  const qHtml=id=>{n++;const q=B.byId[id];if(!q)return `<div class="q"><p class="stem"><b>Câu ${n}.</b> (câu ${esc(id)} không còn trong ngân hàng)</p></div>`;
+    const perm=(de.perm[K(id)]||"").split("").map(Number);const ord=perm.length===q.o.length?perm:[...q.o.keys()];
+    const a=ans[K(id)]!=null?+ans[K(id)]:null;const ok=a===q.a;if(ok)dung++;
+    return `<div class="q"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)} <span class="msg">[${esc(id)} · ${esc(q.lv||"")}]</span> ${a==null?'<span class="wrong">Bỏ trống</span>':ok?'<span class="right">Đúng</span>':'<span class="wrong">Sai</span>'}</p>
+      ${ord.map((oi,pos)=>{const isA=oi===q.a,isC=oi===a;return `<div class="opt${isC?" sel":""}" style="cursor:default${isA?";border-color:var(--ok);background:var(--ok-soft)":""}"><span><b>${LET[pos]}.</b> ${esc(q.o[oi])}${isC?' <b>← sinh viên chọn</b>':''}${isA?' <b class="right">✓ đáp án</b>':''}</span></div>`}).join("")}
+      <p class="msg" style="margin:6px 0 0">Căn cứ: ${esc(q.b||"")}</p></div>`};
+  let h=`<div class="sec-title">Phần I. Lý thuyết</div>`+de.lt.map(qHtml).join("");
+  h+=`<div class="sec-title">Phần II. Tình huống trắc nghiệm</div>`;
+  de.th.forEach((c,i)=>{const cs=B.cases[c.cid]||{};h+=`<div class="case"><h4>Tình huống ${i+1} <span class="msg">[${esc(c.cid)}]</span></h4><p>${esc(cs.text||"")}</p></div>`+c.q.map(qHtml).join("")});
+  const tl=B.cases[de.tl]||{};const c=AD.cham[mssv];
+  h+=`<div class="sec-title">Phần III. Tự luận</div><div class="case"><h4>Tình huống ${de.th.length+1} <span class="msg">[${esc(de.tl)}]</span></h4><p>${esc(tl.text||"")}</p><ol>${(tl.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></div>
+    <p class="lab">Bài làm của sinh viên (${(b.essay||"").trim()?(b.essay.trim().split(/\s+/).length+" từ"):"bỏ trống"})</p><div class="ans" style="max-height:none">${esc(b.essay||"(bỏ trống)")}</div>
+    ${c&&c.xacNhan?`<p class="ok">Điểm tự luận đã xác nhận: ${String(c.diem).replace(".",",")}/20${c.note?" · Nhận xét: "+esc(c.note):""}</p>`:'<p class="msg">Tự luận chưa được xác nhận điểm (đang dùng điểm gợi ý theo từ khóa).</p>'}`;
+  const m=modal(`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Bài làm · ${esc(sv.hoTen)} · ${esc(mssv)}</h2><div><button class="btn small" id="p-print">In / lưu PDF</button> <button class="btn small" id="p-x">Đóng</button></div></div>
+    <dl class="info" style="margin-top:12px"><dt>Lớp</dt><dd>${esc(AD.ma)} · ${esc(AD.l.ten||"")} · ${esc(AD.l.hocPhanTen||"")}</dd><dt>Ngày sinh</dt><dd>${esc(sv.ngaySinh||"–")}</dd>
+      <dt>Bắt đầu</dt><dd>${esc(fmtDT(toDate(b.startedAt)))}</dd><dt>Nộp bài</dt><dd>${b.submittedAt?esc(fmtDT(toDate(b.submittedAt))):"Chưa nộp"+(b.luu?" (lưu lần cuối "+esc(fmtDT(toDate(b.luu)))+")":"")}</dd>
+      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>Lý thuyết ${r.lt}/60 · Tình huống ${r.th}/20 · Tự luận ${String(r.tl).replace(".",",")}/20${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/100 · <b>Thang 10: ${String(r.t10).replace(".",",")}</b></dd></dl>
+    <p class="msg">Phương án hiển thị đúng thứ tự A, B, C, D như sinh viên đã thấy khi làm bài. Ô viền xanh là đáp án đúng.</p>${h}`);
+  m.querySelector("#p-x").onclick=closeModal;m.querySelector("#p-print").onclick=()=>window.print();
+}
 function loadXLSX(){return window.XLSX?Promise.resolve(window.XLSX):new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=()=>res(window.XLSX);s.onerror=()=>rej(new Error("Không tải được thư viện Excel"));document.head.appendChild(s)})}
 async function exportXls(rows){
   const X=await loadXLSX();const st=r=>!r.b?"Chưa làm":r.b.status==="da-nop"?"Đã nộp":"Đang làm";
@@ -513,7 +540,8 @@ function tabDS(){
     <div class="row"><div><input type="file" id="ds-file" accept=".xlsx,.xls,.csv"></div></div>
     <div class="row"><div><textarea id="ds-paste" rows="5" placeholder="2251010001	Nguyễn Văn A	01/02/2005"></textarea></div></div>
     <div class="row"><button class="btn" id="ds-read">Đọc danh sách dán vào</button></div><div id="ds-prev"></div></div>
-    <div class="card tblwrap"><h3 style="margin-top:0">Danh sách hiện tại (${AD.ds.length})</h3>${AD.ds.length?`<table><thead><tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th></th></tr></thead><tbody>${AD.ds.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.mssv)}</td><td>${esc(s.hoTen)}</td><td>${esc(s.ngaySinh||"")}</td><td><button class="btn small" data-edit="${esc(s.mssv)}">Sửa</button> <button class="btn small danger" data-del="${esc(s.mssv)}">Xóa</button></td></tr>`).join("")}</tbody></table>`:'<p class="msg">Chưa có sinh viên.</p>'}</div>`;
+    <div class="card tblwrap"><h3 style="margin-top:0">Danh sách hiện tại (${AD.ds.length})</h3>${AD.ds.length?`<table><thead><tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Lịch sử làm bài</th><th></th></tr></thead><tbody>${AD.ds.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.mssv)}</td><td>${esc(s.hoTen)}</td><td>${esc(s.ngaySinh||"")}</td><td>${lichSu(s.mssv)}</td><td><button class="btn small" data-edit="${esc(s.mssv)}">Sửa</button> <button class="btn small danger" data-del="${esc(s.mssv)}">Xóa</button></td></tr>`).join("")}</tbody></table>`:'<p class="msg">Chưa có sinh viên.</p>'}</div>`;
+  $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
   const f1=$("#ds-one");let editing=null;
   f1.onsubmit=async e=>{e.preventDefault();const err=$("#one-err"),ok=$("#one-ok");err.textContent="";ok.textContent="";
     const hoTen=$("#one-ten").value.replace(/\s+/g," ").trim(),mssv=$("#one-sv").value.trim().toUpperCase().replace(/\s+/g,""),ns=$("#one-ns").value.trim();
