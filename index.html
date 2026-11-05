@@ -60,6 +60,21 @@ h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
 
 /* Khung */
 main.wrap{padding-block:22px 40px;display:grid;gap:20px}
+.col-r{display:grid;gap:20px;min-width:0}
+.dg-box{border-style:solid;border-color:var(--band);background:linear-gradient(135deg,var(--tint),var(--paper))}
+.dg-lead{margin:0 0 14px;font-size:clamp(15px,1.6vw,17px)}
+.dg-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:12px;align-items:end}
+.dg-lab{display:block;font-weight:700;font-size:15px;margin:0 0 4px;color:var(--head)}
+.dg-form input{width:100%;font:600 17px var(--f-body);text-transform:uppercase;letter-spacing:.03em;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink)}
+.dg-form input::placeholder{text-transform:none;letter-spacing:0;font-weight:400}
+.dg-form input:focus{outline:none;border-color:var(--band)}
+.dg-go{font:800 17px var(--f-body);padding:13px 24px;border:0;border-radius:12px;background:var(--band);color:var(--on-band);cursor:pointer;white-space:nowrap}
+.dg-go:hover{filter:brightness(1.1)}
+.dg-err{color:var(--red);font-weight:700;min-height:1.3em;margin:8px 0 0}
+.dg-admin{margin:4px 0 0;font-size:14px}.dg-admin a{color:var(--head);font-weight:700}
+@media (max-width:640px){.dg-form{grid-template-columns:minmax(0,1fr)}.dg-go{width:100%}}
+@media (max-width:900px){.col-r{display:contents}.dg-box{order:-1}}
+.frame.dg-box{border:2px solid var(--band)!important}
 .grid-top{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:20px;align-items:start}
 .grid-bot{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,5fr);gap:20px;align-items:stretch}
 .frame{background:var(--paper);border:2px dashed var(--frame);border-radius:24px;padding:20px clamp(16px,2.6vw,28px) 24px;min-width:0}
@@ -744,7 +759,7 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
-  if(id==="home") m.innerHTML=homeHTML();
+  if(id==="home"){m.innerHTML=homeHTML();bindDg()}
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
   else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
   else if(tlRoute(id,m)){}
@@ -758,6 +773,13 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   m.querySelectorAll("[data-send]").forEach(b=>b.onclick=()=>sendFeedback(b));
   window.scrollTo(0,0)}
 
+function bindDg(){const f=$("#dg-form");if(!f)return;
+  try{const last=JSON.parse(store.get("pndg-last")||"{}");if(last.ma)$("#dg-ma").value=last.ma;if(last.sv)$("#dg-sv").value=last.sv}catch(e){}
+  ["dg-ma","dg-sv"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#dg-err").textContent=""));
+  f.onsubmit=e=>{e.preventDefault();const ma=$("#dg-ma").value.trim().toUpperCase(),sv=$("#dg-sv").value.trim().toUpperCase().replace(/\s+/g,"");
+    if(!/^[A-Z0-9_-]{2,24}$/.test(ma)){$("#dg-err").textContent="Nhập mã lớp (chỉ gồm chữ, số, dấu gạch).";$("#dg-ma").focus();return}
+    if(!/^[A-Z0-9_-]{2,20}$/.test(sv)){$("#dg-err").textContent="Nhập mã sinh viên.";$("#dg-sv").focus();return}
+    store.set("pndg-last",JSON.stringify({ma,sv}));store.set("pndg-go","1");location.href="danh-gia/"}}
 function homeHTML(){
   const list=COURSES.map(c=>`<li data-comment-target><button type="button" class="${c.src?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${c.name}</span><span class="st">${c.src?"Đã có":"Sắp có"}</span></button></li>`).join("");
   const docs=DOCS.map(d=>{const has=!!(d.tl&&TL[d.tl]);
@@ -768,7 +790,19 @@ function homeHTML(){
   return `<main class="wrap">
   <div class="grid-top">
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
+    <div class="col-r">
+    <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ</div>
+      <p class="dg-lead">Sinh viên nhập <b>mã lớp</b> do giảng viên cung cấp và <b>mã sinh viên</b> của mình để làm bài kiểm tra. Không cần mã ôn tập, mỗi sinh viên làm một lần.</p>
+      <form id="dg-form" class="dg-form" novalidate>
+        <div><label class="dg-lab" for="dg-ma">Mã lớp</label><input type="text" id="dg-ma" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Ví dụ: DS-K25A"></div>
+        <div><label class="dg-lab" for="dg-sv">Mã sinh viên</label><input type="text" id="dg-sv" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Mã sinh viên của bạn"></div>
+        <button class="dg-go" type="submit">Vào làm bài</button>
+      </form>
+      <p class="dg-err" id="dg-err" role="alert"></p>
+      ${isOwner?'<p class="dg-admin"><a href="danh-gia/#quan-tri">Quản trị Đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
+    </section>
     <section class="frame center"><div class="ftitle">MIND-MAP HỌC PHẦN</div><div class="docs">${docs}</div></section>
+    </div>
   </div>
   <div class="grid-bot">
     <section class="frame"><div class="ftitle">Hướng dẫn sử dụng</div>

@@ -253,6 +253,8 @@ function studentEntry(msg){
     $("#in-go").disabled=true;$("#in-go").textContent="Đang kiểm tra…";
     try{await checkIn(ma,sv)}catch(x){console.error(x);err.textContent=x.userMsg||"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.";$("#in-go").disabled=false;$("#in-go").textContent="Tiếp tục"}
   };
+  /* đến từ ô Đánh giá định kỳ ở trang chủ: tự kiểm tra luôn */
+  if(!msg&&store.get("pndg-go")==="1"&&last.ma&&last.sv){store.del("pndg-go");const f=$("#f-in");if(f.requestSubmit)f.requestSubmit();else f.dispatchEvent(new Event("submit",{cancelable:true}))}
 }
 function uerr(m){const e=new Error(m);e.userMsg=m;return e}
 async function ensureUser(){if(auth.currentUser){USER=auth.currentUser;return USER}USER=(await auth.signInAnonymously()).user;return USER}
