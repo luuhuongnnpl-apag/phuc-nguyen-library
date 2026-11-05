@@ -296,6 +296,9 @@ const CONFIG={
 /* Firebase (bản web GitHub): mã lớp, lượt dùng, góp ý lưu trên Firestore dự án phuc-nguyen-library */
 const FB_CFG={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
 const FB_ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1"; /* luuhuong.nnpl@gmail.com */
+const FB_ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
+/* Hệ sinh thái PN dùng chung phiên đăng nhập: quản trị nhận theo UID hoặc email Google của giảng viên */
+const fbIsAdmin=u=>!!u&&!u.isAnonymous&&(u.uid===FB_ADMIN_UID||(!!u.email&&u.emailVerified!==false&&FB_ADMIN_EMAILS.includes(u.email.toLowerCase())));
 let FBW=false,fbAuth=null,MIGRATED=false; /* FBW: đang chạy bản web có Firebase */
 /* Bản cũ trên GitHub (chỉ đọc, dự phòng trước khi chuyển xong): data/ma-lop.json */
 const GH={repo:"luuhuongnnpl-apag/phuc-nguyen-library",branch:"main",path:"data/ma-lop.json"};
@@ -511,10 +514,10 @@ function connectBox(first){return `<section class="frame"><div class="ftitle">${
 function admin2HTML(){
   const head=adminHead();
   if(FBW&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
-    <form id="fa-form" novalidate class="admin"><p class="msg">Đăng nhập bằng tài khoản quản trị (Firebase). Máy này sẽ nhớ đăng nhập cho đến khi bấm Đăng xuất.</p>
+    <form id="fa-form" novalidate class="admin"><p class="msg">Đăng nhập bằng tài khoản quản trị (email/mật khẩu hoặc Google). Đăng nhập một lần là dùng chung cho PN Library, PN Work, PN Digital trên máy này, cho đến khi bấm Đăng xuất.</p>
     <div class="row"><div><label class="lab" for="fa-email">Email</label><input type="email" id="fa-email" autocomplete="username" required></div>
     <div><label class="lab" for="fa-pw">Mật khẩu</label><input type="password" id="fa-pw" autocomplete="current-password" required></div></div>
-    <div class="err" id="fa-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
+    <div class="err" id="fa-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" id="fa-google">Đăng nhập Google</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
   if(DB&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã lớp</div><p class="msg">Chỉ chủ trang mới được quản lý mã lớp.</p></section></main>`;
   if(FBW&&!MIGRATED)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Chuyển mã lớp cũ sang Firebase (làm một lần)</div>
     <form id="mg-form" novalidate class="admin"><p class="msg">Danh sách mã lớp cũ trên GitHub được khóa bằng <b>mật khẩu quản trị cũ</b>. Nhập mật khẩu đó để chuyển toàn bộ mã (kèm số người đã dùng) sang Firebase. Sinh viên đang dùng mã không phải nhập lại.</p>
@@ -580,9 +583,13 @@ async function migrateOld(pw){const d=await loadMa(true);const v=await openVault
   await DB.doc("meta/migrated").set({at:new Date().toISOString(),codes:n});MIGRATED=true;return n}
 async function admin2Bind(){
   const fa=$("#fa-form");
-  if(fa){fa.addEventListener("submit",async e=>{e.preventDefault();const em=$("#fa-email").value.trim(),pw=$("#fa-pw").value;if(!em||!pw){$("#fa-err").textContent="Nhập email và mật khẩu.";return}
+  if(fa){$("#fa-google").onclick=async()=>{$("#fa-err").textContent="Đang mở cửa sổ đăng nhập Google…";
+      try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});const r=await fbAuth.signInWithPopup(p);UID=r.user.uid;isOwner=fbIsAdmin(r.user);
+        if(!isOwner){$("#fa-err").textContent="Tài khoản "+r.user.email+" không phải quản trị.";return}grantAdmin();renderWho();route("quan-ly-ma")}
+      catch(err){$("#fa-err").textContent=err.code==="auth/popup-closed-by-user"?"Cửa sổ đăng nhập đã đóng.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}};
+    fa.addEventListener("submit",async e=>{e.preventDefault();const em=$("#fa-email").value.trim(),pw=$("#fa-pw").value;if(!em||!pw){$("#fa-err").textContent="Nhập email và mật khẩu.";return}
       $("#fa-err").textContent="Đang đăng nhập…";
-      try{const r=await fbAuth.signInWithEmailAndPassword(em,pw);UID=r.user.uid;isOwner=UID===FB_ADMIN_UID;if(!isOwner){await fbAuth.signOut();$("#fa-err").textContent="Tài khoản này không phải quản trị.";return}grantAdmin();renderWho();route("quan-ly-ma")}
+      try{const r=await fbAuth.signInWithEmailAndPassword(em,pw);UID=r.user.uid;isOwner=fbIsAdmin(r.user);if(!isOwner){await fbAuth.signOut();$("#fa-err").textContent="Tài khoản này không phải quản trị.";return}grantAdmin();renderWho();route("quan-ly-ma")}
       catch(err){$("#fa-err").textContent=/invalid|wrong|not-found/.test(err.code||"")?"Email hoặc mật khẩu chưa đúng.":err.code==="auth/too-many-requests"?"Sai quá nhiều lần, chờ ít phút rồi thử lại.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}});return}
   const mg=$("#mg-form");
   if(mg){const run=async(pw,auto)=>{$("#mg-err").textContent="";$("#mg-msg").textContent="Đang chuyển mã lớp…";
@@ -956,7 +963,10 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
     DB={doc:p=>fs.doc("pnl_"+p),collection:p=>fs.collection("pnl_"+p)};FBW=true;
     let u=await new Promise(res=>{const off=fbAuth.onAuthStateChanged(x=>{off();res(x)})});
     if(!u)u=(await fbAuth.signInAnonymously()).user;
-    UID=u.uid;isOwner=u.uid===FB_ADMIN_UID;if(isOwner)grantAdmin();else dropAdmin();
+    UID=u.uid;isOwner=fbIsAdmin(u);if(isOwner)grantAdmin();else dropAdmin();
+    /* Đăng nhập/đăng xuất ở trang PN khác (cùng máy) được cập nhật ngay */
+    fbAuth.onAuthStateChanged(async x=>{if(!x){try{x=(await fbAuth.signInAnonymously()).user}catch(e){return}}
+      const was=isOwner;UID=x.uid;isOwner=fbIsAdmin(x);if(isOwner!==was){if(isOwner)grantAdmin();else dropAdmin();renderWho();if(cur==="quan-ly-ma")route("quan-ly-ma")}});
     MIGRATED=(await DB.doc("meta/migrated").get()).exists}
   catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
   if(isOwner){grantAdmin();renderWho()}
