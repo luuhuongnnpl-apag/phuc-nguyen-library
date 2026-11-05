@@ -77,6 +77,7 @@ th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertic
 th{color:var(--muted);font-weight:600;white-space:nowrap}
 td.num,th.num{text-align:right;white-space:nowrap}
 .tblwrap{overflow-x:auto}
+table.sheet{border:1px solid var(--line)}table.sheet th,table.sheet td{border:1px solid var(--line);padding:9px 10px;vertical-align:middle}table.sheet thead th{background:var(--tint);color:var(--head);text-align:left}table.sheet tbody tr:nth-child(even){background:color-mix(in srgb,var(--tint) 45%,transparent)}table.sheet .c{text-align:center}table.sheet td.score{font:700 18px var(--f-display);color:var(--head);white-space:nowrap}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
 .tabs button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 14px;font:600 14px var(--f-body);color:var(--ink);cursor:pointer}
 .tabs button.on{background:var(--head);border-color:var(--head);color:#fff}
@@ -126,7 +127,9 @@ const FB_CFG={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-
 const ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1";
 const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
 /* Học phần đã có đủ ngân hàng (Lý thuyết ABCD + Tình huống có câu ABCD và gợi ý giải quyết). Thêm học phần mới vào đây. */
-const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự"}];
+/* tuLuan: chương lấy tình huống tự luận (so khớp tên nhóm tình huống) */
+const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự",tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"]}];
+const MAX_ROI=10; /* rời trang quá số lần này thì tự nộp bài */
 /* Cấu trúc đề: 30 lý thuyết + 10 tình huống ABCD (2 điểm/câu = 80) + 1 tự luận (20 điểm) = 100 điểm, quy về thang 10 */
 const CT={lv:{NB:10,TH:12,VD:8},lt:30,thCases:[4,3,3],dLT:2,dTH:2,dTL:20};
 /* Chấm tự luận theo từ khóa: ngưỡng gợi ý mức đạt của từng ý */
@@ -171,20 +174,27 @@ function pickSpread(pool,n){
   while(out.length<n&&groups.some(g=>g.length)){for(const g of groups){if(out.length>=n)break;if(g.length)out.push(g.pop())}}
   return out;
 }
-function buildDe(B){
+function buildDe(B,hpId){
   const used=new Set();let lt=[];
   for(const [lv,n] of Object.entries(CT.lv)){const p=pickSpread(B.lt.filter(q=>q.lv===lv),n);p.forEach(q=>used.add(q.id));lt.push(...p)}
   if(lt.length<CT.lt)lt.push(...pickSpread(B.lt.filter(q=>!used.has(q.id)),CT.lt-lt.length));
   lt=shuffle(lt).map(q=>q.id);
   const valid=Object.values(B.cases).filter(c=>Array.isArray(c.mcq)&&c.mcq.length>=4&&c.mcq.every(id=>B.byId[id])&&Array.isArray(c.guide)&&c.guide.length);
-  const by={};valid.forEach(c=>(by[B.caseCh[c.cid]]=by[B.caseCh[c.cid]]||[]).push(c));
+  /* tự luận: chỉ lấy từ các chương quy định (Luật Dân sự: Thừa kế, Hợp đồng, Bồi thường ngoài hợp đồng) */
+  const hp=HOCPHAN.find(h=>h.id===hpId)||{};const names=B.d.th.map(g=>strip(g.name));
+  const tlChs=(hp.tuLuan||[]).map(t=>names.findIndex(n=>n.includes(strip(t)))).filter(i=>i>=0);
+  const tlPool=valid.filter(c=>!tlChs.length||tlChs.includes(B.caseCh[c.cid]));
+  if(!tlPool.length)throw new Error("Chưa có tình huống tự luận cho các chương đã chọn.");
+  const tlCase=shuffle(tlPool)[0];
+  /* 3 tình huống trắc nghiệm: khác chương với nhau và khác chương câu tự luận */
+  const by={};valid.filter(c=>c!==tlCase&&B.caseCh[c.cid]!==B.caseCh[tlCase.cid]).forEach(c=>(by[B.caseCh[c.cid]]=by[B.caseCh[c.cid]]||[]).push(c));
   const picked=[];
-  for(const ch of shuffle(Object.keys(by))){if(picked.length>=4)break;picked.push(shuffle(by[ch])[0])}
-  if(picked.length<4){const rest=shuffle(valid.filter(c=>!picked.includes(c)));while(picked.length<4&&rest.length)picked.push(rest.pop())}
-  if(picked.length<4)throw new Error("Ngân hàng tình huống chưa đủ để trộn đề.");
+  for(const ch of shuffle(Object.keys(by))){if(picked.length>=3)break;picked.push(shuffle(by[ch])[0])}
+  if(picked.length<3){const rest=shuffle(valid.filter(c=>c!==tlCase&&!picked.includes(c)));while(picked.length<3&&rest.length)picked.push(rest.pop())}
+  if(picked.length<3)throw new Error("Ngân hàng tình huống chưa đủ để trộn đề.");
   const th=CT.thCases.map((k,i)=>({cid:picked[i].cid,q:shuffle(picked[i].mcq).slice(0,k).sort()}));
   const perm={};[...lt,...th.flatMap(x=>x.q)].forEach(id=>{perm[K(id)]=shuffle([...Array(B.byId[id].o.length).keys()]).join("")});
-  return {lt,th,tl:picked[3].cid,perm};
+  return {lt,th,tl:tlCase.cid,perm};
 }
 function questionsOf(de){return [...de.lt,...de.th.flatMap(x=>x.q)]}
 
@@ -283,7 +293,7 @@ function confirmView(c){
       <li>Đề gồm 30 câu lý thuyết, 10 câu tình huống trắc nghiệm và 1 câu tự luận giải quyết tình huống.</li>
       <li>Mỗi sinh viên chỉ được làm <b>một lần</b>. Bấm "Bắt đầu" là bắt đầu tính giờ.</li>
       <li>Bài được lưu liên tục; hết giờ bài tự nộp. Không tải lại trang trên máy khác.</li>
-      <li>Câu tự luận không cho dán nội dung sao chép; số lần rời khỏi trang làm bài được ghi lại.</li>
+      <li>Câu tự luận phải tự gõ, không dán được nội dung sao chép.</li><li>Mỗi lần rời khỏi trang làm bài (chuyển thẻ, chuyển ứng dụng) đều bị ghi lại. <b>Rời trang quá 10 lần, bài bị khóa và tự động nộp.</b></li>
     </ul></div>
     <label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 14px"><input type="checkbox" id="cf-ok" style="margin-top:5px"><span>Tôi xác nhận đúng là <b>${esc(c.svd.hoTen)}</b>, mã sinh viên ${esc(c.sv)}.</span></label>
     <div class="err" id="cf-err" role="alert"></div>
@@ -291,7 +301,7 @@ function confirmView(c){
   $("#cf-ok").onchange=e=>$("#cf-go").disabled=!e.target.checked;
   $("#cf-back").onclick=()=>studentEntry();
   $("#cf-go").onclick=async()=>{$("#cf-go").disabled=true;$("#cf-go").textContent="Đang tạo đề…";
-    try{await ensureUser();const B=await loadBank(c.lop.hocPhan);const de=buildDe(B);
+    try{await ensureUser();const B=await loadBank(c.lop.hocPhan);const de=buildDe(B,c.lop.hocPhan);
       await db.doc("pnl_dg_bai/"+c.id).set({maLop:c.ma,mssv:c.sv,hoTen:c.svd.hoTen,uid:USER.uid,status:"dang-lam",startedAt:FV.serverTimestamp(),de,hocPhan:c.lop.hocPhan,roiTrang:0});
       const bai=(await db.doc("pnl_dg_bai/"+c.id).get()).data();startExam({...c,bai});
     }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm.":(x.message||"Lỗi kết nối, thử lại.");$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
@@ -305,7 +315,7 @@ async function startExam(c){
   const start=toDate(c.bai.startedAt)||new Date();const close=toDate(c.lop.closeAt);
   let end=new Date(start.getTime()+(c.lop.thoiGian|0)*60000);if(close&&close<end)end=close;
   EXAM={...c,B,de,answers,essay,end,stamp,roi:c.bai.roiTrang|0,active:true,dirty:false,lastSave:0};
-  renderExam();
+  renderExam();if(EXAM.roi>MAX_ROI)submit(true,"roi");else roiWarn();
 }
 function optHtml(q,id,perm,sel){
   const order=(perm||"").split("").map(Number);const ord=order.length===q.o.length?order:[...q.o.keys()];
@@ -343,17 +353,22 @@ async function save(force){const E=EXAM;if(!E||!E.active||(!E.dirty&&!force))ret
   catch(x){console.warn(x);$("#x-save").textContent="Chưa lưu được lên máy chủ (đã giữ trên máy)"}}
 function tick(){const E=EXAM;if(!E||!E.active)return;const s=Math.max(0,Math.round((E.end-new Date())/1000));const el=$("#x-clock");if(el){el.textContent=pad(Math.floor(s/60))+":"+pad(s%60);el.classList.toggle("low",s<=300)}
   if(s<=0)submit(true)}
-async function submit(auto){const E=EXAM;if(!E||!E.active)return;E.active=false;clearInterval(E.timer);clearInterval(E.saver);
-  $("#app").insertAdjacentHTML("afterbegin",'<div class="card narrow" id="x-wait"><p>'+(auto?"Hết giờ. ":"")+'Đang nộp bài…</p></div>');window.scrollTo(0,0);
+async function submit(auto,why){const E=EXAM;if(!E||!E.active)return;E.active=false;E.why=why||"";clearInterval(E.timer);clearInterval(E.saver);
+  $("#app").insertAdjacentHTML("afterbegin",'<div class="card narrow" id="x-wait"><p>'+(why==="roi"?"Bạn đã rời trang quá "+MAX_ROI+" lần — bài bị khóa và tự động nộp. ":auto?"Hết giờ. ":"")+'Đang nộp bài…</p></div>');window.scrollTo(0,0);
   for(let i=0;i<3;i++){try{await db.doc("pnl_dg_bai/"+E.id).update({answers:E.answers,essay:E.essay.slice(0,20000),roiTrang:E.roi,status:"da-nop",submittedAt:FV.serverTimestamp()});
-      store.del("pndg-"+E.id);const bai=(await db.doc("pnl_dg_bai/"+E.id).get()).data();return doneView(E.lop,E.svd,bai)}catch(x){console.warn(x);await new Promise(r=>setTimeout(r,1500))}}
+      store.del("pndg-"+E.id);const bai=(await db.doc("pnl_dg_bai/"+E.id).get()).data();return doneView(E.lop,E.svd,bai,E.why)}catch(x){console.warn(x);await new Promise(r=>setTimeout(r,1500))}}
   E.active=true;$("#x-wait").innerHTML='<p class="err">Chưa nộp được bài (mất mạng hoặc đã quá giờ đóng). Bài vẫn được giữ trên máy này. Kiểm tra mạng rồi bấm nộp lại, hoặc báo ngay cho giảng viên.</p><button class="btn primary" id="x-retry">Nộp lại</button>';
   $("#x-retry").onclick=()=>submit(false);
 }
-function doneView(lop,svd,bai){EXAM=null;
+function doneView(lop,svd,bai,why){EXAM=null;if(!why&&(bai.roiTrang|0)>MAX_ROI)why="roi";
   $("#app").innerHTML=`<section class="card narrow"><h1>Đã nộp bài</h1><p class="ok">Bài làm của ${esc(svd.hoTen)} (${esc(bai.mssv)}) đã được ghi nhận${bai.submittedAt?" lúc "+esc(fmtDT(toDate(bai.submittedAt))):""}.</p>
-  <p class="msg">Kết quả sẽ do giảng viên thông báo. Bạn có thể đóng trang này.</p><a class="btn" href="../index.html" style="display:inline-block;text-decoration:none">Về trang chủ</a></section>`}
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&EXAM&&EXAM.active){EXAM.roi++;EXAM.dirty=true;store.set("pndg-"+EXAM.id,JSON.stringify({stamp:EXAM.stamp,answers:EXAM.answers,essay:EXAM.essay}));save(true)}});
+  ${why==="roi"?`<p class="err">Bài bị khóa và tự động nộp vì rời khỏi trang làm bài quá ${MAX_ROI} lần.</p>`:""}<p class="msg">Kết quả sẽ do giảng viên thông báo. Bạn có thể đóng trang này.</p><a class="btn" href="../index.html" style="display:inline-block;text-decoration:none">Về trang chủ</a></section>`}
+document.addEventListener("visibilitychange",()=>{if(!EXAM||!EXAM.active)return;
+  if(document.hidden){EXAM.roi++;EXAM.dirty=true;store.set("pndg-"+EXAM.id,JSON.stringify({stamp:EXAM.stamp,answers:EXAM.answers,essay:EXAM.essay}));
+    if(EXAM.roi>MAX_ROI)submit(true,"roi");else save(true)}
+  else roiWarn()});
+function roiWarn(){const E=EXAM;if(!E||!E.active||!E.roi)return;let w=$("#x-roi");if(!w){$("#app").insertAdjacentHTML("afterbegin",'<div id="x-roi" role="alert" style="background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-weight:600"></div>');w=$("#x-roi")}
+  w.textContent="Bạn đã rời khỏi trang làm bài "+E.roi+"/"+MAX_ROI+" lần. Rời trang quá "+MAX_ROI+" lần, bài sẽ bị khóa và tự động nộp.";w.scrollIntoView({block:"nearest"})}
 window.addEventListener("beforeunload",e=>{if(EXAM&&EXAM.active){e.preventDefault();e.returnValue=""}});
 
 /* =================== QUẢN TRỊ =================== */
@@ -451,12 +466,14 @@ function tabDiem(){
     ${nop.length?`<div class="card"><h3 style="margin-top:0">Phổ điểm (thang 10)</h3><div class="bars">${bins.map(x=>`<div style="height:${x.n/mx*100}%"><span>${x.n}</span></div>`).join("")}</div><div class="barlab">${bins.map(x=>"<span>"+x.t+"</span>").join("")}</div>
       ${top.length?`<h3>Câu sai nhiều nhất</h3><ol>${top.map(([id,n])=>{const q=AD.B.byId[id];return `<li>${esc(q?q.q:id)} <span class="msg">(${id} · ${n}/${nop.length} sai)</span></li>`}).join("")}</ol>`:""}</div>`:""}
     <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button></div>
-    <p class="msg">Điểm tự luận ghi "gợi ý" là điểm máy chấm theo từ khóa, chưa được sếp xác nhận. Bấm vào tên sinh viên để xem bài và chấm.</p>
-    <div class="card tblwrap"><table><thead><tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Trạng thái</th><th class="num">LT /60</th><th class="num">TH /20</th><th class="num">TL /20</th><th class="num">Tổng /100</th><th class="num">Thang 10</th><th class="num">Rời trang</th><th></th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${r.b?`<a href="#" data-sv="${esc(r.sv.mssv)}">${esc(r.sv.hoTen)}</a>`:esc(r.sv.hoTen)}</td>
+    <p class="msg">Điểm là tổng bài trên thang 10 (100 điểm quy đổi). Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
+    <div class="card tblwrap"><table class="sheet"><thead><tr><th class="c">STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Trạng thái</th><th class="c">Điểm<br><span class="msg">(thang 10)</span></th><th class="c">Tự luận</th><th class="c">Rời trang</th><th>Thao tác</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${esc(r.sv.hoTen)}</td><td>${esc(r.sv.ngaySinh||"")}</td>
       <td>${!r.b?'<span class="msg">Chưa làm</span>':r.b.status==="da-nop"?'<span class="pill open">Đã nộp</span>':'<span class="pill wait">Đang làm</span>'}</td>
-      <td class="num">${r.b?r.lt:""}</td><td class="num">${r.b?r.th:""}</td><td class="num">${r.b?String(r.tl).replace(".",",")+(r.xn?"":' <span class="msg">gợi ý</span>'):""}</td><td class="num">${r.b?String(r.tong).replace(".",","):""}</td><td class="num"><b>${r.b?String(r.t10).replace(".",","):""}</b></td><td class="num">${r.b?r.b.roiTrang|0:""}</td>
-      <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> <button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
+      <td class="c score">${r.b?String(r.t10).replace(".",",")+(r.xn?"":' <span class="msg">tạm</span>'):""}</td>
+      <td class="c">${!r.b?"":r.xn?'<span class="ok">Đã chấm</span>':`<button class="btn small primary" data-sv="${esc(r.sv.mssv)}">Chấm tự luận</button>`}</td>
+      <td class="c">${r.b?`<span class="${(r.b.roiTrang|0)>MAX_ROI?"wrong":""}">${r.b.roiTrang|0}</span>`:""}</td>
+      <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> ${r.xn?`<button class="btn small" data-sv="${esc(r.sv.mssv)}">Sửa điểm TL</button> `:""}<button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
   $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
   $("#d-re").onclick=()=>classView(AD.ma);$("#d-xls").onclick=()=>exportXls(rows);
   $$("[data-sv]").forEach(a=>a.onclick=e=>{e.preventDefault();gradeView(a.dataset.sv)});
@@ -522,11 +539,12 @@ function paperView(mssv){
 }
 function loadXLSX(){return window.XLSX?Promise.resolve(window.XLSX):new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=()=>res(window.XLSX);s.onerror=()=>rej(new Error("Không tải được thư viện Excel"));document.head.appendChild(s)})}
 async function exportXls(rows){
-  const X=await loadXLSX();const st=r=>!r.b?"Chưa làm":r.b.status==="da-nop"?"Đã nộp":"Đang làm";
-  const data=[["STT","MSSV","Họ và tên","Ngày sinh","Trạng thái","Bắt đầu","Nộp lúc","Lý thuyết (/60)","Tình huống (/20)","Tự luận (/20)","Tự luận đã xác nhận","Tổng (/100)","Điểm thang 10","Rời trang (lần)"]];
-  rows.forEach((r,i)=>data.push([i+1,r.sv.mssv,r.sv.hoTen,r.sv.ngaySinh||"",st(r),r.b?fmtDT(toDate(r.b.startedAt)):"",r.b&&r.b.submittedAt?fmtDT(toDate(r.b.submittedAt)):"",r.b?r.lt:"",r.b?r.th:"",r.b?r.tl:"",r.b?(r.xn?"Có":"Chưa"):"",r.b?r.tong:"",r.b?r.t10:"",r.b?r.b.roiTrang|0:""]));
-  const ws=X.utils.aoa_to_sheet(data);ws["!cols"]=[{wch:5},{wch:12},{wch:26},{wch:12},{wch:10},{wch:17},{wch:17},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:9}];
+  const X=await loadXLSX();
+  const data=[["STT","Mã sinh viên","Họ và tên","Ngày sinh","Điểm"]];
+  rows.forEach((r,i)=>data.push([i+1,r.sv.mssv,r.sv.hoTen,r.sv.ngaySinh||"",r.b?r.t10:""]));
+  const ws=X.utils.aoa_to_sheet(data);ws["!cols"]=[{wch:5},{wch:14},{wch:28},{wch:12},{wch:8}];
   const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Bang diem");X.writeFile(wb,"Bang-diem-"+AD.ma+".xlsx");
+  const cho=rows.filter(r=>r.b&&!r.xn).length;if(cho)alertMsg("Đã xuất bảng điểm. Lưu ý: còn "+cho+" bài chưa xác nhận điểm tự luận, điểm của các bài này đang là điểm tạm.");
 }
 function tabDS(){
   $("#tab").innerHTML=`<div class="card"><h3 style="margin-top:0">Thêm sinh viên thủ công</h3>
