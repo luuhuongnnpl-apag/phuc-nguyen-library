@@ -500,12 +500,37 @@ async function exportXls(rows){
   const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Bang diem");X.writeFile(wb,"Bang-diem-"+AD.ma+".xlsx");
 }
 function tabDS(){
-  $("#tab").innerHTML=`<div class="card"><h3 style="margin-top:0">Nhập danh sách sinh viên</h3>
-    <p class="msg">Chọn file Excel (.xlsx, .xls, .csv) có các cột Mã sinh viên, Họ và tên, Ngày sinh (cột "Họ đệm" + "Tên" tách riêng cũng được). Hoặc sao chép các dòng trong Excel rồi dán vào ô dưới (mỗi dòng: MSSV ⇥ Họ tên ⇥ Ngày sinh).</p>
+  $("#tab").innerHTML=`<div class="card"><h3 style="margin-top:0">Thêm sinh viên thủ công</h3>
+    <form id="ds-one" novalidate><div class="row">
+      <div style="flex:2 1 220px"><label class="lab" for="one-ten">Họ và tên</label><input type="text" id="one-ten" maxlength="80" autocomplete="off"></div>
+      <div><label class="lab" for="one-sv">Mã sinh viên</label><input type="text" id="one-sv" maxlength="20" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></div>
+      <div><label class="lab" for="one-ns">Ngày sinh <span class="msg">(không bắt buộc)</span></label><input type="text" id="one-ns" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"></div></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" id="one-go">Thêm vào lớp</button><span class="err" id="one-err" role="alert"></span><span class="ok" id="one-ok" aria-live="polite"></span></div></form></div>
+    <div class="card"><h3 style="margin-top:0">Nhập danh sách sinh viên</h3>
+    <p class="msg">Chọn file Excel (.xlsx, .xls, .csv) có các cột Mã sinh viên, Họ và tên và cột Ngày sinh nếu có (cột "Họ đệm" + "Tên" tách riêng cũng được). Hoặc sao chép các dòng trong Excel rồi dán vào ô dưới (mỗi dòng: MSSV ⇥ Họ tên ⇥ Ngày sinh — ngày sinh có thể bỏ trống).</p>
     <div class="row"><div><input type="file" id="ds-file" accept=".xlsx,.xls,.csv"></div></div>
     <div class="row"><div><textarea id="ds-paste" rows="5" placeholder="2251010001	Nguyễn Văn A	01/02/2005"></textarea></div></div>
     <div class="row"><button class="btn" id="ds-read">Đọc danh sách dán vào</button></div><div id="ds-prev"></div></div>
-    <div class="card tblwrap"><h3 style="margin-top:0">Danh sách hiện tại (${AD.ds.length})</h3>${AD.ds.length?`<table><thead><tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th></tr></thead><tbody>${AD.ds.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.mssv)}</td><td>${esc(s.hoTen)}</td><td>${esc(s.ngaySinh||"")}</td></tr>`).join("")}</tbody></table>`:'<p class="msg">Chưa có sinh viên.</p>'}</div>`;
+    <div class="card tblwrap"><h3 style="margin-top:0">Danh sách hiện tại (${AD.ds.length})</h3>${AD.ds.length?`<table><thead><tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th></th></tr></thead><tbody>${AD.ds.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.mssv)}</td><td>${esc(s.hoTen)}</td><td>${esc(s.ngaySinh||"")}</td><td><button class="btn small" data-edit="${esc(s.mssv)}">Sửa</button> <button class="btn small danger" data-del="${esc(s.mssv)}">Xóa</button></td></tr>`).join("")}</tbody></table>`:'<p class="msg">Chưa có sinh viên.</p>'}</div>`;
+  const f1=$("#ds-one");let editing=null;
+  f1.onsubmit=async e=>{e.preventDefault();const err=$("#one-err"),ok=$("#one-ok");err.textContent="";ok.textContent="";
+    const hoTen=$("#one-ten").value.replace(/\s+/g," ").trim(),mssv=$("#one-sv").value.trim().toUpperCase().replace(/\s+/g,""),ns=$("#one-ns").value.trim();
+    if(!hoTen){err.textContent="Nhập họ và tên.";$("#one-ten").focus();return}
+    if(!/^[A-Z0-9_-]{2,20}$/.test(mssv)){err.textContent="Mã sinh viên chỉ gồm chữ, số, dấu gạch (2–20 ký tự).";$("#one-sv").focus();return}
+    if(ns&&!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(ns)){err.textContent="Ngày sinh ghi theo dạng dd/mm/yyyy, hoặc để trống.";$("#one-ns").focus();return}
+    const ngaySinh=ns?ns.split("/").map((x,i)=>i<2?pad(+x):x).join("/"):"";
+    let rows=AD.ds.slice();
+    if(editing&&editing!==mssv&&rows.some(r=>r.mssv===mssv)){err.textContent="Mã sinh viên "+mssv+" đã có trong lớp.";return}
+    if(!editing&&rows.some(r=>r.mssv===mssv)){err.textContent="Mã sinh viên "+mssv+" đã có trong lớp. Bấm Sửa ở dòng đó nếu muốn đổi thông tin.";return}
+    if(editing){if(editing!==mssv&&AD.bai[editing]){err.textContent="Sinh viên này đã có bài làm, không đổi mã sinh viên được.";return}rows=rows.map(r=>r.mssv===editing?{mssv,hoTen,ngaySinh}:r)}else rows.push({mssv,hoTen,ngaySinh});
+    $("#one-go").disabled=true;
+    try{await saveRoster(AD.ma,rows);AD.ds=rows;AD.l.siSo=rows.length;const was=editing;editing=null;AD.tab="ds";tabDS();
+      $("#one-ok").textContent=(was?"Đã sửa ":"Đã thêm ")+hoTen+" ("+mssv+").";const tb=$$(".tabs button")[1];if(tb)tb.textContent="Danh sách sinh viên ("+rows.length+")";$("#one-ten").focus()}
+    catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+").";$("#one-go").disabled=false}};
+  $$("[data-edit]").forEach(b=>b.onclick=()=>{const r=AD.ds.find(x=>x.mssv===b.dataset.edit);if(!r)return;editing=r.mssv;$("#one-ten").value=r.hoTen;$("#one-sv").value=r.mssv;$("#one-ns").value=r.ngaySinh||"";$("#one-go").textContent="Lưu thay đổi";$("#one-ok").textContent="";f1.scrollIntoView({behavior:"smooth"});$("#one-ten").focus()});
+  $$("[data-del]").forEach(b=>b.onclick=async()=>{const r=AD.ds.find(x=>x.mssv===b.dataset.del);if(!r)return;
+    const has=!!AD.bai[r.mssv];if(!await ask("Xóa sinh viên khỏi lớp","Xóa <b>"+esc(r.hoTen)+"</b> ("+esc(r.mssv)+") khỏi danh sách lớp."+(has?" Bài làm đã có của sinh viên này vẫn được giữ nhưng không hiện trong bảng điểm.":""),"Xóa",true))return;
+    const rows=AD.ds.filter(x=>x.mssv!==r.mssv);try{await saveRoster(AD.ma,rows);AD.ds=rows;AD.l.siSo=rows.length;tabDS();const tb=$$(".tabs button")[1];if(tb)tb.textContent="Danh sách sinh viên ("+rows.length+")"}catch(x){alertMsg("Không xóa được: "+(x.code||x.message))}});
   $("#ds-file").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const X=await loadXLSX();const wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:true});const aoa=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:""});preview(parseRows(aoa,X))}catch(x){$("#ds-prev").innerHTML='<p class="err">Không đọc được file: '+esc(x.message)+'</p>'}};
   $("#ds-read").onclick=()=>preview(parseRows($("#ds-paste").value.split(/\r?\n/).filter(s=>s.trim()).map(s=>s.split(/\t|;|,(?=\s*\S)/)),null));
 }
