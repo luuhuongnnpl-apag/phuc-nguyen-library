@@ -255,7 +255,9 @@ function studentEntry(msg){
   };
 }
 function uerr(m){const e=new Error(m);e.userMsg=m;return e}
+async function ensureUser(){if(auth.currentUser){USER=auth.currentUser;return USER}USER=(await auth.signInAnonymously()).user;return USER}
 async function checkIn(ma,sv){
+  await ensureUser();
   const ls=await db.doc("pnl_dg_lop/"+ma).get();
   if(!ls.exists)throw uerr("Không tìm thấy mã lớp. Kiểm tra lại với giảng viên.");
   const lop=ls.data();
@@ -287,7 +289,7 @@ function confirmView(c){
   $("#cf-ok").onchange=e=>$("#cf-go").disabled=!e.target.checked;
   $("#cf-back").onclick=()=>studentEntry();
   $("#cf-go").onclick=async()=>{$("#cf-go").disabled=true;$("#cf-go").textContent="Đang tạo đề…";
-    try{const B=await loadBank(c.lop.hocPhan);const de=buildDe(B);
+    try{await ensureUser();const B=await loadBank(c.lop.hocPhan);const de=buildDe(B);
       await db.doc("pnl_dg_bai/"+c.id).set({maLop:c.ma,mssv:c.sv,hoTen:c.svd.hoTen,uid:USER.uid,status:"dang-lam",startedAt:FV.serverTimestamp(),de,hocPhan:c.lop.hocPhan,roiTrang:0});
       const bai=(await db.doc("pnl_dg_bai/"+c.id).get()).data();startExam({...c,bai});
     }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm.":(x.message||"Lỗi kết nối, thử lại.");$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
@@ -540,7 +542,7 @@ function tabCai(){
 
 /* ====== KHỞI ĐỘNG ====== */
 (async function boot(){
-  try{let u=await new Promise(res=>{const off=auth.onAuthStateChanged(x=>{off();res(x)})});if(!u)u=(await auth.signInAnonymously()).user;USER=u;ADMIN=isAdminUser(u)}
+  try{let u=await new Promise(res=>{const off=auth.onAuthStateChanged(x=>{off();res(x)})});if(!u)u=(await auth.signInAnonymously()).user;USER=u;ADMIN=isAdminUser(u);auth.onAuthStateChanged(x=>{if(x){USER=x;ADMIN=isAdminUser(x)}})}
   catch(e){console.error(e);$("#app").innerHTML='<div class="card narrow"><p class="err">Không kết nối được máy chủ. Kiểm tra mạng rồi tải lại trang.</p></div>';return}
   route();
 })();
