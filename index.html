@@ -533,6 +533,7 @@ function admin2HTML(){
   const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=`<div><label class="lab" for="c-max">Số người được dùng mã</label><input type="number" id="c-max" min="1" max="1000" value="20" required></div>`;
   return head+`<main class="wrap admin">
+  <section class="frame"><div class="ftitle">Đánh giá định kỳ</div><p class="msg">Tạo lớp, nhập danh sách sinh viên, mở bài kiểm tra, xem bảng điểm và chấm tự luận.</p><div class="row"><a class="btn primary" href="danh-gia/#quan-tri" style="text-decoration:none">Mở trang quản trị Đánh giá định kỳ</a></div></section>
   <section class="frame" id="c-frame"><div class="ftitle" id="c-title">Cấp mã</div>
     <form id="c-form" novalidate class="admin">
       <p class="msg" id="c-edit-note" hidden></p>
@@ -581,7 +582,7 @@ async function admin2Bind(){
   const fa=$("#fa-form");
   if(fa){fa.addEventListener("submit",async e=>{e.preventDefault();const em=$("#fa-email").value.trim(),pw=$("#fa-pw").value;if(!em||!pw){$("#fa-err").textContent="Nhập email và mật khẩu.";return}
       $("#fa-err").textContent="Đang đăng nhập…";
-      try{const r=await fbAuth.signInWithEmailAndPassword(em,pw);UID=r.user.uid;isOwner=UID===FB_ADMIN_UID;if(!isOwner){await fbAuth.signOut();$("#fa-err").textContent="Tài khoản này không phải quản trị.";return}renderWho();route("quan-ly-ma")}
+      try{const r=await fbAuth.signInWithEmailAndPassword(em,pw);UID=r.user.uid;isOwner=UID===FB_ADMIN_UID;if(!isOwner){await fbAuth.signOut();$("#fa-err").textContent="Tài khoản này không phải quản trị.";return}grantAdmin();renderWho();route("quan-ly-ma")}
       catch(err){$("#fa-err").textContent=/invalid|wrong|not-found/.test(err.code||"")?"Email hoặc mật khẩu chưa đúng.":err.code==="auth/too-many-requests"?"Sai quá nhiều lần, chờ ít phút rồi thử lại.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}});return}
   const mg=$("#mg-form");
   if(mg){const run=async(pw,auto)=>{$("#mg-err").textContent="";$("#mg-msg").textContent="Đang chuyển mã lớp…";
@@ -607,7 +608,7 @@ async function admin2Bind(){
     return;
   }
   bindToken();
-  if($("#l-out"))$("#l-out").onclick=async()=>{ST=null;store.del(AKEY);if(FBW&&fbAuth){await fbAuth.signOut();isOwner=false;try{UID=(await fbAuth.signInAnonymously()).user.uid}catch(e){}}route("quan-ly-ma")};
+  if($("#l-out"))$("#l-out").onclick=async()=>{ST=null;store.del(AKEY);if(FBW&&fbAuth){await fbAuth.signOut();isOwner=false;dropAdmin();renderWho();try{UID=(await fbAuth.signInAnonymously()).user.uid}catch(e){}}route("quan-ly-ma")};
   if(!$("#c-form"))return;
   const web=ADM.web();
   let ITEMS=[],EDIT=null;
@@ -705,10 +706,15 @@ function scopeForRoute(id){const p=tlParse(id);if(p)return p.k;return course(id)
 function needsCode(id){if(FREE.includes(id))return false;if(!session)return true;const xs=session.courses;if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return false;const target=scopeForRoute(id);return !!target&&!xs.includes(target)}
 function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
 function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
+/* 05/11/2026: tài khoản quản trị vào mọi học phần, không cần mã */
+const ADMIN_SESSION={code:"QUAN-TRI",label:"Giảng viên (quản trị)",han:"2099-12-31",courses:["*"],admin:true};
+function grantAdmin(){if(!isOwner)return;session=ADMIN_SESSION;store.set(KEY,JSON.stringify(ADMIN_SESSION));expiredMsg=""}
+function dropAdmin(){if(session&&session.admin){session=null;store.del(KEY)}}
 function renderWho(){const w=$("#who");
-  if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';}
+  if(session&&session.admin){w.innerHTML="Giảng viên (quản trị) · mở mọi học phần";}
+  else if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';}
   else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>';
-  w.insertAdjacentHTML("beforeend",'<br><button type="button" id="manage-codes">Quản lý mã</button>');
+  w.insertAdjacentHTML("beforeend",'<br><button type="button" id="manage-codes">Quản lý mã</button><br><a href="danh-gia/" id="dg-link" style="color:inherit;font-weight:700">Đánh giá định kỳ</a>');
   if($("#logout"))$("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")};
   if($("#login"))$("#login").onclick=()=>{pending=null;showGate()};
   $("#manage-codes").onclick=()=>route("quan-ly-ma");
@@ -950,11 +956,12 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
     DB={doc:p=>fs.doc("pnl_"+p),collection:p=>fs.collection("pnl_"+p)};FBW=true;
     let u=await new Promise(res=>{const off=fbAuth.onAuthStateChanged(x=>{off();res(x)})});
     if(!u)u=(await fbAuth.signInAnonymously()).user;
-    UID=u.uid;isOwner=u.uid===FB_ADMIN_UID;
+    UID=u.uid;isOwner=u.uid===FB_ADMIN_UID;if(isOwner)grantAdmin();else dropAdmin();
     MIGRATED=(await DB.doc("meta/migrated").get()).exists}
   catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
+  if(isOwner){grantAdmin();renderWho()}
   dbReadyRes();
-  if(session){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(async r=>{if(FBW&&!MIGRATED&&r&&!r.ok&&r.why==="notfound"){try{r=await staticCheck(session.code,"")}catch(e){}}if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
+  if(session&&!session.admin){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(async r=>{if(FBW&&!MIGRATED&&r&&!r.ok&&r.why==="notfound"){try{r=await staticCheck(session.code,"")}catch(e){}}if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
       store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
       if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
   await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
