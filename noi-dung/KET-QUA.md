@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 21:39 05/11/2026
+# Kết quả dựng nội dung — 21:50 05/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/index.html
+      - index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42047154439 · commit ce84e03
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42048824439 · commit 6f64cc7
