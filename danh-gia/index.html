@@ -280,7 +280,7 @@ function chamTLPre(c,essay){
   return c.guide.map((y,i)=>{const kw=c.kwPre[i]||[];
     const hit=kw.filter(k=>{const n=normTL(k).trim();const m=n.match(/^dieu (\d+)$/);return m?DS.has(m[1]):T.includes(" "+n)||T.includes("/"+n)||(n.includes(" ")&&coGan(TA,n.split(" ")))});
     const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.5?1:sc>=0.35?0.75:sc>=0.2?0.5:sc>=0.1?0.25:0;
-    return {y,kw,ct:[],hit,hitC:[],sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*10*(1-PHAN_BUOC))}});
+    return {y,kw,ct:[],hit,hitC:[],tomTat:i===0,sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*10*(1-PHAN_BUOC))}});
 }
 /* Số liệu kết quả: tiền quy về đồng (1,95 tỷ = 1.950 triệu), kèm đơn vị năm/tháng/ngày/lần/%/m² */
 const MULT={ty:1e9,trieu:1e6,nghin:1e3,ngan:1e3,dong:1};
@@ -329,7 +329,10 @@ function chamBuoc(c,essay,tlMax){
     return {q,muc,per,thay:sec!=null?"có đoạn "+(i+1):cue?"có nội dung liên quan":"chưa thấy"}});
 }
 /* Tổng điểm tự luận từ mức từng bước (b) và từng ý (v) */
-function tongTL(bs,ys,b,v){return r2(bs.reduce((s,x,i)=>s+(b?b[i]:x.muc)*x.per,0)+ys.reduce((s,y,i)=>s+(v?v[i]:y.muc)*y.per,0))}
+/* Sếp 06/11/2026: phải có ít nhất 1 ý nội dung đúng (đạt từ mức "Một phần") thì mới tính điểm tiêu chí 1 (làm đủ các bước) — chặn bài chép đề.
+   Kỹ năng tư vấn: không tính bước 1 (tóm tắt sự việc chép được từ đề). */
+function coYDung(ys,v){return ys.some((y,i)=>!y.tomTat&&(v?v[i]:y.muc)>=0.5)}
+function tongTL(bs,ys,b,v){const nd=ys.reduce((s,y,i)=>s+(v?v[i]:y.muc)*y.per,0);if(!coYDung(ys,v))return r2(nd);return r2(bs.reduce((s,x,i)=>s+(b?b[i]:x.muc)*x.per,0)+nd)}
 const tlMaxOf=B=>B.tl?100:CT.dTL;
 
 /* ====== PHIẾU LÀM BÀI (điền thông tin theo các bước tư vấn — Hồ sơ TVPLDS) ======
@@ -625,7 +628,7 @@ function tabDiem(){
   $("#tab").innerHTML=`<div class="stats"><div class="stat"><b>${nop.length}/${AD.ds.length}</b><span>đã nộp</span></div><div class="stat"><b>${dang.length}</b><span>đang làm</span></div><div class="stat"><b>${t10.length?avg.toString().replace(".",","):"–"}</b><span>điểm TB (thang 10)</span></div><div class="stat"><b>${chuaXN}</b><span>bài tự luận chưa xác nhận</span></div></div>
     ${nop.length?`<div class="card"><h3 style="margin-top:0">Phổ điểm (thang 10)</h3><div class="bars">${bins.map(x=>`<div style="height:${x.n/mx*100}%"><span>${x.n}</span></div>`).join("")}</div><div class="barlab">${bins.map(x=>"<span>"+x.t+"</span>").join("")}</div>
       ${top.length?`<h3>Câu sai nhiều nhất</h3><ol>${top.map(([id,n])=>{const q=AD.B.byId[id];return `<li>${esc(q?q.q:id)} <span class="msg">(${id} · ${n}/${nop.length} sai)</span></li>`}).join("")}</ol>`:""}</div>`:""}
-    <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button></div>
+    <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button>${nop.length?'<button class="btn" id="d-cl">Chấm lại tự luận theo đáp án mới</button>':""}</div>
     <p class="msg">Điểm là tổng bài trên thang 10 (100 điểm quy đổi). Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
     <div class="card tblwrap"><table class="sheet"><thead><tr><th class="c">STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Trạng thái</th><th class="c">Điểm<br><span class="msg">(thang 10)</span></th><th class="c">Tự luận</th><th class="c">Rời trang</th><th>Thao tác</th></tr></thead><tbody>
     ${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${esc(r.sv.hoTen)}</td><td>${esc(r.sv.ngaySinh||"")}</td>
@@ -636,6 +639,11 @@ function tabDiem(){
       <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> ${r.xn?`<button class="btn small" data-sv="${esc(r.sv.mssv)}">Sửa điểm TL</button> `:""}<button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
   $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
   $("#d-re").onclick=()=>classView(AD.ma);$("#d-xls").onclick=()=>exportXls(rows);
+  if($("#d-cl"))$("#d-cl").onclick=async()=>{const xs=nop.filter(r=>AD.cham[r.sv.mssv]&&AD.cham[r.sv.mssv].xacNhan);
+    if(!await ask("Chấm lại tự luận","Tất cả "+nop.length+" bài đã nộp sẽ dùng điểm máy chấm theo đáp án hiện hành. "+(xs.length?"<b>"+xs.length+"</b> bài đã xác nhận sẽ trở về trạng thái \"tạm\" (điểm cũ được lưu lại trong dữ liệu chấm); sếp xác nhận lại sau.":"Chưa có bài nào đã xác nhận, điểm tạm đã tự cập nhật."),"Chấm lại"))return;
+    try{for(const r of xs){const c=AD.cham[r.sv.mssv];await db.doc("pnl_dg_cham/"+AD.ma+"__"+r.sv.mssv).set({maLop:AD.ma,mssv:r.sv.mssv,xacNhan:false,note:c.note||"",
+        cu:{diem:c.diem==null?null:c.diem,muc:c.muc||null,buoc:c.buoc||null,luc:c.luc||null},chamLai:FV.serverTimestamp()})}
+      classView(AD.ma)}catch(x){alertMsg("Không chấm lại được: "+(x.code||x.message))}};
   $$("[data-sv]").forEach(a=>a.onclick=e=>{e.preventDefault();gradeView(a.dataset.sv)});
   $$("[data-reset]").forEach(b=>b.onclick=async()=>{const sv=b.dataset.reset;const r=rows.find(x=>x.sv.mssv===sv);
     if(!await ask("Mở lại lượt làm bài","Xóa bài làm hiện có của <b>"+esc(r.sv.hoTen)+"</b> ("+esc(sv)+") để sinh viên làm lại từ đầu với đề mới. Không khôi phục được bài cũ.","Xóa và mở lại",true))return;
