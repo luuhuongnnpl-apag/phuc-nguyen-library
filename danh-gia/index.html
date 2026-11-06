@@ -137,6 +137,8 @@ const DAT_KEY="KNTV-APAG-2026";
 const MAX_ROI=10; /* rời trang quá số lần này thì tự nộp bài */
 /* Cấu trúc đề (sửa 06/11/2026): 30 lý thuyết + 10 tình huống ABCD (2,25 điểm/câu = 90) + 1 tự luận (10 điểm) = 100 điểm, quy về thang 10 */
 const CT={lv:{NB:10,TH:12,VD:8},lt:30,thCases:[4,3,3],dLT:2.25,dTH:2.25,dTL:10};
+/* Tự luận (06/11/2026): tiêu chí 1 — làm đủ các bước, trả lời đủ câu hỏi = 50% điểm tự luận; tiêu chí 2 — nội dung chấm theo từ khóa = 50% */
+const PHAN_BUOC=0.5;
 const fz=x=>String(r2(x)).replace(".",",");
 /* Chấm tự luận theo từ khóa: ngưỡng gợi ý mức đạt của từng ý */
 const NGUONG={dat:0.45,motPhan:0.2};
@@ -238,15 +240,39 @@ function tuKhoa(c){
   const given=bigrams(c.text+" "+(c.ask||[]).join(" "));
   return c.guide.map(y=>{let kw=[...bigrams(y)].filter(b=>!given.has(b));if(kw.length<3)kw=[...bigrams(y)];return {y,kw,ct:[...cites(y)]}});
 }
+/* ====== CHẤM RỘNG TAY: sinh viên trả lời theo ý hiểu ======
+   1) Từ đồng nghĩa: bài có một cách nói trong nhóm thì coi như có cả nhóm.
+   2) Cụm từ khóa không cần viết liền: các chữ đứng gần nhau (cách ≤ 3 chữ, không kể thứ tự) là tính.
+   3) Cụm từ khóa ≥ 3 chữ: có đủ trừ 1 chữ là tính. */
+const SYN=[["chet","qua doi","tu tran","mat nam","da mat"],["cuu chua","dieu tri","chua tri","chua benh","vien phi"],["vo hieu","khong co hieu luc","khong co gia tri phap ly"],
+ ["co hieu luc","co gia tri phap ly","hop le"],["hoan tra","tra lai","boi hoan","hoan lai"],["khoi kien","kien ra toa","nop don ra toa","nop don khoi kien","kien len toa","dua ra toa"],
+ ["thuong luong","dam phan","thoa thuan lai","hoa giai"],["phat coc","phat tien coc","den coc","boi thuong tien coc"],["mat coc","mat tien coc","mat khoan coc"],
+ ["nguoi thua ke","nguoi huong thua ke","nguoi duoc huong di san","nguoi huong di san"],["chia deu","chia bang nhau","bang nhau","ngang nhau"],
+ ["het thoi hieu","qua thoi hieu","qua han khoi kien","het han khoi kien"],["con thoi hieu","chua het thoi hieu","van trong thoi hieu","con han khoi kien","trong thoi hieu"],
+ ["khong phai chiu","khong bi","khong phai","mien"],["tai san rieng","tai san ca nhan","cua rieng"],["tai san chung","cua chung","so huu chung"],
+ ["hop dong","khe uoc","giao keo"],["chuyen nhuong","ban dat","mua ban dat","sang nhuong"],["di san","tai san de lai","tai san cua nguoi chet"],
+ ["boi thuong","den bu","boi hoan thiet hai"],["thiet hai","ton that","mat mat"],["co loi","loi cua","vi pham"],["don phuong cham dut","tu y cham dut","tu cham dut","huy ngang"],
+ ["dat coc","tien coc","khoan coc"],["uy quyen","giay uy quyen","dai dien"],["the chap","cam co","dang vay ngan hang"],["khang cao","phuc tham"],["an le","ban an mau"]];
+const STOPS=new Set([...STOP].map(strip));
+function moRong(t){t=" "+strip(t).replace(/[^a-z0-9\/%²]+/g," ").replace(/\s+/g," ")+" ";const add=[];
+  SYN.forEach(g=>{if(g.some(v=>t.includes(" "+v+" ")))add.push(...g)});return t+(add.length?" . "+add.join(" . ")+" ":"")}
+function tokArr(t){return strip(t).split(/[^a-z0-9\/%²]+/).filter(Boolean)}
+/* tập cặp chữ "gần nhau" của bài làm, dùng thay cho cụm liền (ý diễn đạt khác thứ tự vẫn tính) */
+function capGan(essay){const a=tokArr(moRong(essay)),out=new Set();
+  for(let i=0;i<a.length;i++){if(STOPS.has(a[i])||/^\d+$/.test(a[i]))continue;for(let j=i+1;j<=i+3&&j<a.length;j++){if(STOPS.has(a[j])||/^\d+$/.test(a[j]))continue;out.add(a[i]+" "+a[j]);out.add(a[j]+" "+a[i])}}
+  return out}
+function coGan(arr,kt){const need=kt.length>=3?kt.length-1:kt.length,span=kt.length+3,set=new Set(kt);
+  for(let i=0;i<arr.length;i++){if(!set.has(arr[i]))continue;const f=new Set();for(let j=i;j<arr.length&&j<i+span;j++)if(set.has(arr[j]))f.add(arr[j]);if(f.size>=need)return true}return false}
+
 /* chuẩn hóa để so từ khóa soạn sẵn: bỏ dấu, gộp khoảng trắng, "Đ.328"/"đ 328" → "dieu 328", "Điều 134, 138 và 141" → từng điều */
 function normTL(s){let t=" "+strip(s).replace(/[^a-z0-9\/%]+/g," ").replace(/\s+/g," ")+" ";t=t.replace(/ d (\d{2,4}) /g," dieu $1 ").replace(/ d(\d{2,4}) /g," dieu $1 ");return t}
 function dieuSet(t){const out=new Set();const re=/dieu ((?:\d{1,4})(?: (?:va |khoan \d+ |k\d+ )?\d{1,4})*)/g;let m;while((m=re.exec(t)))m[1].split(" ").filter(x=>/^\d+$/.test(x)).forEach(n=>out.add(n));return out}
 function chamTLPre(c,essay){
-  const T=normTL(essay||""),DS=dieuSet(T),short=(essay||"").trim().length<15;
+  const T=normTL(moRong(essay||"")),DS=dieuSet(T),short=(essay||"").trim().length<15,TA=T.trim().split(" ");
   return c.guide.map((y,i)=>{const kw=c.kwPre[i]||[];
-    const hit=kw.filter(k=>{const n=normTL(k).trim();const m=n.match(/^dieu (\d+)$/);return m?DS.has(m[1]):T.includes(" "+n)||T.includes("/"+n)});
-    const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.5?1:sc>=0.25?0.5:0;
-    return {y,kw,ct:[],hit,hitC:[],sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*10)}});
+    const hit=kw.filter(k=>{const n=normTL(k).trim();const m=n.match(/^dieu (\d+)$/);return m?DS.has(m[1]):T.includes(" "+n)||T.includes("/"+n)||(n.includes(" ")&&coGan(TA,n.split(" ")))});
+    const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.5?1:sc>=0.35?0.75:sc>=0.2?0.5:sc>=0.1?0.25:0;
+    return {y,kw,ct:[],hit,hitC:[],sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*10*(1-PHAN_BUOC))}});
 }
 /* Số liệu kết quả: tiền quy về đồng (1,95 tỷ = 1.950 triệu), kèm đơn vị năm/tháng/ngày/lần/%/m² */
 const MULT={ty:1e9,trieu:1e6,nghin:1e3,ngan:1e3,dong:1};
@@ -262,7 +288,7 @@ function nhanSo(k){const [u,x]=k.split(":"),v=+x,f=n=>String(Math.round(n*1000)/
 function chamTL(c,essay){
   if(c.kwPre)return chamTLPre(c,essay);
   const given=soLieu(c.text+" "+(c.ask||[]).join(" "));
-  const y=tuKhoa(c),A=bigrams(essay||""),DS=dieuSet(normTL(essay||"")),SL=soLieu(essay||""),n=y.length,per=CT.dTL/n,short=(essay||"").trim().length<15;
+  const y=tuKhoa(c),A=capGan(essay||""),DS=dieuSet(normTL(essay||"")),SL=soLieu(essay||""),n=y.length,per=CT.dTL*(1-PHAN_BUOC)/n,short=(essay||"").trim().length<15;
   return y.map(x=>{
     const law=[...dieuSet(normTL(x.y))],res=[...soLieu(x.y)],tinh=res.filter(([k])=>!given.has(k)); /* tinh = kết quả phải tự tính ra */
     const hitL=law.filter(d=>DS.has(d)),hitR=res.filter(([k])=>SL.has(k)),hitT=tinh.filter(([k])=>SL.has(k)),hit=x.kw.filter(b=>A.has(b));
@@ -275,6 +301,25 @@ function chamTL(c,essay){
     return {y:x.y,kw:x.kw,hit,ct:law.map(d=>"Điều "+d),hitC:hitL.map(d=>"Điều "+d),res:res.map(r=>r[1]),hitR:hitR.map(r=>r[1]),sc:r2(sc),muc,per};
   });
 }
+
+/* Tiêu chí 1: mỗi yêu cầu (bước) của đề có được trả lời không. Nhận theo đoạn đánh số (1., 2), a), Câu 1…) hoặc từ gợi ý của bước */
+const CUE_TV=[/tom tat|yeu cau|cung cap|giay to|thong tin/,/van de/,/can cu|dieu \d|an le|bo luat|luat /,/tu van|phuong an|giai quyet|ket luan|y kien/,/rui ro|can lam|tiep theo|luu y|khuyen nghi/];
+function chiaDoan(essay){const out={};const re=/(?:^|\n)\s*(?:cau|y|yeu cau|buoc|phan)?\s*(\d{1,2}|[a-e])\s*[\.\):\/-]/g;const t=strip(essay||"");let m,last=null;
+  const marks=[];while((m=re.exec(t)))marks.push({k:m[1],at:m.index+m[0].length});
+  marks.forEach((x,j)=>{const i=/\d/.test(x.k)?+x.k-1:"abcde".indexOf(x.k);const seg=t.slice(x.at,j+1<marks.length?marks[j+1].at:t.length);if(i>=0&&!out[i])out[i]=seg});return out}
+function chamBuoc(c,essay,tlMax){
+  const ask=c.ask||[],n=ask.length||1,per=r2(tlMax*PHAN_BUOC/n),t=strip(essay||""),doan=chiaDoan(essay),words=s=>(s.trim()?s.trim().split(/\s+/).length:0),W=words(t);
+  const A=capGan(essay||"");
+  return ask.map((q,i)=>{let cue;
+    if(c.kwPre&&n===5)cue=CUE_TV[i].test(t);else{const kb=[...bigrams(q)];cue=kb.some(b=>A.has(b))}
+    const sec=doan[i];let muc;
+    if(sec!=null)muc=words(sec)>=5?1:0.5;else if(cue)muc=Object.keys(doan).length?0.5:(W>=10*n?1:0.5);else muc=0; /* rộng tay: có trả lời là tính đủ */
+    if(W<10)muc=0;
+    return {q,muc,per,thay:sec!=null?"có đoạn "+(i+1):cue?"có nội dung liên quan":"chưa thấy"}});
+}
+/* Tổng điểm tự luận từ mức từng bước (b) và từng ý (v) */
+function tongTL(bs,ys,b,v){return r2(bs.reduce((s,x,i)=>s+(b?b[i]:x.muc)*x.per,0)+ys.reduce((s,y,i)=>s+(v?v[i]:y.muc)*y.per,0))}
+const tlMaxOf=B=>B.tl?100:CT.dTL;
 
 /* ====== HỘP THOẠI ====== */
 function modal(html,cls){const m=$("#modal");m.innerHTML='<div class="dlg '+(cls||"")+'" role="dialog" aria-modal="true">'+html+'</div>';m.hidden=false;document.body.style.overflow="hidden";document.body.classList.add("modal-open");const f=m.querySelector("button,input,textarea,select");if(f)setTimeout(()=>f.focus(),20);return m}
@@ -382,11 +427,11 @@ function renderExam(){
   de.th.forEach((c,i)=>{const cs=B.cases[c.cid];h+=`<div class="case"><h4>Tình huống ${i+1}</h4><p>${esc(cs.text)}</p></div>`+c.q.map(qBlock).join("")});
   const tl=B.cases[de.tl];navh+=`<button type="button" data-go="qq-tl" id="nb-tl" class="${E.essay.trim()?"done":""}">TL</button>`;
   h+=TL?`<div class="sec-title">Bài tự luận — Viết ý kiến tư vấn (thang điểm 10)</div><div class="case" id="qq-tl"><h4>Tình huống</h4><p>${esc(tl.text)}</p></div>
-    <div class="q essay"><p class="stem">Anh/chị là luật sư (chuyên viên tư vấn) tiếp nhận yêu cầu trên. Hãy viết ý kiến tư vấn cho khách hàng theo trình tự sau, nêu rõ căn cứ pháp luật và án lệ (nếu có):</p><ol>${(tl.ask||[]).map(a=>"<li>"+esc(a)+"</li>").join("")}</ol>
+    <div class="q essay"><p class="stem">Anh/chị là luật sư (chuyên viên tư vấn) tiếp nhận yêu cầu trên. Hãy viết ý kiến tư vấn cho khách hàng theo trình tự sau, nêu rõ căn cứ pháp luật và án lệ (nếu có). <span style="font-weight:400">Trình bày thành từng đoạn đánh số 1–5 theo đúng các yêu cầu; làm đủ 5 bước được 5 điểm, nội dung đúng được thêm tối đa 5 điểm.</span></p><ol>${(tl.ask||[]).map(a=>"<li>"+esc(a)+"</li>").join("")}</ol>
     <label class="lab" for="essay">Bài làm</label><textarea id="essay" spellcheck="false" style="min-height:420px" placeholder="1. Tóm tắt yêu cầu…&#10;2. Vấn đề pháp lý…&#10;3. Căn cứ pháp luật, án lệ…&#10;4. Ý kiến tư vấn, phương án…&#10;5. Rủi ro, việc cần làm tiếp…">`
     :`<div class="sec-title">Phần III. Tự luận (${fz(CT.dTL)} điểm)</div><div class="case" id="qq-tl"><h4>Tình huống ${de.th.length+1}</h4><p>${esc(tl.text)}</p></div>
-    <div class="q essay"><p class="stem">Anh/chị hãy giải quyết tình huống trên theo các yêu cầu sau, nêu rõ căn cứ pháp lý:</p><ol>${(tl.ask||[]).map(a=>"<li>"+esc(a)+"</li>").join("")}</ol>
-    <label class="lab" for="essay">Bài làm</label><textarea id="essay" spellcheck="false" placeholder="Trình bày lập luận và căn cứ pháp lý (điều, khoản, văn bản)…">`;
+    <div class="q essay"><p class="stem">Anh/chị hãy giải quyết tình huống trên theo các yêu cầu sau, nêu rõ căn cứ pháp lý. <span style="font-weight:400">Trả lời lần lượt, đánh số theo từng yêu cầu; trả lời đủ các yêu cầu được một nửa số điểm tự luận, nội dung đúng (điều luật, kết quả) được phần còn lại.</span></p><ol>${(tl.ask||[]).map(a=>"<li>"+esc(a)+"</li>").join("")}</ol>
+    <label class="lab" for="essay">Bài làm</label><textarea id="essay" spellcheck="false" placeholder="1. …&#10;2. …&#10;(Trả lời lần lượt từng yêu cầu, nêu căn cứ pháp lý: điều, khoản, văn bản)">`;
   h+=`${esc(E.essay)}</textarea><div class="count" id="e-count"></div><p class="msg" id="e-paste"></p></div>
     <div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary" id="x-submit">Nộp bài</button></div>`;
   $("#app").innerHTML=`<div class="timer"><div><b>${esc(E.svd.hoTen)}</b> · ${esc(E.sv)} · ${esc(E.ma)}</div><div><span class="msg" id="x-save"></span> <span class="clock" id="x-clock">--:--</span></div></div>
@@ -510,7 +555,9 @@ function ketQua(sv){
   const b=AD.bai[sv.mssv];if(!b)return {sv,b:null};
   const tn=chamTN(AD.B,b.de,b.answers);const c=AD.cham[sv.mssv];const cs=AD.B.cases[b.de.tl];
   let tl,xn=false,ys=null;
-  if(c&&c.xacNhan){xn=true;if(Array.isArray(c.muc)&&cs&&cs.guide){const yy=chamTL(cs,b.essay);tl=r2(c.muc.reduce((s,v,i)=>s+v*(yy[i]?yy[i].per:0),0))}else tl=c.tlMax?c.diem:r2(c.diem*CT.dTL/20)}else if(cs){ys=chamTL(cs,b.essay);tl=r2(ys.reduce((s,y)=>s+y.muc*y.per,0))}else tl=0;
+  if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(AD.B));
+    if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
+  else tl=c&&c.xacNhan?(xn=true,c.diem):0;
   const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:Math.round(tong)/10};
 }
 function tabDiem(){
@@ -542,6 +589,7 @@ function alertMsg(t){const m=modal('<p>'+esc(t)+'</p><div class="row" style="jus
 function gradeView(mssv){
   const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:""};const r=ketQua(sv);const b=r.b,B=AD.B,cs=B.cases[b.de.tl];
   const c=AD.cham[mssv];const ys=chamTL(cs,b.essay);const saved=c&&Array.isArray(c.muc)?c.muc:null;
+  const TM=tlMaxOf(B),bs=chamBuoc(cs,b.essay,TM),savedB=c&&Array.isArray(c.buoc)?c.buoc:null;
   let n=0;const line=id=>{n++;const q=B.byId[id];if(!q)return"";const a=b.answers&&b.answers[K(id)]!=null?+b.answers[K(id)]:null;
     const perm=(b.de.perm[K(id)]||"").split("").map(Number);const pos=oi=>{const p=perm.indexOf(oi);return p>=0?LET[p]:LET[oi]};
     return `<tr><td>${n}</td><td>${esc(q.q)}</td><td>${a==null?'<span class="msg">bỏ trống</span>':`<span class="${a===q.a?"right":"wrong"}">${pos(a)}</span>`}</td><td>${pos(q.a)}</td></tr>`};
@@ -551,7 +599,11 @@ function gradeView(mssv){
     <h3>Tự luận — Tình huống ${esc(cs.cid)}: ${esc(cs.title||"")}</h3>${cs.anle?`<p class="msg">Án lệ gốc: ${esc(cs.anle)}</p>`:""}
     <details><summary class="msg">Xem đề và yêu cầu</summary><p>${esc(cs.text)}</p><ol>${(cs.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></details>
     <p class="lab" style="margin-top:10px">Bài làm của sinh viên</p><div class="ans">${esc(b.essay||"(bỏ trống)")}</div>
-    <p class="lab" style="margin-top:14px">Đối chiếu ý chính${B.tl?" (điểm từng ý ghi bên cạnh, thang 10)":" (mỗi ý "+fz(CT.dTL/ys.length)+" điểm; từ khóa gồm điều luật, kết quả tính toán \"= …\" và ý diễn đạt — nêu đúng một trong các loại là đã tính hiểu ý)"}. Từ khóa xanh là sinh viên đã nêu.</p>
+    <h3 style="margin-bottom:4px">Tiêu chí 1. Làm đủ các bước, trả lời đủ câu hỏi — ${B.tl?"5 điểm":fz(TM*PHAN_BUOC)+" điểm"}</h3><p class="msg" style="margin-top:0">Chỉ xét sinh viên có trả lời từng yêu cầu hay không (không xét đúng sai). Mỗi yêu cầu ${B.tl?fz(10*PHAN_BUOC/bs.length)+" đ (thang 10)":fz(bs[0]?bs[0].per:0)+" đ"}.</p>
+    ${bs.map((x,i)=>{const v=savedB&&savedB[i]!=null?savedB[i]:x.muc;return `<div class="y b"><div><b>Yêu cầu ${i+1}.</b> ${esc(x.q)}</div><div class="row" style="margin:6px 0 0;align-items:center"><span class="msg">Máy thấy: <b>${esc(x.thay)}</b></span>
+      <select class="g-buoc" style="width:auto"><option value="1"${v===1?" selected":""}>Đã trả lời đủ</option><option value="0.5"${v===0.5?" selected":""}>Trả lời sơ sài</option><option value="0"${v===0?" selected":""}>Không trả lời</option></select></div></div>`}).join("")}
+    <h3 style="margin-bottom:4px">Tiêu chí 2. Nội dung theo từ khóa — ${B.tl?"5 điểm":fz(TM*(1-PHAN_BUOC))+" điểm"}</h3>
+    <p class="msg" style="margin-top:0">${B.tl?"Điểm từng ý ghi bên cạnh (thang 10).":"Mỗi ý "+fz(TM*(1-PHAN_BUOC)/ys.length)+" điểm; từ khóa gồm điều luật, kết quả tính toán \"= …\" và ý diễn đạt — nêu đúng một trong các loại là đã tính hiểu ý."} Từ khóa xanh là sinh viên đã nêu.</p>
     ${ys.map((y,i)=>{const v=saved&&saved[i]!=null?saved[i]:y.muc;return `<div class="y" data-i="${i}"><div><b>Ý ${i+1}${B.tl?" ("+String(r2(y.per/10)).replace(".",",")+" đ)":""}.</b> ${esc(y.y)}</div>
       <div>${y.ct.map(k=>`<span class="chip${y.hitC.includes(k)?" hit":""}">${esc(k)}</span>`).join("")}${(y.res||[]).map(k=>`<span class="chip${y.hitR.includes(k)?" hit":""}">= ${esc(k)}</span>`).join("")}${y.kw.map(k=>`<span class="chip${y.hit.includes(k)?" hit":""}">${esc(ORIG[k]||k)}</span>`).join("")}</div>
       <div class="row" style="margin:8px 0 0;align-items:center"><span class="msg">Máy gợi ý: <b>${({1:"Đạt",0.75:"Đạt phần lớn",0.5:"Một phần",0.25:"Đạt ít",0:"Chưa đạt"})[y.muc]}</b> (độ khớp ${Math.round(y.sc*100)}%)</span>
@@ -559,13 +611,14 @@ function gradeView(mssv){
     <div class="row"><div><label class="lab" for="g-note">Nhận xét (không bắt buộc)</label><input type="text" id="g-note" maxlength="300" value="${esc(c&&c.note||"")}"></div></div>
     <div class="row" style="align-items:center"><button class="btn primary" id="g-save">Xác nhận điểm tự luận</button>${c&&c.xacNhan?'<span class="ok">Đã xác nhận '+esc(fmtDT(toDate(c.luc)))+'</span>':'<span class="msg">Chưa xác nhận</span>'}<span class="err" id="g-err"></span></div>
     ${B.tl?"":`<h3>Phần trắc nghiệm</h3><div class="tblwrap"><table><thead><tr><th>Câu</th><th>Nội dung</th><th>SV chọn</th><th>Đáp án</th></tr></thead><tbody>${b.de.lt.map(line).join("")}${b.de.th.flatMap(x=>x.q).map(line).join("")}</tbody></table></div>`}`);
-  const calc=()=>{const v=[...m.querySelectorAll(".g-muc")].map(s=>+s.value);m.querySelectorAll(".y").forEach((el,i)=>{el.classList.toggle("d1",v[i]===1);el.classList.toggle("d05",v[i]>0&&v[i]<1)});
-    const tl=r2(v.reduce((s,x,i)=>s+x*ys[i].per,0)),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(Math.round(tong)/10).replace(".",",");return {v,tl}};
-  calc();m.querySelectorAll(".g-muc").forEach(s=>s.onchange=calc);
+  const calc=()=>{const v=[...m.querySelectorAll(".g-muc")].map(s=>+s.value),bv=[...m.querySelectorAll(".g-buoc")].map(s=>+s.value);
+    m.querySelectorAll(".y").forEach(el=>{const x=+el.querySelector("select").value;el.classList.toggle("d1",x===1);el.classList.toggle("d05",x>0&&x<1)});
+    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(Math.round(tong)/10).replace(".",",");return {v,bv,tl}};
+  calc();m.querySelectorAll(".g-muc,.g-buoc").forEach(s=>s.onchange=calc);
   m.querySelector("#g-x").onclick=()=>{closeModal();tabDiem()};
-  m.querySelector("#g-save").onclick=async()=>{const {v,tl}=calc();
-    try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,diem:tl,tlMax:B.tl?100:CT.dTL,xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
-      AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,diem:tl,xacNhan:true,luc:TS.now()};closeModal();tabDiem()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
+  m.querySelector("#g-save").onclick=async()=>{const {v,bv,tl}=calc();
+    try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:B.tl?100:CT.dTL,xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
+      AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,xacNhan:true,luc:TS.now()};closeModal();tabDiem()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
 function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
   const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';
@@ -658,7 +711,7 @@ function preview(rows){
 }
 function tabCai(){
   const l=AD.l;$("#tab").innerHTML=`<div class="card"><div class="row"><button class="btn primary" id="c-edit">Sửa thông tin, giờ mở/đóng</button><button class="btn" id="c-tog">${l.open?"Khóa ngay (không cho làm bài)":"Mở lại cho làm bài"}</button></div>
-    <p class="msg">${isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên viết ý kiến tư vấn theo 5 yêu cầu. Chấm theo 5 ý chính (1,0 / 2,0 / 2,0 / 3,5 / 1,5 điểm), máy gợi ý theo từ khóa, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm, chấm theo ý chính: điều luật, kết quả tính toán, ý diễn đạt), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
+    <p class="msg">${isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên viết ý kiến tư vấn theo 5 yêu cầu. Chấm: làm đủ 5 bước = 5 điểm (mỗi bước 1 điểm); nội dung theo 5 ý chính = 5 điểm (0,5 / 1,0 / 1,0 / 1,75 / 0,75); máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm: trả lời đủ các yêu cầu = 5; nội dung theo từ khóa điều luật, kết quả tính toán, ý diễn đạt = 5), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
     <div class="card"><h3 style="margin-top:0">Xóa lớp</h3><p class="msg">Xóa lớp, danh sách sinh viên, bài làm và điểm của lớp. Không khôi phục được — nên xuất bảng điểm Excel trước.</p><button class="btn danger" id="c-del">Xóa lớp ${esc(l.id)}</button></div>`;
   $("#c-edit").onclick=()=>classForm(l);
   $("#c-tog").onclick=async()=>{await db.doc("pnl_dg_lop/"+l.id).set({open:!l.open},{merge:true});classView(l.id)};
