@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 09:23 06/11/2026
+# Kết quả dựng nội dung — 09:44 06/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,8 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
+      - danh-gia/de/ky-nang-tu-van-phap-luat-dan-su.dat
+      - danh-gia/de/ky-nang-tu-van-phap-luat-dan-su.json
       - danh-gia/index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42149968041 · commit a09cf4d
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42152177501 · commit fbc115f
