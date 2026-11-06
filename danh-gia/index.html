@@ -280,7 +280,7 @@ function chamTLPre(c,essay){
   return c.guide.map((y,i)=>{const kw=c.kwPre[i]||[];
     const hit=kw.filter(k=>{const n=normTL(k).trim();const m=n.match(/^dieu (\d+)$/);return m?DS.has(m[1]):T.includes(" "+n)||T.includes("/"+n)||(n.includes(" ")&&coGan(TA,n.split(" ")))});
     const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.5?1:sc>=0.35?0.75:sc>=0.2?0.5:sc>=0.1?0.25:0;
-    return {y,kw,ct:[],hit,hitC:[],tomTat:i===0,sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*10*(1-PHAN_BUOC))}});
+    return {y,kw,ct:[],hit,hitC:[],tomTat:i===0,sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*(1-PHAN_BUOC))}});
 }
 /* Số liệu kết quả: tiền quy về đồng (1,95 tỷ = 1.950 triệu), kèm đơn vị năm/tháng/ngày/lần/%/m² */
 const MULT={ty:1e9,trieu:1e6,nghin:1e3,ngan:1e3,dong:1};
@@ -333,7 +333,8 @@ function chamBuoc(c,essay,tlMax){
    Kỹ năng tư vấn: không tính bước 1 (tóm tắt sự việc chép được từ đề). */
 function coYDung(ys,v){return ys.some((y,i)=>!y.tomTat&&(v?v[i]:y.muc)>=0.5)}
 function tongTL(bs,ys,b,v){const nd=ys.reduce((s,y,i)=>s+(v?v[i]:y.muc)*y.per,0);if(!coYDung(ys,v))return r2(nd);return r2(bs.reduce((s,x,i)=>s+(b?b[i]:x.muc)*x.per,0)+nd)}
-const tlMaxOf=B=>B.tl?100:CT.dTL;
+/* Học phần tư vấn pháp luật dân sự chỉ có 01 bài tự luận: chấm trực tiếp trên thang 10. */
+const tlMaxOf=B=>B.tl?10:CT.dTL;
 
 /* ====== PHIẾU LÀM BÀI (điền thông tin theo các bước tư vấn — Hồ sơ TVPLDS) ======
    Bài làm lưu thành một chuỗi văn bản: "■ <số>. <tiêu đề>" rồi các dòng "▸ <nhãn>: <nội dung>"; ô trống không ghi. */
@@ -617,7 +618,7 @@ function ketQua(sv){
   if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(AD.B));
     if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
   else tl=c&&c.xacNhan?(xn=true,c.diem):0;
-  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:Math.round(tong)/10};
+  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:Math.round(tong*10)/10};
 }
 function tabDiem(){
   const rows=AD.ds.map(ketQua);const nop=rows.filter(r=>r.b&&r.b.status==="da-nop"),dang=rows.filter(r=>r.b&&r.b.status!=="da-nop");
@@ -659,7 +660,7 @@ function gradeView(mssv){
     return `<tr><td>${n}</td><td>${esc(q.q)}</td><td>${a==null?'<span class="msg">bỏ trống</span>':`<span class="${a===q.a?"right":"wrong"}">${pos(a)}</span>`}</td><td>${pos(q.a)}</td></tr>`};
   const m=modal(`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${esc(sv.hoTen)} · ${esc(mssv)}</h2><button class="btn small" id="g-x">Đóng</button></div>
     <p class="msg">Bắt đầu ${esc(fmtDT(toDate(b.startedAt)))}${b.submittedAt?" · nộp "+esc(fmtDT(toDate(b.submittedAt))):" · chưa nộp"} · rời trang ${b.roiTrang|0} lần</p>
-    <div class="stats">${B.tl?"":`<div class="stat"><b>${fz(r.lt)}/${fz(CT.lt*CT.dLT)}</b><span>Lý thuyết</span></div><div class="stat"><b>${fz(r.th)}/${fz(10*CT.dTH)}</b><span>Tình huống</span></div>`}<div class="stat"><b id="g-tl">–</b><span>Tự luận /${B.tl?100:fz(CT.dTL)}</span></div><div class="stat"><b id="g-sum">–</b><span>Tổng · thang 10</span></div></div>
+    <div class="stats">${B.tl?"":`<div class="stat"><b>${fz(r.lt)}/${fz(CT.lt*CT.dLT)}</b><span>Lý thuyết</span></div><div class="stat"><b>${fz(r.th)}/${fz(10*CT.dTH)}</b><span>Tình huống</span></div>`}<div class="stat"><b id="g-tl">–</b><span>Tự luận /${fz(tlMaxOf(B))}</span></div><div class="stat"><b id="g-sum">–</b><span>Tổng · thang 10</span></div></div>
     <h3>Tự luận — Tình huống ${esc(cs.cid)}: ${esc(cs.title||"")}</h3>${cs.anle?`<p class="msg">Án lệ gốc: ${esc(cs.anle)}</p>`:""}
     <details><summary class="msg">Xem đề và yêu cầu</summary><p>${esc(cs.text)}</p><ol>${(cs.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></details>
     <p class="lab" style="margin-top:10px">Bài làm của sinh viên</p><div class="ans">${esc(b.essay||"(bỏ trống)")}</div>
@@ -668,7 +669,7 @@ function gradeView(mssv){
       <select class="g-buoc" style="width:auto"><option value="1"${v===1?" selected":""}>Đã trả lời đủ</option><option value="0.5"${v===0.5?" selected":""}>Trả lời sơ sài</option><option value="0"${v===0?" selected":""}>Không trả lời</option></select></div></div>`}).join("")}
     <h3 style="margin-bottom:4px">Tiêu chí 2. Nội dung theo từ khóa — ${B.tl?"5 điểm":fz(TM*(1-PHAN_BUOC))+" điểm"}</h3>
     <p class="msg" style="margin-top:0">${B.tl?"Điểm từng ý ghi bên cạnh (thang 10).":"Mỗi ý "+fz(TM*(1-PHAN_BUOC)/ys.length)+" điểm; từ khóa gồm điều luật, kết quả tính toán \"= …\" và ý diễn đạt — nêu đúng một trong các loại là đã tính hiểu ý."} Từ khóa xanh là sinh viên đã nêu.</p>
-    ${ys.map((y,i)=>{const v=saved&&saved[i]!=null?saved[i]:y.muc;return `<div class="y" data-i="${i}"><div><b>Ý ${i+1}${B.tl?" ("+String(r2(y.per/10)).replace(".",",")+" đ)":""}.</b> ${esc(y.y)}</div>
+    ${ys.map((y,i)=>{const v=saved&&saved[i]!=null?saved[i]:y.muc;return `<div class="y" data-i="${i}"><div><b>Ý ${i+1}${B.tl?" ("+String(r2(y.per)).replace(".",",")+" đ)":""}.</b> ${esc(y.y)}</div>
       <div>${y.ct.map(k=>`<span class="chip${y.hitC.includes(k)?" hit":""}">${esc(k)}</span>`).join("")}${(y.res||[]).map(k=>`<span class="chip${y.hitR.includes(k)?" hit":""}">= ${esc(k)}</span>`).join("")}${y.kw.map(k=>`<span class="chip${y.hit.includes(k)?" hit":""}">${esc(ORIG[k]||k)}</span>`).join("")}</div>
       <div class="row" style="margin:8px 0 0;align-items:center"><span class="msg">Máy gợi ý: <b>${({1:"Đạt",0.75:"Đạt phần lớn",0.5:"Một phần",0.25:"Đạt ít",0:"Chưa đạt"})[y.muc]}</b> (độ khớp ${Math.round(y.sc*100)}%)</span>
       <select class="g-muc" style="width:auto"><option value="1"${v===1?" selected":""}>Đạt</option><option value="0.75"${v===0.75?" selected":""}>Đạt phần lớn</option><option value="0.5"${v===0.5?" selected":""}>Một phần</option><option value="0.25"${v===0.25?" selected":""}>Đạt ít</option><option value="0"${v===0?" selected":""}>Chưa đạt</option></select></div></div>`}).join("")}
@@ -677,11 +678,11 @@ function gradeView(mssv){
     ${B.tl?"":`<h3>Phần trắc nghiệm</h3><div class="tblwrap"><table><thead><tr><th>Câu</th><th>Nội dung</th><th>SV chọn</th><th>Đáp án</th></tr></thead><tbody>${b.de.lt.map(line).join("")}${b.de.th.flatMap(x=>x.q).map(line).join("")}</tbody></table></div>`}`);
   const calc=()=>{const v=[...m.querySelectorAll(".g-muc")].map(s=>+s.value),bv=[...m.querySelectorAll(".g-buoc")].map(s=>+s.value);
     m.querySelectorAll(".y").forEach(el=>{const x=+el.querySelector("select").value;el.classList.toggle("d1",x===1);el.classList.toggle("d05",x>0&&x<1)});
-    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(Math.round(tong)/10).replace(".",",");return {v,bv,tl}};
+    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(Math.round(tong*10)/10).replace(".",",");return {v,bv,tl}};
   calc();m.querySelectorAll(".g-muc,.g-buoc").forEach(s=>s.onchange=calc);
   m.querySelector("#g-x").onclick=()=>{closeModal();tabDiem()};
   m.querySelector("#g-save").onclick=async()=>{const {v,bv,tl}=calc();
-    try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:B.tl?100:CT.dTL,xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
+    try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:tlMaxOf(B),xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
       AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,xacNhan:true,luc:TS.now()};closeModal();tabDiem()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
 function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
@@ -701,11 +702,11 @@ function paperView(mssv){
   const tl=B.cases[de.tl]||{};const c=AD.cham[mssv];
   h+=`<div class="sec-title">${B.tl?"Bài tự luận — Ý kiến tư vấn":"Phần III. Tự luận"}</div><div class="case"><h4>Tình huống ${B.tl?"":de.th.length+1} <span class="msg">[${esc(de.tl)}]</span></h4><p>${esc(tl.text||"")}</p><ol>${(tl.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></div>
     <p class="lab">Bài làm của sinh viên (${(b.essay||"").trim()?(b.essay.trim().split(/\s+/).length+" từ"):"bỏ trống"})</p><div class="ans" style="max-height:none">${esc(b.essay||"(bỏ trống)")}</div>
-    ${c&&c.xacNhan?`<p class="ok">Điểm tự luận đã xác nhận: ${fz(r.tl)}/${B.tl?100:fz(CT.dTL)}${c.note?" · Nhận xét: "+esc(c.note):""}</p>`:'<p class="msg">Tự luận chưa được xác nhận điểm (đang dùng điểm gợi ý theo từ khóa).</p>'}`;
+    ${c&&c.xacNhan?`<p class="ok">Điểm tự luận đã xác nhận: ${fz(r.tl)}/${fz(tlMaxOf(B))}${c.note?" · Nhận xét: "+esc(c.note):""}</p>`:'<p class="msg">Tự luận chưa được xác nhận điểm (đang dùng điểm gợi ý theo từ khóa).</p>'}`;
   const m=modal(`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Bài làm · ${esc(sv.hoTen)} · ${esc(mssv)}</h2><div><button class="btn small" id="p-print">In / lưu PDF</button> <button class="btn small" id="p-x">Đóng</button></div></div>
     <dl class="info" style="margin-top:12px"><dt>Lớp</dt><dd>${esc(AD.ma)} · ${esc(AD.l.ten||"")} · ${esc(AD.l.hocPhanTen||"")}</dd><dt>Ngày sinh</dt><dd>${esc(sv.ngaySinh||"–")}</dd>
       <dt>Bắt đầu</dt><dd>${esc(fmtDT(toDate(b.startedAt)))}</dd><dt>Nộp bài</dt><dd>${b.submittedAt?esc(fmtDT(toDate(b.submittedAt))):"Chưa nộp"+(b.luu?" (lưu lần cuối "+esc(fmtDT(toDate(b.luu)))+")":"")}</dd>
-      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>${B.tl?"":"Lý thuyết "+fz(r.lt)+"/"+fz(CT.lt*CT.dLT)+" · Tình huống "+fz(r.th)+"/"+fz(10*CT.dTH)+" · "}Tự luận ${fz(r.tl)}/${B.tl?100:fz(CT.dTL)}${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/100 · <b>Thang 10: ${String(r.t10).replace(".",",")}</b></dd></dl>
+      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>${B.tl?"":"Lý thuyết "+fz(r.lt)+"/"+fz(CT.lt*CT.dLT)+" · Tình huống "+fz(r.th)+"/"+fz(10*CT.dTH)+" · "}Tự luận ${fz(r.tl)}/${fz(tlMaxOf(B))}${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/${fz(tlMaxOf(B))} · <b>Thang 10: ${String(r.t10).replace(".",",")}</b></dd></dl>
     ${B.tl?"":'<p class="msg">Phương án hiển thị đúng thứ tự A, B, C, D như sinh viên đã thấy khi làm bài. Ô viền xanh là đáp án đúng.</p>'}${h}`);
   m.querySelector("#p-x").onclick=closeModal;m.querySelector("#p-print").onclick=()=>window.print();
 }
