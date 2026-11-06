@@ -70,6 +70,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--head);outline-of
 .case h4{margin:0 0 6px;font:700 15px var(--f-body);color:var(--head)}
 .case p{margin:0;text-align:justify}
 .essay textarea{min-height:280px;line-height:1.6}
+.phieu .pb{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--head);border-radius:12px;padding:14px 16px;margin:0 0 12px}
+.phieu .pb h4{margin:0 0 4px;font:700 16px/1.35 var(--f-display);color:var(--head)}
+.phieu .pb .yc{margin:0 0 10px;color:var(--muted);font-size:14px}
+.phieu .fl{margin:0 0 10px}.phieu .fl>span{display:block;font-weight:600;font-size:14px;margin:0 0 4px}
+.phieu textarea{min-height:76px;line-height:1.55}.phieu textarea.big{min-height:180px}
+.phieu .bang{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px}.phieu .bang .hd{font-size:13px;color:var(--muted);font-weight:600}
+.phieu .chon{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:15px}.phieu .chon label{display:flex;gap:6px;align-items:center;cursor:pointer}
+@media (max-width:640px){.phieu .bang{grid-template-columns:1fr}.phieu .bang .hd:nth-child(2){display:none}}
 .count{font-size:13px;color:var(--muted);text-align:right}
 /* quản trị */
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -286,6 +294,7 @@ function nhanSo(k){const [u,x]=k.split(":"),v=+x,f=n=>String(Math.round(n*1000)/
   return f(v)+({"%":"%",nam:" năm",thang:" tháng",ngay:" ngày",lan:" lần","m²":" m²"})[u]}
 /* Luật Dân sự: từ khóa của mỗi ý = các điều luật + kết quả tính toán (số liệu không có sẵn trong đề) + ý diễn đạt; chấm rộng tay — hiểu ý là đạt */
 function chamTL(c,essay){
+  essay=boNhan(essay);
   if(c.kwPre)return chamTLPre(c,essay);
   const given=soLieu(c.text+" "+(c.ask||[]).join(" "));
   const y=tuKhoa(c),A=capGan(essay||""),DS=dieuSet(normTL(essay||"")),SL=soLieu(essay||""),n=y.length,per=CT.dTL*(1-PHAN_BUOC)/n,short=(essay||"").trim().length<15;
@@ -307,8 +316,10 @@ const CUE_TV=[/tom tat|yeu cau|cung cap|giay to|thong tin/,/van de/,/can cu|dieu
 function chiaDoan(essay){const out={};const re=/(?:^|\n)\s*(?:cau|y|yeu cau|buoc|phan)?\s*(\d{1,2}|[a-e])\s*[\.\):\/-]/g;const t=strip(essay||"");let m,last=null;
   const marks=[];while((m=re.exec(t)))marks.push({k:m[1],at:m.index+m[0].length});
   marks.forEach((x,j)=>{const i=/\d/.test(x.k)?+x.k-1:"abcde".indexOf(x.k);const seg=t.slice(x.at,j+1<marks.length?marks[j+1].at:t.length);if(i>=0&&!out[i])out[i]=seg});return out}
+function doanPhieu(essay){const out={};(essay||"").split(/\n*■ /).filter(Boolean).forEach(sec=>{const m=sec.match(/^(\d+)\./);if(m)out[+m[1]-1]=strip(boNhan(sec.replace(/^[^\n]*\n?/,"")))});return out}
 function chamBuoc(c,essay,tlMax){
-  const ask=c.ask||[],n=ask.length||1,per=r2(tlMax*PHAN_BUOC/n),t=strip(essay||""),doan=chiaDoan(essay),words=s=>(s.trim()?s.trim().split(/\s+/).length:0),W=words(t);
+  const laPhieu=(essay||"").indexOf("■ ")>=0,doan=laPhieu?doanPhieu(essay):chiaDoan(essay);essay=boNhan(essay);
+  const ask=c.ask||[],n=ask.length||1,per=r2(tlMax*PHAN_BUOC/n),t=strip(essay||""),words=s=>(s.trim()?s.trim().split(/\s+/).length:0),W=words(t);
   const A=capGan(essay||"");
   return ask.map((q,i)=>{let cue;
     if(c.kwPre&&n===5)cue=CUE_TV[i].test(t);else{const kb=[...bigrams(q)];cue=kb.some(b=>A.has(b))}
@@ -320,6 +331,49 @@ function chamBuoc(c,essay,tlMax){
 /* Tổng điểm tự luận từ mức từng bước (b) và từng ý (v) */
 function tongTL(bs,ys,b,v){return r2(bs.reduce((s,x,i)=>s+(b?b[i]:x.muc)*x.per,0)+ys.reduce((s,y,i)=>s+(v?v[i]:y.muc)*y.per,0))}
 const tlMaxOf=B=>B.tl?100:CT.dTL;
+
+/* ====== PHIẾU LÀM BÀI (điền thông tin theo các bước tư vấn — Hồ sơ TVPLDS) ======
+   Bài làm lưu thành một chuỗi văn bản: "■ <số>. <tiêu đề>" rồi các dòng "▸ <nhãn>: <nội dung>"; ô trống không ghi. */
+const PHIEU_TV=[
+ {t:"Tiếp xúc khách hàng",f:[{k:"kh",l:"Khách hàng (người cần tư vấn)",ph:"Họ tên, tư cách của khách hàng trong vụ việc",r:1},
+   {k:"yc",l:"Yêu cầu, mong muốn của khách hàng",ph:"Khách hàng muốn biết điều gì, muốn đạt được kết quả gì?"},
+   {k:"gt",l:"Giấy tờ, tài liệu khách hàng đã cung cấp",ph:"Hợp đồng, giấy chứng nhận, chứng từ, văn bản…"},
+   {k:"bs",l:"Thông tin, giấy tờ cần khách hàng bổ sung",ph:"Còn thiếu thông tin, giấy tờ gì để tư vấn chính xác?"}]},
+ {t:"Xác định vấn đề pháp lý",f:[{k:"qh",l:"Quan hệ pháp luật phát sinh",ph:"Ví dụ: hợp đồng đặt cọc; thừa kế theo pháp luật; bồi thường thiệt hại ngoài hợp đồng…",r:1},
+   {k:"vd",l:"Các vấn đề pháp lý cần làm rõ",ph:"Vấn đề thứ nhất: …&#10;Vấn đề thứ hai: …"}]},
+ {t:"Xác định luật áp dụng",f:[{k:"la",l:"Vấn đề pháp lý mấu chốt và căn cứ áp dụng",ty:"bang",h:["Vấn đề pháp lý mấu chốt","Căn cứ: điều, khoản, văn bản; án lệ"],n:3}]},
+ {t:"Phương án giải quyết",f:[{k:"pt",l:"Phương thức giải quyết",ty:"chon",o:["Thỏa thuận dân sự (thương lượng, hòa giải)","Thủ tục hành chính","Khiếu nại","Tố tụng dân sự (khởi kiện)","Khác"]},
+   {k:"pa",l:"Phân tích, ý kiến tư vấn và phương án đề xuất",ph:"Áp dụng quy định vào sự việc → kết luận từng vấn đề → phương án 1, phương án 2…",big:1},
+   {k:"dg",l:"Đánh giá tính khả thi, phương án nên chọn",ph:"Ưu điểm, hạn chế của từng phương án; phương án tối ưu"}]},
+ {t:"Trả lời tư vấn",f:[{k:"rr",l:"Rủi ro pháp lý cần lưu ý",ph:"Khách hàng có thể gặp bất lợi gì?"},
+   {k:"vl",l:"Kết luận, khuyến nghị và việc khách hàng cần làm tiếp",ph:"Việc cần làm, thời hạn, giấy tờ cần chuẩn bị…"},
+   {k:"ht",l:"Hình thức tư vấn",ty:"mot",o:["Trực tiếp bằng lời nói","Qua điện thoại","Bằng văn bản (thư tư vấn)"]},
+   {k:"ly",l:"Lý do chọn hình thức tư vấn",ph:"Vì sao hình thức này phù hợp với vụ việc?",r:1}]}];
+function phieuOf(B,c){if(B.tl)return PHIEU_TV.map((x,i)=>({...x,yc:(c.ask||[])[i]||""}));
+  return (c.ask||[]).map((q,i)=>({t:"Câu "+(i+1),yc:q,f:[{k:"kl"+i,l:"Trả lời (kết luận)",ph:"Trả lời thẳng vào câu hỏi"},
+    {k:"cc"+i,l:"Căn cứ pháp lý",ph:"Điều …, khoản … Bộ luật Dân sự 2015; văn bản, án lệ khác (nếu có)",r:1},
+    {k:"lg"+i,l:"Lập luận, tính toán",ph:"Áp dụng quy định vào sự việc; nếu có số liệu thì tính ra kết quả cụ thể"}]}))}
+function boNhan(e){return (e||"").replace(/^■ .*$/gm,"").replace(/▸ [^:\n]{1,90}: ?/g,"").replace(/ ⇒ /g," ; ")}
+function docPhieu(P,essay){const v={};if(!essay||essay.indexOf("■ ")<0)return v;
+  essay.split(/\n*■ /).filter(Boolean).forEach(sec=>{const nl=sec.indexOf("\n");const head=sec.slice(0,nl<0?sec.length:nl),m=head.match(/(\d+)\./);if(!m)return;const p=P[+m[1]-1];if(!p)return;
+    const body=nl<0?"":sec.slice(nl+1);const re=/▸ ([^:\n]{1,90}): ([\s\S]*?)(?=\n▸ |$)/g;let x;
+    while((x=re.exec(body))){const f=p.f.find(f=>f.l===x[1]);if(!f)continue;const val=x[2].replace(/\s+$/,"");
+      if(f.ty==="bang")v[f.k]=val.split("\n").map(r=>{const a=r.replace(/^– /,"").split(" ⇒ ");return [a[0]||"",a.slice(1).join(" ⇒ ")]});
+      else if(f.ty==="chon")v[f.k]=val.split("; ");else v[f.k]=val}});
+  return v}
+function ghiPhieu(P,root){return P.map((p,i)=>{const L=[];p.f.forEach(f=>{let val="";
+    if(f.ty==="bang")val=[...root.querySelectorAll('[data-bang="'+f.k+'"] .br')].map(r=>{const a=r.querySelectorAll("input");return [a[0].value.trim(),a[1].value.trim()]}).filter(a=>a[0]||a[1]).map(a=>"– "+a[0]+" ⇒ "+a[1]).join("\n");
+    else if(f.ty==="chon")val=[...root.querySelectorAll('input[name="pf-'+f.k+'"]:checked')].map(x=>x.value).join("; ");
+    else if(f.ty==="mot"){const x=root.querySelector('input[name="pf-'+f.k+'"]:checked');val=x?x.value:""}
+    else{const x=root.querySelector('[data-k="'+f.k+'"]');val=x?x.value.trim():""}
+    if(val)L.push("▸ "+f.l+": "+val)});
+  return L.length?"■ "+(i+1)+". "+p.t.replace(/^Câu \d+$/,"Trả lời câu "+(i+1))+"\n"+L.join("\n"):""}).filter(Boolean).join("\n\n")}
+function phieuHtml(P,essay){const v=docPhieu(P,essay);
+  return P.map((p,i)=>`<div class="pb"><h4>${p.t.startsWith("Câu")?esc(p.t):"Bước "+(i+1)+". "+esc(p.t)}</h4>${p.yc?`<p class="yc">${esc(p.yc)}</p>`:""}${p.f.map(f=>{
+    if(f.ty==="bang"){const rows=(v[f.k]||[]).slice();while(rows.length<f.n)rows.push(["",""]);
+      return `<div class="fl"><span>${esc(f.l)}</span><div class="bang" data-bang="${f.k}"><div class="hd">${esc(f.h[0])}</div><div class="hd">${esc(f.h[1])}</div>${rows.map(r=>`<div class="br" style="display:contents"><input type="text" value="${esc(r[0])}" placeholder="Vấn đề…"><input type="text" value="${esc(r[1])}" placeholder="Điều … , khoản … ; án lệ số …"></div>`).join("")}</div><button type="button" class="btn small" data-them="${f.k}" style="margin-top:6px">+ Thêm dòng</button></div>`}
+    if(f.ty==="chon"||f.ty==="mot"){const sel=f.ty==="chon"?(v[f.k]||[]):[v[f.k]];return `<div class="fl"><span>${esc(f.l)}</span><div class="chon">${f.o.map(o=>`<label><input type="${f.ty==="chon"?"checkbox":"radio"}" name="pf-${f.k}" value="${esc(o)}"${sel.includes(o)?" checked":""}>${esc(o)}</label>`).join("")}</div></div>`}
+    return `<label class="fl"><span>${esc(f.l)}</span>${f.r?`<input type="text" data-k="${f.k}" value="${esc(v[f.k]||"")}" placeholder="${f.ph}" spellcheck="false">`:`<textarea data-k="${f.k}" class="${f.big?"big":""}" placeholder="${f.ph}" spellcheck="false">${esc(v[f.k]||"")}</textarea>`}</label>`}).join("")}</div>`).join("")}
 
 /* ====== HỘP THOẠI ====== */
 function modal(html,cls){const m=$("#modal");m.innerHTML='<div class="dlg '+(cls||"")+'" role="dialog" aria-modal="true">'+html+'</div>';m.hidden=false;document.body.style.overflow="hidden";document.body.classList.add("modal-open");const f=m.querySelector("button,input,textarea,select");if(f)setTimeout(()=>f.focus(),20);return m}
@@ -386,10 +440,10 @@ function confirmView(c){
   $("#app").innerHTML=`<section class="card narrow"><h1>Xác nhận thông tin</h1>
     <dl class="info"><dt>Họ và tên</dt><dd>${esc(c.svd.hoTen)}</dd><dt>Mã sinh viên</dt><dd>${esc(c.sv)}</dd><dt>Lớp</dt><dd>${esc(c.lop.ten||c.ma)} (${esc(c.ma)})</dd><dt>Học phần</dt><dd>${esc(hp?hp.name:c.lop.hocPhanTen||c.lop.hocPhan)}</dd><dt>Thời gian</dt><dd>${c.lop.thoiGian|0} phút</dd></dl>
     <div class="rules"><b>Quy định làm bài</b><ul>
-      <li>${isTL(c.lop.hocPhan)?"Đề gồm 01 tình huống tư vấn (rút ngẫu nhiên). Bạn viết ý kiến tư vấn cho khách hàng theo 5 yêu cầu, nêu rõ căn cứ pháp luật và án lệ.":"Đề gồm 30 câu lý thuyết, 10 câu tình huống trắc nghiệm và 1 câu tự luận giải quyết tình huống."}</li>
+      <li>${isTL(c.lop.hocPhan)?"Đề gồm 01 tình huống tư vấn (rút ngẫu nhiên). Bạn điền phiếu tư vấn theo các bước: tiếp xúc khách hàng, xác định vấn đề pháp lý, xác định luật áp dụng, phương án giải quyết, trả lời tư vấn.":"Đề gồm 30 câu lý thuyết, 10 câu tình huống trắc nghiệm và 1 câu tự luận giải quyết tình huống."}</li>
       <li>Mỗi sinh viên chỉ được làm <b>một lần</b>. Bấm "Bắt đầu" là bắt đầu tính giờ.</li>
       <li>Bài được lưu liên tục; hết giờ bài tự nộp. Không tải lại trang trên máy khác.</li>
-      <li>Bài tự luận phải tự gõ, không dán được nội dung sao chép.</li><li>Mỗi lần rời khỏi trang làm bài (chuyển thẻ, chuyển ứng dụng) đều bị ghi lại. <b>Rời trang quá 10 lần, bài bị khóa và tự động nộp.</b></li>
+      <li>Bài tự luận làm theo phiếu điền thông tin; phải tự gõ, không dán được nội dung sao chép.</li><li>Mỗi lần rời khỏi trang làm bài (chuyển thẻ, chuyển ứng dụng) đều bị ghi lại. <b>Rời trang quá 10 lần, bài bị khóa và tự động nộp.</b></li>
     </ul></div>
     <label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 14px"><input type="checkbox" id="cf-ok" style="margin-top:5px"><span>Tôi xác nhận đúng là <b>${esc(c.svd.hoTen)}</b>, mã sinh viên ${esc(c.sv)}.</span></label>
     <div class="err" id="cf-err" role="alert"></div>
@@ -422,17 +476,16 @@ function renderExam(){
   const qBlock=id=>{n++;const q=B.byId[id];const sel=E.answers[K(id)]!=null?+E.answers[K(id)]:null;navh+=`<button type="button" data-go="qq-${n}" class="${sel!=null?"done":""}" id="nb-${esc(K(id))}">${n}</button>`;
     return `<div class="q" id="qq-${n}"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)}</p>${optHtml(q,id,de.perm[K(id)],sel)}</div>`};
   const TL=!!B.tl;
-  if(!TL){h+=`<div class="sec-title">Phần I. Lý thuyết (30 câu × ${fz(CT.dLT)} điểm)</div>`+de.lt.map(qBlock).join("");
-  h+=`<div class="sec-title">Phần II. Tình huống trắc nghiệm (10 câu × ${fz(CT.dTH)} điểm)</div>`}
+  if(!TL){h+=`<div class="sec-title">Phần I. Lý thuyết (30 câu)</div>`+de.lt.map(qBlock).join("");
+  h+=`<div class="sec-title">Phần II. Tình huống trắc nghiệm (10 câu)</div>`}
   de.th.forEach((c,i)=>{const cs=B.cases[c.cid];h+=`<div class="case"><h4>Tình huống ${i+1}</h4><p>${esc(cs.text)}</p></div>`+c.q.map(qBlock).join("")});
   const tl=B.cases[de.tl];navh+=`<button type="button" data-go="qq-tl" id="nb-tl" class="${E.essay.trim()?"done":""}">TL</button>`;
-  h+=TL?`<div class="sec-title">Bài tự luận — Viết ý kiến tư vấn (thang điểm 10)</div><div class="case" id="qq-tl"><h4>Tình huống</h4><p>${esc(tl.text)}</p></div>
-    <div class="q essay"><p class="stem">Anh/chị là luật sư (chuyên viên tư vấn) tiếp nhận yêu cầu trên. Hãy viết ý kiến tư vấn cho khách hàng theo trình tự sau, nêu rõ căn cứ pháp luật và án lệ (nếu có). <span style="font-weight:400">Trình bày thành từng đoạn đánh số 1–5 theo đúng các yêu cầu; làm đủ 5 bước được 5 điểm, nội dung đúng được thêm tối đa 5 điểm.</span></p><ol>${(tl.ask||[]).map(a=>"<li>"+esc(a)+"</li>").join("")}</ol>
-    <label class="lab" for="essay">Bài làm</label><textarea id="essay" spellcheck="false" style="min-height:420px" placeholder="1. Tóm tắt yêu cầu…&#10;2. Vấn đề pháp lý…&#10;3. Căn cứ pháp luật, án lệ…&#10;4. Ý kiến tư vấn, phương án…&#10;5. Rủi ro, việc cần làm tiếp…">`
-    :`<div class="sec-title">Phần III. Tự luận (${fz(CT.dTL)} điểm)</div><div class="case" id="qq-tl"><h4>Tình huống ${de.th.length+1}</h4><p>${esc(tl.text)}</p></div>
-    <div class="q essay"><p class="stem">Anh/chị hãy giải quyết tình huống trên theo các yêu cầu sau, nêu rõ căn cứ pháp lý. <span style="font-weight:400">Trả lời lần lượt, đánh số theo từng yêu cầu; trả lời đủ các yêu cầu được một nửa số điểm tự luận, nội dung đúng (điều luật, kết quả) được phần còn lại.</span></p><ol>${(tl.ask||[]).map(a=>"<li>"+esc(a)+"</li>").join("")}</ol>
-    <label class="lab" for="essay">Bài làm</label><textarea id="essay" spellcheck="false" placeholder="1. …&#10;2. …&#10;(Trả lời lần lượt từng yêu cầu, nêu căn cứ pháp lý: điều, khoản, văn bản)">`;
-  h+=`${esc(E.essay)}</textarea><div class="count" id="e-count"></div><p class="msg" id="e-paste"></p></div>
+  const P=phieuOf(B,tl);
+  h+=TL?`<div class="sec-title">Bài tự luận — Ý kiến tư vấn</div><div class="case" id="qq-tl"><h4>Tình huống</h4><p>${esc(tl.text)}</p></div>
+    <div class="q essay"><p class="stem">Anh/chị là luật sư (chuyên viên tư vấn) tiếp nhận yêu cầu trên. Hãy hoàn thành phiếu tư vấn dưới đây theo các bước tư vấn, nêu rõ căn cứ pháp luật và án lệ (nếu có).</p>`
+    :`<div class="sec-title">Phần III. Tự luận</div><div class="case" id="qq-tl"><h4>Tình huống ${de.th.length+1}</h4><p>${esc(tl.text)}</p></div>
+    <div class="q essay"><p class="stem">Anh/chị hãy giải quyết tình huống trên: trả lời từng câu hỏi theo các ô gợi ý dưới đây, nêu rõ căn cứ pháp lý.</p>`;
+  h+=`<div class="phieu" id="phieu">${phieuHtml(P,E.essay)}</div><div class="count" id="e-count"></div><p class="msg" id="e-paste"></p></div>
     <div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary" id="x-submit">Nộp bài</button></div>`;
   $("#app").innerHTML=`<div class="timer"><div><b>${esc(E.svd.hoTen)}</b> · ${esc(E.sv)} · ${esc(E.ma)}</div><div><span class="msg" id="x-save"></span> <span class="clock" id="x-clock">--:--</span></div></div>
     ${TL?"":`<div class="navq" aria-label="Chuyển nhanh tới câu">${navh}</div>`}${h}`;
@@ -440,12 +493,15 @@ function renderExam(){
   $("#app").addEventListener("change",e=>{const t=e.target;if(t.type!=="radio")return;const id=t.name.slice(2);E.answers[id]=+t.value;
     t.closest(".q").querySelectorAll(".opt").forEach(o=>o.classList.toggle("sel",o.querySelector("input").checked));
     const nb=document.getElementById("nb-"+id);if(nb)nb.classList.add("done");touch()});
-  const ta=$("#essay");const cnt=()=>{$("#e-count").textContent=(ta.value.trim()?ta.value.trim().split(/\s+/).length:0)+" từ"};cnt();
-  ta.addEventListener("input",()=>{E.essay=ta.value;cnt();const nb=$("#nb-tl");if(nb)nb.classList.toggle("done",!!ta.value.trim());touch()});
-  ta.addEventListener("paste",e=>{e.preventDefault();$("#e-paste").textContent="Không được dán nội dung vào bài tự luận. Hãy tự trình bày."});
-  ta.addEventListener("drop",e=>e.preventDefault());
+  const pf=$("#phieu"),soTu=()=>{const t=boNhan(E.essay).trim();return t?t.split(/\s+/).length:0},cnt=()=>{$("#e-count").textContent=soTu()+" từ"};cnt();
+  const doi=()=>{E.essay=ghiPhieu(P,pf);cnt();const nb=$("#nb-tl");if(nb)nb.classList.toggle("done",!!E.essay.trim());touch()};
+  pf.addEventListener("input",doi);pf.addEventListener("change",doi);
+  pf.addEventListener("click",e=>{const b=e.target.closest("[data-them]");if(!b)return;const g=pf.querySelector('[data-bang="'+b.dataset.them+'"]');
+    g.insertAdjacentHTML("beforeend",'<div class="br" style="display:contents"><input type="text" placeholder="Vấn đề…"><input type="text" placeholder="Điều … , khoản … ; án lệ số …"></div>')});
+  pf.addEventListener("paste",e=>{e.preventDefault();$("#e-paste").textContent="Không được dán nội dung vào bài tự luận. Hãy tự trình bày."});
+  pf.addEventListener("drop",e=>e.preventDefault());
   $("#x-submit").onclick=async()=>{const sum=questionsOf(E.de).length,done=questionsOf(E.de).filter(id=>E.answers[K(id)]!=null).length;
-    const ok=await ask("Nộp bài?",(E.B.tl?(E.essay.trim()?"Bài tự luận của bạn có "+E.essay.trim().split(/\s+/).length+" từ.":"Bạn <b>chưa viết bài tự luận</b>."):"Bạn đã trả lời "+done+"/"+sum+" câu trắc nghiệm"+(E.essay.trim()?"":" và <b>chưa làm câu tự luận</b>")+".")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
+    const ok=await ask("Nộp bài?",(E.B.tl?(E.essay.trim()?"Phiếu tư vấn của bạn có "+soTu()+" từ.":"Bạn <b>chưa điền phiếu tư vấn</b>."):"Bạn đã trả lời "+done+"/"+sum+" câu trắc nghiệm"+(E.essay.trim()?"":" và <b>chưa làm câu tự luận</b>")+".")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
   tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);
 }
 function touch(){const E=EXAM;E.dirty=true;store.set("pndg-"+E.id,JSON.stringify({stamp:E.stamp,answers:E.answers,essay:E.essay}));if(Date.now()-E.lastSave>15000)save(false)}
