@@ -618,7 +618,7 @@ function ketQua(sv){
   if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(AD.B));
     if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
   else tl=c&&c.xacNhan?(xn=true,c.diem):0;
-  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:Math.round(tong*10)/10};
+  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:AD.B.tl?Math.round(tong*10)/10:Math.round(tong)/10};
 }
 function tabDiem(){
   const rows=AD.ds.map(ketQua);const nop=rows.filter(r=>r.b&&r.b.status==="da-nop"),dang=rows.filter(r=>r.b&&r.b.status!=="da-nop");
@@ -630,7 +630,7 @@ function tabDiem(){
     ${nop.length?`<div class="card"><h3 style="margin-top:0">Phổ điểm (thang 10)</h3><div class="bars">${bins.map(x=>`<div style="height:${x.n/mx*100}%"><span>${x.n}</span></div>`).join("")}</div><div class="barlab">${bins.map(x=>"<span>"+x.t+"</span>").join("")}</div>
       ${top.length?`<h3>Câu sai nhiều nhất</h3><ol>${top.map(([id,n])=>{const q=AD.B.byId[id];return `<li>${esc(q?q.q:id)} <span class="msg">(${id} · ${n}/${nop.length} sai)</span></li>`}).join("")}</ol>`:""}</div>`:""}
     <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button>${nop.length?'<button class="btn" id="d-cl">Chấm lại tự luận theo đáp án mới</button>':""}</div>
-    <p class="msg">Điểm là tổng bài trên thang 10 (100 điểm quy đổi). Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
+    <p class="msg">${AD.B.tl?"Điểm là tổng bài trên thang 10.":"Điểm là tổng bài trên thang 10 (100 điểm quy đổi)."} Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
     <div class="card tblwrap"><table class="sheet"><thead><tr><th class="c">STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Trạng thái</th><th class="c">Điểm<br><span class="msg">(thang 10)</span></th><th class="c">Tự luận</th><th class="c">Rời trang</th><th>Thao tác</th></tr></thead><tbody>
     ${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${esc(r.sv.hoTen)}</td><td>${esc(r.sv.ngaySinh||"")}</td>
       <td>${!r.b?'<span class="msg">Chưa làm</span>':r.b.status==="da-nop"?'<span class="pill open">Đã nộp</span>':'<span class="pill wait">Đang làm</span>'}</td>
@@ -678,7 +678,7 @@ function gradeView(mssv){
     ${B.tl?"":`<h3>Phần trắc nghiệm</h3><div class="tblwrap"><table><thead><tr><th>Câu</th><th>Nội dung</th><th>SV chọn</th><th>Đáp án</th></tr></thead><tbody>${b.de.lt.map(line).join("")}${b.de.th.flatMap(x=>x.q).map(line).join("")}</tbody></table></div>`}`);
   const calc=()=>{const v=[...m.querySelectorAll(".g-muc")].map(s=>+s.value),bv=[...m.querySelectorAll(".g-buoc")].map(s=>+s.value);
     m.querySelectorAll(".y").forEach(el=>{const x=+el.querySelector("select").value;el.classList.toggle("d1",x===1);el.classList.toggle("d05",x>0&&x<1)});
-    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(Math.round(tong*10)/10).replace(".",",");return {v,bv,tl}};
+    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(B.tl?Math.round(tong*10)/10:Math.round(tong)/10).replace(".",",");return {v,bv,tl}};
   calc();m.querySelectorAll(".g-muc,.g-buoc").forEach(s=>s.onchange=calc);
   m.querySelector("#g-x").onclick=()=>{closeModal();tabDiem()};
   m.querySelector("#g-save").onclick=async()=>{const {v,bv,tl}=calc();
@@ -706,7 +706,7 @@ function paperView(mssv){
   const m=modal(`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Bài làm · ${esc(sv.hoTen)} · ${esc(mssv)}</h2><div><button class="btn small" id="p-print">In / lưu PDF</button> <button class="btn small" id="p-x">Đóng</button></div></div>
     <dl class="info" style="margin-top:12px"><dt>Lớp</dt><dd>${esc(AD.ma)} · ${esc(AD.l.ten||"")} · ${esc(AD.l.hocPhanTen||"")}</dd><dt>Ngày sinh</dt><dd>${esc(sv.ngaySinh||"–")}</dd>
       <dt>Bắt đầu</dt><dd>${esc(fmtDT(toDate(b.startedAt)))}</dd><dt>Nộp bài</dt><dd>${b.submittedAt?esc(fmtDT(toDate(b.submittedAt))):"Chưa nộp"+(b.luu?" (lưu lần cuối "+esc(fmtDT(toDate(b.luu)))+")":"")}</dd>
-      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>${B.tl?"":"Lý thuyết "+fz(r.lt)+"/"+fz(CT.lt*CT.dLT)+" · Tình huống "+fz(r.th)+"/"+fz(10*CT.dTH)+" · "}Tự luận ${fz(r.tl)}/${fz(tlMaxOf(B))}${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/${fz(tlMaxOf(B))} · <b>Thang 10: ${String(r.t10).replace(".",",")}</b></dd></dl>
+      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>${B.tl?"":"Lý thuyết "+fz(r.lt)+"/"+fz(CT.lt*CT.dLT)+" · Tình huống "+fz(r.th)+"/"+fz(10*CT.dTH)+" · "}Tự luận ${fz(r.tl)}/${fz(tlMaxOf(B))}${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/${B.tl?fz(tlMaxOf(B)):"100"} · <b>Thang 10: ${String(r.t10).replace(".",",")}</b></dd></dl>
     ${B.tl?"":'<p class="msg">Phương án hiển thị đúng thứ tự A, B, C, D như sinh viên đã thấy khi làm bài. Ô viền xanh là đáp án đúng.</p>'}${h}`);
   m.querySelector("#p-x").onclick=closeModal;m.querySelector("#p-print").onclick=()=>window.print();
 }
