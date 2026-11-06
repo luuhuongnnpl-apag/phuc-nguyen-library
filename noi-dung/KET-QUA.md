@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 09:44 06/11/2026
+# Kết quả dựng nội dung — 09:50 06/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -13,4 +13,4 @@
       - danh-gia/de/ky-nang-tu-van-phap-luat-dan-su.json
       - danh-gia/index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42152177501 · commit fbc115f
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42152793199 · commit 43dbc2e
