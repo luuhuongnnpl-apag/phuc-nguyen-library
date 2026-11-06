@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 10:17 06/11/2026
+# Kết quả dựng nội dung — 15:41 06/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,8 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
+      - assets/pnlib-course.js
       - danh-gia/index.html
+      - ky-nang-tu-van-phap-luat-dan-su/index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42155586315 · commit d91cff0
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42189452891 · commit e09f138
