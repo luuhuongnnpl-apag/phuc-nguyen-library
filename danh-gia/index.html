@@ -138,9 +138,14 @@ const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
 /* tuLuan: chương lấy tình huống tự luận (so khớp tên nhóm tình huống) */
 /* mode:"tl" = bài chỉ có 01 câu tự luận (đề trong de/<id>.json, ý chính + từ khóa trong de/<id>.dat, chỉ quản trị tải) */
 const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự",tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
-  {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tl",thoiGian:60,ma:"TV"}];
+  {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tn",src:"../ky-nang-tu-van-phap-luat-dan-su/index.html",tnCases:3,thoiGian:60,ma:"TV"}];
+/* mode:"tn" (06/11/2026) = đề chỉ gồm tình huống trắc nghiệm: rút tnCases tình huống khác chương, lấy đủ các câu của mỗi tình huống, chấm thang 10.
+   Bài đã nộp theo đề tự luận cũ (de.tl) vẫn chấm theo ngân hàng tự luận de/<id>.json + .dat. */
 const hpOf=id=>HOCPHAN.find(h=>h.id===id)||{};
 const isTL=id=>hpOf(id).mode==="tl";
+const isTN=id=>hpOf(id).mode==="tn";
+const laTLCu=(id,de)=>isTN(id)&&!!(de&&de.tl); /* bài tự luận cũ của học phần đã chuyển sang trắc nghiệm */
+const bankFor=(id,de,withKey)=>laTLCu(id,de)?loadTL(id,withKey):loadBank(id,withKey);
 const DAT_KEY="KNTV-APAG-2026";
 const MAX_ROI=10; /* rời trang quá số lần này thì tự nộp bài */
 /* Cấu trúc đề (sửa 06/11/2026): 30 lý thuyết + 10 tình huống ABCD (2,25 điểm/câu = 90) + 1 tự luận (10 điểm) = 100 điểm, quy về thang 10 */
@@ -175,7 +180,7 @@ const BANKS={};
 async function loadBank(id,withKey){
   if(isTL(id))return loadTL(id,withKey);
   if(BANKS[id])return BANKS[id];
-  const r=await fetch("../hp/"+id+".html",{cache:"no-cache"});
+  const r=await fetch(hpOf(id).src||("../hp/"+id+".html"),{cache:"no-cache"});
   if(!r.ok)throw new Error("Không tải được ngân hàng câu hỏi của học phần.");
   const t=await r.text();
   const m=t.match(/<script id="pn-data" type="application\/json">([\s\S]*?)<\/script>/);
@@ -183,15 +188,15 @@ async function loadBank(id,withKey){
   const d=JSON.parse(m[1]);const byId={},cases={},caseCh={};
   d.q.forEach(q=>{if(q.id)byId[q.id]=q});
   (d.th||[]).forEach((g,gi)=>(g.items||[]).forEach(it=>{cases[it.cid]=it;caseCh[it.cid]=gi}));
-  return BANKS[id]={d,byId,cases,caseCh,lt:d.q.filter(q=>q.id&&!q.cid&&Array.isArray(q.o)),name:d.meta&&d.meta.name||id};
+  return BANKS[id]={d,byId,cases,caseCh,lt:d.q.filter(q=>q.id&&!q.cid&&Array.isArray(q.o)),name:d.meta&&d.meta.name||id,tn:isTN(id)};
 }
 /* Học phần chỉ có tự luận: đề công khai + khóa chấm mã hóa (chỉ tải khi quản trị chấm) */
 async function loadTL(id,withKey){
-  let B=BANKS[id];
+  let B=BANKS["TL:"+id];
   if(!B){const r=await fetch("de/"+id+".json",{cache:"no-cache"});if(!r.ok)throw new Error("Không tải được đề của học phần.");
     const d=await r.json();const cases={},caseCh={},chs=[];
     d.cases.forEach(c=>{let gi=chs.indexOf(c.ch);if(gi<0){chs.push(c.ch);gi=chs.length-1}cases[c.cid]={...c,ask:d.meta.ask};caseCh[c.cid]=gi});
-    B=BANKS[id]={tl:true,d:{th:chs.map(n=>({name:n}))},byId:{},cases,caseCh,lt:[],name:hpOf(id).name||id,ask:d.meta.ask,keyed:false}}
+    B=BANKS["TL:"+id]={tl:true,d:{th:chs.map(n=>({name:n}))},byId:{},cases,caseCh,lt:[],name:hpOf(id).name||id,ask:d.meta.ask,keyed:false}}
   if(withKey&&!B.keyed){const r=await fetch("de/"+id+".dat",{cache:"no-cache"});if(!r.ok)throw new Error("Không tải được đáp án gợi ý.");
     const raw=atob((await r.text()).trim()),k=new TextEncoder().encode(DAT_KEY),u=new Uint8Array(raw.length);
     for(let i=0;i<raw.length;i++)u[i]=raw.charCodeAt(i)^k[i%k.length];
@@ -208,6 +213,14 @@ function pickSpread(pool,n){
 }
 function buildDe(B,hpId){
   if(B.tl){const ids=Object.keys(B.cases);if(!ids.length)throw new Error("Chưa có tình huống.");return {lt:[],th:[],tl:shuffle(ids)[0],perm:{}}}
+  if(B.tn){const k=hpOf(hpId).tnCases||3,ok=Object.values(B.cases).filter(c=>Array.isArray(c.mcq)&&c.mcq.length&&c.mcq.every(id=>B.byId[id]));
+    const by={};ok.forEach(c=>(by[B.caseCh[c.cid]]=by[B.caseCh[c.cid]]||[]).push(c));const picked=[];
+    for(const ch of shuffle(Object.keys(by))){if(picked.length>=k)break;picked.push(shuffle(by[ch])[0])}
+    if(picked.length<k){const rest=shuffle(ok.filter(c=>!picked.includes(c)));while(picked.length<k&&rest.length)picked.push(rest.pop())}
+    if(picked.length<k)throw new Error("Ngân hàng tình huống chưa đủ để trộn đề.");
+    const th=picked.map(c=>({cid:c.cid,q:c.mcq.slice()}));const perm={};
+    th.flatMap(x=>x.q).forEach(id=>{perm[K(id)]=shuffle([...Array(B.byId[id].o.length).keys()]).join("")});
+    return {lt:[],th,tl:null,perm,tn:1}}
   const used=new Set();let lt=[];
   for(const [lv,n] of Object.entries(CT.lv)){const p=pickSpread(B.lt.filter(q=>q.lv===lv),n);p.forEach(q=>used.add(q.id));lt.push(...p)}
   if(lt.length<CT.lt)lt.push(...pickSpread(B.lt.filter(q=>!used.has(q.id)),CT.lt-lt.length));
@@ -230,6 +243,10 @@ function buildDe(B,hpId){
   return {lt,th,tl:tlCase.cid,perm};
 }
 function questionsOf(de){return [...de.lt,...de.th.flatMap(x=>x.q)]}
+/* Đề chỉ trắc nghiệm tình huống: điểm = số câu đúng / tổng số câu × 10 */
+function chamTNTH(B,de,answers){answers=answers||{};const ids=questionsOf(de);let dung=0;const sai=[];
+  ids.forEach(id=>{const q=B.byId[id];if(!q)return;const a=answers[K(id)];if(a!=null&&+a===q.a)dung++;else sai.push(id)});
+  return {dung,tong:ids.length,diem:ids.length?r2(dung*10/ids.length):0,sai}}
 
 /* ====== CHẤM ====== */
 function chamTN(B,de,answers){
@@ -444,10 +461,10 @@ function confirmView(c){
   $("#app").innerHTML=`<section class="card narrow"><h1>Xác nhận thông tin</h1>
     <dl class="info"><dt>Họ và tên</dt><dd>${esc(c.svd.hoTen)}</dd><dt>Mã sinh viên</dt><dd>${esc(c.sv)}</dd><dt>Lớp</dt><dd>${esc(c.lop.ten||c.ma)} (${esc(c.ma)})</dd><dt>Học phần</dt><dd>${esc(hp?hp.name:c.lop.hocPhanTen||c.lop.hocPhan)}</dd><dt>Thời gian</dt><dd>${c.lop.thoiGian|0} phút</dd></dl>
     <div class="rules"><b>Quy định làm bài</b><ul>
-      <li>${isTL(c.lop.hocPhan)?"Đề gồm 01 tình huống tư vấn (rút ngẫu nhiên). Bạn điền phiếu tư vấn theo các bước: tiếp xúc khách hàng, xác định vấn đề pháp lý, xác định luật áp dụng, phương án giải quyết, trả lời tư vấn.":"Đề gồm 30 câu lý thuyết, 10 câu tình huống trắc nghiệm và 1 câu tự luận giải quyết tình huống."}</li>
+      <li>${isTN(c.lop.hocPhan)?"Đề gồm "+(hpOf(c.lop.hocPhan).tnCases||3)+" tình huống tư vấn, mỗi tình huống có nhiều câu hỏi trắc nghiệm nối tiếp theo các bước tư vấn (tiếp xúc khách hàng → vấn đề pháp lý → luật áp dụng → phương án giải quyết → trả lời tư vấn). Mỗi câu chọn một phương án đúng nhất.":isTL(c.lop.hocPhan)?"Đề gồm 01 tình huống tư vấn (rút ngẫu nhiên). Bạn điền phiếu tư vấn theo các bước: tiếp xúc khách hàng, xác định vấn đề pháp lý, xác định luật áp dụng, phương án giải quyết, trả lời tư vấn.":"Đề gồm 30 câu lý thuyết, 10 câu tình huống trắc nghiệm và 1 câu tự luận giải quyết tình huống."}</li>
       <li>Mỗi sinh viên chỉ được làm <b>một lần</b>. Bấm "Bắt đầu" là bắt đầu tính giờ.</li>
       <li>Bài được lưu liên tục; hết giờ bài tự nộp. Không tải lại trang trên máy khác.</li>
-      <li>Bài tự luận làm theo phiếu điền thông tin; phải tự gõ, không dán được nội dung sao chép.</li><li>Mỗi lần rời khỏi trang làm bài (chuyển thẻ, chuyển ứng dụng) đều bị ghi lại. <b>Rời trang quá 10 lần, bài bị khóa và tự động nộp.</b></li>
+      ${isTN(c.lop.hocPhan)?"":"<li>Bài tự luận làm theo phiếu điền thông tin; phải tự gõ, không dán được nội dung sao chép.</li>"}<li>Mỗi lần rời khỏi trang làm bài (chuyển thẻ, chuyển ứng dụng) đều bị ghi lại. <b>Rời trang quá 10 lần, bài bị khóa và tự động nộp.</b></li>
     </ul></div>
     <label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 14px"><input type="checkbox" id="cf-ok" style="margin-top:5px"><span>Tôi xác nhận đúng là <b>${esc(c.svd.hoTen)}</b>, mã sinh viên ${esc(c.sv)}.</span></label>
     <div class="err" id="cf-err" role="alert"></div>
@@ -461,7 +478,7 @@ function confirmView(c){
     }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm.":(x.message||"Lỗi kết nối, thử lại.");$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
 }
 async function startExam(c){
-  const B=await loadBank(c.lop.hocPhan);const de=c.bai.de;
+  const de=c.bai.de;const B=await bankFor(c.lop.hocPhan,de);
   const stamp=(toDate(c.bai.startedAt)||new Date(0)).getTime()+"|"+de.tl;
   let local=JSON.parse(store.get("pndg-"+c.id)||"{}");if(local.stamp!==stamp)local={};
   const answers=Object.assign({},c.bai.answers||{},local.answers||{});
@@ -479,7 +496,18 @@ function renderExam(){
   const E=EXAM,B=E.B,de=E.de;let n=0,h="",navh="";
   const qBlock=id=>{n++;const q=B.byId[id];const sel=E.answers[K(id)]!=null?+E.answers[K(id)]:null;navh+=`<button type="button" data-go="qq-${n}" class="${sel!=null?"done":""}" id="nb-${esc(K(id))}">${n}</button>`;
     return `<div class="q" id="qq-${n}"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)}</p>${optHtml(q,id,de.perm[K(id)],sel)}</div>`};
-  const TL=!!B.tl;
+  const TL=!!B.tl,TN=!de.tl;
+  if(TN){de.th.forEach((c,i)=>{const cs=B.cases[c.cid]||{};h+=`<div class="sec-title">Tình huống ${i+1} (${c.q.length} câu)</div><div class="case"><p>${esc(cs.text||"")}</p></div>`+c.q.map(qBlock).join("")});
+    h+=`<div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary" id="x-submit">Nộp bài</button></div>`;
+    $("#app").innerHTML=`<div class="timer"><div><b>${esc(E.svd.hoTen)}</b> · ${esc(E.sv)} · ${esc(E.ma)}</div><div><span class="msg" id="x-save"></span> <span class="clock" id="x-clock">--:--</span></div></div>
+    <div class="navq" aria-label="Chuyển nhanh tới câu">${navh}</div>${h}`;
+    $$(".navq button").forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.go);if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
+    $("#app").addEventListener("change",e=>{const t=e.target;if(t.type!=="radio")return;const id=t.name.slice(2);E.answers[id]=+t.value;
+      t.closest(".q").querySelectorAll(".opt").forEach(o=>o.classList.toggle("sel",o.querySelector("input").checked));
+      const nb=document.getElementById("nb-"+id);if(nb)nb.classList.add("done");touch()});
+    $("#x-submit").onclick=async()=>{const ids=questionsOf(E.de),done=ids.filter(id=>E.answers[K(id)]!=null).length;
+      const ok=await ask("Nộp bài?","Bạn đã trả lời "+done+"/"+ids.length+" câu."+(done<ids.length?" <b>Còn "+(ids.length-done)+" câu chưa trả lời.</b>":"")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
+    tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);return}
   if(!TL){h+=`<div class="sec-title">Phần I. Lý thuyết (30 câu)</div>`+de.lt.map(qBlock).join("");
   h+=`<div class="sec-title">Phần II. Tình huống trắc nghiệm (10 câu)</div>`}
   de.th.forEach((c,i)=>{const cs=B.cases[c.cid];h+=`<div class="case"><h4>Tình huống ${i+1}</h4><p>${esc(cs.text)}</p></div>`+c.q.map(qBlock).join("")});
@@ -595,14 +623,15 @@ async function saveRoster(ma,rows){
 /* ---- trang một lớp ---- */
 async function classView(ma){
   $("#app").innerHTML='<p class="msg">Đang tải lớp '+esc(ma)+'…</p>';
-  let l,ds,bai,cham,B;
+  let l,ds,bai,cham,B,BL=null;
   try{const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists){$("#app").innerHTML='<p class="err">Không có lớp '+esc(ma)+'.</p><a href="#quan-tri">← Danh sách lớp</a>';return}
     l={id:ma,...ls.data()};
     const [d1,d2,d3]=await Promise.all([db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
     ds=d1.exists?(d1.data().rows||[]):[];bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
     B=await loadBank(l.hocPhan,true);
+    if(isTN(l.hocPhan)&&Object.values(bai).some(b=>b.de&&b.de.tl))BL=await loadTL(l.hocPhan,true);
   }catch(x){console.error(x);$("#app").innerHTML='<p class="err">Không tải được dữ liệu lớp ('+esc(x.code||x.message)+').</p>';return}
-  AD={...AD,ma,l,ds,bai,cham,B};
+  AD={...AD,ma,l,ds,bai,cham,B,BL};
   const st=lopTrangThai(l);
   $("#app").innerHTML=`<p><a href="#quan-tri">← Danh sách lớp</a></p><h1>${esc(ma)} <span class="pill ${st.k}" style="vertical-align:middle;font-size:13px">${esc(st.t)}</span></h1>
     <p class="lead">${esc(l.ten||"")} · ${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${l.thoiGian|0} phút · mở ${esc(fmtDT(toDate(l.openAt)))} → đóng ${esc(fmtDT(toDate(l.closeAt)))}</p>
@@ -611,14 +640,17 @@ async function classView(ma){
   renderTab();
 }
 function renderTab(){({diem:tabDiem,ds:tabDS,cai:tabCai})[AD.tab]()}
+/* Ngân hàng dùng để chấm một bài: bài tự luận cũ của học phần đã chuyển sang trắc nghiệm dùng ngân hàng tự luận */
+const BB=b=>(b&&AD.BL&&laTLCu(AD.l.hocPhan,b.de))?AD.BL:AD.B;
 function ketQua(sv){
-  const b=AD.bai[sv.mssv];if(!b)return {sv,b:null};
-  const tn=chamTN(AD.B,b.de,b.answers);const c=AD.cham[sv.mssv];const cs=AD.B.cases[b.de.tl];
+  const b=AD.bai[sv.mssv];if(!b)return {sv,b:null};const B=BB(b);
+  if(!b.de.tl){const t=chamTNTH(B,b.de,b.answers);return {sv,b,lt:0,th:t.diem,sai:t.sai,tl:0,xn:true,tong:t.diem,t10:Math.round(t.diem*10)/10,tn:t}}
+  const tn=chamTN(B,b.de,b.answers);const c=AD.cham[sv.mssv];const cs=B.cases[b.de.tl];
   let tl,xn=false,ys=null;
-  if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(AD.B));
+  if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(B));
     if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
   else tl=c&&c.xacNhan?(xn=true,c.diem):0;
-  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:AD.B.tl?Math.round(tong*10)/10:Math.round(tong)/10};
+  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:B.tl?Math.round(tong*10)/10:Math.round(tong)/10};
 }
 function tabDiem(){
   const rows=AD.ds.map(ketQua);const nop=rows.filter(r=>r.b&&r.b.status==="da-nop"),dang=rows.filter(r=>r.b&&r.b.status!=="da-nop");
@@ -629,15 +661,15 @@ function tabDiem(){
   $("#tab").innerHTML=`<div class="stats"><div class="stat"><b>${nop.length}/${AD.ds.length}</b><span>đã nộp</span></div><div class="stat"><b>${dang.length}</b><span>đang làm</span></div><div class="stat"><b>${t10.length?avg.toString().replace(".",","):"–"}</b><span>điểm TB (thang 10)</span></div><div class="stat"><b>${chuaXN}</b><span>bài tự luận chưa xác nhận</span></div></div>
     ${nop.length?`<div class="card"><h3 style="margin-top:0">Phổ điểm (thang 10)</h3><div class="bars">${bins.map(x=>`<div style="height:${x.n/mx*100}%"><span>${x.n}</span></div>`).join("")}</div><div class="barlab">${bins.map(x=>"<span>"+x.t+"</span>").join("")}</div>
       ${top.length?`<h3>Câu sai nhiều nhất</h3><ol>${top.map(([id,n])=>{const q=AD.B.byId[id];return `<li>${esc(q?q.q:id)} <span class="msg">(${id} · ${n}/${nop.length} sai)</span></li>`}).join("")}</ol>`:""}</div>`:""}
-    <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button>${nop.length?'<button class="btn" id="d-cl">Chấm lại tự luận theo đáp án mới</button>':""}</div>
-    <p class="msg">${AD.B.tl?"Điểm là tổng bài trên thang 10.":"Điểm là tổng bài trên thang 10 (100 điểm quy đổi)."} Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
+    <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button>${nop.some(r=>r.b.de&&r.b.de.tl)?'<button class="btn" id="d-cl">Chấm lại tự luận theo đáp án mới</button>':""}</div>
+    <p class="msg">${AD.B.tn?"Điểm thang 10 = số câu đúng / tổng số câu × 10. Bài tự luận nộp theo đề cũ (nếu có) vẫn chấm như trước; điểm ghi \"tạm\" là bài tự luận chưa xác nhận.":AD.B.tl?"Điểm là tổng bài trên thang 10.":"Điểm là tổng bài trên thang 10 (100 điểm quy đổi)."} Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
     <div class="card tblwrap"><table class="sheet"><thead><tr><th class="c">STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Trạng thái</th><th class="c">Điểm<br><span class="msg">(thang 10)</span></th><th class="c">Tự luận</th><th class="c">Rời trang</th><th>Thao tác</th></tr></thead><tbody>
     ${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${esc(r.sv.hoTen)}</td><td>${esc(r.sv.ngaySinh||"")}</td>
       <td>${!r.b?'<span class="msg">Chưa làm</span>':r.b.status==="da-nop"?'<span class="pill open">Đã nộp</span>':'<span class="pill wait">Đang làm</span>'}</td>
       <td class="c score">${r.b?String(r.t10).replace(".",",")+(r.xn?"":' <span class="msg">tạm</span>'):""}</td>
-      <td class="c">${!r.b?"":r.xn?'<span class="ok">Đã chấm</span>':`<button class="btn small primary" data-sv="${esc(r.sv.mssv)}">Chấm tự luận</button>`}</td>
+      <td class="c">${!r.b?"":r.tn?'<span class="msg">Trắc nghiệm</span>':r.xn?'<span class="ok">Đã chấm</span>':`<button class="btn small primary" data-sv="${esc(r.sv.mssv)}">Chấm tự luận</button>`}</td>
       <td class="c">${r.b?`<span class="${(r.b.roiTrang|0)>MAX_ROI?"wrong":""}">${r.b.roiTrang|0}</span>`:""}</td>
-      <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> ${r.xn?`<button class="btn small" data-sv="${esc(r.sv.mssv)}">Sửa điểm TL</button> `:""}<button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
+      <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> ${r.xn&&!r.tn?`<button class="btn small" data-sv="${esc(r.sv.mssv)}">Sửa điểm TL</button> `:""}<button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
   $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
   $("#d-re").onclick=()=>classView(AD.ma);$("#d-xls").onclick=()=>exportXls(rows);
   if($("#d-cl"))$("#d-cl").onclick=async()=>{const xs=nop.filter(r=>AD.cham[r.sv.mssv]&&AD.cham[r.sv.mssv].xacNhan);
@@ -652,7 +684,7 @@ function tabDiem(){
 }
 function alertMsg(t){const m=modal('<p>'+esc(t)+'</p><div class="row" style="justify-content:flex-end"><button class="btn primary" id="m-ok">Đóng</button></div>',"sm");m.querySelector("#m-ok").onclick=closeModal}
 function gradeView(mssv){
-  const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:""};const r=ketQua(sv);const b=r.b,B=AD.B,cs=B.cases[b.de.tl];
+  const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:""};const r=ketQua(sv);const b=r.b,B=BB(b),cs=B.cases[b.de.tl];
   const c=AD.cham[mssv];const ys=chamTL(cs,b.essay);const saved=c&&Array.isArray(c.muc)?c.muc:null;
   const TM=tlMaxOf(B),bs=chamBuoc(cs,b.essay,TM),savedB=c&&Array.isArray(c.buoc)?c.buoc:null;
   let n=0;const line=id=>{n++;const q=B.byId[id];if(!q)return"";const a=b.answers&&b.answers[K(id)]!=null?+b.answers[K(id)]:null;
@@ -689,7 +721,7 @@ function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa
   const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';
   return t+` <button class="btn small" data-paper="${esc(mssv)}">Xem bài</button>`}
 function paperView(mssv){
-  const b=AD.bai[mssv];if(!b)return;const B=AD.B,de=b.de,sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};
+  const b=AD.bai[mssv];if(!b)return;const B=BB(b),de=b.de,sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};
   const r=ketQua(sv);const ans=b.answers||{};let n=0,dung=0;
   const qHtml=id=>{n++;const q=B.byId[id];if(!q)return `<div class="q"><p class="stem"><b>Câu ${n}.</b> (câu ${esc(id)} không còn trong ngân hàng)</p></div>`;
     const perm=(de.perm[K(id)]||"").split("").map(Number);const ord=perm.length===q.o.length?perm:[...q.o.keys()];
@@ -697,17 +729,17 @@ function paperView(mssv){
     return `<div class="q"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)} <span class="msg">[${esc(id)} · ${esc(q.lv||"")}]</span> ${a==null?'<span class="wrong">Bỏ trống</span>':ok?'<span class="right">Đúng</span>':'<span class="wrong">Sai</span>'}</p>
       ${ord.map((oi,pos)=>{const isA=oi===q.a,isC=oi===a;return `<div class="opt${isC?" sel":""}" style="cursor:default${isA?";border-color:var(--ok);background:var(--ok-soft)":""}"><span><b>${LET[pos]}.</b> ${esc(q.o[oi])}${isC?' <b>← sinh viên chọn</b>':''}${isA?' <b class="right">✓ đáp án</b>':''}</span></div>`}).join("")}
       <p class="msg" style="margin:6px 0 0">Căn cứ: ${esc(q.b||"")}</p></div>`};
-  let h=B.tl?"":`<div class="sec-title">Phần I. Lý thuyết</div>`+de.lt.map(qHtml).join("")+`<div class="sec-title">Phần II. Tình huống trắc nghiệm</div>`;
+  let h=(B.tl||!de.tl)?"":`<div class="sec-title">Phần I. Lý thuyết</div>`+de.lt.map(qHtml).join("")+`<div class="sec-title">Phần II. Tình huống trắc nghiệm</div>`;
   de.th.forEach((c,i)=>{const cs=B.cases[c.cid]||{};h+=`<div class="case"><h4>Tình huống ${i+1} <span class="msg">[${esc(c.cid)}]</span></h4><p>${esc(cs.text||"")}</p></div>`+c.q.map(qHtml).join("")});
   const tl=B.cases[de.tl]||{};const c=AD.cham[mssv];
-  h+=`<div class="sec-title">${B.tl?"Bài tự luận — Ý kiến tư vấn":"Phần III. Tự luận"}</div><div class="case"><h4>Tình huống ${B.tl?"":de.th.length+1} <span class="msg">[${esc(de.tl)}]</span></h4><p>${esc(tl.text||"")}</p><ol>${(tl.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></div>
+  if(de.tl)h+=`<div class="sec-title">${B.tl?"Bài tự luận — Ý kiến tư vấn":"Phần III. Tự luận"}</div><div class="case"><h4>Tình huống ${B.tl?"":de.th.length+1} <span class="msg">[${esc(de.tl)}]</span></h4><p>${esc(tl.text||"")}</p><ol>${(tl.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></div>
     <p class="lab">Bài làm của sinh viên (${(b.essay||"").trim()?(b.essay.trim().split(/\s+/).length+" từ"):"bỏ trống"})</p><div class="ans" style="max-height:none">${esc(b.essay||"(bỏ trống)")}</div>
     ${c&&c.xacNhan?`<p class="ok">Điểm tự luận đã xác nhận: ${fz(r.tl)}/${fz(tlMaxOf(B))}${c.note?" · Nhận xét: "+esc(c.note):""}</p>`:'<p class="msg">Tự luận chưa được xác nhận điểm (đang dùng điểm gợi ý theo từ khóa).</p>'}`;
   const m=modal(`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Bài làm · ${esc(sv.hoTen)} · ${esc(mssv)}</h2><div><button class="btn small" id="p-print">In / lưu PDF</button> <button class="btn small" id="p-x">Đóng</button></div></div>
     <dl class="info" style="margin-top:12px"><dt>Lớp</dt><dd>${esc(AD.ma)} · ${esc(AD.l.ten||"")} · ${esc(AD.l.hocPhanTen||"")}</dd><dt>Ngày sinh</dt><dd>${esc(sv.ngaySinh||"–")}</dd>
       <dt>Bắt đầu</dt><dd>${esc(fmtDT(toDate(b.startedAt)))}</dd><dt>Nộp bài</dt><dd>${b.submittedAt?esc(fmtDT(toDate(b.submittedAt))):"Chưa nộp"+(b.luu?" (lưu lần cuối "+esc(fmtDT(toDate(b.luu)))+")":"")}</dd>
-      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>${B.tl?"":"Lý thuyết "+fz(r.lt)+"/"+fz(CT.lt*CT.dLT)+" · Tình huống "+fz(r.th)+"/"+fz(10*CT.dTH)+" · "}Tự luận ${fz(r.tl)}/${fz(tlMaxOf(B))}${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/${B.tl?fz(tlMaxOf(B)):"100"} · <b>Thang 10: ${String(r.t10).replace(".",",")}</b></dd></dl>
-    ${B.tl?"":'<p class="msg">Phương án hiển thị đúng thứ tự A, B, C, D như sinh viên đã thấy khi làm bài. Ô viền xanh là đáp án đúng.</p>'}${h}`);
+      <dt>Rời trang làm bài</dt><dd>${b.roiTrang|0} lần</dd><dt>Kết quả</dt><dd>${!de.tl?"Trắc nghiệm: đúng "+r.tn.dung+"/"+r.tn.tong+" câu · <b>Thang 10: "+String(r.t10).replace(".",",")+"</b>":`${B.tl?"":"Lý thuyết "+fz(r.lt)+"/"+fz(CT.lt*CT.dLT)+" · Tình huống "+fz(r.th)+"/"+fz(10*CT.dTH)+" · "}Tự luận ${fz(r.tl)}/${fz(tlMaxOf(B))}${r.xn?"":" (gợi ý)"} · Tổng ${String(r.tong).replace(".",",")}/${B.tl?fz(tlMaxOf(B)):"100"} · <b>Thang 10: ${String(r.t10).replace(".",",")}</b>`}</dd></dl>
+    ${B.tl&&de.tl?"":'<p class="msg">Phương án hiển thị đúng thứ tự A, B, C, D như sinh viên đã thấy khi làm bài. Ô viền xanh là đáp án đúng.</p>'}${h}`);
   m.querySelector("#p-x").onclick=closeModal;m.querySelector("#p-print").onclick=()=>window.print();
 }
 function loadXLSX(){return window.XLSX?Promise.resolve(window.XLSX):new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=()=>res(window.XLSX);s.onerror=()=>rej(new Error("Không tải được thư viện Excel"));document.head.appendChild(s)})}
@@ -776,7 +808,7 @@ function preview(rows){
 }
 function tabCai(){
   const l=AD.l;$("#tab").innerHTML=`<div class="card"><div class="row"><button class="btn primary" id="c-edit">Sửa thông tin, giờ mở/đóng</button><button class="btn" id="c-tog">${l.open?"Khóa ngay (không cho làm bài)":"Mở lại cho làm bài"}</button></div>
-    <p class="msg">${isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên điền phiếu tư vấn 5 bước (Tiếp xúc khách hàng → Vấn đề pháp lý → Luật áp dụng → Phương án giải quyết → Trả lời tư vấn). Chấm: làm đủ 5 bước = 5 điểm (mỗi bước 1 điểm); nội dung theo 5 ý chính của từng bước = 5 điểm (0,5 / 1,0 / 1,0 / 1,75 / 0,75); máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm: trả lời đủ các yêu cầu = 5; nội dung theo từ khóa điều luật, kết quả tính toán, ý diễn đạt = 5), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
+    <p class="msg">${isTN(l.hocPhan)?`Đề mỗi sinh viên: ${hpOf(l.hocPhan).tnCases||3} tình huống tư vấn khác chương, rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống của ngân hàng ôn tập (Chương 2–6); lấy đủ các câu ABCD của mỗi tình huống theo 5 bước tư vấn (khoảng ${(hpOf(l.hocPhan).tnCases||3)*8} câu), đảo thứ tự phương án. Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Bài tự luận đã nộp theo đề cũ vẫn giữ cách chấm cũ.`:isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên điền phiếu tư vấn 5 bước (Tiếp xúc khách hàng → Vấn đề pháp lý → Luật áp dụng → Phương án giải quyết → Trả lời tư vấn). Chấm: làm đủ 5 bước = 5 điểm (mỗi bước 1 điểm); nội dung theo 5 ý chính của từng bước = 5 điểm (0,5 / 1,0 / 1,0 / 1,75 / 0,75); máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm: trả lời đủ các yêu cầu = 5; nội dung theo từ khóa điều luật, kết quả tính toán, ý diễn đạt = 5), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
     <div class="card"><h3 style="margin-top:0">Xóa lớp</h3><p class="msg">Xóa lớp, danh sách sinh viên, bài làm và điểm của lớp. Không khôi phục được — nên xuất bảng điểm Excel trước.</p><button class="btn danger" id="c-del">Xóa lớp ${esc(l.id)}</button></div>`;
   $("#c-edit").onclick=()=>classForm(l);
   $("#c-tog").onclick=async()=>{await db.doc("pnl_dg_lop/"+l.id).set({open:!l.open},{merge:true});classView(l.id)};
@@ -793,7 +825,7 @@ function tabCai(){
   route();
 })();
 /* Dùng cho kiểm thử tự động */
-window.PNDG={buildDe,chamTN,chamTL,tuKhoa,loadBank,parseRows,CT,normTL,dieuSet};
+window.PNDG={buildDe,chamTNTH,bankFor,chamTN,chamTL,tuKhoa,loadBank,parseRows,CT,normTL,dieuSet};
 </script>
 </body>
 </html>

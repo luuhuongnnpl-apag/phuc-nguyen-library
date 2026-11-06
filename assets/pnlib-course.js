@@ -60,7 +60,7 @@ const ICON={
  tomtat:'<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="36" rx="3" fill="#e9824a"/><rect x="13" y="12" width="22" height="28" rx="1.5" fill="#fff"/><rect x="18" y="4" width="12" height="7" rx="2" fill="#7a8794"/><path d="M17 19h14M17 25h14M17 31h10" stroke="#e9824a" stroke-width="2.4" stroke-linecap="round"/></svg>',
  lichsu:'<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="25" cy="25" r="16" fill="#dbe7f3" stroke="#2f6db0" stroke-width="2.5"/><path d="M25 16v10l7 4" stroke="#1f3a5a" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M6 22l4 5 5-5" stroke="#c0392b" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>'};
 const VIEWS=[["thithu","Thi thử"],["luyentap","Lý thuyết"],["tinhhuong","Tình huống"],["vanban","Văn bản, án lệ"],["tomtat",M.mindmapTitle||"Tóm tắt lý thuyết"],["lichsu","Lịch sử làm bài"]]
-  .filter(([v])=>v!=="tinhhuong"||(D.th&&D.th.length)).filter(([v])=>v!=="tomtat"||D.ly);
+  .filter(([v])=>v!=="tinhhuong"||(D.th&&D.th.length)).filter(([v])=>v!=="luyentap"||QT.length).filter(([v])=>v!=="tomtat"||D.ly);
 document.title=(M.title||("Tài liệu "+M.name))+" · Phúc Nguyên Library";
 const app=document.getElementById("pn-app");
 app.innerHTML=`<header class="pn-band"><div class="pn-wrap"><img class="pn-logo" src="../assets/logo.png" alt="Logo Phúc Nguyên Library"><div class="pn-titles"><div class="pn-kicker">Thư viện Phúc Nguyên</div><h1>${esc(M.title||("Tài liệu "+M.name))}</h1><div class="pn-copy">Bản quyền thuộc Phúc Nguyên</div></div></div></header>
@@ -128,24 +128,24 @@ function examSetup(){
   const cnt=(g,l)=>QT.filter(q=>(g==null||q.g===g)&&(l==null||q.lv===l)).length;
   const ncnt=g=>CASEQ.filter(c=>c.g===g).length;
   BODY.innerHTML=`<div class="card setup">
-    <div class="field"><span class="lab">Số câu lý thuyết</span><div class="row"><div class="chips" id="c-n">${((M.exam&&M.exam.sizes)||[10,20,30,40,50]).map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="0" max="${QT.length}" value="${cfg.n}"></div></div>
+    ${QT.length?`<div class="field"><span class="lab">Số câu lý thuyết</span><div class="row"><div class="chips" id="c-n">${((M.exam&&M.exam.sizes)||[10,20,30,40,50]).map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.n===v}">${v} câu</button>`).join("")}</div><label class="lab" for="c-n-in">hoặc nhập</label><input type="number" id="c-n-in" min="0" max="${QT.length}" value="${cfg.n}"></div></div>`:""}
     ${CASEQ.length?`<div class="field"><span class="lab">Số tình huống</span><div class="row"><div class="chips" id="c-nc">${[0,1,2,3].map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.nc===v}">${v?v+" tình huống":"Không có"}</button>`).join("")}</div></div></div>`:""}
     <div class="field"><span class="lab">Thời gian làm bài</span><div class="row"><div class="chips" id="c-min">${((M.exam&&M.exam.times)||[15,30,45,60]).map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${cfg.min===v}">${v} phút</button>`).join("")}</div><label class="lab" for="c-min-in">hoặc nhập</label><input type="number" id="c-min-in" min="5" max="180" value="${cfg.min}"></div></div>
-    <div class="field"><span class="lab">Mức độ câu hỏi</span><div class="picks" id="c-lv">${LVK.map(l=>`<label><input type="checkbox" value="${l}" ${cfg.lv.includes(l)?"checked":""}><span>${LV[l]} <small>(${cnt(null,l)} câu)</small></span></label>`).join("")}</div></div>
+    ${QT.length?`<div class="field"><span class="lab">Mức độ câu hỏi</span><div class="picks" id="c-lv">${LVK.map(l=>`<label><input type="checkbox" value="${l}" ${cfg.lv.includes(l)?"checked":""}><span>${LV[l]} <small>(${cnt(null,l)} câu)</small></span></label>`).join("")}</div></div>`:""}
     <div class="field"><span class="lab">Phạm vi nội dung</span><div class="chips"><button type="button" class="chip" id="g-all">Chọn tất cả</button><button type="button" class="chip" id="g-none">Bỏ chọn</button></div>
       <div class="picks" id="c-g">${GROUPS.map(g=>`<label><input type="checkbox" value="${g.n}" ${cfg.groups.includes(g.n)?"checked":""}><span>Chương ${g.n}. ${esc(g.name)} <small>(${cnt(g.n,null)} câu${ncnt(g.n)?", "+ncnt(g.n)+" tình huống":""})</small></span></label>`).join("")}</div></div>
     <div class="nav-row" style="margin-top:0"><span class="intro" id="cfg-note" style="margin:0"></span><button type="button" class="btn primary" id="go">Bắt đầu làm bài</button></div>
   </div>`;
-  const sync=()=>{cfg.lv=$$("#c-lv input").filter(x=>x.checked).map(x=>x.value);cfg.groups=$$("#c-g input").filter(x=>x.checked).map(x=>+x.value);
-    const nv=parseInt($("#c-n-in").value,10);cfg.n=Math.max(0,Math.min(isNaN(nv)?20:nv,QT.length));cfg.min=Math.max(5,Math.min(+$("#c-min-in").value||30,180));store.set("cfg",cfg);
+  const sync=()=>{if($("#c-lv"))cfg.lv=$$("#c-lv input").filter(x=>x.checked).map(x=>x.value);cfg.groups=$$("#c-g input").filter(x=>x.checked).map(x=>+x.value);
+    const nv=$("#c-n-in")?parseInt($("#c-n-in").value,10):0;cfg.n=Math.max(0,Math.min(isNaN(nv)?20:nv,QT.length));cfg.min=Math.max(5,Math.min(+$("#c-min-in").value||30,180));store.set("cfg",cfg);
     $$("#c-n .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.n)));$$("#c-min .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.min)));$$("#c-nc .chip").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.v===cfg.nc)));
     const have=Math.min(cfg.n,cfg.lv.length?pool(cfg.groups,cfg.lv).length:0),hc=Math.min(cfg.nc||0,casePool(cfg.groups).length),hq=pickCasesCount(hc);$("#go").disabled=!(have+hc);
-    $("#cfg-note").textContent=!cfg.groups.length?"Chọn ít nhất một chương.":!(have+hc)?"Chọn ít nhất một mức độ hoặc một tình huống.":`Đề gồm ${have} câu lý thuyết${hc?` và ${hc} tình huống (khoảng ${hq} câu)`:""}${have<cfg.n?` (phạm vi đã chọn chỉ có ${have} câu lý thuyết)`:""}${hc<(cfg.nc||0)?` (phạm vi đã chọn chỉ có ${hc} tình huống)`:""}, làm trong ${cfg.min} phút.`};
+    $("#cfg-note").textContent=!cfg.groups.length?"Chọn ít nhất một chương.":!(have+hc)?"Chọn ít nhất một mức độ hoặc một tình huống.":`Đề gồm ${QT.length?have+" câu lý thuyết"+(hc?" và ":""):""}${hc?`${hc} tình huống (khoảng ${hq} câu)`:""}${have<cfg.n?` (phạm vi đã chọn chỉ có ${have} câu lý thuyết)`:""}${hc<(cfg.nc||0)?` (phạm vi đã chọn chỉ có ${hc} tình huống)`:""}, làm trong ${cfg.min} phút.`};
   const pickCasesCount=k=>{const p=casePool(cfg.groups);return p.length?Math.round(p.reduce((a,c)=>a+c.keys.length,0)/p.length*k):0};
   $$("#c-nc .chip").forEach(b=>b.onclick=()=>{cfg.nc=+b.dataset.v;sync()});
   $$("#c-n .chip").forEach(b=>b.onclick=()=>{$("#c-n-in").value=b.dataset.v;sync()});
   $$("#c-min .chip").forEach(b=>b.onclick=()=>{$("#c-min-in").value=b.dataset.v;sync()});
-  $("#c-n-in").oninput=sync;$("#c-min-in").oninput=sync;$$("#c-lv input,#c-g input").forEach(x=>x.onchange=sync);
+  if($("#c-n-in"))$("#c-n-in").oninput=sync;$("#c-min-in").oninput=sync;$$("#c-lv input,#c-g input").forEach(x=>x.onchange=sync);
   $("#g-all").onclick=()=>{$$("#c-g input").forEach(x=>x.checked=true);sync()};$("#g-none").onclick=()=>{$$("#c-g input").forEach(x=>x.checked=false);sync()};
   $("#go").onclick=()=>{exam=buildExam();exI=0;store.set("exam",exam);examRun();scrollTo(0,0)};
   sync()}
