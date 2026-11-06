@@ -312,7 +312,7 @@ function chamTL(c,essay){
 }
 
 /* Tiêu chí 1: mỗi yêu cầu (bước) của đề có được trả lời không. Nhận theo đoạn đánh số (1., 2), a), Câu 1…) hoặc từ gợi ý của bước */
-const CUE_TV=[/tom tat|yeu cau|cung cap|giay to|thong tin/,/van de/,/can cu|dieu \d|an le|bo luat|luat /,/tu van|phuong an|giai quyet|ket luan|y kien/,/rui ro|can lam|tiep theo|luu y|khuyen nghi/];
+const CUE_TV=[/khach hang|tom tat|yeu cau|cung cap|giay to|thong tin/,/van de|quan he phap luat/,/can cu|dieu \d|an le|bo luat|luat /,/phuong an|phuong thuc|giai quyet|kha thi|phan tich/,/rui ro|can lam|tiep theo|luu y|khuyen nghi|ket luan|hinh thuc/];
 function chiaDoan(essay){const out={};const re=/(?:^|\n)\s*(?:cau|y|yeu cau|buoc|phan)?\s*(\d{1,2}|[a-e])\s*[\.\):\/-]/g;const t=strip(essay||"");let m,last=null;
   const marks=[];while((m=re.exec(t)))marks.push({k:m[1],at:m.index+m[0].length});
   marks.forEach((x,j)=>{const i=/\d/.test(x.k)?+x.k-1:"abcde".indexOf(x.k);const seg=t.slice(x.at,j+1<marks.length?marks[j+1].at:t.length);if(i>=0&&!out[i])out[i]=seg});return out}
@@ -767,7 +767,7 @@ function preview(rows){
 }
 function tabCai(){
   const l=AD.l;$("#tab").innerHTML=`<div class="card"><div class="row"><button class="btn primary" id="c-edit">Sửa thông tin, giờ mở/đóng</button><button class="btn" id="c-tog">${l.open?"Khóa ngay (không cho làm bài)":"Mở lại cho làm bài"}</button></div>
-    <p class="msg">${isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên viết ý kiến tư vấn theo 5 yêu cầu. Chấm: làm đủ 5 bước = 5 điểm (mỗi bước 1 điểm); nội dung theo 5 ý chính = 5 điểm (0,5 / 1,0 / 1,0 / 1,75 / 0,75); máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm: trả lời đủ các yêu cầu = 5; nội dung theo từ khóa điều luật, kết quả tính toán, ý diễn đạt = 5), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
+    <p class="msg">${isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên điền phiếu tư vấn 5 bước (Tiếp xúc khách hàng → Vấn đề pháp lý → Luật áp dụng → Phương án giải quyết → Trả lời tư vấn). Chấm: làm đủ 5 bước = 5 điểm (mỗi bước 1 điểm); nội dung theo 5 ý chính của từng bước = 5 điểm (0,5 / 1,0 / 1,0 / 1,75 / 0,75); máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm: trả lời đủ các yêu cầu = 5; nội dung theo từ khóa điều luật, kết quả tính toán, ý diễn đạt = 5), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
     <div class="card"><h3 style="margin-top:0">Xóa lớp</h3><p class="msg">Xóa lớp, danh sách sinh viên, bài làm và điểm của lớp. Không khôi phục được — nên xuất bảng điểm Excel trước.</p><button class="btn danger" id="c-del">Xóa lớp ${esc(l.id)}</button></div>`;
   $("#c-edit").onclick=()=>classForm(l);
   $("#c-tog").onclick=async()=>{await db.doc("pnl_dg_lop/"+l.id).set({open:!l.open},{merge:true});classView(l.id)};
