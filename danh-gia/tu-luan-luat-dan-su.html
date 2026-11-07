@@ -332,13 +332,35 @@ function createClass(){
   }catch(x){err(x)}
  };
 }
+
+function editClassRoster(ma,students,l){
+ app.innerHTML='<article><div class="top"><h2>Danh sách sinh viên · '+E(ma)+'</h2><button class="secondary" id="rosterBack">Trở lại lớp</button></div><p class="muted">Có thể sửa trực tiếp danh sách, thêm sinh viên hoặc tải tệp Excel/CSV. Mỗi dòng: MSSV; Họ tên (hoặc Họ tên; MSSV).</p><label>Nhập thủ công / chỉnh sửa danh sách</label><textarea id="rosterEdit" rows="12"></textarea><label>Tải Excel / CSV</label><input id="rosterUpload" type="file" accept=".xlsx,.xls,.csv,.txt"><p class="mini muted">Tệp mới sẽ được thêm vào danh sách hiện tại, không làm mất sinh viên đã có bài.</p><button id="rosterSave">Lưu danh sách</button><p id="msg" class="error"></p></article>';
+ $("#rosterEdit").value=students.map(x=>x.mssv+"; "+x.hoTen).join("\n");
+ $("#rosterBack").onclick=()=>manageClass(ma);
+ $("#rosterUpload").onchange=async e=>{
+  try{
+   const rows=parseStudentRows(await readRosterFile(e.target.files[0]));
+   const existing=parseStudentRows($("#rosterEdit").value),byId=new Map(existing.map(x=>[x.mssv,x]));
+   rows.forEach(x=>byId.set(x.mssv,x));$("#rosterEdit").value=[...byId.values()].map(x=>x.mssv+"; "+x.hoTen).join("\n");
+   note("Đã nhập "+rows.length+" sinh viên từ tệp. Tổng danh sách "+byId.size+".");
+  }catch(x){err(x)}
+ };
+ $("#rosterSave").onclick=async()=>{
+  try{
+   const rows=parseStudentRows($("#rosterEdit").value);
+   if(!confirm("Lưu danh sách "+rows.length+" sinh viên cho lớp "+ma+"?"))return;
+   await saveStudents(ma,rows,students);await manageClass(ma);
+  }catch(x){err(x)}
+ };
+}
+
 async function manageClass(ma){CURRENT=ma;app.innerHTML='<article><h2>Quản lý lớp '+E(ma)+'</h2><p id="msg" class="error">Đang tải…</p></article>';try{const [ls,ro,bs,gr]=await Promise.all([db.doc("pnl_dg_lop/"+ma).get(),db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);if(!ls.exists)throw Error("Không tìm thấy lớp.");
 const l=ls.data(),students=ro.exists?ro.data().rows:[],papers=Object.fromEntries(bs.docs.map(d=>[d.data().mssv,d.data()])),grades=Object.fromEntries(gr.docs.map(d=>[d.data().mssv,d.data()]));
 const resultAuto=await markPending(ma,papers,grades);
-let h='<article><div class="top"><h2>'+E(ma)+' · '+E(l.ten)+'</h2><button class="secondary" id="back">Các lớp</button></div><p>Trạng thái: <b>'+(l.open?"Đang mở":"Đang khóa")+'</b>. Đề mới: 12 trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm); mặc định 40 phút.</p><button id="toggle">'+(l.open?"Khóa bài kiểm tra":"Mở cho sinh viên")+'</button><button id="csv" class="secondary">Xuất điểm CSV</button><p class="mini muted">Bài được chấm theo từng yêu cầu, tối đa 1,25 điểm. Bài đã nộp được máy tự chấm khi quản trị mở lớp; giảng viên có thể sửa điểm.</p><p id="msg" class="error"></p></article>';
+let h='<article><div class="top"><h2>'+E(ma)+' · '+E(l.ten)+'</h2><button class="secondary" id="back">Các lớp</button></div><p>Trạng thái: <b>'+(l.open?"Đang mở":"Đang khóa")+'</b>. Đề mới: 12 trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm); mặc định 40 phút.</p><button id="toggle">'+(l.open?"Khóa bài kiểm tra":"Mở cho sinh viên")+'</button><button id="roster" class="secondary">Nhập / sửa danh sách sinh viên ('+students.length+')</button><button id="csv" class="secondary">Xuất điểm CSV</button><p class="mini muted">Phần tự luận: 04 yêu cầu, tối đa 01 điểm mỗi yêu cầu. Bài đã nộp được máy tự chấm khi quản trị mở lớp; giảng viên có thể sửa điểm.</p><p id="msg" class="error"></p></article>';
 h+='<article><h3>Danh sách và bài làm</h3><p class="mini muted">Đã tự chấm thêm '+resultAuto.done+' bài; lỗi: '+resultAuto.errors.length+'</p>';
 students.forEach(s=>{const b=papers[s.mssv],g=grades[s.mssv];h+='<div class="student"><div class="top"><span><b>'+E(s.mssv)+'</b> · '+E(s.hoTen)+'</span><span>'+(!b?"Chưa làm":b.status==="da-nop"?"Đã nộp":"Đang làm")+' · '+(g&&g.xacNhan?E(g.diem)+"/10"+(g.nguon==="tu-dong"?" · tự động":" · giảng viên"):"Chưa chấm")+'</span></div>'+(b&&b.status==="da-nop"?'<button data-grade="'+E(s.mssv)+'">Chấm bài</button>':'')+'</div>'});h+='</article>';app.innerHTML=h;
-$("#back").onclick=adminHome;$("#toggle").onclick=async()=>{if(!confirm(l.open?"Khóa lớp?":"Mở lớp cho sinh viên làm bài? Đảm bảo đã rà soát đề và đáp án."))return;try{await db.doc("pnl_dg_lop/"+ma).update({open:!l.open});manageClass(ma)}catch(x){err(x)}};
+$("#back").onclick=adminHome;$("#roster").onclick=()=>editClassRoster(ma,students,l);$("#toggle").onclick=async()=>{if(!confirm(l.open?"Khóa lớp?":"Mở lớp cho sinh viên làm bài? Đảm bảo đã rà soát đề và đáp án."))return;try{await db.doc("pnl_dg_lop/"+ma).update({open:!l.open});manageClass(ma)}catch(x){err(x)}};
 $("#csv").onclick=()=>{const rows=[["MSSV","Họ và tên","Điểm /10","Đã xác nhận"]].concat(students.map(s=>[s.mssv,s.hoTen,grades[s.mssv]?grades[s.mssv].diem:"",grades[s.mssv]&&grades[s.mssv].xacNhan?"Có":"Không"]));const text="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));a.download="diem-tu-luan-"+ma+".csv";a.click();URL.revokeObjectURL(a.href)};
 document.querySelectorAll("[data-grade]").forEach(x=>x.onclick=()=>grade(ma,x.dataset.grade,papers[x.dataset.grade],grades[x.dataset.grade]))}catch(x){err(x)}}
 function normalize(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(x=>x.length>3)}
