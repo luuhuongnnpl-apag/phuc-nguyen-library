@@ -23,6 +23,48 @@ const caseBy=id=>BANK.cases.find(c=>c.id===id);
 async function bankLoad(){if(BANK)return BANK;const r=await fetch("./de/luat-dan-su-tu-luan.b64",{cache:"no-cache"});if(!r.ok)throw Error("Không tải được ngân hàng đề.");
 const data=atob((await r.text()).trim()),bytes=Uint8Array.from(data,c=>c.charCodeAt(0)),stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
 BANK=JSON.parse(await new Response(stream).text());if(BANK.cases.length!==30||BANK.exam_sets.length!==15)throw Error("Ngân hàng đề không hợp lệ.");return BANK}
+
+/* Ngân hàng chính thức từ học phần: 180 câu lý thuyết + 108 câu trắc nghiệm tình huống.
+   Lưu mã câu và thứ tự phương án; không lưu đáp án đúng trong bài sinh viên. */
+let MCQ=null;
+async function loadMCQ(){
+ if(MCQ)return MCQ;
+ const r=await fetch("../hp/luat-dan-su.html",{cache:"no-cache"});
+ if(!r.ok)throw Error("Không tải được trắc nghiệm học phần.");
+ const txt=await r.text(),m=txt.match(/<script id="pn-data" type="application\/json">([\s\S]*?)<\/script>/);
+ if(!m)throw Error("Không tìm thấy ngân hàng câu hỏi học phần.");
+ const d=JSON.parse(m[1]),questions={},situations={};
+ for(const q of d.q||[])if(q.id&&Array.isArray(q.o)&&q.o.length===4)questions[q.id]=q;
+ for(const group of d.th||[])for(const c of group.items||[])situations[c.cid]=c;
+ const theory=Object.values(questions).filter(q=>!q.cid);
+ const contexts=Object.values(situations).filter(c=>Array.isArray(c.mcq)&&c.mcq.length>=4&&c.mcq.every(id=>questions[id]));
+ if(theory.length<8||!contexts.length)throw Error("Ngân hàng trắc nghiệm chưa đủ câu.");
+ MCQ={questions,theory,contexts};return MCQ;
+}
+function shuffleExam(xs){xs=xs.slice();for(let i=xs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[xs[i],xs[j]]=[xs[j],xs[i]]}return xs}
+function newMixedExam(){
+ const ch=shuffleExam(MCQ.contexts)[0];
+ const theory=shuffleExam(MCQ.theory);
+ const picks=[],chapters={};
+ for(const q of theory){const chapter=String(q.id).split(".")[0];if((chapters[chapter]||0)>=2)continue;picks.push(q.id);chapters[chapter]=(chapters[chapter]||0)+1;if(picks.length===8)break}
+ if(picks.length<8)for(const q of theory){if(!picks.includes(q.id))picks.push(q.id);if(picks.length===8)break}
+ const ids=picks.concat(shuffleExam(ch.mcq).slice(0,4));
+ const order={};ids.forEach(id=>order[id]=shuffleExam([0,1,2,3]));
+ const essayCase=shuffleExam(BANK.cases)[0];
+ return {essayMode:"mixed12x1",set:"DS-MIX-"+String(Math.floor(Math.random()*90000)+10000),mcq:ids,perm:order,mcqCase:ch.cid,caseIds:[essayCase.id],lt:[],th:[],tl:essayCase.id};
+}
+function markMCQ(de,ans){
+ if(de.essayMode!=="mixed12x1")return {score:0,correct:0,items:[]};
+ const ids=de.mcq||[],items=[];let correct=0;
+ for(const id of ids){
+  const q=MCQ?.questions[id];if(!q)throw Error("Không có câu trắc nghiệm "+id);
+  const chosen=ans["mcq_"+id],per=de.perm?.[id]||[0,1,2,3],validChoice=Number.isInteger(chosen)&&chosen>=0&&chosen<4;
+  const ok=validChoice&&per[chosen]===q.a;if(ok)correct++;
+  items.push({id,selected:validChoice?chosen:null,correct:per.indexOf(q.a),ok,basis:q.b||"",explanation:q.e||""});
+ }
+ return {score:Math.round(correct*50)/100,correct,items};
+}
+
 function note(text){const p=$("#msg");if(p)p.textContent=text}
 function err(x){console.error(x);note(x.message||String(x))}
 const valid=s=>/^[A-Z0-9_-]{2,24}$/.test(s);
@@ -48,10 +90,10 @@ function studentEntry(){app.innerHTML=`<article>
 <button type="submit">Xác nhận và vào bài kiểm tra</button></form><p id="msg" class="error"></p></article>`;
 const qp=new URLSearchParams(location.search);if(qp.get("ma"))$("#entry").elements.ma.value=qp.get("ma");if(qp.get("sv"))$("#entry").elements.sv.value=qp.get("sv");
 $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.trim().toUpperCase(),sv=e.target.sv.value.trim().toUpperCase();if(!valid(ma)||!valid(sv)){note("Mã lớp hoặc mã sinh viên không hợp lệ.");return}
-try{await ensureAnon();await bankLoad();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
+try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
 const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc hình thức tự luận Luật Dân sự.");
 const id=ma+"__"+sv;let old=await db.doc("pnl_dg_bai/"+id).get();
-if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;const n=Math.floor(Math.random()*BANK.exam_sets.length),pair=BANK.exam_sets[n];const de={essayMode:"ds2",set:pair.code,caseIds:pair.cases,lt:[],th:[],tl:null,perm:{}};
+if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;await loadMCQ();const de=newMixedExam();
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
 old=await db.doc("pnl_dg_bai/"+id).get()}
 if(!old.exists)throw Error("Không đọc được bài làm. Vui lòng liên hệ giảng viên.");
