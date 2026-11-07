@@ -419,13 +419,13 @@ function lopTrangThai(l){const now=new Date(),a=toDate(l.openAt),b=toDate(l.clos
 function studentEntry(msg){
   const last=JSON.parse(store.get("pndg-last")||"{}");
   $("#app").innerHTML=`<section class="card narrow">
-    <h1>Đánh giá định kỳ</h1>
-    <p class="lead">Nhập mã lớp do giảng viên cung cấp và mã sinh viên của bạn. Không cần đăng nhập tài khoản.</p>
+    <h1>Đánh giá định kỳ – Tự luận Luật Dân sự</h1>
+    <p class="lead"><b>Hình thức chính thức:</b> 02 tình huống/đề, 04 yêu cầu/tình huống, tối đa 05 điểm/tình huống; tổng 10 điểm. Sinh viên làm bài tự luận và giảng viên xác nhận điểm. Các lớp trắc nghiệm cũ vẫn giữ nguyên kết quả để đối chiếu.</p>
     <form id="f-in" novalidate>
       <div class="row"><div><label class="lab" for="in-ma">Mã lớp</label><input type="text" id="in-ma" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase" value="${esc(last.ma||"")}" placeholder="Ví dụ: DS-K25A"></div></div>
       <div class="row"><div><label class="lab" for="in-sv">Mã sinh viên</label><input type="text" id="in-sv" maxlength="20" autocomplete="off" spellcheck="false" style="text-transform:uppercase" value="${esc(last.sv||"")}"></div></div>
       <div class="err" id="in-err" role="alert">${esc(msg||"")}</div>
-      <button class="btn primary" type="submit" id="in-go">Tiếp tục</button>
+      <button class="btn primary" type="submit" id="in-go">Vào bài kiểm tra</button>
     </form></section>`;
   $("#f-in").onsubmit=async e=>{e.preventDefault();
     const ma=$("#in-ma").value.trim().toUpperCase(),sv=$("#in-sv").value.trim().toUpperCase().replace(/\s+/g,"");
@@ -446,6 +446,7 @@ async function checkIn(ma,sv){
   if(!ls.exists)throw uerr("Không tìm thấy mã lớp. Kiểm tra lại với giảng viên.");
   const lop=ls.data();
   if(lop.hocPhan==="luat-dan-su-tu-luan"){location.href="tu-luan-luat-dan-su.html?ma="+encodeURIComponent(ma)+"&sv="+encodeURIComponent(sv);return}
+   if(lop.hocPhan==="luat-dan-su"){const old=await db.doc("pnl_dg_bai/"+ma+"__"+sv).get();if(!old.exists)throw uerr("Mã lớp này thuộc đề trắc nghiệm cũ, đã ngừng phát đề mới. Giảng viên cần tạo mã lớp tự luận Luật Dân sự. Bài cũ vẫn được lưu để xem và chấm.");}
   const ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();
   if(!ss.exists)throw uerr("Mã sinh viên không có trong danh sách lớp "+ma+".");
   const svd=ss.data();store.set("pndg-last",JSON.stringify({ma,sv}));
