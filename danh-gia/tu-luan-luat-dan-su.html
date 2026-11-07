@@ -73,8 +73,17 @@ function access(l){const t=Date.now();return l.open&&(!l.openAt||until(l.openAt)
 async function ensureAnon(){if(auth.currentUser)return auth.currentUser;return(await auth.signInAnonymously()).user}
 function navigate(){clearInterval(TIMER);if(location.hash.startsWith("#quan-tri"))return adminEntry();studentEntry()}
 window.addEventListener("hashchange",navigate);
+function confirmStudentIdentity(ma,sv,hoTen,l){
+ return new Promise(resolve=>{
+  const old=app.innerHTML;
+  app.innerHTML='<article><h2>Xác nhận thông tin sinh viên</h2><p>Kiểm tra thông tin trước khi vào bài kiểm tra. Nếu họ tên không đúng, chọn Quay lại và thông báo giảng viên.</p><div class="case"><p><b>Họ và tên:</b> '+E(hoTen||"(Chưa có họ tên)")+'</p><p><b>Mã sinh viên:</b> '+E(sv)+'</p><p><b>Mã lớp:</b> '+E(ma)+'</p><p><b>Tên lớp:</b> '+E(l.ten||"")+'</p><p><b>Học phần:</b> '+E(l.hocPhanTen||"Luật Dân sự")+'</p><p><b>Thời gian:</b> '+E(l.thoiGian||40)+' phút</p></div><button id="identityYes">Xác nhận đúng thông tin và tiếp tục</button><button id="identityNo" class="secondary">Quay lại</button></article>';
+  $("#identityYes").onclick=()=>resolve(true);
+  $("#identityNo").onclick=()=>{app.innerHTML=old;studentEntry();resolve(false)};
+ });
+}
 function studentEntry(){app.innerHTML=`<article>
-<h2>ĐÁNH GIÁ ĐỊNH KỲ – LUẬT DÂN SỰ</h2>
+<h2>ĐÁNH GIÁ ĐỊNH KỲ</h2>
+<p class="mini muted">Học phần: Luật Dân sự</p>
 <p class="muted">Hình thức kiểm tra chính thức: <b>Trắc nghiệm kết hợp tự luận</b>. Ngân hàng câu hỏi và đáp án đã được phê duyệt.</p>
 <div class="grid"><div class="panel"><strong>12 câu trắc nghiệm</strong><p class="mini muted">08 lý thuyết + 04 câu hỏi tình huống · 06 điểm</p></div>
 <div class="panel"><strong>01 tình huống tự luận</strong><p class="mini muted">04 yêu cầu × 01 điểm = 04 điểm</p></div>
@@ -92,6 +101,7 @@ const qp=new URLSearchParams(location.search);if(qp.get("ma"))$("#entry").elemen
 $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.trim().toUpperCase(),sv=e.target.sv.value.trim().toUpperCase();if(!valid(ma)||!valid(sv)){note("Mã lớp hoặc mã sinh viên không hợp lệ.");return}
 try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
 const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
+if(!await confirmStudentIdentity(ma,sv,ss.data().hoTen,l))return;
 const id=ma+"__"+sv;let old=await db.doc("pnl_dg_bai/"+id).get();
 if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức trắc nghiệm kết hợp tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;await loadMCQ();const de=newMixedExam();
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
