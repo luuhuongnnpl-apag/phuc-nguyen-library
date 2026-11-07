@@ -161,8 +161,8 @@ function renderExam(){
  if(ms===0)save(true);
 }
 function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá tự luận</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
-$("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};
-$("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};return}adminHome()}
+$("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};
+$("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};return}const ma=decodeURIComponent(location.hash.split("/")[1]||"");if(ma)return manageClass(ma);adminHome()}
 
 async function loadAutoKey(){
  if(RUBRIC)return RUBRIC;
@@ -368,5 +368,5 @@ function grade(ma,sv,b,g){
   }catch(e){err(e)}
  };
 }
-(async()=>{try{await bankLoad();if(auth.currentUser){navigate()}else{auth.onAuthStateChanged(()=>{if(location.hash.startsWith("#quan-tri")&&isAdmin(auth.currentUser))adminHome();else if(!location.hash.startsWith("#quan-tri"))studentEntry();else adminEntry()})}}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
+(async()=>{try{await bankLoad();if(auth.currentUser){navigate()}else{auth.onAuthStateChanged(()=>{if(location.hash.startsWith("#quan-tri")&&isAdmin(auth.currentUser))adminEntry();else if(!location.hash.startsWith("#quan-tri"))studentEntry();else adminEntry()})}}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
 </script></body></html>
