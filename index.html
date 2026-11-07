@@ -551,7 +551,7 @@ function admin2HTML(){
   const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=`<div><label class="lab" for="c-max">Số người được dùng mã</label><input type="number" id="c-max" min="1" max="1000" value="20" required></div>`;
   return head+`<main class="wrap admin">
-  <section class="frame"><div class="ftitle">Đánh giá định kỳ Luật Dân sự – Trắc nghiệm và tự luận</div><p class="msg">Hình thức chính thức: 12 câu trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm), mặc định 40 phút. Quản lý lớp, bài nộp, đối chiếu đáp án và duyệt điểm.</p><div class="row"><a class="btn primary" href="danh-gia/tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">Quản trị đánh giá Luật Dân sự</a><a class="btn" href="danh-gia/#quan-tri" style="text-decoration:none">Học phần khác và đề cũ</a></div></section>
+  <section class="frame"><div class="ftitle">Đánh giá định kỳ</div><p class="msg">Quản lý chung các lớp kiểm tra của từng học phần: tạo lớp, nhập danh sách sinh viên, theo dõi bài nộp và xem bảng điểm. Hình thức đề được xác định theo học phần.</p><div class="row"><a class="btn primary" href="danh-gia/tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">Quản trị Luật Dân sự</a><a class="btn" href="danh-gia/#quan-tri" style="text-decoration:none">Học phần khác và đề cũ</a></div></section>
   <section class="frame" id="c-frame"><div class="ftitle" id="c-title">Cấp mã</div>
     <form id="c-form" novalidate class="admin">
       <p class="msg" id="c-edit-note" hidden></p>
