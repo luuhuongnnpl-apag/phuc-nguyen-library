@@ -791,15 +791,15 @@ function homeHTML(){
   <div class="grid-top">
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
     <div class="col-r">
-    <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ</div>
-      <p class="dg-lead">Hệ thống đánh giá định kỳ dùng chung cho các học phần. Hãy nhập <b>mã lớp</b> và <b>mã sinh viên</b>; hệ thống sẽ xác định học phần, hiển thị thể thức đề, thời gian làm bài và yêu cầu xác nhận họ tên trước khi bắt đầu. Đề Luật Dân sự hiện gồm <b>12 câu trắc nghiệm (6 điểm)</b> và <b>1 tình huống tự luận (4 điểm)</b>, mặc định 40 phút.</p>
+    <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ – Luật Dân sự</div>
+      <p class="dg-lead">Bài kiểm tra chính thức gồm <b>12 câu trắc nghiệm</b> (6 điểm, mỗi câu 0,5 điểm) và <b>1 tình huống tự luận</b> (4 điểm, gồm 4 yêu cầu). Thời gian mặc định <b>40 phút</b>. Sinh viên lựa chọn đáp án trắc nghiệm và trình bày lập luận pháp lý ở phần tự luận.</p>
       <form id="dg-form" class="dg-form" novalidate>
         <div><label class="dg-lab" for="dg-ma">Mã lớp</label><input type="text" id="dg-ma" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Ví dụ: DS-K25A"></div>
         <div><label class="dg-lab" for="dg-sv">Mã sinh viên</label><input type="text" id="dg-sv" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Mã sinh viên của bạn"></div>
         <button class="dg-go" type="submit">Vào kiểm tra định kỳ</button>
       </form>
       <p class="dg-err" id="dg-err" role="alert"></p>
-      ${isOwner?'<p class="dg-admin"><a href="danh-gia/#quan-tri">Quản trị đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
+      ${isOwner?'<p class="dg-admin"><a href="danh-gia/tu-luan-luat-dan-su.html#quan-tri">Quản trị đánh giá tự luận: lớp, bài làm, chấm điểm →</a></p>':''}
     </section>
     <section class="frame center"><div class="ftitle">MIND-MAP HỌC PHẦN</div><div class="docs">${docs}</div></section>
     </div>
