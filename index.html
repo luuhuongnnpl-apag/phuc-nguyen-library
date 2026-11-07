@@ -551,7 +551,7 @@ function admin2HTML(){
   const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=`<div><label class="lab" for="c-max">Số người được dùng mã</label><input type="number" id="c-max" min="1" max="1000" value="20" required></div>`;
   return head+`<main class="wrap admin">
-  <section class="frame"><div class="ftitle">Đánh giá định kỳ Luật Dân sự – Tự luận</div><p class="msg">Hình thức chính thức: 02 tình huống/đề, mỗi tình huống 05 điểm; tổng 10 điểm. Quản lý lớp, bài nộp, đối chiếu đáp án và duyệt điểm.</p><div class="row"><a class="btn primary" href="danh-gia/tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">Quản trị tự luận Luật Dân sự</a><a class="btn" href="danh-gia/#quan-tri" style="text-decoration:none">Học phần khác và đề cũ</a></div></section>
+  <section class="frame"><div class="ftitle">Đánh giá định kỳ Luật Dân sự – Trắc nghiệm và tự luận</div><p class="msg">Hình thức chính thức: 12 câu trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm), mặc định 40 phút. Quản lý lớp, bài nộp, đối chiếu đáp án và duyệt điểm.</p><div class="row"><a class="btn primary" href="danh-gia/tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">Quản trị đánh giá Luật Dân sự</a><a class="btn" href="danh-gia/#quan-tri" style="text-decoration:none">Học phần khác và đề cũ</a></div></section>
   <section class="frame" id="c-frame"><div class="ftitle" id="c-title">Cấp mã</div>
     <form id="c-form" novalidate class="admin">
       <p class="msg" id="c-edit-note" hidden></p>
@@ -791,12 +791,12 @@ function homeHTML(){
   <div class="grid-top">
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
     <div class="col-r">
-    <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ – Tự luận Luật Dân sự</div>
-      <p class="dg-lead">Bài kiểm tra chính thức gồm <b>02 tình huống pháp lý</b>, mỗi tình huống có <b>04 yêu cầu</b>, tối đa <b>05 điểm/tình huống</b>; tổng 10 điểm. Sinh viên viết bài phân tích, lập luận và viện dẫn pháp luật, không chọn đáp án trắc nghiệm. Nhập mã lớp và mã sinh viên; mỗi sinh viên làm một lần.</p>
+    <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ – Luật Dân sự</div>
+      <p class="dg-lead">Bài kiểm tra chính thức gồm <b>12 câu trắc nghiệm</b> (6 điểm, mỗi câu 0,5 điểm) và <b>1 tình huống tự luận</b> (4 điểm, gồm 4 yêu cầu). Thời gian mặc định <b>40 phút</b>. Sinh viên lựa chọn đáp án trắc nghiệm và trình bày lập luận pháp lý ở phần tự luận.</p>
       <form id="dg-form" class="dg-form" novalidate>
         <div><label class="dg-lab" for="dg-ma">Mã lớp</label><input type="text" id="dg-ma" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Ví dụ: DS-K25A"></div>
         <div><label class="dg-lab" for="dg-sv">Mã sinh viên</label><input type="text" id="dg-sv" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Mã sinh viên của bạn"></div>
-        <button class="dg-go" type="submit">Vào kiểm tra tự luận</button>
+        <button class="dg-go" type="submit">Vào kiểm tra định kỳ</button>
       </form>
       <p class="dg-err" id="dg-err" role="alert"></p>
       ${isOwner?'<p class="dg-admin"><a href="danh-gia/tu-luan-luat-dan-su.html#quan-tri">Quản trị đánh giá tự luận: lớp, bài làm, chấm điểm →</a></p>':''}
