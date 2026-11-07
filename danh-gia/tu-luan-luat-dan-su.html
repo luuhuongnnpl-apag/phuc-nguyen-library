@@ -59,8 +59,9 @@ const ms=Math.max(0,total-(Date.now()-started));$("#clock").textContent=Math.flo
 function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá tự luận</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};
 $("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};return}adminHome()}
-async function adminHome(){app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">15 mã đề · 30 tình huống · mỗi đề 10 điểm. Đáp án chỉ được mở từ tệp nội bộ trên thiết bị giảng viên.</p><label>Nhập đáp án nội bộ (.json)</label><input type="file" id="keyFile" accept=".json,application/json"><p class="mini muted">Tệp không tải lên website. Giảng viên có thể chấm thủ công nếu chưa tải đáp án.</p><button id="newClass">Tạo lớp kiểm tra</button><p id="msg" class="error"></p></article><div id="classes"></div>';
-$("#keyFile").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.case_bank)||x.case_bank.length!==30)throw Error("Đáp án không đúng cấu trúc.");RUBRIC=x;note("Đã đọc 30 đáp án vào phiên làm việc của giảng viên.")}catch(x){err(x)}};
+async function adminHome(){app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">15 mã đề · 30 tình huống · mỗi đề 10 điểm. Đáp án được mã hóa; giải mã trong phiên giảng viên để đề xuất điểm theo từng yêu cầu.</p><label>Mở đáp án đã mã hóa trên web</label><input id="unlockPass" type="password" autocomplete="off" placeholder="Mật khẩu giải mã đáp án"><button id="unlockBtn" type="button" class="secondary">Mở đáp án và bật chấm gợi ý</button><p class="mini muted">Đáp án được mã hóa AES-256-GCM; chỉ giải mã trên máy giảng viên. Mật khẩu không lưu vào website.</p><details><summary>Dùng tệp đáp án nội bộ thay thế</summary><input type="file" id="keyFile" accept=".json,application/json"><p class="mini muted">Tệp chỉ được đọc trong phiên hiện tại, không tải lên máy chủ.</p></details><button id="newClass">Tạo lớp kiểm tra</button><p id="msg" class="error"></p></article><div id="classes"></div>';
+$("#unlockBtn").onclick=async()=>{const password=$("#unlockPass").value;try{if(!password)throw Error("Nhập mật khẩu giải mã.");await decryptRubric(password);$("#unlockPass").value="";note("Đã mở 30 đáp án; chức năng gợi ý điểm đang sẵn sàng.");}catch(x){err(x)}};
+ $("#keyFile").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.case_bank)||x.case_bank.length!==30)throw Error("Đáp án không đúng cấu trúc.");RUBRIC=x;note("Đã đọc 30 đáp án vào phiên làm việc của giảng viên.")}catch(x){err(x)}};
 $("#newClass").onclick=createClass;try{const q=await db.collection("pnl_dg_lop").get();const rows=q.docs.filter(d=>d.data().hocPhan===COURSE);$("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Quản lý lớp</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class))}catch(x){err(x)}}
 function createClass(){app.innerHTML='<article><h2>Tạo lớp đánh giá tự luận</h2><p class="warn">Lớp mới mặc định khóa. Nhập danh sách và kiểm tra trước khi mở cho sinh viên.</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-TL-K25"><label>Tên lớp</label><input name="ten" required><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="60"><label>Danh sách sinh viên (mỗi dòng: MSSV; Họ tên)</label><textarea name="roster" required placeholder="SV001; Nguyễn Văn A"></textarea><button type="submit">Tạo lớp (đang khóa)</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';$("#back").onclick=adminHome;
 $("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,ma=f.ma.value.toUpperCase().trim(),rows=f.roster.value.split(/\r?\n/).map(x=>x.split(/[;\t]/)).filter(x=>x.length>=2&&x[0].trim()&&x[1].trim()).map(x=>({mssv:x[0].trim().toUpperCase(),hoTen:x.slice(1).join(" ").trim()}));if(!valid(ma)||!rows.length||new Set(rows.map(x=>x.mssv)).size!==rows.length){note("Mã lớp hoặc danh sách sinh viên không hợp lệ.");return}
@@ -75,10 +76,53 @@ $("#csv").onclick=()=>{const rows=[["MSSV","Họ và tên","Điểm /10","Đã x
 document.querySelectorAll("[data-grade]").forEach(x=>x.onclick=()=>grade(ma,x.dataset.grade,papers[x.dataset.grade],grades[x.dataset.grade]))}catch(x){err(x)}}
 function normalize(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(x=>x.length>3)}
 function similarity(a,b){const A=new Set(normalize(a)),B=new Set(normalize(b));if(!A.size||!B.size)return 0;let n=0;A.forEach(w=>{if(B.has(w))n++});return Math.round(100*n/B.size)}
-function guideFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);if(!c)return"";return(c.answer||[])[j*2+1]||""}
-function grade(ma,sv,b,g){const ids=b.de.caseIds||[],ans=answerMap(b);let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Điểm đề xuất chỉ hỗ trợ rà soát mức độ tương thích. So khớp từ ngữ không thay thế đánh giá lập luận pháp lý. Giảng viên quyết định điểm chính thức.</p></article>';
+
+/* Đề xuất điểm theo ý pháp lý: chỉ là trợ giúp, không phải quyết định tự động.
+   Đáp án chỉ giải mã trong phiên quản trị hoặc được chọn từ tệp nội bộ. */
+const STOP_LEGAL=new Set("cua nhung trong theo nguoi truong hop phap luat quy dinh neu thi va hoac cua cac duoc khong cho voi mot hai ba nay do can phai xac dinh xem xet dieu kien dieu khoan bo luat toan bo phan tuong ung ngay thoi diem".split(" "));
+function legalWords(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/đ/g,"d").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(w=>w.length>2&&!STOP_LEGAL.has(w))}
+function uniqueWords(s){return [...new Set(legalWords(s))]}
+function legalSentences(s){return String(s||"").split(/[.;\n]+/).map(x=>x.trim()).filter(x=>x.length>25&&uniqueWords(x).length>=4).slice(0,14)}
+function legalCites(s){const v=new Set(),re=/(?:điều|dieu|đ\.|d\.)\s*(\d{1,3})/gi;let m;while((m=re.exec(s||"")))v.add(m[1]);return v}
+function legalGrade(essay,answer){
+ const A=legalSentences(answer),R=legalSentences(essay);
+ if(!String(essay||"").trim())return {score:0,parts:[0,0,0,0],hits:[],missing:A,warning:"Bỏ trống"};
+ const seen=uniqueWords(essay),seenSet=new Set(seen),hit=[],miss=[];
+ let total=0;
+ for(const clause of A){
+   const terms=uniqueWords(clause),same=terms.filter(w=>seenSet.has(w)).length,ratio=terms.length?same/terms.length:0;
+   if(ratio>=.52&&same>=3){hit.push({clause,ratio});total+=ratio}else miss.push(clause)
+ }
+ const coverage=A.length?hit.length/A.length:0;
+ const evidence=Math.min(1,seen.length/18);
+ const conclusion=Math.min(.4,.4*coverage*1.25*evidence);
+ const reasoning=Math.min(.4,.4*(total/Math.max(1,A.length))*evidence);
+ const branchText=(essay||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+ const branches=(branchText.match(/neu |truong hop|mat khac|nguoc lai|tuy thuoc|khi |co quyet dinh|khong co/g)||[]).length;
+ const refBranches=(String(answer).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().match(/neu |truong hop|mat khac|nguoc lai|tuy thuoc|khi /g)||[]).length;
+ const branch= refBranches ? .3*Math.min(1,branches/Math.max(1,Math.min(2,refBranches)))*coverage : .3*coverage;
+ const cited=legalCites(essay),model=legalCites(answer);
+ const citation=model.size?(.15*Math.min(1,[...model].filter(x=>cited.has(x)).length/Math.min(2,model.size))):(.15*(cited.size>0?1:0));
+ const parts=[conclusion,reasoning,branch,citation].map(x=>Math.round(x*100)/100);
+ return {score:Math.min(1.25,Math.round(parts.reduce((a,b)=>a+b,0)*100)/100),parts,hits:hit,missing:miss,warning:hit.length===0?"Không nhận diện được ý pháp lý đủ rõ; cần chấm thủ công.":"Máy chỉ so khớp dấu hiệu nội dung; kiểm tra kết luận và lập luận trước khi duyệt."};
+}
+const b64ToBytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decryptRubric(password){
+ const r=await fetch("./de/luat-dan-su-tu-luan-key.enc.json",{cache:"no-store"});if(!r.ok)throw Error("Chưa tìm thấy đáp án mã hóa trên web.");
+ const c=await r.json(),enc=new TextEncoder(),secret=await crypto.subtle.importKey("raw",enc.encode(password),"PBKDF2",false,["deriveKey"]);
+ const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64ToBytes(c.salt),iterations:c.rounds,hash:"SHA-256"},secret,{name:"AES-GCM",length:256},false,["decrypt"]);
+ const zipped=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64ToBytes(c.iv)},key,b64ToBytes(c.payload));
+ const stream=new Blob([zipped]).stream().pipeThrough(new DecompressionStream("deflate"));
+ const d=JSON.parse(await new Response(stream).text());
+ if(!Array.isArray(d.case_bank)||d.case_bank.length!==30)throw Error("Đáp án không hợp lệ.");
+ RUBRIC=d;return d;
+}
+
+function guideFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);if(!c)return"";const a=c.answer||[];return a.length===4?a[j]:(a[j*2+1]||"")}
+function grade(ma,sv,b,g){const ids=b.de.caseIds||[],ans=answerMap(b);let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Gợi ý điểm chỉ dựa trên dấu hiệu nội dung và căn cứ pháp luật. Máy có thể không nhận ra lập luận đúng hoặc đánh giá nhầm lập luận sai. Giảng viên bắt buộc đối chiếu và quyết định điểm chính thức.</p></article>';
 ids.forEach((id,i)=>{const c=caseBy(id);h+='<article><h3>Câu '+(i+1)+' – '+E(id)+' (5 điểm)</h3><div class="case">'+E(c.text)+'</div>';
-c.questions.forEach((q,j)=>{const key=id+"_"+j,guide=guideFor(id,j),input=ans[key]||"";const pos=i*4+j;h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div>'+(guide?'<details><summary>Đáp án đối chiếu · Tương thích từ ngữ tham khảo '+similarity(input,guide)+'%</summary><div class="ans">'+E(guide)+'</div></details>':'<p class="mini muted">Tải tệp đáp án nội bộ tại trang Quản trị để đối chiếu.</p>')+'<label>Điểm yêu cầu (0 – 1,25)</label><input data-point="'+pos+'" type="number" min="0" max="1.25" step="0.05" value="'+E(g&&g.muc&&g.muc[pos]!=null?g.muc[pos]:0)+'"></div>'});
+c.questions.forEach((q,j)=>{const key=id+"_"+j,guide=guideFor(id,j),input=ans[key]||"";const pos=i*4+j,ev=guide?legalGrade(input,guide):null;const selected=(g&&g.muc&&g.muc[pos]!=null)?g.muc[pos]:(ev?ev.score:0);
+ h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div>'+(guide?'<details><summary>Đáp án và minh chứng đối chiếu</summary><div class="ans">'+E(guide)+'</div></details><p class="mini muted">Gợi ý '+ev.score.toFixed(2)+'/1,25 · Kết luận '+ev.parts[0].toFixed(2)+' · Lập luận '+ev.parts[1].toFixed(2)+' · Trường hợp '+ev.parts[2].toFixed(2)+' · Căn cứ '+ev.parts[3].toFixed(2)+'</p>'+(ev.hits.length?'<details><summary>Ý có dấu hiệu phù hợp ('+ev.hits.length+')</summary><ul>'+ev.hits.map(x=>'<li>'+E(x.clause)+'</li>').join('')+'</ul></details>':'')+(ev.missing.length?'<details><summary>Ý cần xem xét ('+ev.missing.length+')</summary><ul>'+ev.missing.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul></details>':'')+'<p class="mini muted">'+E(ev.warning)+'</p>':'<p class="mini muted">Mở đáp án mã hóa tại trang Quản trị để có gợi ý chấm.</p>')+'<label>Điểm giảng viên xác nhận (0 – 1,25)</label><input data-point="'+pos+'" type="number" min="0" max="1.25" step="0.05" value="'+E(selected)+'"></div>'});
 h+='</article>'});h+='<article><div class="top"><span>Điểm tổng</span><strong class="score" id="total">0/10</strong></div><label>Nhận xét</label><textarea id="review" maxlength="1000">'+E(g&&g.note||"")+'</textarea><button id="saveGrade">Duyệt và lưu điểm</button><p id="msg" class="error"></p></article>';app.innerHTML=h;
 $("#back").onclick=()=>manageClass(ma);const points=()=>Array.from(document.querySelectorAll("[data-point]")).map(x=>Math.max(0,Math.min(1.25,Number(x.value)||0)));
 const recalc=()=>{$("#total").textContent=points().reduce((a,b)=>a+b,0).toFixed(2).replace(".",",")+"/10"};document.querySelectorAll("[data-point]").forEach(x=>x.oninput=recalc);recalc();
