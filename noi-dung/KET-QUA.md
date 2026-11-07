@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 22:21 07/11/2026
+# Kết quả dựng nội dung — 22:22 07/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/de/luat-dan-su-tu-luan-key.enc.json
+      - danh-gia/tu-luan-luat-dan-su.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42386014061 · commit 4f1beb9
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42386037805 · commit 21d6f09
