@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Đánh giá tự luận Luật Dân sự – Phúc Nguyên Library</title>
+<title>Đánh giá định kỳ Luật Dân sự – Trắc nghiệm và tự luận – Phúc Nguyên Library</title>
 <style>
 :root{font-family:"Segoe UI",Arial,sans-serif;color:#172c40;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}header{background:#164f70;color:white;padding:16px 4%}header a{color:#fff}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{font-size:23px;margin:0}main{max-width:1080px;margin:24px auto;padding:0 16px 50px}h2{font-size:21px}h3{font-size:18px}article,.panel{background:white;border:1px solid #d5dfeb;border-radius:13px;padding:20px;margin-bottom:16px}label{display:block;font-weight:600;margin:12px 0 5px}input,textarea,button,select{font:inherit}input,textarea,select{border:1px solid #b9c9d7;border-radius:8px;padding:9px 11px;width:100%}textarea{line-height:1.55;min-height:130px;resize:vertical}button,.btn{background:#19597b;color:white;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;margin:5px 6px 5px 0;text-decoration:none;display:inline-block}button.secondary,.btn.secondary{background:#eef2f6;color:#16405b;border:1px solid #b8c9d7}button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.muted{color:#607287}.warn{background:#fff2d9;border-left:4px solid #b77922;padding:12px;border-radius:5px}.ok{color:#167148}.error{color:#af2626;white-space:pre-wrap}.case{background:#f5f8fb;padding:16px;border-radius:10px;line-height:1.7}.q{padding:12px 0;border-bottom:1px solid #e3e9ef}.q:last-child{border:0}.q strong{display:block;margin-bottom:6px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.score{font-size:25px;font-weight:700}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1 1 150px}.mini{font-size:13px}.ans{white-space:pre-wrap;background:#f7f9fc;padding:10px;border-radius:8px}.student{border-top:1px solid #d6e0e9;padding-top:15px;margin-top:15px}.hide{display:none}footer{padding:20px;text-align:center;color:#607287;font-size:13px}
-</style></head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
-<main id="app"><article>Đang nạp dữ liệu…</article></main><footer>2 tình huống × 5 điểm = 10 điểm · Phiên bản thử nghiệm dành cho giảng viên kiểm duyệt</footer>
+</style></head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
+<main id="app"><article>Đang nạp dữ liệu…</article></main><footer>12 câu trắc nghiệm × 0,5 điểm + 1 tình huống tự luận × 4 điểm = 10 điểm · 40 phút mặc định</footer>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -75,25 +75,25 @@ function navigate(){clearInterval(TIMER);if(location.hash.startsWith("#quan-tri"
 window.addEventListener("hashchange",navigate);
 function studentEntry(){app.innerHTML=`<article>
 <h2>ĐÁNH GIÁ ĐỊNH KỲ – LUẬT DÂN SỰ</h2>
-<p class="muted">Hình thức kiểm tra chính thức: <b>Tự luận theo tình huống pháp lý</b>. Ngân hàng tình huống đã được phê duyệt và phát hành.</p>
-<div class="grid"><div class="panel"><strong>02 tình huống</strong><p class="mini muted">04 yêu cầu pháp lý mỗi tình huống</p></div>
-<div class="panel"><strong>05 điểm / tình huống</strong><p class="mini muted">Tổng điểm tối đa: 10 điểm</p></div>
-<div class="panel"><strong>Thời gian theo lớp</strong><p class="mini muted">Do giảng viên thiết lập</p></div></div>
+<p class="muted">Hình thức kiểm tra chính thức: <b>Trắc nghiệm kết hợp tự luận</b>. Ngân hàng câu hỏi và đáp án đã được phê duyệt.</p>
+<div class="grid"><div class="panel"><strong>12 câu trắc nghiệm</strong><p class="mini muted">08 lý thuyết + 04 câu hỏi tình huống · 06 điểm</p></div>
+<div class="panel"><strong>01 tình huống tự luận</strong><p class="mini muted">04 yêu cầu × 01 điểm = 04 điểm</p></div>
+<div class="panel"><strong>40 phút</strong><p class="mini muted">Thời gian mặc định, giảng viên có thể điều chỉnh</p></div></div>
 <h3>Hướng dẫn trước khi làm bài</h3>
-<ol><li>Đọc kỹ tình huống, xác định vấn đề pháp lý và trình bày câu trả lời tự luận.</li>
-<li>Chủ động phân chia trường hợp, lập luận và nêu căn cứ pháp luật phù hợp. Không chọn đáp án A, B, C, D.</li>
+<ol><li>Phần trắc nghiệm có 12 câu, mỗi câu chọn một phương án đúng; 0,5 điểm/câu.</li>
+<li>Phần tự luận gồm 01 tình huống và 04 yêu cầu; phân tích, lập luận và nêu căn cứ pháp luật.</li>
 <li>Hệ thống phân phối một mã đề ngẫu nhiên; mỗi sinh viên chỉ làm một lần trong đợt kiểm tra.</li>
-<li>Bài được lưu nháp, hết giờ tự nộp. Giảng viên chấm theo đáp án và duyệt điểm chính thức.</li></ol>
+<li>Bài tự lưu, hết giờ tự nộp. Trắc nghiệm được chấm theo đáp án; tự luận được chấm gợi ý tự động và giảng viên có thể điều chỉnh.</li></ol>
 <form id="entry"><label>Mã lớp kiểm tra</label><input name="ma" required maxlength="24" autocomplete="off" placeholder="Mã lớp giảng viên cung cấp">
 <label>Mã sinh viên</label><input name="sv" required maxlength="20" autocomplete="off" placeholder="Mã sinh viên">
-<label style="display:flex;gap:9px;align-items:center;font-weight:400"><input id="agree" type="checkbox" style="width:auto" required> Tôi đã đọc quy định kiểm tra tự luận.</label>
+<label style="display:flex;gap:9px;align-items:center;font-weight:400"><input id="agree" type="checkbox" style="width:auto" required> Tôi đã đọc quy định kiểm tra định kỳ.</label>
 <button type="submit">Xác nhận và vào bài kiểm tra</button></form><p id="msg" class="error"></p></article>`;
 const qp=new URLSearchParams(location.search);if(qp.get("ma"))$("#entry").elements.ma.value=qp.get("ma");if(qp.get("sv"))$("#entry").elements.sv.value=qp.get("sv");
 $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.trim().toUpperCase(),sv=e.target.sv.value.trim().toUpperCase();if(!valid(ma)||!valid(sv)){note("Mã lớp hoặc mã sinh viên không hợp lệ.");return}
 try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
-const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc hình thức tự luận Luật Dân sự.");
+const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
 const id=ma+"__"+sv;let old=await db.doc("pnl_dg_bai/"+id).get();
-if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;await loadMCQ();const de=newMixedExam();
+if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức trắc nghiệm kết hợp tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;await loadMCQ();const de=newMixedExam();
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
 old=await db.doc("pnl_dg_bai/"+id).get()}
 if(!old.exists)throw Error("Không đọc được bài làm. Vui lòng liên hệ giảng viên.");
@@ -193,12 +193,12 @@ async function markPending(ma,papers,grades){
 }
 
 async function adminHome(){
- app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">Chấm tự động theo đáp án đã bật. Không cần mật khẩu, giải mã hoặc tải tệp thủ công. Khi mở lớp, hệ thống tự đối chiếu và ghi điểm cho bài đã nộp chưa được chấm.</p><p class="warn">Máy chấm theo dấu hiệu nội dung và căn cứ pháp luật; không thay thế hoàn toàn việc đánh giá lập luận. Giảng viên có thể xem, điều chỉnh điểm.</p><button id="newClass">Tạo lớp kiểm tra</button><button id="migrateOld" class="secondary">Chuyển lớp trắc nghiệm cũ sang tự luận</button><p id="msg" class="error"></p></article><div id="classes"></div>';
+ app.innerHTML='<article><h2>Quản trị · Đánh giá định kỳ Luật Dân sự</h2><p class="muted">Chấm tự động theo đáp án đã bật (6 điểm trắc nghiệm và 4 điểm tự luận). Không cần mật khẩu, giải mã hoặc tải tệp thủ công. Khi mở lớp, hệ thống tự đối chiếu và ghi điểm cho bài đã nộp chưa được chấm.</p><p class="warn">Máy chấm theo dấu hiệu nội dung và căn cứ pháp luật; không thay thế hoàn toàn việc đánh giá lập luận. Giảng viên có thể xem, điều chỉnh điểm.</p><button id="newClass">Tạo lớp kiểm tra</button><button id="migrateOld" class="secondary">Chuyển lớp trắc nghiệm cũ sang tự luận</button><p id="msg" class="error"></p></article><div id="classes"></div>';
  $("#newClass").onclick=createClass;$("#migrateOld").onclick=migrateLegacyClasses;
  try{
   await loadAutoKey();
   const q=await db.collection("pnl_dg_lop").get(),rows=q.docs.filter(d=>d.data().hocPhan===COURSE);
-  $("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Mở lớp và tự chấm bài</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';
+  $("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Mở lớp và xem kết quả chấm</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';
   document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class));
  }catch(x){err(x)}
 }
@@ -262,7 +262,7 @@ async function migrateLegacyClasses(){
  finally{const b=$("#migrateOld");if(b)b.disabled=false}
 }
 
-function createClass(){app.innerHTML='<article><h2>Tạo lớp đánh giá tự luận</h2><p class="warn">Lớp mới mặc định khóa. Nhập danh sách và kiểm tra trước khi mở cho sinh viên.</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-TL-K25"><label>Tên lớp</label><input name="ten" required><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="40"><label>Danh sách sinh viên (mỗi dòng: MSSV; Họ tên)</label><textarea name="roster" required placeholder="SV001; Nguyễn Văn A"></textarea><button type="submit">Tạo lớp (đang khóa)</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';$("#back").onclick=adminHome;
+function createClass(){app.innerHTML='<article><h2>Tạo lớp đánh giá định kỳ</h2><p class="warn">Lớp mới mặc định khóa. Nhập danh sách và kiểm tra trước khi mở cho sinh viên.</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-TL-K25"><label>Tên lớp</label><input name="ten" required><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="40"><label>Danh sách sinh viên (mỗi dòng: MSSV; Họ tên)</label><textarea name="roster" required placeholder="SV001; Nguyễn Văn A"></textarea><button type="submit">Tạo lớp (đang khóa)</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';$("#back").onclick=adminHome;
 $("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,ma=f.ma.value.toUpperCase().trim(),rows=f.roster.value.split(/\r?\n/).map(x=>x.split(/[;\t]/)).filter(x=>x.length>=2&&x[0].trim()&&x[1].trim()).map(x=>({mssv:x[0].trim().toUpperCase(),hoTen:x.slice(1).join(" ").trim()}));if(!valid(ma)||!rows.length||new Set(rows.map(x=>x.mssv)).size!==rows.length){note("Mã lớp hoặc danh sách sinh viên không hợp lệ.");return}
 try{const ref=db.doc("pnl_dg_lop/"+ma);if((await ref.get()).exists)throw Error("Mã lớp đã tồn tại.");const now=Date.now();await ref.set({ten:f.ten.value.trim(),hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Tự luận",namHoc:"2026–2027",thoiGian:+f.time.value||40,open:false,openAt:TS.fromDate(new Date(now-60000)),closeAt:TS.fromDate(new Date(now+7*86400000)),siSo:rows.length,created:FV.serverTimestamp()});await db.doc("pnl_dg_ds/"+ma).set({rows,updated:FV.serverTimestamp()});for(let i=0;i<rows.length;i+=300){const b=db.batch();rows.slice(i,i+300).forEach(x=>b.set(db.doc("pnl_dg_sv/"+ma+"__"+x.mssv),{...x,maLop:ma}));await b.commit()}manageClass(ma)}catch(x){err(x)}}}
 async function manageClass(ma){CURRENT=ma;app.innerHTML='<article><h2>Quản lý lớp '+E(ma)+'</h2><p id="msg" class="error">Đang tải…</p></article>';try{const [ls,ro,bs,gr]=await Promise.all([db.doc("pnl_dg_lop/"+ma).get(),db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);if(!ls.exists)throw Error("Không tìm thấy lớp.");
