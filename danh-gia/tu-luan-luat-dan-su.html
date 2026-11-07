@@ -160,7 +160,7 @@ function renderExam(){
  if(clock)clock.textContent=Math.floor(ms/60000)+":"+String(Math.floor(ms/1000)%60).padStart(2,"0");
  if(ms===0)save(true);
 }
-function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá tự luận</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
+function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};
 $("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};return}const ma=decodeURIComponent(location.hash.split("/")[1]||"");if(ma)return manageClass(ma);adminHome()}
 
@@ -203,12 +203,12 @@ async function markPending(ma,papers,grades){
 }
 
 async function adminHome(){
- app.innerHTML='<article><h2>Quản trị · Đánh giá định kỳ Luật Dân sự</h2><p class="muted">Chấm tự động theo đáp án đã bật (6 điểm trắc nghiệm và 4 điểm tự luận). Không cần mật khẩu, giải mã hoặc tải tệp thủ công. Khi mở lớp, hệ thống tự đối chiếu và ghi điểm cho bài đã nộp chưa được chấm.</p><p class="warn">Máy chấm theo dấu hiệu nội dung và căn cứ pháp luật; không thay thế hoàn toàn việc đánh giá lập luận. Giảng viên có thể xem, điều chỉnh điểm.</p><button id="newClass">Tạo lớp kiểm tra</button><button id="migrateOld" class="secondary">Chuyển lớp trắc nghiệm cũ sang tự luận</button><p id="msg" class="error"></p></article><div id="classes"></div>';
+ app.innerHTML='<article><h2>Quản trị · Đánh giá định kỳ</h2><p class="mini muted">Học phần: Luật Dân sự</p><p><a href="./index.html#quan-tri">Quản lý chung tất cả học phần</a></p><p class="muted">Chấm tự động theo đáp án đã bật (6 điểm trắc nghiệm và 4 điểm tự luận). Không cần mật khẩu, giải mã hoặc tải tệp thủ công. Khi mở lớp, hệ thống tự đối chiếu và ghi điểm cho bài đã nộp chưa được chấm.</p><p class="warn">Máy chấm theo dấu hiệu nội dung và căn cứ pháp luật; không thay thế hoàn toàn việc đánh giá lập luận. Giảng viên có thể xem, điều chỉnh điểm.</p><button id="newClass">Tạo lớp kiểm tra</button><button id="migrateOld" class="secondary">Chuyển lớp Luật Dân sự cũ sang đề hỗn hợp</button><p id="msg" class="error"></p></article><div id="classes"></div>';
  $("#newClass").onclick=createClass;$("#migrateOld").onclick=migrateLegacyClasses;
  try{
   await loadAutoKey();
   const q=await db.collection("pnl_dg_lop").get(),rows=q.docs.filter(d=>d.data().hocPhan===COURSE);
-  $("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Mở lớp và xem kết quả chấm</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';
+  $("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Mở lớp và xem kết quả chấm</button></div></article>').join(""):'<article>Chưa có lớp đánh giá Luật Dân sự.</article>';
   document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class));
  }catch(x){err(x)}
 }
@@ -256,7 +256,7 @@ async function migrateLegacyClasses(){
    }
    const now=Date.now(),newClose=now+7*86400000;
    await r.cls.ref.update({
-     hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Đánh giá định kỳ (tự luận)",
+     hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Đánh giá định kỳ (trắc nghiệm + tự luận)",
      thoiGian:40,open:false,
      openAt:TS.fromDate(new Date(now-60000)),
      closeAt:TS.fromDate(new Date(newClose)),
