@@ -137,8 +137,8 @@ const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
 /* Học phần đã có đủ ngân hàng (Lý thuyết ABCD + Tình huống có câu ABCD và gợi ý giải quyết). Thêm học phần mới vào đây. */
 /* tuLuan: chương lấy tình huống tự luận (so khớp tên nhóm tình huống) */
 /* mode:"tl" = bài chỉ có 01 câu tự luận (đề trong de/<id>.json, ý chính + từ khóa trong de/<id>.dat, chỉ quản trị tải) */
-const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự",tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
-  {id:"luat-dan-su-tu-luan",name:"Luật Dân sự – Tự luận (2 tình huống)",mode:"external",ma:"DSTL",thoiGian:60},
+const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự – Đề cũ (lưu trữ)",legacy:true,tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
+  {id:"luat-dan-su-tu-luan",name:"Luật Dân sự – Đánh giá định kỳ (tự luận)",mode:"external",ma:"DSTL",thoiGian:60},
   {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tn",src:"../ky-nang-tu-van-phap-luat-dan-su/index.html",tnCases:3,thoiGian:60,ma:"TV"}];
 /* mode:"tn" (06/11/2026) = đề chỉ gồm tình huống trắc nghiệm: rút tnCases tình huống khác chương, lấy đủ các câu của mỗi tình huống, chấm thang 10.
    Bài đã nộp theo đề tự luận cũ (de.tl) vẫn chấm theo ngân hàng tự luận de/<id>.json + .dat. */
@@ -405,7 +405,7 @@ function ask(title,text,okLabel,danger){return new Promise(res=>{const m=modal('
 
 /* ====== ĐIỀU HƯỚNG ====== */
 function nav(){
-  const n=$("#nav");let h='<a href="../index.html">Trang chủ</a><a href="tu-luan-luat-dan-su.html">Tự luận Luật Dân sự</a>';
+  const n=$("#nav");let h='<a href="../index.html">Trang chủ</a><a href="tu-luan-luat-dan-su.html">Đánh giá định kỳ Luật Dân sự (tự luận)</a>';
   if(ADMIN)h+=location.hash.startsWith("#quan-tri")?'<a href="#">Giao diện sinh viên</a><button id="n-out">Đăng xuất quản trị</button>':'<a href="#quan-tri">Quản trị</a>';
   n.innerHTML=h;if($("#n-out"))$("#n-out").onclick=async()=>{await auth.signOut();USER=(await auth.signInAnonymously()).user;ADMIN=false;location.hash="";route()};
 }
@@ -577,7 +577,7 @@ async function adminView(){
   if(!ADMIN)return adminLogin();
   const parts=location.hash.split("/");if(parts[1])return classView(decodeURIComponent(parts[1]));
   $("#app").innerHTML=`<h1>Đánh giá định kỳ — Quản trị</h1><p class="lead">Mỗi lớp có mã lớp và danh sách sinh viên riêng. Sinh viên vào làm bài bằng mã lớp + mã sinh viên.</p>
-    <div class="row"><button class="btn primary" id="a-new">+ Tạo lớp</button>${HOCPHAN.map(h=>`<button class="btn" data-demo="${h.id}">Lớp thử ${esc(h.name)}</button>`).join("")}</div><div id="a-list"><p class="msg">Đang tải…</p></div>`;
+    <div class="row"><a class="btn primary" href="tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">+ Tạo lớp đánh giá Luật Dân sự (tự luận)</a><button class="btn" id="a-new">+ Lớp Kỹ năng tư vấn</button>${HOCPHAN.filter(h=>h.mode==="tn").map(h=>`<button class="btn" data-demo="${h.id}">Lớp thử ${esc(h.name)}</button>`).join("")}</div><div id="a-list"><p class="msg">Đang tải…</p></div>`;
   $("#a-new").onclick=()=>classForm();$$("[data-demo]").forEach(b=>b.onclick=()=>makeDemo(b.dataset.demo));
   try{const qs=await db.collection("pnl_dg_lop").get();const xs=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0));
     $("#a-list").innerHTML=xs.length?'<div class="classes">'+xs.map(l=>{const st=lopTrangThai(l);return `<button class="ccard" data-id="${esc(l.id)}"><b>${esc(l.id)}</b> <span class="pill ${st.k}">${esc(st.k==="open"?"Đang mở":st.k==="wait"?"Chưa mở":"Đóng")}</span><br>${esc(l.ten||"")}<br><span class="msg">${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${l.siSo|0} SV · ${l.thoiGian|0} phút</span></button>`}).join("")+"</div>":'<p class="msg">Chưa có lớp nào.</p>';
@@ -589,9 +589,9 @@ function classForm(l){
   const m=modal(`<h2>${l?"Sửa lớp "+esc(l.id):"Tạo lớp mới"}</h2><form id="cf" novalidate>
     <div class="row"><div><label class="lab" for="cf-ma">Mã lớp (sinh viên nhập mã này)</label><input type="text" id="cf-ma" maxlength="24" style="text-transform:uppercase" value="${esc(l?l.id:"")}" ${l?"disabled":""} placeholder="DS-K25A"></div>
       <div><label class="lab" for="cf-ten">Tên lớp</label><input type="text" id="cf-ten" maxlength="80" value="${esc(l?l.ten:"")}" placeholder="K25 Luật A"></div></div>
-    <div class="row"><div><label class="lab" for="cf-hp">Học phần</label><select id="cf-hp">${HOCPHAN.map(h=>`<option value="${h.id}"${l&&l.hocPhan===h.id?" selected":""}>${esc(h.name)}</option>`).join("")}</select></div>
+    <div class="row"><div><label class="lab" for="cf-hp">Học phần</label><select id="cf-hp">${HOCPHAN.filter(h=>h.mode==="tn"||(l&&l.hocPhan===h.id)).map(h=>`<option value="${h.id}"${l&&l.hocPhan===h.id?" selected":""}>${esc(h.name)}</option>`).join("")}</select></div>
       <div><label class="lab" for="cf-nh">Năm học</label><input type="text" id="cf-nh" maxlength="20" value="${esc(l?l.namHoc:"2026–2027")}"></div>
-      <div><label class="lab" for="cf-tg">Thời gian làm bài (phút)</label><input type="number" id="cf-tg" min="5" max="180" value="${l?l.thoiGian|0:(HOCPHAN[0].thoiGian||40)}"></div></div>
+      <div><label class="lab" for="cf-tg">Thời gian làm bài (phút)</label><input type="number" id="cf-tg" min="5" max="180" value="${l?l.thoiGian|0:60}"></div></div>
     <div class="row"><div><label class="lab" for="cf-a">Mở từ</label><input type="datetime-local" id="cf-a" value="${dtLocal(a)}"></div><div><label class="lab" for="cf-b">Đóng lúc</label><input type="datetime-local" id="cf-b" value="${dtLocal(b)}"></div></div>
     <label style="display:flex;gap:8px;margin:0 0 10px"><input type="checkbox" id="cf-open" ${!l||l.open?"checked":""}> Cho phép làm bài trong khung giờ trên</label>
     <div class="err" id="cf-err"></div><div class="row" style="justify-content:flex-end"><button class="btn" type="button" id="cf-x">Hủy</button><button class="btn primary" type="submit">Lưu</button></div></form>`);
@@ -603,6 +603,7 @@ function classForm(l){
     const A=new Date(m.querySelector("#cf-a").value),Bd=new Date(m.querySelector("#cf-b").value);
     if(isNaN(A)||isNaN(Bd)||Bd<=A){err.textContent="Giờ đóng phải sau giờ mở.";return}
     const hp=m.querySelector("#cf-hp").value;
+     if(!l&&hp!=="ky-nang-tu-van-phap-luat-dan-su"){err.textContent="Đánh giá Luật Dân sự mới được tạo tại mục Tự luận Luật Dân sự.";return}
     const data={ten:m.querySelector("#cf-ten").value.trim(),hocPhan:hp,hocPhanTen:(HOCPHAN.find(h=>h.id===hp)||{}).name||hp,namHoc:m.querySelector("#cf-nh").value.trim(),
       thoiGian:Math.max(5,Math.min(180,parseInt(m.querySelector("#cf-tg").value,10)||40)),openAt:TS.fromDate(A),closeAt:TS.fromDate(Bd),open:m.querySelector("#cf-open").checked};
     try{const ref=db.doc("pnl_dg_lop/"+ma);if(!l){if((await ref.get()).exists){err.textContent="Mã lớp này đã có.";return}data.created=FV.serverTimestamp();data.siSo=0}
