@@ -272,9 +272,66 @@ async function migrateLegacyClasses(){
  finally{const b=$("#migrateOld");if(b)b.disabled=false}
 }
 
-function createClass(){app.innerHTML='<article><h2>Tạo lớp đánh giá định kỳ</h2><p class="warn">Lớp mới mặc định khóa. Nhập danh sách và kiểm tra trước khi mở cho sinh viên.</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-TL-K25"><label>Tên lớp</label><input name="ten" required><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="40"><label>Danh sách sinh viên (mỗi dòng: MSSV; Họ tên)</label><textarea name="roster" required placeholder="SV001; Nguyễn Văn A"></textarea><button type="submit">Tạo lớp (đang khóa)</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';$("#back").onclick=adminHome;
-$("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,ma=f.ma.value.toUpperCase().trim(),rows=f.roster.value.split(/\r?\n/).map(x=>x.split(/[;\t]/)).filter(x=>x.length>=2&&x[0].trim()&&x[1].trim()).map(x=>({mssv:x[0].trim().toUpperCase(),hoTen:x.slice(1).join(" ").trim()}));if(!valid(ma)||!rows.length||new Set(rows.map(x=>x.mssv)).size!==rows.length){note("Mã lớp hoặc danh sách sinh viên không hợp lệ.");return}
-try{const ref=db.doc("pnl_dg_lop/"+ma);if((await ref.get()).exists)throw Error("Mã lớp đã tồn tại.");const now=Date.now();await ref.set({ten:f.ten.value.trim(),hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Tự luận",namHoc:"2026–2027",thoiGian:+f.time.value||40,open:false,openAt:TS.fromDate(new Date(now-60000)),closeAt:TS.fromDate(new Date(now+7*86400000)),siSo:rows.length,created:FV.serverTimestamp()});await db.doc("pnl_dg_ds/"+ma).set({rows,updated:FV.serverTimestamp()});for(let i=0;i<rows.length;i+=300){const b=db.batch();rows.slice(i,i+300).forEach(x=>b.set(db.doc("pnl_dg_sv/"+ma+"__"+x.mssv),{...x,maLop:ma}));await b.commit()}manageClass(ma)}catch(x){err(x)}}}
+
+/* Thống nhất danh sách sinh viên: MSSV; Họ tên hoặc Họ tên; MSSV */
+function parseStudentRows(text){
+ const rows=[],seen=new Set();
+ for(const ln of String(text||"").split(/\r?\n/)){
+  const line=ln.trim();if(!line)continue;
+  let pair=line.split(/[;\t]/).map(x=>x.trim());
+  if(pair.length<2)pair=line.split(",").map(x=>x.trim().replace(/^"|"$/g,""));
+  if(pair.length<2)continue;
+  let a=pair[0],b=pair.slice(1).join(" ").trim();
+  const isCode=x=>/^[A-Z0-9_-]{2,24}$/i.test(x)&&(/\d/.test(x)||x===x.toUpperCase());
+  if(!isCode(a)&&isCode(b)){const tmp=a;a=b;b=tmp}
+  a=a.toUpperCase();
+  if(!isCode(a)||!b||/^(mssv|mã sinh viên|ma sinh vien|student id)$/i.test(a))continue;
+  if(seen.has(a))throw Error("Mã sinh viên trùng: "+a);
+  seen.add(a);rows.push({mssv:a,hoTen:b});
+ }
+ return rows;
+}
+async function readRosterFile(file){
+ if(!file)return "";
+ const ext=(file.name.split(".").pop()||"").toLowerCase();
+ if(ext==="xlsx"||ext==="xls"){
+  if(!window.XLSX)await new Promise((resolve,reject)=>{const el=document.createElement("script");el.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";el.onload=resolve;el.onerror=()=>reject(Error("Không tải được công cụ đọc Excel."));document.head.appendChild(el)});
+  const wb=XLSX.read(await file.arrayBuffer(),{type:"array"}),sheet=wb.Sheets[wb.SheetNames[0]],matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
+  return matrix.map(r=>r.slice(0,2).map(x=>String(x).trim()).join("; ")).join("\n");
+ }
+ return file.text();
+}
+async function saveStudents(ma,rows,previous=[]){
+ const previousIds=new Set(previous.map(x=>x.mssv)),ids=new Set(rows.map(x=>x.mssv));
+ const deletions=previous.filter(x=>!ids.has(x.mssv));
+ if(deletions.length){
+  const ongoing=await db.collection("pnl_dg_bai").where("maLop","==",ma).get();
+  const active=ongoing.docs.filter(x=>deletions.some(d=>d.mssv===x.data().mssv));
+  if(active.length)throw Error("Không được xóa sinh viên đã có bài kiểm tra. Hãy giữ sinh viên trong danh sách.");
+ }
+ const tasks=[];
+ for(const x of deletions)tasks.push(b=>b.delete(db.doc("pnl_dg_sv/"+ma+"__"+x.mssv)));
+ for(const x of rows)tasks.push(b=>b.set(db.doc("pnl_dg_sv/"+ma+"__"+x.mssv),{maLop:ma,mssv:x.mssv,hoTen:x.hoTen},{merge:true}));
+ tasks.push(b=>b.set(db.doc("pnl_dg_ds/"+ma),{rows,updated:FV.serverTimestamp()}));
+ tasks.push(b=>b.set(db.doc("pnl_dg_lop/"+ma),{siSo:rows.length},{merge:true}));
+ for(let i=0;i<tasks.length;i+=350){const batch=db.batch();tasks.slice(i,i+350).forEach(fn=>fn(batch));await batch.commit()}
+}
+function createClass(){
+ app.innerHTML='<article><h2>Tạo lớp đánh giá định kỳ</h2><p class="muted">Chọn học phần trong quản trị chung; lớp Luật Dân sự sử dụng 12 câu trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm).</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-K25A"><label>Tên lớp</label><input name="ten" required placeholder="Lớp K25A"><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="40"><label>Nhập danh sách sinh viên (mỗi dòng: MSSV; Họ tên hoặc Họ tên; MSSV)</label><textarea name="roster" rows="5" placeholder="SV001; Nguyễn Văn A"></textarea><label>Tải danh sách từ Excel hoặc CSV</label><input id="rosterFile" type="file" accept=".xlsx,.xls,.csv,.txt"><p class="mini muted">Có thể tạo lớp trước và thêm sinh viên sau. Tệp tải lên tự chuyển thành danh sách để kiểm tra.</p><label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" name="open" checked style="width:auto"> Mở lớp ngay sau khi tạo</label><button type="submit">Tạo lớp</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';
+ $("#back").onclick=adminHome;
+ $("#rosterFile").onchange=async e=>{try{const raw=await readRosterFile(e.target.files[0]),rows=parseStudentRows(raw);$("#cf").elements.roster.value=rows.map(x=>x.mssv+"; "+x.hoTen).join("\n");note("Đã đọc "+rows.length+" sinh viên. Kiểm tra danh sách trước khi lưu.")}catch(x){err(x)}};
+ $("#cf").onsubmit=async e=>{
+  e.preventDefault();const form=e.target,ma=form.elements.ma.value.toUpperCase().trim();
+  let rows;try{rows=parseStudentRows(form.elements.roster.value)}catch(x){err(x);return}
+  if(!valid(ma)||!form.elements.ten.value.trim()){note("Nhập mã lớp và tên lớp hợp lệ.");return}
+  try{
+   const ref=db.doc("pnl_dg_lop/"+ma);if((await ref.get()).exists)throw Error("Mã lớp đã tồn tại.");
+   const now=Date.now(),mins=Math.max(10,Math.min(180,Number(form.elements.time.value)||40));
+   await ref.set({ten:form.elements.ten.value.trim(),hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Đánh giá định kỳ",namHoc:"2026–2027",thoiGian:mins,open:form.elements.open.checked,openAt:TS.fromDate(new Date(now-60000)),closeAt:TS.fromDate(new Date(now+7*86400000)),siSo:0,created:FV.serverTimestamp()});
+   await saveStudents(ma,rows,[]);await manageClass(ma);
+  }catch(x){err(x)}
+ };
+}
 async function manageClass(ma){CURRENT=ma;app.innerHTML='<article><h2>Quản lý lớp '+E(ma)+'</h2><p id="msg" class="error">Đang tải…</p></article>';try{const [ls,ro,bs,gr]=await Promise.all([db.doc("pnl_dg_lop/"+ma).get(),db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);if(!ls.exists)throw Error("Không tìm thấy lớp.");
 const l=ls.data(),students=ro.exists?ro.data().rows:[],papers=Object.fromEntries(bs.docs.map(d=>[d.data().mssv,d.data()])),grades=Object.fromEntries(gr.docs.map(d=>[d.data().mssv,d.data()]));
 const resultAuto=await markPending(ma,papers,grades);
