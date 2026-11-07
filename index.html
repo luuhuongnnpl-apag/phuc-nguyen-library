@@ -551,7 +551,7 @@ function admin2HTML(){
   const courseChoices=COURSES.filter(c=>c.src).map(c=>`<label class="admin-course"><input type="checkbox" class="c-course" value="${esc(c.id)}" disabled><span>${esc(c.name)}</span></label>`).join("");
   const maxField=`<div><label class="lab" for="c-max">Số người được dùng mã</label><input type="number" id="c-max" min="1" max="1000" value="20" required></div>`;
   return head+`<main class="wrap admin">
-  <section class="frame"><div class="ftitle">Đánh giá định kỳ</div><p class="msg">Quản lý chung các lớp kiểm tra của từng học phần: tạo lớp, nhập danh sách sinh viên, theo dõi bài nộp và xem bảng điểm. Hình thức đề được xác định theo học phần.</p><div class="row"><a class="btn primary" href="danh-gia/tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">Quản trị Luật Dân sự</a><a class="btn" href="danh-gia/#quan-tri" style="text-decoration:none">Học phần khác và đề cũ</a></div></section>
+  <section class="frame"><div class="ftitle">Đánh giá định kỳ</div><p class="msg">Quản lý chung các lớp kiểm tra của từng học phần: tạo lớp, nhập danh sách sinh viên, theo dõi bài nộp và xem bảng điểm. Hình thức đề được xác định theo học phần.</p><div class="row"><a class="btn primary" href="danh-gia/#quan-tri" style="text-decoration:none">Quản trị đánh giá định kỳ</a><a class="btn" href="danh-gia/tu-luan-luat-dan-su.html#quan-tri" style="text-decoration:none">Quản lý riêng học phần Luật Dân sự</a></div></section>
   <section class="frame" id="c-frame"><div class="ftitle" id="c-title">Cấp mã</div>
     <form id="c-form" novalidate class="admin">
       <p class="msg" id="c-edit-note" hidden></p>
@@ -792,7 +792,7 @@ function homeHTML(){
     <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
     <div class="col-r">
     <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ</div>
-      <p class="dg-lead">Hệ thống đánh giá định kỳ dùng chung cho các học phần. Hãy nhập <b>mã lớp</b> và <b>mã sinh viên</b>; hệ thống sẽ xác định học phần, hiển thị thể thức đề, thời gian làm bài và yêu cầu xác nhận họ tên trước khi bắt đầu. Đề Luật Dân sự hiện gồm <b>12 câu trắc nghiệm (6 điểm)</b> và <b>1 tình huống tự luận (4 điểm)</b>, mặc định 40 phút.</p>
+      <p class="dg-lead">Hệ thống đánh giá định kỳ dùng chung cho tất cả học phần. Sinh viên nhập <b>mã lớp</b> và <b>mã sinh viên</b>; hệ thống tự xác định học phần, hiển thị cấu trúc đề, thời gian làm bài và yêu cầu xác nhận họ tên trước khi bắt đầu.</p>
       <form id="dg-form" class="dg-form" novalidate>
         <div><label class="dg-lab" for="dg-ma">Mã lớp</label><input type="text" id="dg-ma" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Ví dụ: DS-K25A"></div>
         <div><label class="dg-lab" for="dg-sv">Mã sinh viên</label><input type="text" id="dg-sv" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Mã sinh viên của bạn"></div>
