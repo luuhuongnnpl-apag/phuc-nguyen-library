@@ -138,6 +138,7 @@ const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
 /* tuLuan: chương lấy tình huống tự luận (so khớp tên nhóm tình huống) */
 /* mode:"tl" = bài chỉ có 01 câu tự luận (đề trong de/<id>.json, ý chính + từ khóa trong de/<id>.dat, chỉ quản trị tải) */
 const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự",tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
+  {id:"luat-dan-su-tu-luan",name:"Luật Dân sự – Tự luận (2 tình huống)",mode:"external",ma:"DSTL",thoiGian:60},
   {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tn",src:"../ky-nang-tu-van-phap-luat-dan-su/index.html",tnCases:3,thoiGian:60,ma:"TV"}];
 /* mode:"tn" (06/11/2026) = đề chỉ gồm tình huống trắc nghiệm: rút tnCases tình huống khác chương, lấy đủ các câu của mỗi tình huống, chấm thang 10.
    Bài đã nộp theo đề tự luận cũ (de.tl) vẫn chấm theo ngân hàng tự luận de/<id>.json + .dat. */
@@ -444,6 +445,7 @@ async function checkIn(ma,sv){
   const ls=await db.doc("pnl_dg_lop/"+ma).get();
   if(!ls.exists)throw uerr("Không tìm thấy mã lớp. Kiểm tra lại với giảng viên.");
   const lop=ls.data();
+  if(lop.hocPhan==="luat-dan-su-tu-luan"){location.href="tu-luan-luat-dan-su.html?ma="+encodeURIComponent(ma)+"&sv="+encodeURIComponent(sv);return}
   const ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();
   if(!ss.exists)throw uerr("Mã sinh viên không có trong danh sách lớp "+ma+".");
   const svd=ss.data();store.set("pndg-last",JSON.stringify({ma,sv}));
@@ -626,6 +628,7 @@ async function classView(ma){
   let l,ds,bai,cham,B,BL=null;
   try{const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists){$("#app").innerHTML='<p class="err">Không có lớp '+esc(ma)+'.</p><a href="#quan-tri">← Danh sách lớp</a>';return}
     l={id:ma,...ls.data()};
+    if(l.hocPhan==="luat-dan-su-tu-luan"){location.href="tu-luan-luat-dan-su.html#quan-tri";return}
     const [d1,d2,d3]=await Promise.all([db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
     ds=d1.exists?(d1.data().rows||[]):[];bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
     B=await loadBank(l.hocPhan,true);
