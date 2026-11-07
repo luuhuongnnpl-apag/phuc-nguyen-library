@@ -31,13 +31,27 @@ function access(l){const t=Date.now();return l.open&&(!l.openAt||until(l.openAt)
 async function ensureAnon(){if(auth.currentUser)return auth.currentUser;return(await auth.signInAnonymously()).user}
 function navigate(){clearInterval(TIMER);if(location.hash.startsWith("#quan-tri"))return adminEntry();studentEntry()}
 window.addEventListener("hashchange",navigate);
-function studentEntry(){app.innerHTML='<article><h2>Đánh giá định kỳ – Tự luận Luật Dân sự</h2><p>Mỗi bài gồm 02 tình huống, mỗi tình huống 04 yêu cầu và tối đa 05 điểm. Sinh viên chỉ được làm một bài cho mỗi đợt.</p><div class="warn">Ngân hàng tình huống đã được phê duyệt để sử dụng cho đánh giá định kỳ Luật Dân sự. Chỉ những lớp được giảng viên mở mới được làm bài.</div><form id="entry"><label>Mã lớp</label><input name="ma" required maxlength="24" autocomplete="off"><label>Mã sinh viên</label><input name="sv" required maxlength="20" autocomplete="off"><button type="submit">Vào bài kiểm tra</button></form><p id="msg" class="error"></p></article>';
+function studentEntry(){app.innerHTML=`<article>
+<h2>ĐÁNH GIÁ ĐỊNH KỲ – LUẬT DÂN SỰ</h2>
+<p class="muted">Hình thức kiểm tra chính thức: <b>Tự luận theo tình huống pháp lý</b>. Ngân hàng tình huống đã được phê duyệt và phát hành.</p>
+<div class="grid"><div class="panel"><strong>02 tình huống</strong><p class="mini muted">04 yêu cầu pháp lý mỗi tình huống</p></div>
+<div class="panel"><strong>05 điểm / tình huống</strong><p class="mini muted">Tổng điểm tối đa: 10 điểm</p></div>
+<div class="panel"><strong>Thời gian theo lớp</strong><p class="mini muted">Do giảng viên thiết lập</p></div></div>
+<h3>Hướng dẫn trước khi làm bài</h3>
+<ol><li>Đọc kỹ tình huống, xác định vấn đề pháp lý và trình bày câu trả lời tự luận.</li>
+<li>Chủ động phân chia trường hợp, lập luận và nêu căn cứ pháp luật phù hợp. Không chọn đáp án A, B, C, D.</li>
+<li>Hệ thống phân phối một mã đề ngẫu nhiên; mỗi sinh viên chỉ làm một lần trong đợt kiểm tra.</li>
+<li>Bài được lưu nháp, hết giờ tự nộp. Giảng viên chấm theo đáp án và duyệt điểm chính thức.</li></ol>
+<form id="entry"><label>Mã lớp kiểm tra</label><input name="ma" required maxlength="24" autocomplete="off" placeholder="Mã lớp giảng viên cung cấp">
+<label>Mã sinh viên</label><input name="sv" required maxlength="20" autocomplete="off" placeholder="Mã sinh viên">
+<label style="display:flex;gap:9px;align-items:center;font-weight:400"><input id="agree" type="checkbox" style="width:auto" required> Tôi đã đọc quy định kiểm tra tự luận.</label>
+<button type="submit">Xác nhận và vào bài kiểm tra</button></form><p id="msg" class="error"></p></article>`;
 const qp=new URLSearchParams(location.search);if(qp.get("ma"))$("#entry").elements.ma.value=qp.get("ma");if(qp.get("sv"))$("#entry").elements.sv.value=qp.get("sv");
 $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.trim().toUpperCase(),sv=e.target.sv.value.trim().toUpperCase();if(!valid(ma)||!valid(sv)){note("Mã lớp hoặc mã sinh viên không hợp lệ.");return}
 try{await ensureAnon();await bankLoad();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
 const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc hình thức tự luận Luật Dân sự.");
 const id=ma+"__"+sv;let old=await db.doc("pnl_dg_bai/"+id).get();
-if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");const n=Math.floor(Math.random()*BANK.exam_sets.length),pair=BANK.exam_sets[n];const de={essayMode:"ds2",set:pair.code,caseIds:pair.cases,lt:[],th:[],tl:null,perm:{}};
+if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;const n=Math.floor(Math.random()*BANK.exam_sets.length),pair=BANK.exam_sets[n];const de={essayMode:"ds2",set:pair.code,caseIds:pair.cases,lt:[],th:[],tl:null,perm:{}};
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
 old=await db.doc("pnl_dg_bai/"+id).get()}
 if(!old.exists)throw Error("Không đọc được bài làm. Vui lòng liên hệ giảng viên.");
