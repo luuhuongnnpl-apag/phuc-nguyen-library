@@ -73,10 +73,69 @@ const ms=Math.max(0,total-(Date.now()-started));$("#clock").textContent=Math.flo
 function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá tự luận</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};
 $("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};return}adminHome()}
-async function adminHome(){app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">15 mã đề · 30 tình huống · mỗi đề 10 điểm. Đáp án được mã hóa; giải mã trong phiên giảng viên để đề xuất điểm theo từng yêu cầu.</p><label>Mở đáp án đã mã hóa trên web</label><input id="unlockPass" type="password" autocomplete="off" placeholder="Mật khẩu giải mã đáp án"><button id="unlockBtn" type="button" class="secondary">Mở đáp án và bật chấm gợi ý</button><p class="mini muted">Đáp án được mã hóa AES-256-GCM; chỉ giải mã trên máy giảng viên. Mật khẩu không lưu vào website.</p><details><summary>Dùng tệp đáp án nội bộ thay thế</summary><input type="file" id="keyFile" accept=".json,application/json"><p class="mini muted">Tệp chỉ được đọc trong phiên hiện tại, không tải lên máy chủ.</p></details><button id="newClass">Tạo lớp kiểm tra</button><p id="msg" class="error"></p></article><div id="classes"></div>';
+async function adminHome(){app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">15 mã đề · 30 tình huống · mỗi đề 10 điểm. Đáp án được mã hóa; giải mã trong phiên giảng viên để đề xuất điểm theo từng yêu cầu.</p><label>Mở đáp án đã mã hóa trên web</label><input id="unlockPass" type="password" autocomplete="off" placeholder="Mật khẩu giải mã đáp án"><button id="unlockBtn" type="button" class="secondary">Mở đáp án và bật chấm gợi ý</button><p class="mini muted">Đáp án được mã hóa AES-256-GCM; chỉ giải mã trên máy giảng viên. Mật khẩu không lưu vào website.</p><details><summary>Dùng tệp đáp án nội bộ thay thế</summary><input type="file" id="keyFile" accept=".json,application/json"><p class="mini muted">Tệp chỉ được đọc trong phiên hiện tại, không tải lên máy chủ.</p></details><button id="newClass">Tạo lớp kiểm tra</button><button type="button" id="migrateOld" class="secondary">Chuyển lớp Luật Dân sự trắc nghiệm cũ sang tự luận</button><p class="mini muted">Giữ nguyên mã lớp và danh sách sinh viên; xóa bài làm, đáp án đã nộp và điểm của đề trắc nghiệm cũ. Lớp chuyển đổi mặc định khóa.</p><p id="msg" class="error"></p></article><div id="classes"></div>';
 $("#unlockBtn").onclick=async()=>{const password=$("#unlockPass").value;try{if(!password)throw Error("Nhập mật khẩu giải mã.");await decryptRubric(password);$("#unlockPass").value="";note("Đã mở 30 đáp án; chức năng gợi ý điểm đang sẵn sàng.");}catch(x){err(x)}};
  $("#keyFile").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.case_bank)||x.case_bank.length!==30)throw Error("Đáp án không đúng cấu trúc.");RUBRIC=x;note("Đã đọc 30 đáp án vào phiên làm việc của giảng viên.")}catch(x){err(x)}};
-$("#newClass").onclick=createClass;try{const q=await db.collection("pnl_dg_lop").get();const rows=q.docs.filter(d=>d.data().hocPhan===COURSE);$("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Quản lý lớp</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class))}catch(x){err(x)}}
+$("#newClass").onclick=createClass;$("#migrateOld").onclick=migrateLegacyClasses;try{const q=await db.collection("pnl_dg_lop").get();const rows=q.docs.filter(d=>d.data().hocPhan===COURSE);$("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Quản lý lớp</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class))}catch(x){err(x)}}
+/* Chuyển đổi dữ liệu kiểm tra cũ: chỉ học phần luat-dan-su, không đụng học phần khác.
+   Xóa bài và điểm cũ tại quyền quản trị Firebase, giữ mã lớp và danh sách SV.
+   Không tự mở lớp mới để tránh sinh viên làm bài trước khi kiểm tra cấu hình. */
+async function migrateLegacyClasses(){
+ const btn=$("#migrateOld");if(btn)btn.disabled=true;
+ try{
+  const q=await db.collection("pnl_dg_lop").where("hocPhan","==","luat-dan-su").get();
+  const classes=q.docs.filter(d=>d.data().hocPhan==="luat-dan-su");
+  if(!classes.length){note("Không có lớp Luật Dân sự trắc nghiệm cũ cần chuyển.");return}
+  const rows=[];
+  for(const cls of classes){
+   const ma=cls.id;
+   const [b,g]=await Promise.all([
+    db.collection("pnl_dg_bai").where("maLop","==",ma).get(),
+    db.collection("pnl_dg_cham").where("maLop","==",ma).get()
+   ]);
+   rows.push({cls,ma,b,g});
+  }
+  const totalB=rows.reduce((n,r)=>n+r.b.size,0),totalG=rows.reduce((n,r)=>n+r.g.size,0);
+  const list=rows.map(r=>r.ma+" ("+r.b.size+" bài, "+r.g.size+" điểm)").join("\n");
+  if(!confirm("CHUYỂN ĐỔI "+rows.length+" LỚP LUẬT DÂN SỰ SANG TỰ LUẬN?\n\n"+list+"\n\nSẽ XÓA VĨNH VIỄN "+totalB+" bài làm và "+totalG+" bản ghi chấm/điểm cũ. GIỮ mã lớp, danh sách sinh viên và dữ liệu các học phần khác. Lớp mới ở trạng thái KHÓA."))return;
+  const typed=prompt("Để xác nhận xóa dữ liệu cũ và chuyển lớp, nhập đúng: CHUYEN TU LUAN");
+  if(typed!=="CHUYEN TU LUAN"){note("Đã hủy chuyển đổi.");return}
+  let done=0,deletedB=0,deletedG=0;
+  for(const r of rows){
+   /* Khóa ngay trước khi xóa để ngăn phát đề trắc nghiệm từ phiên đang mở */
+   await r.cls.ref.update({open:false});
+   const docs=[...r.b.docs,...r.g.docs];
+   for(let i=0;i<docs.length;i+=350){
+    const batch=db.batch();
+    docs.slice(i,i+350).forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+   }
+   /* Quét lại để loại bài/điểm phát sinh trong khi chuyển đổi */
+   for(const col of ["pnl_dg_bai","pnl_dg_cham"]){
+    while(true){
+     const more=await db.collection(col).where("maLop","==",r.ma).limit(350).get();
+     if(more.empty)break;
+     const batch=db.batch();more.docs.forEach(d=>batch.delete(d.ref));await batch.commit();
+    }
+   }
+   const now=Date.now(),newClose=now+7*86400000;
+   await r.cls.ref.update({
+     hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Đánh giá định kỳ (tự luận)",
+     thoiGian:60,open:false,
+     openAt:TS.fromDate(new Date(now-60000)),
+     closeAt:TS.fromDate(new Date(newClose)),
+     migratedFrom:"luat-dan-su",migratedAt:FV.serverTimestamp(),
+     migratedOldPaperCount:r.b.size,migratedOldGradeCount:r.g.size
+   });
+   deletedB+=r.b.size;deletedG+=r.g.size;done++;
+   note("Đã chuyển "+done+"/"+rows.length+" lớp. Lớp đang khóa; cần kiểm tra trước khi mở.");
+  }
+  await adminHome();
+  note("ĐÃ CHUYỂN "+done+" lớp sang tự luận; xóa ít nhất "+deletedB+" bài và "+deletedG+" điểm cũ. Danh sách sinh viên giữ nguyên. Các lớp đang khóa.");
+ }catch(x){console.error(x);note("Chuyển đổi gián đoạn: "+(x.message||x)+". Các lớp đã hoàn tất giữ nguyên; lớp chưa hoàn tất vẫn khóa. Kiểm tra trước khi chạy lại.");}
+ finally{const b=$("#migrateOld");if(b)b.disabled=false}
+}
+
 function createClass(){app.innerHTML='<article><h2>Tạo lớp đánh giá tự luận</h2><p class="warn">Lớp mới mặc định khóa. Nhập danh sách và kiểm tra trước khi mở cho sinh viên.</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-TL-K25"><label>Tên lớp</label><input name="ten" required><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="60"><label>Danh sách sinh viên (mỗi dòng: MSSV; Họ tên)</label><textarea name="roster" required placeholder="SV001; Nguyễn Văn A"></textarea><button type="submit">Tạo lớp (đang khóa)</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';$("#back").onclick=adminHome;
 $("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,ma=f.ma.value.toUpperCase().trim(),rows=f.roster.value.split(/\r?\n/).map(x=>x.split(/[;\t]/)).filter(x=>x.length>=2&&x[0].trim()&&x[1].trim()).map(x=>({mssv:x[0].trim().toUpperCase(),hoTen:x.slice(1).join(" ").trim()}));if(!valid(ma)||!rows.length||new Set(rows.map(x=>x.mssv)).size!==rows.length){note("Mã lớp hoặc danh sách sinh viên không hợp lệ.");return}
 try{const ref=db.doc("pnl_dg_lop/"+ma);if((await ref.get()).exists)throw Error("Mã lớp đã tồn tại.");const now=Date.now();await ref.set({ten:f.ten.value.trim(),hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Tự luận",namHoc:"2026–2027",thoiGian:+f.time.value||60,open:false,openAt:TS.fromDate(new Date(now-60000)),closeAt:TS.fromDate(new Date(now+7*86400000)),siSo:rows.length,created:FV.serverTimestamp()});await db.doc("pnl_dg_ds/"+ma).set({rows,updated:FV.serverTimestamp()});for(let i=0;i<rows.length;i+=300){const b=db.batch();rows.slice(i,i+300).forEach(x=>b.set(db.doc("pnl_dg_sv/"+ma+"__"+x.mssv),{...x,maLop:ma}));await b.commit()}manageClass(ma)}catch(x){err(x)}}}
