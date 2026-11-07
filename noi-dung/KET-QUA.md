@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 22:49 07/11/2026
+# Kết quả dựng nội dung — 22:51 07/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -11,4 +11,4 @@
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
       - danh-gia/tu-luan-luat-dan-su.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42388197196 · commit 6740a70
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42388365805 · commit 2ff323b
