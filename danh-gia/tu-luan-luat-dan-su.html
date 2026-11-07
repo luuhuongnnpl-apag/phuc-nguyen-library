@@ -73,10 +73,54 @@ const ms=Math.max(0,total-(Date.now()-started));$("#clock").textContent=Math.flo
 function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá tự luận</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};
 $("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminHome()}catch(x){err(x)}};return}adminHome()}
-async function adminHome(){app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">15 mã đề · 30 tình huống · mỗi đề 10 điểm. Đáp án được mã hóa; giải mã trong phiên giảng viên để đề xuất điểm theo từng yêu cầu.</p><label>Mở đáp án đã mã hóa trên web</label><input id="unlockPass" type="password" autocomplete="off" placeholder="Mật khẩu giải mã đáp án"><button id="unlockBtn" type="button" class="secondary">Mở đáp án và bật chấm gợi ý</button><p class="mini muted">Đáp án được mã hóa AES-256-GCM; chỉ giải mã trên máy giảng viên. Mật khẩu không lưu vào website.</p><details><summary>Dùng tệp đáp án nội bộ thay thế</summary><input type="file" id="keyFile" accept=".json,application/json"><p class="mini muted">Tệp chỉ được đọc trong phiên hiện tại, không tải lên máy chủ.</p></details><button id="newClass">Tạo lớp kiểm tra</button><button type="button" id="migrateOld" class="secondary">Chuyển lớp Luật Dân sự trắc nghiệm cũ sang tự luận</button><p class="mini muted">Giữ nguyên mã lớp và danh sách sinh viên; xóa bài làm, đáp án đã nộp và điểm của đề trắc nghiệm cũ. Lớp chuyển đổi mặc định khóa.</p><p id="msg" class="error"></p></article><div id="classes"></div>';
-$("#unlockBtn").onclick=async()=>{const password=$("#unlockPass").value;try{if(!password)throw Error("Nhập mật khẩu giải mã.");await decryptRubric(password);$("#unlockPass").value="";note("Đã mở 30 đáp án; chức năng gợi ý điểm đang sẵn sàng.");}catch(x){err(x)}};
- $("#keyFile").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.case_bank)||x.case_bank.length!==30)throw Error("Đáp án không đúng cấu trúc.");RUBRIC=x;note("Đã đọc 30 đáp án vào phiên làm việc của giảng viên.")}catch(x){err(x)}};
-$("#newClass").onclick=createClass;$("#migrateOld").onclick=migrateLegacyClasses;try{const q=await db.collection("pnl_dg_lop").get();const rows=q.docs.filter(d=>d.data().hocPhan===COURSE);$("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Quản lý lớp</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class))}catch(x){err(x)}}
+
+async function loadAutoKey(){
+ if(RUBRIC)return RUBRIC;
+ const r=await fetch("./de/luat-dan-su-tu-luan-rubric.json",{cache:"no-cache"});
+ if(!r.ok)throw Error("Không tải được đáp án.");
+ const d=await r.json();
+ if(!Array.isArray(d.cases)||d.cases.length!==30||!d.cases.every(x=>x.answers?.length===4))throw Error("Dữ liệu đáp án không hợp lệ.");
+ RUBRIC={case_bank:d.cases.map(x=>({id:x.id,answer:x.answers}))};
+ return RUBRIC;
+}
+function gradeAutomatic(b){
+ if(!b?.de?.caseIds||b.de.caseIds.length!==2)throw Error("Mã đề không hợp lệ");
+ const ans=answerMap(b),scores=[],report=[];
+ for(const id of b.de.caseIds)for(let j=0;j<4;j++){
+  const key=id+"_"+j,g=guideFor(id,j);
+  if(!g)throw Error("Thiếu đáp án "+id+"/"+j);
+  const r=legalGrade(ans[key]||"",g);
+  scores.push(r.score);
+  report.push({id,question:j+1,score:r.score,matched:r.hits.map(x=>x.clause),missing:r.missing});
+ }
+ return {diem:Math.round(scores.reduce((a,b)=>a+b,0)*100)/100,muc:scores,chiTiet:report};
+}
+async function markPending(ma,papers,grades){
+ await loadAutoKey();
+ const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!grades[sv]?.xacNhan);
+ let done=0,errors=[];
+ for(const [sv,b] of entries){
+  try{
+   const r=gradeAutomatic(b);
+   const saved={maLop:ma,mssv:sv,diem:r.diem,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
+   grades[sv]=saved;done++;
+  }catch(e){errors.push(sv+": "+e.message)}
+ }
+ return {done,errors};
+}
+
+async function adminHome(){
+ app.innerHTML='<article><h2>Quản trị · Tự luận Luật Dân sự</h2><p class="muted">Chấm tự động theo đáp án đã bật. Không cần mật khẩu, giải mã hoặc tải tệp thủ công. Khi mở lớp, hệ thống tự đối chiếu và ghi điểm cho bài đã nộp chưa được chấm.</p><p class="warn">Máy chấm theo dấu hiệu nội dung và căn cứ pháp luật; không thay thế hoàn toàn việc đánh giá lập luận. Giảng viên có thể xem, điều chỉnh điểm.</p><button id="newClass">Tạo lớp kiểm tra</button><button id="migrateOld" class="secondary">Chuyển lớp trắc nghiệm cũ sang tự luận</button><p id="msg" class="error"></p></article><div id="classes"></div>';
+ $("#newClass").onclick=createClass;$("#migrateOld").onclick=migrateLegacyClasses;
+ try{
+  await loadAutoKey();
+  const q=await db.collection("pnl_dg_lop").get(),rows=q.docs.filter(d=>d.data().hocPhan===COURSE);
+  $("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Mở lớp và tự chấm bài</button></div></article>').join(""):'<article>Chưa có lớp tự luận.</article>';
+  document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class));
+ }catch(x){err(x)}
+}
+
 /* Chuyển đổi dữ liệu kiểm tra cũ: chỉ học phần luat-dan-su, không đụng học phần khác.
    Xóa bài và điểm cũ tại quyền quản trị Firebase, giữ mã lớp và danh sách SV.
    Không tự mở lớp mới để tránh sinh viên làm bài trước khi kiểm tra cấu hình. */
@@ -141,9 +185,10 @@ $("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,ma=f.ma.value.to
 try{const ref=db.doc("pnl_dg_lop/"+ma);if((await ref.get()).exists)throw Error("Mã lớp đã tồn tại.");const now=Date.now();await ref.set({ten:f.ten.value.trim(),hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Tự luận",namHoc:"2026–2027",thoiGian:+f.time.value||60,open:false,openAt:TS.fromDate(new Date(now-60000)),closeAt:TS.fromDate(new Date(now+7*86400000)),siSo:rows.length,created:FV.serverTimestamp()});await db.doc("pnl_dg_ds/"+ma).set({rows,updated:FV.serverTimestamp()});for(let i=0;i<rows.length;i+=300){const b=db.batch();rows.slice(i,i+300).forEach(x=>b.set(db.doc("pnl_dg_sv/"+ma+"__"+x.mssv),{...x,maLop:ma}));await b.commit()}manageClass(ma)}catch(x){err(x)}}}
 async function manageClass(ma){CURRENT=ma;app.innerHTML='<article><h2>Quản lý lớp '+E(ma)+'</h2><p id="msg" class="error">Đang tải…</p></article>';try{const [ls,ro,bs,gr]=await Promise.all([db.doc("pnl_dg_lop/"+ma).get(),db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);if(!ls.exists)throw Error("Không tìm thấy lớp.");
 const l=ls.data(),students=ro.exists?ro.data().rows:[],papers=Object.fromEntries(bs.docs.map(d=>[d.data().mssv,d.data()])),grades=Object.fromEntries(gr.docs.map(d=>[d.data().mssv,d.data()]));
-let h='<article><div class="top"><h2>'+E(ma)+' · '+E(l.ten)+'</h2><button class="secondary" id="back">Các lớp</button></div><p>Trạng thái: <b>'+(l.open?"Đang mở":"Đang khóa")+'</b>. Mỗi đề gồm 02 tình huống × 05 điểm.</p><button id="toggle">'+(l.open?"Khóa bài kiểm tra":"Mở cho sinh viên")+'</button><button id="csv" class="secondary">Xuất điểm CSV</button><p class="mini muted">Bài được chấm theo từng yêu cầu, tối đa 1,25 điểm. Chỉ điểm đã được giảng viên duyệt mới là điểm chính thức.</p><p id="msg" class="error"></p></article>';
-h+='<article><h3>Danh sách và bài làm</h3>';
-students.forEach(s=>{const b=papers[s.mssv],g=grades[s.mssv];h+='<div class="student"><div class="top"><span><b>'+E(s.mssv)+'</b> · '+E(s.hoTen)+'</span><span>'+(!b?"Chưa làm":b.status==="da-nop"?"Đã nộp":"Đang làm")+' · '+(g&&g.xacNhan?E(g.diem)+"/10":"Chưa chấm")+'</span></div>'+(b&&b.status==="da-nop"?'<button data-grade="'+E(s.mssv)+'">Chấm bài</button>':'')+'</div>'});h+='</article>';app.innerHTML=h;
+const resultAuto=await markPending(ma,papers,grades);
+let h='<article><div class="top"><h2>'+E(ma)+' · '+E(l.ten)+'</h2><button class="secondary" id="back">Các lớp</button></div><p>Trạng thái: <b>'+(l.open?"Đang mở":"Đang khóa")+'</b>. Mỗi đề gồm 02 tình huống × 05 điểm.</p><button id="toggle">'+(l.open?"Khóa bài kiểm tra":"Mở cho sinh viên")+'</button><button id="csv" class="secondary">Xuất điểm CSV</button><p class="mini muted">Bài được chấm theo từng yêu cầu, tối đa 1,25 điểm. Bài đã nộp được máy tự chấm khi quản trị mở lớp; giảng viên có thể sửa điểm.</p><p id="msg" class="error"></p></article>';
+h+='<article><h3>Danh sách và bài làm</h3><p class="mini muted">Đã tự chấm thêm '+resultAuto.done+' bài; lỗi: '+resultAuto.errors.length+'</p>';
+students.forEach(s=>{const b=papers[s.mssv],g=grades[s.mssv];h+='<div class="student"><div class="top"><span><b>'+E(s.mssv)+'</b> · '+E(s.hoTen)+'</span><span>'+(!b?"Chưa làm":b.status==="da-nop"?"Đã nộp":"Đang làm")+' · '+(g&&g.xacNhan?E(g.diem)+"/10"+(g.nguon==="tu-dong"?" · tự động":" · giảng viên"):"Chưa chấm")+'</span></div>'+(b&&b.status==="da-nop"?'<button data-grade="'+E(s.mssv)+'">Chấm bài</button>':'')+'</div>'});h+='</article>';app.innerHTML=h;
 $("#back").onclick=adminHome;$("#toggle").onclick=async()=>{if(!confirm(l.open?"Khóa lớp?":"Mở lớp cho sinh viên làm bài? Đảm bảo đã rà soát đề và đáp án."))return;try{await db.doc("pnl_dg_lop/"+ma).update({open:!l.open});manageClass(ma)}catch(x){err(x)}};
 $("#csv").onclick=()=>{const rows=[["MSSV","Họ và tên","Điểm /10","Đã xác nhận"]].concat(students.map(s=>[s.mssv,s.hoTen,grades[s.mssv]?grades[s.mssv].diem:"",grades[s.mssv]&&grades[s.mssv].xacNhan?"Có":"Không"]));const text="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));a.download="diem-tu-luan-"+ma+".csv";a.click();URL.revokeObjectURL(a.href)};
 document.querySelectorAll("[data-grade]").forEach(x=>x.onclick=()=>grade(ma,x.dataset.grade,papers[x.dataset.grade],grades[x.dataset.grade]))}catch(x){err(x)}}
@@ -192,13 +237,13 @@ async function decryptRubric(password){
 }
 
 function guideFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);if(!c)return"";const a=c.answer||[];return a.length===4?a[j]:(a[j*2+1]||"")}
-function grade(ma,sv,b,g){if(!RUBRIC){app.innerHTML='<article><h2>Chưa mở đáp án</h2><p>Giảng viên cần giải mã bộ đáp án trước khi chấm, để bảo đảm điểm được đối chiếu với đáp án đã phê duyệt.</p><button id="back">Về quản trị</button></article>';$("#back").onclick=adminHome;return}const ids=b.de.caseIds||[],ans=answerMap(b);let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Gợi ý điểm chỉ dựa trên dấu hiệu nội dung và căn cứ pháp luật. Máy có thể không nhận ra lập luận đúng hoặc đánh giá nhầm lập luận sai. Giảng viên bắt buộc đối chiếu và quyết định điểm chính thức.</p></article>';
+function grade(ma,sv,b,g){if(!RUBRIC){app.innerHTML='<article><h2>Chưa mở đáp án</h2><p>Không tải được đáp án để đối chiếu. Vui lòng tải lại trang.</p><button id="back">Về quản trị</button></article>';$("#back").onclick=adminHome;return}const ids=b.de.caseIds||[],ans=answerMap(b);let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Gợi ý điểm chỉ dựa trên dấu hiệu nội dung và căn cứ pháp luật. Máy có thể không nhận ra lập luận đúng hoặc đánh giá nhầm lập luận sai. Giảng viên bắt buộc đối chiếu và quyết định điểm chính thức.</p></article>';
 ids.forEach((id,i)=>{const c=caseBy(id);h+='<article><h3>Câu '+(i+1)+' – '+E(id)+' (5 điểm)</h3><div class="case">'+E(c.text)+'</div>';
 c.questions.forEach((q,j)=>{const key=id+"_"+j,guide=guideFor(id,j),input=ans[key]||"";const pos=i*4+j,ev=guide?legalGrade(input,guide):null;const selected=(g&&g.muc&&g.muc[pos]!=null)?g.muc[pos]:(ev?ev.score:0);
- h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div>'+(guide?'<details><summary>Đáp án và minh chứng đối chiếu</summary><div class="ans">'+E(guide)+'</div></details><p class="mini muted">Gợi ý '+ev.score.toFixed(2)+'/1,25 · Kết luận '+ev.parts[0].toFixed(2)+' · Lập luận '+ev.parts[1].toFixed(2)+' · Trường hợp '+ev.parts[2].toFixed(2)+' · Căn cứ '+ev.parts[3].toFixed(2)+'</p>'+(ev.hits.length?'<details><summary>Ý có dấu hiệu phù hợp ('+ev.hits.length+')</summary><ul>'+ev.hits.map(x=>'<li>'+E(x.clause)+'</li>').join('')+'</ul></details>':'')+(ev.missing.length?'<details><summary>Ý cần xem xét ('+ev.missing.length+')</summary><ul>'+ev.missing.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul></details>':'')+'<p class="mini muted">'+E(ev.warning)+'</p>':'<p class="mini muted">Mở đáp án mã hóa tại trang Quản trị để có gợi ý chấm.</p>')+'<label>Điểm giảng viên xác nhận (0 – 1,25)</label><input data-point="'+pos+'" type="number" min="0" max="1.25" step="0.05" value="'+E(selected)+'"></div>'});
+ h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div>'+(guide?'<details><summary>Đáp án và minh chứng đối chiếu</summary><div class="ans">'+E(guide)+'</div></details><p class="mini muted">Gợi ý '+ev.score.toFixed(2)+'/1,25 · Kết luận '+ev.parts[0].toFixed(2)+' · Lập luận '+ev.parts[1].toFixed(2)+' · Trường hợp '+ev.parts[2].toFixed(2)+' · Căn cứ '+ev.parts[3].toFixed(2)+'</p>'+(ev.hits.length?'<details><summary>Ý có dấu hiệu phù hợp ('+ev.hits.length+')</summary><ul>'+ev.hits.map(x=>'<li>'+E(x.clause)+'</li>').join('')+'</ul></details>':'')+(ev.missing.length?'<details><summary>Ý cần xem xét ('+ev.missing.length+')</summary><ul>'+ev.missing.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul></details>':'')+'<p class="mini muted">'+E(ev.warning)+'</p>':'<p class="mini muted">Không tìm thấy đáp án, cần rà soát ngân hàng.</p>')+'<label>Điểm giảng viên xác nhận (0 – 1,25)</label><input data-point="'+pos+'" type="number" min="0" max="1.25" step="0.05" value="'+E(selected)+'"></div>'});
 const cb=RUBRIC.case_bank.find(x=>x.id===id);if(cb&&cb.legal_basis)h+='<details><summary>Căn cứ pháp luật tổng hợp</summary><div class="ans">'+E(cb.legal_basis)+'</div></details>';h+='</article>'});h+='<article><div class="top"><span>Điểm tổng</span><strong class="score" id="total">0/10</strong></div><label>Nhận xét</label><textarea id="review" maxlength="1000">'+E(g&&g.note||"")+'</textarea><button id="saveGrade">Duyệt và lưu điểm</button><p id="msg" class="error"></p></article>';app.innerHTML=h;
 $("#back").onclick=()=>manageClass(ma);const points=()=>Array.from(document.querySelectorAll("[data-point]")).map(x=>Math.max(0,Math.min(1.25,Number(x.value)||0)));
 const recalc=()=>{$("#total").textContent=points().reduce((a,b)=>a+b,0).toFixed(2).replace(".",",")+"/10"};document.querySelectorAll("[data-point]").forEach(x=>x.oninput=recalc);recalc();
-$("#saveGrade").onclick=async()=>{const v=points(),sum=Math.round(v.reduce((a,b)=>a+b,0)*100)/100;if(!confirm("Xác nhận đã đối chiếu đáp án, kiểm tra lập luận và phê duyệt điểm "+sum+"/10 cho "+sv+"?"))return;try{await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,diem:sum,xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:b.de.set||"",phienBanDapAn:"2026-11-07-v2",chamBoi:auth.currentUser&&auth.currentUser.uid||"",luc:FV.serverTimestamp()});manageClass(ma)}catch(x){err(x)}}}
+$("#saveGrade").onclick=async()=>{const v=points(),sum=Math.round(v.reduce((a,b)=>a+b,0)*100)/100;if(!confirm("Xác nhận đã đối chiếu đáp án, kiểm tra lập luận và phê duyệt điểm "+sum+"/10 cho "+sv+"?"))return;try{await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,diem:sum,nguon:"giang-vien",xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:b.de.set||"",phienBanDapAn:"2026-11-07-v2",chamBoi:auth.currentUser&&auth.currentUser.uid||"",luc:FV.serverTimestamp()});manageClass(ma)}catch(x){err(x)}}}
 (async()=>{try{await bankLoad();if(auth.currentUser){navigate()}else{auth.onAuthStateChanged(()=>{if(location.hash.startsWith("#quan-tri")&&isAdmin(auth.currentUser))adminHome();else if(!location.hash.startsWith("#quan-tri"))studentEntry();else adminEntry()})}}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
 </script></body></html>
