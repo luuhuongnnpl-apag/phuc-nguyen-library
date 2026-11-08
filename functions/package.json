@@ -4,7 +4,7 @@
   "description": "Secured Gemini Live endpoints for Phuc Nguyen Library oral exams",
   "main": "index.js",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "scripts": {
     "check": "node --check index.js"
