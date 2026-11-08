@@ -137,7 +137,7 @@ const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
 /* Học phần đã có đủ ngân hàng (Lý thuyết ABCD + Tình huống có câu ABCD và gợi ý giải quyết). Thêm học phần mới vào đây. */
 /* tuLuan: chương lấy tình huống tự luận (so khớp tên nhóm tình huống) */
 /* mode:"tl" = bài chỉ có 01 câu tự luận (đề trong de/<id>.json, ý chính + từ khóa trong de/<id>.dat, chỉ quản trị tải) */
-const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự – Đề cũ (lưu trữ)",legacy:true,tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
+const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự – Đề cũ (lưu trữ)",legacy:true,tuLuan:["Hợp đồng","Thừa kế","Giao dịch dân sự","Năng lực hành vi","Giám hộ","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
   {id:"luat-dan-su-tu-luan",name:"Luật Dân sự – Đánh giá định kỳ (12 trắc nghiệm + 1 tự luận)",mode:"external",ma:"DSTL",thoiGian:40},
   {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tn",src:"../ky-nang-tu-van-phap-luat-dan-su/index.html",tnCases:3,thoiGian:40,ma:"TV"}];
 /* mode:"tn" (06/11/2026) = đề chỉ gồm tình huống trắc nghiệm: rút tnCases tình huống khác chương, lấy đủ các câu của mỗi tình huống, chấm thang 10.
@@ -300,7 +300,7 @@ function chamTLPre(c,essay){
   const T=normTL(moRong(essay||"")),DS=dieuSet(T),short=(essay||"").trim().length<15,TA=T.trim().split(" ");
   return c.guide.map((y,i)=>{const kw=c.kwPre[i]||[];
     const hit=kw.filter(k=>{const n=normTL(k).trim();const m=n.match(/^dieu (\d+)$/);return m?DS.has(m[1]):T.includes(" "+n)||T.includes("/"+n)||(n.includes(" ")&&coGan(TA,n.split(" ")))});
-    const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.85?1:sc>=0.65?0.85:sc>=0.5?0.7:sc>=0.35?0.5:sc>=0.2?0.3:sc>=0.1?0.15:0;
+    const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.9?1:sc>=0.75?0.8:sc>=0.6?0.6:sc>=0.45?0.4:sc>=0.3?0.2:0;
     return {y,kw,ct:[],hit,hitC:[],tomTat:i===0,sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*(1-PHAN_BUOC))}});
 }
 /* Số liệu kết quả: tiền quy về đồng (1,95 tỷ = 1.950 triệu), kèm đơn vị năm/tháng/ngày/lần/%/m² */
@@ -325,7 +325,7 @@ function chamTL(c,essay){
     const L=law.length?hitL.length/law.length:null,R=res.length?hitR.length/res.length:null;
     const I=x.kw.length?(hit.length<2?hit.length*0.15:Math.min(1,hit.length/Math.max(3,Math.ceil(x.kw.length*0.4)))):null;
     const sc=Math.max(0,...[L,R,I].filter(v=>v!=null));
-    let muc=short?0:sc>=0.85?1:sc>=0.65?0.85:sc>=0.5?0.7:sc>=0.35?0.5:sc>=0.2?0.3:sc>=0.15?0.2:0;
+    let muc=short?0:sc>=0.9?1:sc>=0.75?0.8:sc>=0.6?0.6:sc>=0.45?0.4:sc>=0.3?0.2:0;
     if(muc>0.5&&!hitR.length&&(I||0)<0.3)muc=0.5;            /* chỉ liệt kê điều luật, không nêu kết quả/ý: tối đa Một phần */
     if(muc===1&&tinh.length&&hitT.length<tinh.length/2)muc=0.75; /* có phép tính mà chưa ra kết quả: chưa trọn điểm */
     return {y:x.y,kw:x.kw,hit,ct:law.map(d=>"Điều "+d),hitC:hitL.map(d=>"Điều "+d),res:res.map(r=>r[1]),hitR:hitR.map(r=>r[1]),sc:r2(sc),muc,per};
@@ -345,7 +345,7 @@ function chamBuoc(c,essay,tlMax){
   return ask.map((q,i)=>{let cue;
     if(c.kwPre&&n===5)cue=CUE_TV[i].test(t);else{const kb=[...bigrams(q)];cue=kb.some(b=>A.has(b))}
     const sec=doan[i];let muc;
-    if(sec!=null)muc=words(sec)>=5?1:0.5;else if(cue)muc=Object.keys(doan).length?0.5:(W>=10*n?1:0.5);else muc=0; /* rộng tay: có trả lời là tính đủ */
+    if(sec!=null)muc=words(sec)>=15?0.8:words(sec)>=8?0.5:0.2;else if(cue)muc=Object.keys(doan).length?0.25:(W>=15*n?0.5:0.25);else muc=0; /* rộng tay: có trả lời là tính đủ */
     if(W<10)muc=0;
     return {q,muc,per,thay:sec!=null?"có đoạn "+(i+1):cue?"có nội dung liên quan":"chưa thấy"}});
 }
@@ -536,7 +536,15 @@ function renderExam(){
   pf.addEventListener("input",doi);pf.addEventListener("change",doi);
   pf.addEventListener("click",e=>{const b=e.target.closest("[data-them]");if(!b)return;const g=pf.querySelector('[data-bang="'+b.dataset.them+'"]');
     g.insertAdjacentHTML("beforeend",'<div class="br" style="display:contents"><input type="text" placeholder="Vấn đề…"><input type="text" placeholder="Điều … , khoản … ; án lệ số …"></div>')});
-  pf.addEventListener("paste",e=>{e.preventDefault();$("#e-paste").textContent="Không được dán nội dung vào bài tự luận. Hãy tự trình bày."});
+  /* Khóa thao tác clipboard trong thời gian làm bài, gồm cả câu trắc nghiệm và tự luận. */
+   const blockClip=e=>{if(!EXAM?.active||!document.getElementById("app").contains(e.target))return;
+     e.preventDefault();$("#e-paste").textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung trong khi kiểm tra.";};
+   ["copy","cut","paste","drop"].forEach(t=>pf.addEventListener(t,blockClip,true));
+   $("#app").addEventListener("copy",blockClip,true);
+   $("#app").addEventListener("cut",blockClip,true);
+   $("#app").addEventListener("paste",blockClip,true);
+   $("#app").addEventListener("drop",blockClip,true);
+   $("#app").addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))blockClip(e)},true);
   pf.addEventListener("drop",e=>e.preventDefault());
   $("#x-submit").onclick=async()=>{const sum=questionsOf(E.de).length,done=questionsOf(E.de).filter(id=>E.answers[K(id)]!=null).length;
     const ok=await ask("Nộp bài?",(E.B.tl?(E.essay.trim()?"Phiếu tư vấn của bạn có "+soTu()+" từ.":"Bạn <b>chưa điền phiếu tư vấn</b>."):"Bạn đã trả lời "+done+"/"+sum+" câu trắc nghiệm"+(E.essay.trim()?"":" và <b>chưa làm câu tự luận</b>")+".")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
