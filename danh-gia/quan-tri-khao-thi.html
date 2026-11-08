@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PNL · Quản trị khảo thí AI</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#21384c;background:#f2f6fa}
+*{box-sizing:border-box}body{margin:0}header{background:#194f70;color:white;padding:20px max(18px,calc((100% - 900px)/2))}
+header h1{font-size:24px;margin:0 0 6px}header a{color:#fff}main{max-width:900px;margin:24px auto;padding:0 16px}
+section{background:#fff;border:1px solid #d3e1e9;border-radius:14px;padding:22px;margin:16px 0;box-shadow:0 2px 10px #173e5a0a}
+h2{margin:0 0 14px;font-size:19px}label{display:block;font-weight:650;margin:16px 0 6px}
+input,select,button{font:inherit;padding:11px;border:1px solid #afc6d4;border-radius:9px}
+input,select{width:100%;background:#fff}button{background:#175576;color:#fff;border:0;font-weight:650;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}button.secondary{background:#e8f0f6;color:#175576}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.muted{color:#5c7181;font-size:14px;line-height:1.5}.status{padding:12px 15px;border-radius:10px;background:#e9f2f8;margin:15px 0;white-space:pre-line}.error{background:#fff1f1;color:#a32638}
+[hidden]{display:none!important}footer{text-align:center;color:#728494;font-size:12px;padding:24px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
+<script src="./quan-tri-khao-thi.js?v=20261108a" defer></script>
+</head><body>
+<header><h1>QUẢN TRỊ KHẢO THÍ AI · PNL</h1><div><a href="./van-dap-ai.html">Về phòng thi vấn đáp</a> · <a href="../index.html">Thư viện</a></div></header>
+<main>
+<p class="muted">Chỉ dành cho giảng viên quản trị. Cấu hình được lưu trên Firebase và áp dụng cho phiên thi bắt đầu sau khi lưu; phiên đang thi giữ thông số cũ.</p>
+<div id="status" class="status" role="status" aria-live="polite">Vui lòng đăng nhập để xem cấu hình.</div>
+<section id="loginSection">
+<h2>Đăng nhập quản trị</h2>
+<div class="grid"><div><label for="email">Email quản trị</label><input id="email" autocomplete="username" type="email"></div>
+<div><label for="password">Mật khẩu</label><input id="password" autocomplete="current-password" type="password"></div></div>
+<div class="row" style="margin-top:16px"><button type="button" id="signIn">Đăng nhập</button><button type="button" class="secondary" id="signOut" hidden>Đăng xuất</button><span id="who" class="muted"></span></div>
+</section>
+<section id="settingsSection" hidden>
+<h2>Cấu hình phiên thi</h2>
+<div class="grid">
+<div><label for="duration">Thời gian tối đa mỗi bài</label><select id="duration"><option value="20">20 phút</option><option value="30">30 phút</option><option value="40">40 phút</option><option value="60">60 phút</option></select></div>
+<div><label for="branches">Số câu hỏi nhánh mục tiêu</label><select id="branches"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
+<div><label for="gradingMode">Hình thức đánh giá</label><select id="gradingMode"><option value="ai_review">AI đề xuất, giảng viên duyệt</option><option value="manual">Giảng viên chấm hoàn toàn</option></select></div>
+<div><label for="rubricVersion">Phiên bản rubric</label><input id="rubricVersion" maxlength="50" placeholder="draft-1" readonly></div>
+</div>
+<p class="muted">Thông tin đánh giá không hiển thị cho sinh viên. Rubric đang cố định trong mã máy chủ; trường phiên bản chỉ để theo dõi, chưa hỗ trợ sửa trọng số. Mục tiêu số nhánh được lưu để dùng ở bộ điều phối hỏi đáp; chưa bảo đảm AI Live thực hiện đủ số nhánh khi chưa hoàn thiện tích hợp.</p>
+<div class="row"><button id="saveSettings" type="button">Lưu cấu hình</button><button id="reloadSettings" class="secondary" type="button">Tải lại</button></div>
+</section>
+<section id="questionSection" hidden>
+<h2>Ngân hàng đề thi vấn đáp</h2>
+<p class="muted">Đề được lưu trong Firestore, không đưa đáp án hay ngân hàng đề bí mật lên GitHub Pages. Chỉ giảng viên quản trị được tạo và công bố đề.</p>
+<label for="courseName">Tên học phần (đúng với tên học phần của lớp)</label><input id="courseName" maxlength="120" placeholder="Ví dụ: Luật Dân sự">
+<label for="ticketNumber">Mã đề</label><input id="ticketNumber" maxlength="60" placeholder="LDS-01">
+<label for="caseFacts">Tình huống pháp lý gốc</label><textarea id="caseFacts" rows="5" style="width:100%;font:inherit;padding:12px;border:1px solid #afc6d4;border-radius:9px"></textarea>
+<label for="rootQuestion">Câu hỏi chính</label><textarea id="rootQuestion" rows="3" style="width:100%;font:inherit;padding:12px;border:1px solid #afc6d4;border-radius:9px"></textarea>
+<div class="row" style="margin-top:14px"><button id="createQuestion" type="button">Lưu đề nháp (chưa bốc thăm)</button><button id="publishQuestion" type="button" disabled>Duyệt và mở đề để bốc thăm</button></div>
+<p class="muted" id="questionResult" aria-live="polite"></p>
+<p class="muted">Chỉ bấm duyệt sau khi đã đối chiếu nội dung và căn cứ pháp luật. Nếu muốn thay nội dung đề đã duyệt, hãy tạo phiên bản đề mới để giữ lịch sử.</p>
+</section>
+<section><h2>Trạng thái triển khai</h2><p class="muted">Trang này quản lý các thiết lập do máy chủ PNL hỗ trợ. Kết nối ứng dụng xuất từ Google AI Studio cần một đợt tích hợp riêng vì bản xuất sử dụng máy chủ Express, lưu phiên trong RAM và chưa có xác thực đầy đủ. Không sử dụng mã nguồn xuất đó trực tiếp cho điểm chính thức.</p></section>
+</main><footer>Phúc Nguyên Library · Nội bộ giảng viên</footer></body></html>

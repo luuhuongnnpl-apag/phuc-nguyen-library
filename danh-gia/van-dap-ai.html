@@ -51,26 +51,27 @@ footer{color:#7c8b98;text-align:center;padding:0 16px 25px;font-size:12px}
 <div class="row" style="margin-top:10px"><button id="adminLogin" type="button">Đăng nhập quản trị</button><span id="adminName" class="muted"></span></div>
 <p class="muted">Tài khoản quản trị dùng để thử Gemini Live trước khi mở cho sinh viên.</p></div>
 <label><input id="consent" type="checkbox"> Tôi đồng ý việc ghi nhận nội dung hỏi đáp để giảng viên rà soát, chấm điểm.</label>
+<div id="drawPanel" class="card" style="margin:14px 0 0;padding:14px"><h3>Bốc thăm đề ngẫu nhiên</h3><p class="muted">Sinh viên phải bốc thăm trước khi thi. Đề được lưu trên máy chủ và không thể đổi bằng cách tải lại trang.</p><button id="drawTicket" type="button">🎲 BỐC THĂM ĐỀ THI</button><div id="drawInfo" class="muted" aria-live="polite" style="margin-top:8px">Chưa bốc thăm.</div></div>
 <div class="row" style="margin-top:12px"><button class="primary" id="startLive" type="button">🎙 Bắt đầu vấn đáp trực tiếp</button><button id="startText" type="button">Dùng văn bản dự phòng</button></div>
 <div id="notice" class="muted" aria-live="polite" style="margin-top:9px">Thời gian bài thi: 40 phút. Cho phép sử dụng micro trong Safari khi được hỏi.</div>
 </div>
 <div id="examPanel" class="card" hidden>
 <div class="row" style="justify-content:space-between"><h2>Phòng thi Gemini Live</h2><span class="pill" id="liveState">Chưa kết nối</span></div>
 <div class="stats"><div class="stat"><b id="clock">40:00</b><span>Thời gian còn lại</span></div>
-<div class="stat"><b id="turnCount">0</b><span>Lượt hỏi đáp</span></div><div class="stat"><b>10</b><span>Thang điểm</span></div></div>
+<div class="stat"><b id="turnCount">0</b><span>Lượt hỏi đáp</span></div><div class="stat"><b>AI</b><span>Hội đồng vấn đáp</span></div></div>
 <div id="log" aria-live="polite"><p class="muted">Chưa có bản ghi hỏi đáp.</p></div>
 <label for="typed">Trả lời bằng văn bản (dự phòng khi micro gián đoạn)</label>
 <textarea id="typed" placeholder="Nhập câu trả lời nếu không sử dụng được micro..."></textarea>
-<div class="row" style="margin-top:10px"><button id="sendText" type="button">Gửi câu trả lời</button><button id="mute" type="button">Tắt micro</button><button id="endLive" class="danger" type="button">Kết thúc và nộp</button></div>
-<p class="muted" id="connectionInfo">Âm thanh được truyền trực tiếp tới Gemini. Bản ghi chữ chỉ lưu khi nộp bài.</p>
+<div class="row" style="margin-top:10px"><button id="sendText" type="button">Gửi câu trả lời</button><button id="mute" type="button">Bắt đầu trả lời</button><button class="primary" id="finishTurn" type="button" disabled>✓ Tôi đã trả lời xong</button><button id="endLive" class="danger" type="button">Kết thúc và nộp</button></div>
+<p class="muted" id="connectionInfo">Chỉ bấm “Tôi đã trả lời xong” sau khi kết thúc mỗi câu trả lời. Hệ thống sẽ ghi nhận lượt và tiếp tục hỏi nhánh.</p>
 </div>
-<div class="card" id="reviewPanel" hidden><h2>Bài vấn đáp đã kết thúc</h2><p id="reviewMessage"></p><p class="muted">Điểm AI chỉ là đề xuất và cần giảng viên phê duyệt.</p></div>
+<div class="card" id="reviewPanel" hidden><h2>Bài vấn đáp đã kết thúc</h2><p id="reviewMessage"></p><p class="muted">Bài thi đã được ghi nhận. Kết quả sẽ được giảng viên phụ trách xem xét và phê duyệt theo quy định.</p></div>
 </section>
 <aside>
-<div class="card"><h2>Trình tự thi</h2><p>AI nêu tình huống → sinh viên trả lời → AI hỏi phản biện → thay đổi giả thiết → ghi nhận đánh giá.</p>
+<div class="card"><h2>Trình tự thi</h2><p>AI nêu tình huống → sinh viên trả lời → AI bổ sung giả thiết và hỏi sâu → ghi nhận bài thi.</p>
 <div class="warn"><strong>Lưu ý:</strong> bản thử nghiệm chỉ dùng khi dịch vụ Firebase được triển khai và lớp đã bật thi vấn đáp. Không dùng điểm AI làm điểm chính thức trước khi giảng viên duyệt.</div>
 <h3>Quy định</h3><p class="muted">40 phút mỗi bài, một sinh viên một lượt. Phiên có thể cần nối lại do giới hạn kết nối Gemini Live.</p></div>
-<div class="card" id="teacherTools" hidden><h2>Quản trị vấn đáp</h2>
+<div class="card" id="teacherTools" hidden><h2>Quản trị vấn đáp</h2><p><a href="./quan-tri-khao-thi.html">⚙ Cấu hình khảo thí AI</a></p>
 <label for="adminClass">Mã lớp cần bật/tắt vấn đáp</label><input id="adminClass" placeholder="DS-K25A">
 <div class="row" style="margin-top:9px"><button id="enableClass" type="button">Bật vấn đáp</button><button id="disableClass" type="button">Tắt vấn đáp</button><button id="loadClass" type="button">Xem bài</button></div>
 <p id="adminInfo" class="muted"></p><div class="tableWrap" id="resultList"></div></div>

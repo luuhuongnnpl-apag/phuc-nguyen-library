@@ -5,7 +5,7 @@
  const API="https://asia-southeast1-phuc-nguyen-library.cloudfunctions.net/vanDapApi";
  const WS="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
  const FB={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
- let tab="student",reconnects=0,checkpointTimer=null;
+ let tab="student",reconnects=0,checkpointTimer=null,drawnTicket=null;
  const state={running:false,finishing:false,preview:false,textOnly:false,ws:null,stream:null,ctx:null,src:null,processor:null,volume:null,
   timer:null,reconnect:null,start:0,end:0,ma:"",sv:"",history:[],input:"",output:"",playingUntil:0,muted:false,lastTokenAt:0};
  function status(message,error=false,selector="#health"){const el=$(selector);if(!el)return;el.textContent=message;el.classList.toggle("error",error)}
@@ -46,7 +46,19 @@
   }catch(e){status("Chưa kết nối được máy chủ Firebase Functions. Mã nguồn đã chuẩn bị nhưng cần triển khai dịch vụ và cấu hình Gemini API key mới. Trang này không thể chạy Live trước khi máy chủ hoạt động.",true)}
   finally{clearTimeout(id)}
  }
- function selectTab(which){tab=which;$("#studentTab").classList.toggle("active",which==="student");$("#teacherTab").classList.toggle("active",which==="teacher");visible("#studentPanel",which==="student");visible("#adminPanel",which==="teacher");msg(which==="teacher"?"Đăng nhập quản trị PNL trước khi thử Gemini Live.":"Lớp phải được bật thi vấn đáp bởi giảng viên.")}
+ function selectTab(which){tab=which;visible("#drawPanel",which==="student");$("#studentTab").classList.toggle("active",which==="student");$("#teacherTab").classList.toggle("active",which==="teacher");visible("#studentPanel",which==="student");visible("#adminPanel",which==="teacher");msg(which==="teacher"?"Đăng nhập quản trị PNL trước khi thử Gemini Live.":"Lớp phải được bật thi vấn đáp bởi giảng viên.")}
+ $("#drawTicket").onclick=async()=>{
+  const btn=$("#drawTicket");btn.disabled=true;
+  try{
+    await ensureLogin();
+    const {ma,sv}=validStudent();
+    const data=await api("draw",{ma,sv});
+    drawnTicket={ma,sv,...data.question};
+    $("#drawInfo").textContent="Đề "+drawnTicket.questionNumber+": "+drawnTicket.tinhHuong+" — "+drawnTicket.cauHoi;
+    status("Đã ghi nhận đề bốc thăm. Có thể bắt đầu bài thi.");
+  }catch(e){status("Chưa bốc được đề: "+e.message,true)}
+  finally{btn.disabled=!!drawnTicket}
+ };
  $("#studentTab").onclick=()=>selectTab("student");
  $("#teacherTab").onclick=()=>selectTab("teacher");
  $("#adminLogin").onclick=async()=>{
@@ -102,7 +114,7 @@
   if(obj.setupComplete){
    status("Đã kết nối Gemini Live. Hãy lắng nghe câu hỏi và trả lời qua micro.");
    $("#liveState").textContent="Đang đối thoại";
-   attachMicro();
+   state.muted=true;$("#mute").textContent="Bắt đầu trả lời";$("#finishTurn").disabled=true;
    send({clientContent:{turns:[{role:"user",parts:[{text:state.history.length?"Hãy tiếp tục bài vấn đáp từ những lượt đã có; đừng lặp lại tình huống mở đầu.":"Bắt đầu phần thi vấn đáp. Xin mời giảng viên nêu câu hỏi đầu tiên."}]}],turnComplete:true}});
   }
   const sc=obj.serverContent||{};
@@ -111,14 +123,14 @@
   if(sc.outputTranscription?.text)state.output=accumulate(state.output,sc.outputTranscription.text);
   const parts=sc.modelTurn?.parts||[];
   for(const p of parts){if(p.inlineData?.data&&/audio\/pcm/i.test(p.inlineData.mimeType||"audio/pcm"))playPCM(p.inlineData.data,p.inlineData.mimeType)}
-  if(sc.turnComplete||sc.generationComplete)flush();
+  if(sc.turnComplete||sc.generationComplete){flush();if(!state.textOnly&&state.running&&state.muted){$("#mute").disabled=false;$("#mute").textContent="Bắt đầu trả lời"}}
   if(obj.goAway){status("Gemini sắp ngắt kết nối theo giới hạn phiên. PNL sẽ thử nối lại.",false)}
  }
  function connectSocket(token,model){
   return new Promise((resolve,reject)=>{
    const ws=new WebSocket(WS+"?access_token="+encodeURIComponent(token));state.ws=ws;
    let settled=false;const timer=setTimeout(()=>{if(!settled){settled=true;ws.close();reject(Error("Gemini Live không mở được kết nối trong 15 giây."))}},15000);
-   ws.onopen=()=>{try{ws.send(JSON.stringify({setup:{model:"models/"+model,generationConfig:{responseModalities:["AUDIO"]},inputAudioTranscription:{},outputAudioTranscription:{}}}))}catch(e){if(!settled){settled=true;clearTimeout(timer);reject(e)}}};
+   ws.onopen=()=>{try{ws.send(JSON.stringify({setup:{model:"models/"+model,generationConfig:{responseModalities:["AUDIO"]},realtimeInputConfig:{automaticActivityDetection:{disabled:true}},inputAudioTranscription:{},outputAudioTranscription:{}}}))}catch(e){if(!settled){settled=true;clearTimeout(timer);reject(e)}}};
    ws.onmessage=async e=>{try{const raw=typeof e.data==="string"?e.data:await e.data.text(),obj=JSON.parse(raw);
     if(obj.setupComplete&&!settled){settled=true;clearTimeout(timer);resolve()}
     serverMessage(obj);
@@ -154,7 +166,8 @@
   if(!$("#consent").checked){status("Cần xác nhận đồng ý ghi nhận nội dung hỏi đáp để dự thi.",true);b.disabled=false;t.disabled=false;return}
   try{
    state.preview=tab==="teacher";({ma:state.ma,sv:state.sv}=state.preview?{ma:"",sv:""}:validStudent());
-   state.textOnly=!!textOnly;state.history=[];state.input="";state.output="";state.start=0;state.end=0;state.finishing=false;state.muted=false;reconnects=0;
+   if(!state.preview&&(!drawnTicket||drawnTicket.ma!==state.ma||drawnTicket.sv!==state.sv))throw Error("Hãy bốc thăm đề trước khi bắt đầu thi.");
+   state.textOnly=!!textOnly;state.history=[];state.input="";state.output="";state.start=0;state.end=0;state.finishing=false;state.muted=true;reconnects=0;
    if(!textOnly){
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)throw Error("Thiết bị không hỗ trợ phát/thu âm thanh thời gian thực.");
@@ -165,7 +178,7 @@
    await ensureLogin();
    status("Đang xin phiên Gemini Live từ Firebase…");state.running=true;
    visible("#examPanel",true);visible("#entryPanel",false);$("#log").replaceChildren();$("#turnCount").textContent="0";
-   $("#mute").disabled=textOnly;$("#mute").textContent="Tắt micro";$("#liveState").textContent="Đang kết nối";
+   $("#mute").disabled=textOnly;$("#mute").textContent="Bắt đầu trả lời";$("#finishTurn").disabled=true;$("#liveState").textContent="Đang kết nối";
    await connect();
    state.timer=setInterval(timerTick,1000);timerTick();
   }catch(e){
@@ -188,7 +201,7 @@
   try{
    if(preview){$("#reviewMessage").textContent="Đã kết thúc buổi thử nghiệm. Số lượt ghi nhận: "+transcript.length+". Không ghi điểm thử lên Firebase."}
    else{const r=await api("finish",{ma,sv,transcript},55000);
-    $("#reviewMessage").textContent="Đã lưu bài thi để giảng viên duyệt. Điểm AI đề xuất: "+(r.suggestion?.total!=null?r.suggestion.total+"/10":"chưa có, cần giảng viên rà soát")+".";
+    $("#reviewMessage").textContent="Bài thi đã được ghi nhận. Kết quả sẽ được giảng viên phụ trách xem xét và phê duyệt theo quy định.";
    }
    visible("#examPanel",false);visible("#reviewPanel",true);status("Đã kết thúc phiên. Giảng viên có thể xem biên bản và quyết định điểm cuối cùng.");
   }catch(e){
@@ -205,9 +218,18 @@
   record("student",text);$("#typed").value="";
   send({clientContent:{turns:[{role:"user",parts:[{text}]}],turnComplete:true}});
  };
- $("#mute").onclick=()=>{state.muted=!state.muted;$("#mute").textContent=state.muted?"Bật micro":"Tắt micro";
-  if(state.muted){stopInput();send({realtimeInput:{audioStreamEnd:true}})}
-  else attachMicro()
+ $("#mute").onclick=()=>{
+  if(state.textOnly||!state.running||state.finishing||!state.muted)return;
+  if(!state.ws||state.ws.readyState!==WebSocket.OPEN){status("Chưa có kết nối Gemini Live.",true);return}
+  state.muted=false;send({realtimeInput:{activityStart:{}}});attachMicro();$("#mute").disabled=true;$("#finishTurn").disabled=false;
+  status("Đang nghe. Bấm Tôi đã trả lời xong sau khi kết thúc câu trả lời.");
+ };
+ $("#finishTurn").onclick=()=>{
+  if(!state.running||state.finishing||state.muted)return;
+  state.muted=true;stopInput();$("#finishTurn").disabled=true;
+  send({realtimeInput:{activityEnd:{}}});
+  $("#mute").textContent="Đang chờ câu hỏi tiếp";$("#mute").disabled=true;
+  status("Đã kết thúc lượt trả lời. Hội đồng AI sẽ tiếp tục hỏi nhánh mở rộng.");
  };
  $("#endLive").onclick=()=>{if(confirm("Kết thúc bài vấn đáp và nộp ngay?"))finish(false)};
  async function adminAction(action,extras={}){
