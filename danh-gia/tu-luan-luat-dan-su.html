@@ -188,14 +188,14 @@ function gradeAutomatic(b){
  return {diem:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
 }
 async function markPending(ma,papers,grades){
- const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!grades[sv]?.xacNhan);
+ const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&(!grades[sv]?.xacNhan||(grades[sv]?.nguon==="tu-dong"&&grades[sv]?.gradePolicyVersion!=="2026-11-08-v2")));
  if(!entries.length)return {done:0,errors:[]};
  await Promise.all([loadAutoKey(),loadMCQ()]);
  let done=0,errors=[];
  for(const [sv,b] of entries){
   try{
    const r=gradeAutomatic(b);
-   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:"2026-11-08-v2",xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
    grades[sv]=saved;done++;
   }catch(e){errors.push(sv+": "+e.message)}
