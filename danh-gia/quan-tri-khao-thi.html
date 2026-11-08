@@ -40,5 +40,16 @@ button:disabled{opacity:.55;cursor:not-allowed}button.secondary{background:#e8f0
 <p class="muted">Thông tin đánh giá không hiển thị cho sinh viên. Rubric đang cố định trong mã máy chủ; trường phiên bản chỉ để theo dõi, chưa hỗ trợ sửa trọng số. Mục tiêu số nhánh được lưu để dùng ở bộ điều phối hỏi đáp; chưa bảo đảm AI Live thực hiện đủ số nhánh khi chưa hoàn thiện tích hợp.</p>
 <div class="row"><button id="saveSettings" type="button">Lưu cấu hình</button><button id="reloadSettings" class="secondary" type="button">Tải lại</button></div>
 </section>
+<section id="questionSection" hidden>
+<h2>Ngân hàng đề thi vấn đáp</h2>
+<p class="muted">Đề được lưu trong Firestore, không đưa đáp án hay ngân hàng đề bí mật lên GitHub Pages. Chỉ giảng viên quản trị được tạo và công bố đề.</p>
+<label for="courseName">Tên học phần (đúng với tên học phần của lớp)</label><input id="courseName" maxlength="120" placeholder="Ví dụ: Luật Dân sự">
+<label for="ticketNumber">Mã đề</label><input id="ticketNumber" maxlength="60" placeholder="LDS-01">
+<label for="caseFacts">Tình huống pháp lý gốc</label><textarea id="caseFacts" rows="5" style="width:100%;font:inherit;padding:12px;border:1px solid #afc6d4;border-radius:9px"></textarea>
+<label for="rootQuestion">Câu hỏi chính</label><textarea id="rootQuestion" rows="3" style="width:100%;font:inherit;padding:12px;border:1px solid #afc6d4;border-radius:9px"></textarea>
+<div class="row" style="margin-top:14px"><button id="createQuestion" type="button">Lưu đề nháp (chưa bốc thăm)</button><button id="publishQuestion" type="button" disabled>Duyệt và mở đề để bốc thăm</button></div>
+<p class="muted" id="questionResult" aria-live="polite"></p>
+<p class="muted">Chỉ bấm duyệt sau khi đã đối chiếu nội dung và căn cứ pháp luật. Nếu muốn thay nội dung đề đã duyệt, hãy tạo phiên bản đề mới để giữ lịch sử.</p>
+</section>
 <section><h2>Trạng thái triển khai</h2><p class="muted">Trang này quản lý các thiết lập do máy chủ PNL hỗ trợ. Kết nối ứng dụng xuất từ Google AI Studio cần một đợt tích hợp riêng vì bản xuất sử dụng máy chủ Express, lưu phiên trong RAM và chưa có xác thực đầy đủ. Không sử dụng mã nguồn xuất đó trực tiếp cho điểm chính thức.</p></section>
 </main><footer>Phúc Nguyên Library · Nội bộ giảng viên</footer></body></html>
