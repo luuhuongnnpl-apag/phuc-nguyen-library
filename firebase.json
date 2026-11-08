@@ -1,0 +1,14 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "pnl-vandap",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "*.local"
+      ]
+    }
+  ]
+}
