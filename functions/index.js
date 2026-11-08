@@ -126,8 +126,8 @@ async function handleFinish(req,res,u,p){
  const ref=db.doc("pnl_vd_phien/"+ma+"__"+sv),snap=await ref.get();
  if(!snap.exists||snap.data().uid!==u.uid)fail(403,"Không có quyền nộp bài này.");
  if(snap.data().status!=="dang-thi")fail(409,"Bài thi đã được ghi nhận trước đó.");
- const transcript=Array.isArray(p.transcript)?p.transcript.slice(0,100).filter(x=>x&&["student","teacher"].includes(x.role)).map(x=>({role:x.role,text:safe(x.text)})).filter(x=>x.text):[];
- if(!transcript.length)fail(400,"Chưa có bản ghi để lập phiếu chấm. Giảng viên cần xử lý thủ công.");
+ const rows=Array.isArray(p.transcript)&&p.transcript.length?p.transcript:(snap.data().draftTranscript||[]);
+ const transcript=rows.slice(0,100).filter(x=>x&&["student","teacher"].includes(x.role)).map(x=>({role:x.role,text:safe(x.text)})).filter(x=>x.text);
  // Chốt bài trước khi gọi AI, tránh bị chấm trùng hoặc mất bài nếu Gemini lỗi.
  await ref.update({status:"cho-duyet",transcript,transcriptSource:"client-unverified",submittedAt:admin.firestore.FieldValue.serverTimestamp(),reviewRequired:true});
  let suggestion;
@@ -147,7 +147,7 @@ async function handleAdmin(req,res,u,p){
  }
  if(action==="list"){
   const q=await db.collection("pnl_vd_phien").where("maLop","==",ma).limit(200).get();
-  return json(res,200,{rows:q.docs.map(d=>{const x=d.data();return {id:d.id,mssv:x.mssv,hoTen:x.hoTen,status:x.status,score:x.suggestion?.total??null,finalScore:x.finalScore??null,reviewRequired:x.reviewRequired,transcript:x.transcript||[],suggestion:x.suggestion||null}})});
+  return json(res,200,{rows:q.docs.map(d=>{const x=d.data();return {id:d.id,mssv:x.mssv,hoTen:x.hoTen,status:x.status,score:x.suggestion?.total??null,finalScore:x.finalScore??null,reviewRequired:x.reviewRequired,transcript:x.transcript||x.draftTranscript||[],suggestion:x.suggestion||null}})});
  }
  if(action==="approve"){
   const sv=String(p.sv||"").trim().toUpperCase();if(!goodCode(sv,20))fail(400,"Mã sinh viên không hợp lệ.");
