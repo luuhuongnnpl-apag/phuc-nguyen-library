@@ -123,11 +123,12 @@ function renderExam(){
  const a=answerMap(b),steps=[];
  if(mixed)de.mcq.forEach((id,i)=>steps.push({kind:"mcq",id,i}));
  ids.forEach((id,i)=>{const c=caseBy(id);if(!c)throw Error("Thiếu tình huống "+id);
-  c.questions.forEach((question,j)=>steps.push({kind:"essay",id,i,j,question,caseText:c.text}))});
+  steps.push({kind:"essay",id,i,questions:c.questions,caseText:c.text})});
+ /* Tương thích bài đang làm theo giao diện cũ (mỗi yêu cầu là một bước). */
  const step=Math.max(0,Math.min(steps.length-1,Number.isInteger(b.step)?b.step:0));
  const current=steps[step],last=step===steps.length-1,started=until(b.startedAt).getTime(),total=40*60000;
- let h='<article><div class="top"><div><h2>Luật Dân sự – Mã đề '+E(de.set)+'</h2><span class="muted">'+E(b.hoTen)+' · '+E(S.sv)+'</span></div><div><strong id="clock" class="score"></strong><div id="saveStatus" class="mini muted">Tự động lưu bài</div></div></div><p class="warn">Câu '+(step+1)+'/'+steps.length+'. Mỗi lần chỉ hiển thị một câu. Sau khi chuyển sang câu kế tiếp không thể quay lại. Hết 40 phút bài tự nộp.</p></article>';
- h+='<article><h3>'+(current.kind==="mcq"?'PHẦN I. TRẮC NGHIỆM':'PHẦN II. TỰ LUẬN')+' — Câu '+(step+1)+'/'+steps.length+'</h3>';
+ let h='<article><div class="top"><div><h2>Luật Dân sự – Mã đề '+E(de.set)+'</h2><span class="muted">'+E(b.hoTen)+' · '+E(S.sv)+'</span></div><div><strong id="clock" class="score"></strong><div id="saveStatus" class="mini muted">Tự động lưu bài</div></div></div><p class="warn">'+(current.kind==="mcq"?'Câu trắc nghiệm '+(step+1)+'/'+(mixed?de.mcq.length:0)+'. Mỗi lần hiển thị một câu; không thể quay lại.':'Phần tự luận: hiển thị toàn bộ tình huống và các yêu cầu để trả lời cùng lúc.')+' Hết 40 phút bài tự nộp.</p></article>';
+ h+='<article><h3>'+(current.kind==="mcq"?'PHẦN I. TRẮC NGHIỆM — Câu '+(step+1):'PHẦN II. TỰ LUẬN — Tình huống '+(current.i+1))+'</h3>';
  if(current.kind==="mcq"){
    const q=MCQ?.questions[current.id];if(!q)throw Error("Thiếu câu trắc nghiệm "+current.id);
    if(current.i>=8){const c=MCQ.contexts.find(x=>x.cid===de.mcqCase);if(c)h+='<div class="case">'+E(c.text)+'</div>'}
@@ -136,14 +137,17 @@ function renderExam(){
    for(let j=0;j<4;j++){h+='<label style="display:flex;align-items:flex-start;gap:9px;font-weight:400"><input type="radio" name="currentMcq" value="'+j+'" style="width:auto;margin-top:4px"'+(selected===j?' checked':'')+'> <span>'+"ABCD"[j]+'. '+E(q.o[perm[j]])+'</span></label>'}
    h+='</div>';
  }else{
-   h+='<div class="case">'+E(current.caseText)+'</div><div class="q"><strong>Yêu cầu '+(current.j+1)+'. '+E(current.question)+'</strong><textarea id="currentEssay" maxlength="2300" placeholder="Trình bày câu trả lời, lập luận và căn cứ pháp luật">'+E(a[current.id+"_"+current.j]||"")+'</textarea><div class="mini muted">Tối đa '+(mixed?'1':'1,25')+' điểm</div></div>';
+   h+='<div class="case" style="white-space:pre-wrap"><strong>Đề bài — Tình huống đầy đủ</strong><p>'+E(current.caseText)+'</p></div>';
+   current.questions.forEach((question,j)=>{
+     h+='<div class="q"><strong>Yêu cầu '+(j+1)+'. '+E(question)+'</strong><textarea data-essay-key="'+E(current.id+"_"+j)+'" maxlength="2300" placeholder="Trình bày câu trả lời, lập luận và căn cứ pháp luật">'+E(a[current.id+"_"+j]||"")+'</textarea><div class="mini muted">Tối đa '+(mixed?'1':'1,25')+' điểm</div></div>';
+   });
  }
  h+='</article><article><button id="saveNow" class="secondary">Lưu nháp</button><button id="nextStep">'+(last?'Nộp bài':'Lưu và sang câu tiếp theo')+'</button><p id="msg" class="error"></p></article>';
  app.innerHTML=h;
  let dirty=false,saving=false;
  const gather=()=>{const values=Object.assign({},answerMap(SESSION.b));
    if(current.kind==="mcq"){const el=$('input[name="currentMcq"]:checked');if(el)values["mcq_"+current.id]=Number(el.value)}
-   else values[current.id+"_"+current.j]=$("#currentEssay").value;
+   else app.querySelectorAll("[data-essay-key]").forEach(el=>values[el.dataset.essayKey]=el.value);
    delete values._step;return values};
  async function save(final=false,advance=false){
    if(!SESSION||SESSION.b.status==="da-nop"||saving)return false;
@@ -161,15 +165,15 @@ function renderExam(){
    }catch(e){const msg=$("#msg");if(msg)msg.textContent="Chưa lưu được bài. Kiểm tra kết nối trước khi tiếp tục.";console.error(e);return false}
    finally{saving=false}
  }
- app.querySelectorAll('input[name="currentMcq"],#currentEssay').forEach(x=>x.addEventListener("input",()=>{dirty=true;const st=$("#saveStatus");if(st)st.textContent="Chưa lưu"}));
+ app.querySelectorAll('input[name="currentMcq"],[data-essay-key]').forEach(x=>x.addEventListener("input",()=>{dirty=true;const st=$("#saveStatus");if(st)st.textContent="Chưa lưu"}));
  const block=e=>{if(!SESSION||SESSION.b.status==="da-nop"||!app.contains(e.target))return;
    e.preventDefault();const msg=$("#msg");if(msg)msg.textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung khi kiểm tra."};
  ["copy","cut","paste","drop"].forEach(type=>app.addEventListener(type,block,{capture:true,once:false}));
  app.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))block(e)},{capture:true});
  $("#saveNow").onclick=()=>save();
  $("#nextStep").onclick=async()=>{
-   const value=current.kind==="mcq"?$('input[name="currentMcq"]:checked')?.value:$("#currentEssay").value.trim();
-   if(value==null||value===""){const msg=$("#msg");if(msg)msg.textContent="Hãy hoàn thành câu hỏi hiện tại trước khi tiếp tục.";return}
+   const complete=current.kind==="mcq"?Boolean($('input[name="currentMcq"]:checked')):[...app.querySelectorAll("[data-essay-key]")].every(el=>el.value.trim());
+   if(!complete){const msg=$("#msg");if(msg)msg.textContent="Hãy hoàn thành tất cả yêu cầu của phần đang làm trước khi tiếp tục.";return}
    if(last){if(confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))await save(true)}
    else await save(false,true);
  };
