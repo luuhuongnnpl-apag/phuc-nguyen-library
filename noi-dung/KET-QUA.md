@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 08:07 08/11/2026
+# Kết quả dựng nội dung — 08:08 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - functions/index.js
+      - danh-gia/van-dap-ai.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42432832149 · commit e2ed36b
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42432924815 · commit 1b37a6d
