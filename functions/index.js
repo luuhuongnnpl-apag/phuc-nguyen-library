@@ -43,6 +43,7 @@ async function mintToken(context){
    model:"models/"+MODEL,
    config:{
     responseModalities:["AUDIO"],
+    realtimeInputConfig:{automaticActivityDetection:{disabled:true}},
     systemInstruction:{parts:[{text:examPrompt(context)}]},
     inputAudioTranscription:{},outputAudioTranscription:{}
    }
