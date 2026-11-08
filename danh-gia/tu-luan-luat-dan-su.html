@@ -115,59 +115,71 @@ const b=old.data();if(b.hocPhan!==COURSE)throw Error("Mã sinh viên đã có b�
 function answerMap(b){try{return JSON.parse(b.essay||"{}")}catch(x){return{}}}
 function renderExam(){
  const S=SESSION,b=S.b;
+ if(TIMER){clearInterval(TIMER);TIMER=null}
  if(b.status==="da-nop"){app.innerHTML='<article><h2>Đã nộp bài</h2><p>Hệ thống đã ghi nhận bài của <b>'+E(b.hoTen)+'</b> ('+E(S.sv)+'). Kết quả sẽ được giảng viên công bố.</p><a class="btn secondary" href="../index.html">Về thư viện</a></article>';return}
  const de=b.de||{},mixed=de.essayMode==="mixed12x1",ids=de.caseIds||[];
  if(mixed&&(!Array.isArray(de.mcq)||de.mcq.length!==12||ids.length!==1))throw Error("Đề hỗn hợp không hợp lệ.");
  if(!mixed&&ids.length!==2)throw Error("Đề cũ không hợp lệ.");
- const a=answerMap(b),total=40*60000;
- const started=until(b.startedAt).getTime();
- let h='<article><div class="top"><div><h2>Luật Dân sự – Mã đề '+E(de.set)+'</h2><span class="muted">'+E(b.hoTen)+' · '+E(S.sv)+'</span></div><div><strong id="clock" class="score"></strong><div id="saveStatus" class="mini muted">Tự động lưu bài</div></div></div><p class="warn">'+(mixed?'Phần I: 12 câu trắc nghiệm × 0,5 = 6 điểm. Phần II: 1 tình huống tự luận (4 yêu cầu × 1 điểm) = 4 điểm.':'Đề tự luận cũ: 2 tình huống × 5 điểm.')+' Hết giờ bài tự nộp.</p></article>';
- if(mixed){
-  h+='<article><h3>PHẦN I. TRẮC NGHIỆM (6 điểm)</h3>';
-  de.mcq.forEach((id,i)=>{
-   const q=MCQ?.questions[id];if(!q)throw Error("Thiếu câu trắc nghiệm "+id);
-   const perm=de.perm?.[id]||[0,1,2,3],selected=a["mcq_"+id];
-   if(i===8){const c=MCQ.contexts.find(c=>c.cid===de.mcqCase);if(c)h+='<h3>Tình huống trắc nghiệm</h3><div class="case">'+E(c.text)+'</div>';}
-   h+='<div class="q"><strong>Câu '+(i+1)+'. '+E(q.q)+' (0,5 điểm)</strong>';
-   for(let j=0;j<4;j++){const letter="ABCD"[j];h+='<label style="display:flex;align-items:flex-start;gap:9px;font-weight:400"><input type="radio" name="mcq_'+E(id)+'" data-mcq="'+E(id)+'" value="'+j+'" style="width:auto;margin-top:4px"'+(selected===j?' checked':'')+'> <span>'+letter+'. '+E(q.o[perm[j]])+'</span></label>'}
-   h+='</div>';
-  });h+='</article>';
- }
- h+='<article><h3>'+(mixed?'PHẦN II. TỰ LUẬN (4 điểm)':'PHẦN TỰ LUẬN')+'</h3>';
+ const a=answerMap(b),steps=[];
+ if(mixed)de.mcq.forEach((id,i)=>steps.push({kind:"mcq",id,i}));
  ids.forEach((id,i)=>{const c=caseBy(id);if(!c)throw Error("Thiếu tình huống "+id);
- h+='<h3>Tình huống '+(i+1)+' ('+(mixed?'4':'5')+' điểm)</h3><div class="case">'+E(c.text)+'</div>';
- c.questions.forEach((q,j)=>{const key=id+"_"+j;h+='<div class="q"><strong>'+E(q)+'</strong><textarea maxlength="2300" data-key="'+E(key)+'" placeholder="Trình bày câu trả lời, lập luận và căn cứ pháp luật">'+E(a[key]||"")+'</textarea><div class="mini muted">Tối đa '+(mixed?'1':'1,25')+' điểm</div></div>'});
- });h+='</article><article><button id="saveNow" class="secondary">Lưu nháp</button><button id="submitNow">Nộp bài</button><p id="msg" class="error"></p></article>';
+  c.questions.forEach((question,j)=>steps.push({kind:"essay",id,i,j,question,caseText:c.text}))});
+ const step=Math.max(0,Math.min(steps.length-1,Number.isInteger(b.step)?b.step:0));
+ const current=steps[step],last=step===steps.length-1,started=until(b.startedAt).getTime(),total=40*60000;
+ let h='<article><div class="top"><div><h2>Luật Dân sự – Mã đề '+E(de.set)+'</h2><span class="muted">'+E(b.hoTen)+' · '+E(S.sv)+'</span></div><div><strong id="clock" class="score"></strong><div id="saveStatus" class="mini muted">Tự động lưu bài</div></div></div><p class="warn">Câu '+(step+1)+'/'+steps.length+'. Mỗi lần chỉ hiển thị một câu. Sau khi chuyển sang câu kế tiếp không thể quay lại. Hết 40 phút bài tự nộp.</p></article>';
+ h+='<article><h3>'+(current.kind==="mcq"?'PHẦN I. TRẮC NGHIỆM':'PHẦN II. TỰ LUẬN')+' — Câu '+(step+1)+'/'+steps.length+'</h3>';
+ if(current.kind==="mcq"){
+   const q=MCQ?.questions[current.id];if(!q)throw Error("Thiếu câu trắc nghiệm "+current.id);
+   if(current.i>=8){const c=MCQ.contexts.find(x=>x.cid===de.mcqCase);if(c)h+='<div class="case">'+E(c.text)+'</div>'}
+   const perm=de.perm?.[current.id]||[0,1,2,3],selected=a["mcq_"+current.id];
+   h+='<div class="q"><strong>'+E(q.q)+' (0,5 điểm)</strong>';
+   for(let j=0;j<4;j++){h+='<label style="display:flex;align-items:flex-start;gap:9px;font-weight:400"><input type="radio" name="currentMcq" value="'+j+'" style="width:auto;margin-top:4px"'+(selected===j?' checked':'')+'> <span>'+"ABCD"[j]+'. '+E(q.o[perm[j]])+'</span></label>'}
+   h+='</div>';
+ }else{
+   h+='<div class="case">'+E(current.caseText)+'</div><div class="q"><strong>Yêu cầu '+(current.j+1)+'. '+E(current.question)+'</strong><textarea id="currentEssay" maxlength="2300" placeholder="Trình bày câu trả lời, lập luận và căn cứ pháp luật">'+E(a[current.id+"_"+current.j]||"")+'</textarea><div class="mini muted">Tối đa '+(mixed?'1':'1,25')+' điểm</div></div>';
+ }
+ h+='</article><article><button id="saveNow" class="secondary">Lưu nháp</button><button id="nextStep">'+(last?'Nộp bài':'Lưu và sang câu tiếp theo')+'</button><p id="msg" class="error"></p></article>';
  app.innerHTML=h;
  let dirty=false,saving=false;
- const gather=()=>{const values={};document.querySelectorAll("[data-key]").forEach(t=>values[t.dataset.key]=t.value);
-  if(mixed)de.mcq.forEach(id=>{const el=document.querySelector('input[name="mcq_'+id+'"]:checked');if(el)values["mcq_"+id]=Number(el.value)});
-  return values;};
- async function save(final=false){
-  if(!SESSION||SESSION.b.status==="da-nop"||saving)return;
-  saving=true;const ans=JSON.stringify(gather());
-  try{const update={essay:ans,luu:FV.serverTimestamp()};
-   if(final){update.status="da-nop";update.submittedAt=FV.serverTimestamp()}
-   await db.doc("pnl_dg_bai/"+SESSION.id).update(update);
-   SESSION.b.essay=ans;dirty=false;
-   if(final){SESSION.b.status="da-nop";renderExam()}else{const status=$("#saveStatus");if(status)status.textContent="Đã lưu lúc "+new Date().toLocaleTimeString("vi-VN");}
-  }catch(e){err(e)}finally{saving=false}
+ const gather=()=>{const values=Object.assign({},answerMap(SESSION.b));
+   if(current.kind==="mcq"){const el=$('input[name="currentMcq"]:checked');if(el)values["mcq_"+current.id]=Number(el.value)}
+   else values[current.id+"_"+current.j]=$("#currentEssay").value;
+   delete values._step;return values};
+ async function save(final=false,advance=false){
+   if(!SESSION||SESSION.b.status==="da-nop"||saving)return false;
+   saving=true;const values=gather(),answer=JSON.stringify(values);
+   try{const update={essay:answer,luu:FV.serverTimestamp()};
+     if(advance)update.step=step+1;
+     if(final){update.status="da-nop";update.submittedAt=FV.serverTimestamp()}
+     await db.doc("pnl_dg_bai/"+SESSION.id).update(update);
+     SESSION.b.essay=answer;dirty=false;
+     if(advance)SESSION.b.step=step+1;
+     if(final){SESSION.b.status="da-nop";renderExam()}
+     else if(advance)renderExam();
+     else{const status=$("#saveStatus");if(status)status.textContent="Đã lưu lúc "+new Date().toLocaleTimeString("vi-VN")}
+     return true;
+   }catch(e){const msg=$("#msg");if(msg)msg.textContent="Chưa lưu được bài. Kiểm tra kết nối trước khi tiếp tục.";console.error(e);return false}
+   finally{saving=false}
  }
- document.querySelectorAll("[data-key],[data-mcq]").forEach(t=>t.addEventListener("input",()=>{dirty=true;const st=$("#saveStatus");if(st)st.textContent="Chưa lưu"}));
-  /* Chặn thao tác clipboard trong vùng bài thi, không chặn khi quản trị. */
-  const stopClipboard=e=>{if(!SESSION||SESSION.b.status==="da-nop"||!app.contains(e.target))return;
-    e.preventDefault();const msg=$("#msg");if(msg)msg.textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung khi kiểm tra.";};
-  ["copy","cut","paste","drop"].forEach(type=>app.addEventListener(type,stopClipboard,{capture:true}));
-  app.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))stopClipboard(e)},{capture:true});
- $("#saveNow").onclick=()=>save();$("#submitNow").onclick=()=>{if(confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))save(true)};
- TIMER=setInterval(()=>{if(!SESSION||SESSION.b.status==="da-nop"){clearInterval(TIMER);return}
-  const ms=Math.max(0,total-(Date.now()-started)),el=$("#clock");
-  if(el)el.textContent=Math.floor(ms/60000)+":"+String(Math.floor(ms/1000)%60).padStart(2,"0");
-  if(ms===0){clearInterval(TIMER);save(true)}else if(dirty)save();
- },10000);
- const ms=Math.max(0,total-(Date.now()-started)),clock=$("#clock");
- if(clock)clock.textContent=Math.floor(ms/60000)+":"+String(Math.floor(ms/1000)%60).padStart(2,"0");
- if(ms===0)save(true);
+ app.querySelectorAll('input[name="currentMcq"],#currentEssay').forEach(x=>x.addEventListener("input",()=>{dirty=true;const st=$("#saveStatus");if(st)st.textContent="Chưa lưu"}));
+ const block=e=>{if(!SESSION||SESSION.b.status==="da-nop"||!app.contains(e.target))return;
+   e.preventDefault();const msg=$("#msg");if(msg)msg.textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung khi kiểm tra."};
+ ["copy","cut","paste","drop"].forEach(type=>app.addEventListener(type,block,{capture:true,once:false}));
+ app.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))block(e)},{capture:true});
+ $("#saveNow").onclick=()=>save();
+ $("#nextStep").onclick=async()=>{
+   const value=current.kind==="mcq"?$('input[name="currentMcq"]:checked')?.value:$("#currentEssay").value.trim();
+   if(value==null||value===""){const msg=$("#msg");if(msg)msg.textContent="Hãy hoàn thành câu hỏi hiện tại trước khi tiếp tục.";return}
+   if(last){if(confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))await save(true)}
+   else await save(false,true);
+ };
+ const clockTick=()=>{
+   if(!SESSION||SESSION.b.status==="da-nop"){clearInterval(TIMER);return}
+   const ms=Math.max(0,total-(Date.now()-started)),el=$("#clock");
+   if(el)el.textContent=Math.floor(ms/60000)+":"+String(Math.floor(ms/1000)%60).padStart(2,"0");
+   if(ms===0){clearInterval(TIMER);save(true)}else if(dirty)save();
+ };
+ TIMER=setInterval(clockTick,10000);clockTick();
 }
 function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};
