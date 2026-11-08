@@ -29,12 +29,12 @@ ul{padding-left:20px}.phase{padding:7px 10px;background:#e9f2f8;border-radius:9p
 <div class="grid"><div><section class="card"><div class="row spread"><h2>Phòng thi đối thoại</h2><span class="phase" id="phase">Chưa bắt đầu</span></div>
 <div id="log" aria-live="polite"><p class="muted">Bấm Bắt đầu để xem cách AI điều chỉnh câu hỏi theo nội dung trả lời.</p></div>
 <label for="answer">Câu trả lời của sinh viên</label><textarea id="answer" placeholder="Trình bày nhận định và căn cứ pháp luật..." disabled></textarea>
-<div class="row" style="margin-top:12px"><button class="primary" id="start">Bắt đầu mô phỏng</button><button id="send" disabled>Gửi câu trả lời</button><button id="mic" disabled>🎙 Nhập bằng giọng nói</button><button id="speak" disabled>🔊 Nghe câu hỏi</button></div>
-<p class="status" id="status">Nhận diện tiếng nói và đọc câu hỏi sử dụng khả năng có sẵn trên trình duyệt, nếu được hỗ trợ.</p>
+<div class="row" style="margin-top:12px"><button class="primary" id="start" type="button">Bắt đầu thử hỏi đáp</button><button id="send" type="button" disabled>Gửi câu trả lời</button><button id="mic" type="button" disabled>🎙 Trả lời bằng giọng nói</button><button id="speak" type="button" disabled>🔊 Nghe câu hỏi</button></div>
+<p class="status" id="status" role="status" aria-live="polite">Bấm “Bắt đầu thử hỏi đáp”. Nếu không dùng được micro, có thể nhập câu trả lời bằng bàn phím.</p>
 </section></div>
 <aside><section class="card"><h2>Cách hệ thống sẽ vận hành</h2>
 <ol><li>Xác nhận mã lớp, mã SV và đồng ý ghi nhận nội dung thi.</li><li>Rút ngẫu nhiên tình huống từ ngân hàng đã duyệt.</li><li>AI lần lượt hỏi, nghe, phân loại câu trả lời và hỏi phản biện.</li><li>AI thay đổi giả thiết pháp lý nhằm kiểm tra khả năng vận dụng.</li><li>Hết giờ hoặc đủ tiêu chí: kết thúc, chấm sơ bộ và chuyển giảng viên.</li></ol>
-<div class="hint"><strong>Lưu ý:</strong> Trang hiện tại là mô phỏng logic. Chưa kết nối dịch vụ AI thời gian thực, chưa xác thực sinh viên, chưa lưu bài thi hay kết quả vào Firebase.</div></section>
+<div class="hint"><strong>Lưu ý:</strong> Đây là bản mô phỏng. Giọng nói sử dụng chức năng của trình duyệt và có thể không hoạt động trong trình duyệt nhúng trên iPhone. Chưa có AI Live, chấm điểm thật, xác thực sinh viên hay lưu Firebase. Nếu màn hình không phản hồi, hãy mở bằng Safari thay vì trình duyệt bên trong ứng dụng.</div></section>
 <section class="card"><h2>Thang điểm dự kiến</h2><ul><li>Nhận diện vấn đề: 2 điểm</li><li>Căn cứ pháp luật: 2 điểm</li><li>Lập luận và phân tích: 2,5 điểm</li><li>Thay đổi giả thiết: 2,5 điểm</li><li>Trình bày rõ ràng: 1 điểm</li></ul><p class="muted">Điểm AI chỉ là đề xuất; giảng viên chốt điểm. Không đánh giá giọng vùng miền hoặc tốc độ nói.</p></section></aside></div></main>
 <script>
 "use strict";
@@ -48,12 +48,12 @@ const scenarios=[
 ];
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&quot;"}[c]))}
 function bubble(who,text){const d=document.createElement("div");d.className="bubble "+(who==="Giảng viên AI"?"teacher":"student");const b=document.createElement("strong");b.textContent=who;const p=document.createElement("div");p.textContent=text;d.append(b,p);log.append(d);log.scrollTop=log.scrollHeight}
-function speak(t){if(!("speechSynthesis" in window)){status("Trình duyệt không hỗ trợ đọc thành tiếng.");return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="vi-VN";u.rate=.95;speechSynthesis.speak(u)}
+function speak(t){if(!("speechSynthesis" in window)){status("Trình duyệt không hỗ trợ đọc thành tiếng. Câu hỏi vẫn hiển thị trên màn hình.");return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="vi-VN";u.rate=.95;u.onerror=()=>status("Không phát được giọng đọc. Có thể đọc câu hỏi trên màn hình.");speechSynthesis.speak(u)}catch(e){status("Không phát được giọng đọc. Có thể đọc câu hỏi trên màn hình.")}}
 function status(t){$("#status").textContent=t}
-function ask(q,phase){question=q;$("#phase").textContent=phase;bubble("Giảng viên AI",q);$("#step").textContent=turn+"/5";$("#speak").disabled=false}
+function ask(q,phase){question=q;$("#phase").textContent=phase;bubble("Giảng viên AI",q);$("#step").textContent=turn+"/5";$("#speak").disabled=false;status("Câu hỏi đã hiển thị. Bấm “Nghe câu hỏi”, “Trả lời bằng giọng nói” hoặc nhập văn bản rồi gửi.")}
 function reset(){turn=0;history=[];mode="start";question="";log.replaceChildren();ans.value="";ans.disabled=true;$("#start").disabled=false;$("#send").disabled=true;$("#mic").disabled=true;$("#speak").disabled=true;$("#step").textContent="0/5";$("#phase").textContent="Chưa bắt đầu";status("Bản mô phỏng, không sử dụng API chấm thi.");if("speechSynthesis" in window)speechSynthesis.cancel()}
 $("#reset").onclick=reset;
-$("#start").onclick=()=>{turn=1;mode="exam";$("#start").disabled=true;$("#send").disabled=false;$("#mic").disabled=false;ans.disabled=false;log.replaceChildren();ask(scenarios[0].q,scenarios[0].phase)};
+$("#start").onclick=()=>{try{turn=1;mode="exam";$("#start").disabled=true;$("#send").disabled=false;$("#mic").disabled=!SR;ans.disabled=false;log.replaceChildren();ask(scenarios[0].q,scenarios[0].phase);if(!SR)status("Đã bắt đầu. Trình duyệt này không hỗ trợ nhận diện giọng nói, hãy nhập văn bản hoặc mở bằng Safari.")}catch(e){status("Không mở được bài thử: "+e.message);$("#start").disabled=false}};
 $("#send").onclick=()=>{const t=ans.value.trim();if(!t){status("Hãy nhập nội dung trả lời trước khi tiếp tục.");return}bubble("Sinh viên",t);history.push({question,answer:t});ans.value="";if(turn>=5){bubble("Giảng viên AI","Bài vấn đáp mô phỏng đã kết thúc. Trong bản triển khai thật, hệ thống chuyển bản ghi và gợi ý chấm đến giảng viên.");$("#phase").textContent="Kết thúc";$("#send").disabled=true;$("#mic").disabled=true;ans.disabled=true;mode="done";return}
 const lower=t.toLocaleLowerCase("vi-VN");let next;
 if(turn===1){
@@ -64,6 +64,6 @@ if(turn===1){
 turn++;ask(next,scenarios[turn-1].phase);status("Hỏi tiếp theo nhánh minh họa. Bản này chưa dùng AI để đánh giá đúng sai.")};
 $("#speak").onclick=()=>question&&speak(question);
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR){$("#mic").title="Trình duyệt không hỗ trợ nhận diện lời nói; hãy nhập văn bản";status("Thiết bị/trình duyệt hiện tại có thể không hỗ trợ nhận diện tiếng nói. Có thể nhập bằng bàn phím.")}
-$("#mic").onclick=()=>{if(!SR){status("Không hỗ trợ nhận diện giọng nói. Dùng ô nhập văn bản.");return}const rec=new SR();rec.lang="vi-VN";rec.interimResults=false;rec.maxAlternatives=1;rec.onresult=e=>{ans.value=(ans.value?ans.value+" ":"")+e.results[0][0].transcript;status("Đã nhận dạng lời nói; vui lòng kiểm tra văn bản trước khi gửi.")};rec.onerror=e=>status("Không ghi âm được: "+e.error);rec.start();status("Đang nghe câu trả lời...")};
+if(!SR){$("#mic").title="Không hỗ trợ micro nhận dạng trên trình duyệt hiện tại. Hãy nhập văn bản hoặc thử Safari.";$("#mic").disabled=true;status("Bấm Bắt đầu để thi thử. Trình duyệt này chưa hỗ trợ nhận diện giọng nói; có thể trả lời bằng văn bản.")}
+let activeRecognition=null;$("#mic").onclick=()=>{if(!SR){status("Trình duyệt không hỗ trợ nhận diện giọng nói. Có thể nhập văn bản.");return}if(activeRecognition){try{activeRecognition.stop()}catch(e){}return}try{const rec=new SR();activeRecognition=rec;rec.lang="vi-VN";rec.interimResults=false;rec.maxAlternatives=1;$("#mic").textContent="■ Dừng nghe";rec.onresult=e=>{const transcript=e.results[0]?.[0]?.transcript||"";ans.value=(ans.value?ans.value+" ":"")+transcript;status(transcript?"Đã nhận dạng lời nói. Kiểm tra và bấm Gửi câu trả lời.":"Chưa nhận được lời nói; hãy thử lại.")};rec.onerror=e=>status("Không nhận diện được giọng nói ("+e.error+"). Kiểm tra quyền micro trong Safari hoặc nhập văn bản.");rec.onend=()=>{activeRecognition=null;$("#mic").textContent="🎙 Trả lời bằng giọng nói"};rec.start();status("Đang nghe… Hãy nói câu trả lời và bấm Dừng nghe khi xong.")}catch(e){activeRecognition=null;$("#mic").textContent="🎙 Trả lời bằng giọng nói";status("Không mở được micro: "+e.message+". Có thể nhập văn bản.")}};
 </script></body></html>
