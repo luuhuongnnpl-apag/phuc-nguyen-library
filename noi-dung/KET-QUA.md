@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 09:05 08/11/2026
+# Kết quả dựng nội dung — 11:01 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/tu-luan-luat-dan-su.html
+      - exports/PNL_Luat_Dan_su_Ly_thuyet_180_Quizizz.csv
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42437015419 · commit a292deb
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42445045374 · commit 62ddeb5
