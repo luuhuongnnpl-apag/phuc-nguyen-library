@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 08:24 08/11/2026
+# Kết quả dựng nội dung — 08:25 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - functions/package.json
+      - scripts/deploy_van_dap.sh
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42434141787 · commit dfc81a0
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42434164561 · commit f451550
