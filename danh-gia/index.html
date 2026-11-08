@@ -538,7 +538,7 @@ function renderExam(){
     g.insertAdjacentHTML("beforeend",'<div class="br" style="display:contents"><input type="text" placeholder="Vấn đề…"><input type="text" placeholder="Điều … , khoản … ; án lệ số …"></div>')});
   /* Khóa thao tác clipboard trong thời gian làm bài, gồm cả câu trắc nghiệm và tự luận. */
    const blockClip=e=>{if(!EXAM?.active||!document.getElementById("app").contains(e.target))return;
-     e.preventDefault();$("#e-paste").textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung trong khi kiểm tra.";};
+     e.preventDefault();const notice=$("#e-paste");if(notice)notice.textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung trong khi kiểm tra.";};
    ["copy","cut","paste","drop"].forEach(t=>pf.addEventListener(t,blockClip,true));
    $("#app").addEventListener("copy",blockClip,true);
    $("#app").addEventListener("cut",blockClip,true);
