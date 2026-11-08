@@ -491,43 +491,75 @@ async function startExam(c){
   const essay=(local.essay&&local.essay.length>=(c.bai.essay||"").length)?local.essay:(c.bai.essay||"");
   const start=toDate(c.bai.startedAt)||new Date();const close=toDate(c.lop.closeAt);
   let end=new Date(start.getTime()+THOI_GIAN_CHUNG*60000);if(close&&close<end)end=close;
-  EXAM={...c,B,de,answers,essay,end,stamp,roi:c.bai.roiTrang|0,active:true,dirty:false,lastSave:0};
+  EXAM={...c,B,de,answers,essay,end,stamp,roi:c.bai.roiTrang|0,step:Math.max(0,c.bai.step|0),active:true,dirty:false,lastSave:0};
   renderExam();if(EXAM.roi>MAX_ROI)submit(true,"roi");else roiWarn();
 }
 function optHtml(q,id,perm,sel){
   const order=(perm||"").split("").map(Number);const ord=order.length===q.o.length?order:[...q.o.keys()];
   return ord.map((oi,pos)=>`<label class="opt${sel===oi?" sel":""}"><input type="radio" name="q-${esc(K(id))}" value="${oi}"${sel===oi?" checked":""}><span><b>${LET[pos]}.</b> ${esc(q.o[oi])}</span></label>`).join("");
 }
+
+/* Đề định kỳ: mỗi lần một câu; lưu vị trí vào bài làm trên máy chủ, không quay lại câu cũ. */
+function setupOneQuestion(){
+ const E=EXAM,stages=Array.from(document.querySelectorAll(".pn-exam-step"));
+ if(!E||!stages.length)return;
+ E.step=Math.min(E.step,stages.length-1);
+ const submitButton=$("#x-submit");
+ submitButton.insertAdjacentHTML("beforebegin",'<button type="button" class="btn primary" id="x-next">Lưu và sang câu tiếp theo</button> <span id="x-next-msg" class="msg" role="status"></span>');
+ const next=$("#x-next"),status=$("#x-next-msg");
+ const draw=()=>{
+   stages.forEach((el,i)=>{el.hidden=i!==E.step});
+   $("#exam-progress").textContent="Câu "+(E.step+1)+"/"+stages.length+" — mỗi lần chỉ hiển thị một câu; đã chuyển không thể quay lại.";
+   next.hidden=E.step===stages.length-1;submitButton.hidden=E.step!==stages.length-1;
+ };
+ draw();
+ next.onclick=async()=>{
+   if(!E.active||next.disabled)return;
+   const current=stages[E.step],radio=current.querySelector('input[type="radio"]:checked');
+   if(radio===null){status.textContent="Vui lòng chọn một đáp án trước khi tiếp tục.";return}
+   next.disabled=true;status.textContent="Đang lưu câu trả lời…";
+   try{
+     await db.doc("pnl_dg_bai/"+E.id).update({answers:E.answers,essay:E.essay.slice(0,20000),step:E.step+1,roiTrang:E.roi,luu:FV.serverTimestamp()});
+     E.step++;E.dirty=false;status.textContent="";draw();window.scrollTo(0,0);
+   }catch(x){status.textContent="Không lưu được. Hãy kiểm tra kết nối và thử lại."}
+   finally{next.disabled=false}
+ };
+ /* Clipboard được hạn chế ở cả đề trắc nghiệm thuần và đề hỗn hợp. */
+ const clip=e=>{if(!E.active||!$("#app").contains(e.target))return;e.preventDefault();
+   const note=$("#x-next-msg")||$("#e-paste");if(note)note.textContent="Không được sao chép hoặc dán nội dung trong khi kiểm tra."};
+ ["copy","cut","paste","drop"].forEach(k=>$("#app").addEventListener(k,clip,true));
+ $("#app").addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","v","x"].includes(e.key.toLowerCase()))clip(e)},true);
+}
 function renderExam(){
   const E=EXAM,B=E.B,de=E.de;let n=0,h="",navh="";
-  const qBlock=id=>{n++;const q=B.byId[id];const sel=E.answers[K(id)]!=null?+E.answers[K(id)]:null;navh+=`<button type="button" data-go="qq-${n}" class="${sel!=null?"done":""}" id="nb-${esc(K(id))}">${n}</button>`;
-    return `<div class="q" id="qq-${n}"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)}</p>${optHtml(q,id,de.perm[K(id)],sel)}</div>`};
+  const qBlock=(id,context="")=>{n++;const q=B.byId[id];const sel=E.answers[K(id)]!=null?+E.answers[K(id)]:null;navh+=`<button type="button" data-go="qq-${n}" class="${sel!=null?"done":""}" id="nb-${esc(K(id))}">${n}</button>`;
+    return `<div class="pn-exam-step" data-exam-step="${n-1}" hidden>${context}<div class="q" id="qq-${n}"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)}</p>${optHtml(q,id,de.perm[K(id)],sel)}</div></div>`};
   const TL=!!B.tl,TN=!de.tl;
-  if(TN){de.th.forEach((c,i)=>{const cs=B.cases[c.cid]||{};h+=`<div class="sec-title">Tình huống ${i+1} (${c.q.length} câu)</div><div class="case"><p>${esc(cs.text||"")}</p></div>`+c.q.map(qBlock).join("")});
+  if(TN){de.th.forEach((c,i)=>{const cs=B.cases[c.cid]||{};const context=`<div class="sec-title">Tình huống ${i+1}</div><div class="case"><p>${esc(cs.text||"")}</p></div>`;h+=c.q.map(id=>qBlock(id,context)).join("")});
     h+=`<div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary" id="x-submit">Nộp bài</button></div>`;
     $("#app").innerHTML=`<div class="timer"><div><b>${esc(E.svd.hoTen)}</b> · ${esc(E.sv)} · ${esc(E.ma)}</div><div><span class="msg" id="x-save"></span> <span class="clock" id="x-clock">--:--</span></div></div>
-    <div class="navq" aria-label="Chuyển nhanh tới câu">${navh}</div>${h}`;
-    $$(".navq button").forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.go);if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
+    <div id="exam-progress" class="msg" aria-live="polite"></div>${h}`;
+    
     $("#app").addEventListener("change",e=>{const t=e.target;if(t.type!=="radio")return;const id=t.name.slice(2);E.answers[id]=+t.value;
       t.closest(".q").querySelectorAll(".opt").forEach(o=>o.classList.toggle("sel",o.querySelector("input").checked));
       const nb=document.getElementById("nb-"+id);if(nb)nb.classList.add("done");touch()});
     $("#x-submit").onclick=async()=>{const ids=questionsOf(E.de),done=ids.filter(id=>E.answers[K(id)]!=null).length;
       const ok=await ask("Nộp bài?","Bạn đã trả lời "+done+"/"+ids.length+" câu."+(done<ids.length?" <b>Còn "+(ids.length-done)+" câu chưa trả lời.</b>":"")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
-    tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);return}
-  if(!TL){h+=`<div class="sec-title">Phần I. Lý thuyết (30 câu)</div>`+de.lt.map(qBlock).join("");
-  h+=`<div class="sec-title">Phần II. Tình huống trắc nghiệm (10 câu)</div>`}
-  de.th.forEach((c,i)=>{const cs=B.cases[c.cid];h+=`<div class="case"><h4>Tình huống ${i+1}</h4><p>${esc(cs.text)}</p></div>`+c.q.map(qBlock).join("")});
+    setupOneQuestion();tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);return}
+  if(!TL){h+=de.lt.map(id=>qBlock(id,`<div class="sec-title">Phần I. Lý thuyết</div>`)).join("");
+  }
+  de.th.forEach((c,i)=>{const cs=B.cases[c.cid];const context=`<div class="sec-title">Phần II. Tình huống trắc nghiệm</div><div class="case"><h4>Tình huống ${i+1}</h4><p>${esc(cs.text)}</p></div>`;h+=c.q.map(id=>qBlock(id,context)).join("")});
   const tl=B.cases[de.tl];navh+=`<button type="button" data-go="qq-tl" id="nb-tl" class="${E.essay.trim()?"done":""}">TL</button>`;
   const P=phieuOf(B,tl);
-  h+=TL?`<div class="sec-title">Bài tự luận — Ý kiến tư vấn</div><div class="case" id="qq-tl"><h4>Tình huống</h4><p>${esc(tl.text)}</p></div>
+  h+=TL?`<div class="pn-exam-step" data-exam-step="${n}" hidden><div class="sec-title">Bài tự luận — Ý kiến tư vấn</div><div class="case" id="qq-tl"><h4>Tình huống</h4><p>${esc(tl.text)}</p></div>
     <div class="q essay"><p class="stem">Anh/chị là luật sư (chuyên viên tư vấn) tiếp nhận yêu cầu trên. Hãy hoàn thành phiếu tư vấn dưới đây theo các bước tư vấn, nêu rõ căn cứ pháp luật và án lệ (nếu có).</p>`
-    :`<div class="sec-title">Phần III. Tự luận</div><div class="case" id="qq-tl"><h4>Tình huống ${de.th.length+1}</h4><p>${esc(tl.text)}</p></div>
+    :`<div class="pn-exam-step" data-exam-step="${n}" hidden><div class="sec-title">Phần III. Tự luận</div><div class="case" id="qq-tl"><h4>Tình huống ${de.th.length+1}</h4><p>${esc(tl.text)}</p></div>
     <div class="q essay"><p class="stem">Anh/chị hãy giải quyết tình huống trên: trả lời từng câu hỏi theo các ô gợi ý dưới đây, nêu rõ căn cứ pháp lý.</p>`;
-  h+=`<div class="phieu" id="phieu">${phieuHtml(P,E.essay)}</div><div class="count" id="e-count"></div><p class="msg" id="e-paste"></p></div>
+  h+=`<div class="phieu" id="phieu">${phieuHtml(P,E.essay)}</div><div class="count" id="e-count"></div><p class="msg" id="e-paste"></p></div></div>
     <div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary" id="x-submit">Nộp bài</button></div>`;
   $("#app").innerHTML=`<div class="timer"><div><b>${esc(E.svd.hoTen)}</b> · ${esc(E.sv)} · ${esc(E.ma)}</div><div><span class="msg" id="x-save"></span> <span class="clock" id="x-clock">--:--</span></div></div>
-    ${TL?"":`<div class="navq" aria-label="Chuyển nhanh tới câu">${navh}</div>`}${h}`;
-  $$(".navq button").forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.go);if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
+    <div id="exam-progress" class="msg" aria-live="polite"></div>${h}`;
+  
   $("#app").addEventListener("change",e=>{const t=e.target;if(t.type!=="radio")return;const id=t.name.slice(2);E.answers[id]=+t.value;
     t.closest(".q").querySelectorAll(".opt").forEach(o=>o.classList.toggle("sel",o.querySelector("input").checked));
     const nb=document.getElementById("nb-"+id);if(nb)nb.classList.add("done");touch()});
@@ -548,7 +580,7 @@ function renderExam(){
   pf.addEventListener("drop",e=>e.preventDefault());
   $("#x-submit").onclick=async()=>{const sum=questionsOf(E.de).length,done=questionsOf(E.de).filter(id=>E.answers[K(id)]!=null).length;
     const ok=await ask("Nộp bài?",(E.B.tl?(E.essay.trim()?"Phiếu tư vấn của bạn có "+soTu()+" từ.":"Bạn <b>chưa điền phiếu tư vấn</b>."):"Bạn đã trả lời "+done+"/"+sum+" câu trắc nghiệm"+(E.essay.trim()?"":" và <b>chưa làm câu tự luận</b>")+".")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
-  tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);
+  setupOneQuestion();tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);
 }
 function touch(){const E=EXAM;E.dirty=true;store.set("pndg-"+E.id,JSON.stringify({stamp:E.stamp,answers:E.answers,essay:E.essay}));if(Date.now()-E.lastSave>15000)save(false)}
 async function save(force){const E=EXAM;if(!E||!E.active||(!E.dirty&&!force))return;E.lastSave=Date.now();
