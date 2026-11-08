@@ -50,7 +50,11 @@ function newMixedExam(){
  if(picks.length<8)for(const q of theory){if(!picks.includes(q.id))picks.push(q.id);if(picks.length===8)break}
  const ids=picks.concat(shuffleExam(ch.mcq).slice(0,4));
  const order={};ids.forEach(id=>order[id]=shuffleExam([0,1,2,3]));
- const essayCase=shuffleExam(BANK.cases)[0];
+ /* Chỉ rút tình huống ở sáu nhóm kiến thức cốt lõi, không dùng chủ đề chuyên sâu/ngoài phạm vi. */
+  const coreIds=new Set(["DS01","DS02","DS03","DS05","DS06","DS08","DS09","DS13","DS14","DS15","DS17","DS18","DS19","DS20","DS21","DS22","DS23"]);
+  const coreCases=BANK.cases.filter(c=>coreIds.has(c.id)&&Array.isArray(c.questions)&&c.questions.length===4);
+  if(!coreCases.length)throw Error("Chưa có tình huống tự luận thuộc sáu chủ đề cốt lõi.");
+  const essayCase=shuffleExam(coreCases)[0];
  return {essayMode:"mixed12x1",set:"DS-MIX-"+String(Math.floor(Math.random()*90000)+10000),mcq:ids,perm:order,mcqCase:ch.cid,caseIds:[essayCase.id],lt:[],th:[],tl:essayCase.id};
 }
 function markMCQ(de,ans){
@@ -150,6 +154,11 @@ function renderExam(){
   }catch(e){err(e)}finally{saving=false}
  }
  document.querySelectorAll("[data-key],[data-mcq]").forEach(t=>t.addEventListener("input",()=>{dirty=true;const st=$("#saveStatus");if(st)st.textContent="Chưa lưu"}));
+  /* Chặn thao tác clipboard trong vùng bài thi, không chặn khi quản trị. */
+  const stopClipboard=e=>{if(!SESSION||SESSION.b.status==="da-nop"||!app.contains(e.target))return;
+    e.preventDefault();const msg=$("#msg");if(msg)msg.textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung khi kiểm tra.";};
+  ["copy","cut","paste","drop"].forEach(type=>app.addEventListener(type,stopClipboard,{capture:true}));
+  app.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))stopClipboard(e)},{capture:true});
  $("#saveNow").onclick=()=>save();$("#submitNow").onclick=()=>{if(confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))save(true)};
  TIMER=setInterval(()=>{if(!SESSION||SESSION.b.status==="da-nop"){clearInterval(TIMER);return}
   const ms=Math.max(0,total-(Date.now()-started)),el=$("#clock");
@@ -188,14 +197,14 @@ function gradeAutomatic(b){
  return {diem:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
 }
 async function markPending(ma,papers,grades){
- const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&(!grades[sv]?.xacNhan||(grades[sv]?.nguon==="tu-dong"&&grades[sv]?.gradePolicyVersion!=="2026-11-08-v2")));
+ const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!grades[sv]?.xacNhan);
  if(!entries.length)return {done:0,errors:[]};
  await Promise.all([loadAutoKey(),loadMCQ()]);
  let done=0,errors=[];
  for(const [sv,b] of entries){
   try{
    const r=gradeAutomatic(b);
-   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:"2026-11-08-v2",xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:"2026-11-08-v3",xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
    grades[sv]=saved;done++;
   }catch(e){errors.push(sv+": "+e.message)}
@@ -401,18 +410,18 @@ function legalGrade(essay,answer){
  let total=0;
  for(const clause of A){
    const terms=uniqueWords(clause),same=terms.filter(w=>seenSet.has(w)).length,ratio=terms.length?same/terms.length:0;
-   if(ratio>=.52&&same>=3){hit.push({clause,ratio});total+=ratio}else miss.push(clause)
+   if(ratio>=.62&&same>=4){hit.push({clause,ratio});total+=ratio}else miss.push(clause)
  }
  const coverage=A.length?hit.length/A.length:0;
  /* Chấm rộng tay: đúng một nửa nội dung => 70% điểm câu.
     Chỉ tính các ý có mức khớp đủ rõ; bỏ trống và không liên quan không được điểm. */
- const gradeCurve=p=>p<=0?0:p<.5?1.4*p:.7+.6*(Math.min(1,p)-.5);
- const substantive=hit.length>0&&seen.length>=4;
+ const gradeCurve=p=>Math.pow(Math.max(0,Math.min(1,p)),1.2);
+ const substantive=hit.length>0&&seen.length>=6;
  const cited=legalCites(essay),model=legalCites(answer);
  const citationRatio=model.size?[...model].filter(x=>cited.has(x)).length/model.size:0;
  const detail=hit.length?hit.reduce((a,x)=>a+x.ratio,0)/hit.length:0;
  const weighted=Math.min(1,coverage*(.9+.1*Math.min(1,detail)));
- const score=substantive?Math.min(1.25,Math.max(coverage>=.5?.7:0,gradeCurve(weighted)+Math.min(.05,.05*citationRatio))*1.25):0;
+ const score=substantive?Math.min(1.25,gradeCurve(weighted)*(model.size&&citationRatio===0?.85:1)*1.25):0;
  return {score:Math.round(score*100)/100,parts:[Math.round(score*100)/100,0,0,0],hits:hit,missing:miss,warning:!substantive?"Không nhận diện được ý pháp lý đủ rõ; cần giảng viên chấm thủ công.":"Gợi ý theo độ bao phủ ý đúng; giảng viên kiểm tra lập luận và tính chính xác trước khi duyệt."};
 }
 const b64ToBytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
