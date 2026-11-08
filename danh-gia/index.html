@@ -139,7 +139,7 @@ const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
 /* mode:"tl" = bài chỉ có 01 câu tự luận (đề trong de/<id>.json, ý chính + từ khóa trong de/<id>.dat, chỉ quản trị tải) */
 const HOCPHAN=[{id:"luat-dan-su",name:"Luật Dân sự – Đề cũ (lưu trữ)",legacy:true,tuLuan:["Thừa kế","Hợp đồng","Bồi thường thiệt hại ngoài hợp đồng"],ma:"DS"},
   {id:"luat-dan-su-tu-luan",name:"Luật Dân sự – Đánh giá định kỳ (12 trắc nghiệm + 1 tự luận)",mode:"external",ma:"DSTL",thoiGian:40},
-  {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tn",src:"../ky-nang-tu-van-phap-luat-dan-su/index.html",tnCases:3,thoiGian:60,ma:"TV"}];
+  {id:"ky-nang-tu-van-phap-luat-dan-su",name:"Kỹ năng tư vấn pháp luật dân sự",mode:"tn",src:"../ky-nang-tu-van-phap-luat-dan-su/index.html",tnCases:3,thoiGian:40,ma:"TV"}];
 /* mode:"tn" (06/11/2026) = đề chỉ gồm tình huống trắc nghiệm: rút tnCases tình huống khác chương, lấy đủ các câu của mỗi tình huống, chấm thang 10.
    Bài đã nộp theo đề tự luận cũ (de.tl) vẫn chấm theo ngân hàng tự luận de/<id>.json + .dat. */
 const hpOf=id=>HOCPHAN.find(h=>h.id===id)||{};
@@ -148,11 +148,14 @@ const isTN=id=>hpOf(id).mode==="tn";
 const laTLCu=(id,de)=>isTN(id)&&!!(de&&de.tl); /* bài tự luận cũ của học phần đã chuyển sang trắc nghiệm */
 const bankFor=(id,de,withKey)=>laTLCu(id,de)?loadTL(id,withKey):loadBank(id,withKey);
 const DAT_KEY="KNTV-APAG-2026";
+const THOI_GIAN_CHUNG=40;
 const MAX_ROI=10; /* rời trang quá số lần này thì tự nộp bài */
 /* Cấu trúc đề (sửa 06/11/2026): 30 lý thuyết + 10 tình huống ABCD (2,25 điểm/câu = 90) + 1 tự luận (10 điểm) = 100 điểm, quy về thang 10 */
 const CT={lv:{NB:10,TH:12,VD:8},lt:30,thCases:[4,3,3],dLT:2.25,dTH:2.25,dTL:10};
 /* Tự luận (06/11/2026): tiêu chí 1 — làm đủ các bước, trả lời đủ câu hỏi = 50% điểm tự luận; tiêu chí 2 — nội dung chấm theo từ khóa = 50% */
 const PHAN_BUOC=0.5;
+/* Thang chấm rộng tay: đúng một nửa nội dung đạt ít nhất 70% phần điểm nội dung. */
+const quyDoiRongTay=p=>p<=0?0:p<0.5?1.4*p:0.7+0.6*(Math.min(1,p)-0.5);
 const fz=x=>String(r2(x)).replace(".",",");
 /* Chấm tự luận theo từ khóa: ngưỡng gợi ý mức đạt của từng ý */
 const NGUONG={dat:0.45,motPhan:0.2};
@@ -297,7 +300,7 @@ function chamTLPre(c,essay){
   const T=normTL(moRong(essay||"")),DS=dieuSet(T),short=(essay||"").trim().length<15,TA=T.trim().split(" ");
   return c.guide.map((y,i)=>{const kw=c.kwPre[i]||[];
     const hit=kw.filter(k=>{const n=normTL(k).trim();const m=n.match(/^dieu (\d+)$/);return m?DS.has(m[1]):T.includes(" "+n)||T.includes("/"+n)||(n.includes(" ")&&coGan(TA,n.split(" ")))});
-    const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.5?1:sc>=0.35?0.75:sc>=0.2?0.5:sc>=0.1?0.25:0;
+    const sc=kw.length?hit.length/kw.length:0;const muc=short?0:sc>=0.85?1:sc>=0.65?0.85:sc>=0.5?0.7:sc>=0.35?0.5:sc>=0.2?0.3:sc>=0.1?0.15:0;
     return {y,kw,ct:[],hit,hitC:[],tomTat:i===0,sc:r2(sc),muc,per:r2((c.diem&&c.diem[i]||0)*(1-PHAN_BUOC))}});
 }
 /* Số liệu kết quả: tiền quy về đồng (1,95 tỷ = 1.950 triệu), kèm đơn vị năm/tháng/ngày/lần/%/m² */
@@ -322,7 +325,7 @@ function chamTL(c,essay){
     const L=law.length?hitL.length/law.length:null,R=res.length?hitR.length/res.length:null;
     const I=x.kw.length?(hit.length<2?hit.length*0.15:Math.min(1,hit.length/Math.max(3,Math.ceil(x.kw.length*0.4)))):null;
     const sc=Math.max(0,...[L,R,I].filter(v=>v!=null));
-    let muc=short?0:sc>=0.6?1:sc>=0.45?0.75:sc>=0.3?0.5:sc>=0.15?0.25:0;
+    let muc=short?0:sc>=0.85?1:sc>=0.65?0.85:sc>=0.5?0.7:sc>=0.35?0.5:sc>=0.2?0.3:sc>=0.15?0.2:0;
     if(muc>0.5&&!hitR.length&&(I||0)<0.3)muc=0.5;            /* chỉ liệt kê điều luật, không nêu kết quả/ý: tối đa Một phần */
     if(muc===1&&tinh.length&&hitT.length<tinh.length/2)muc=0.75; /* có phép tính mà chưa ra kết quả: chưa trọn điểm */
     return {y:x.y,kw:x.kw,hit,ct:law.map(d=>"Điều "+d),hitC:hitL.map(d=>"Điều "+d),res:res.map(r=>r[1]),hitR:hitR.map(r=>r[1]),sc:r2(sc),muc,per};
@@ -462,7 +465,7 @@ async function checkIn(ma,sv){
 function confirmView(c){
   const hp=HOCPHAN.find(h=>h.id===c.lop.hocPhan);
   $("#app").innerHTML=`<section class="card narrow"><h1>Xác nhận thông tin</h1>
-    <dl class="info"><dt>Họ và tên</dt><dd>${esc(c.svd.hoTen)}</dd><dt>Mã sinh viên</dt><dd>${esc(c.sv)}</dd><dt>Lớp</dt><dd>${esc(c.lop.ten||c.ma)} (${esc(c.ma)})</dd><dt>Học phần</dt><dd>${esc(hp?hp.name:c.lop.hocPhanTen||c.lop.hocPhan)}</dd><dt>Thời gian</dt><dd>${c.lop.thoiGian|0} phút</dd></dl>
+    <dl class="info"><dt>Họ và tên</dt><dd>${esc(c.svd.hoTen)}</dd><dt>Mã sinh viên</dt><dd>${esc(c.sv)}</dd><dt>Lớp</dt><dd>${esc(c.lop.ten||c.ma)} (${esc(c.ma)})</dd><dt>Học phần</dt><dd>${esc(hp?hp.name:c.lop.hocPhanTen||c.lop.hocPhan)}</dd><dt>Thời gian</dt><dd>${THOI_GIAN_CHUNG} phút</dd></dl>
     <div class="rules"><b>Quy định làm bài</b><ul>
       <li>${isTN(c.lop.hocPhan)?"Đề gồm "+(hpOf(c.lop.hocPhan).tnCases||3)+" tình huống tư vấn, mỗi tình huống có nhiều câu hỏi trắc nghiệm nối tiếp theo các bước tư vấn (tiếp xúc khách hàng → vấn đề pháp lý → luật áp dụng → phương án giải quyết → trả lời tư vấn). Mỗi câu chọn một phương án đúng nhất.":isTL(c.lop.hocPhan)?"Đề gồm 01 tình huống tư vấn (rút ngẫu nhiên). Bạn điền phiếu tư vấn theo các bước: tiếp xúc khách hàng, xác định vấn đề pháp lý, xác định luật áp dụng, phương án giải quyết, trả lời tư vấn.":"Đề gồm 30 câu lý thuyết, 10 câu tình huống trắc nghiệm và 1 câu tự luận giải quyết tình huống."}</li>
       <li>Mỗi sinh viên chỉ được làm <b>một lần</b>. Bấm "Bắt đầu" là bắt đầu tính giờ.</li>
@@ -487,7 +490,7 @@ async function startExam(c){
   const answers=Object.assign({},c.bai.answers||{},local.answers||{});
   const essay=(local.essay&&local.essay.length>=(c.bai.essay||"").length)?local.essay:(c.bai.essay||"");
   const start=toDate(c.bai.startedAt)||new Date();const close=toDate(c.lop.closeAt);
-  let end=new Date(start.getTime()+(c.lop.thoiGian|0)*60000);if(close&&close<end)end=close;
+  let end=new Date(start.getTime()+THOI_GIAN_CHUNG*60000);if(close&&close<end)end=close;
   EXAM={...c,B,de,answers,essay,end,stamp,roi:c.bai.roiTrang|0,active:true,dirty:false,lastSave:0};
   renderExam();if(EXAM.roi>MAX_ROI)submit(true,"roi");else roiWarn();
 }
@@ -581,7 +584,7 @@ async function adminView(){
     <div class="row"><button class="btn primary" id="a-new">+ Tạo lớp đánh giá</button>${HOCPHAN.filter(h=>h.mode==="tn").map(h=>`<button class="btn" data-demo="${h.id}">Lớp thử ${esc(h.name)}</button>`).join("")}</div><div id="a-list"><p class="msg">Đang tải…</p></div>`;
   $("#a-new").onclick=()=>classForm();$$("[data-demo]").forEach(b=>b.onclick=()=>makeDemo(b.dataset.demo));
   try{const qs=await db.collection("pnl_dg_lop").get();const xs=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0));
-    $("#a-list").innerHTML=xs.length?'<div class="classes">'+xs.map(l=>{const st=lopTrangThai(l);return `<button class="ccard" data-id="${esc(l.id)}"><b>${esc(l.id)}</b> <span class="pill ${st.k}">${esc(st.k==="open"?"Đang mở":st.k==="wait"?"Chưa mở":"Đóng")}</span><br>${esc(l.ten||"")}<br><span class="msg">${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${l.siSo|0} SV · ${l.thoiGian|0} phút</span></button>`}).join("")+"</div>":'<p class="msg">Chưa có lớp nào.</p>';
+    $("#a-list").innerHTML=xs.length?'<div class="classes">'+xs.map(l=>{const st=lopTrangThai(l);return `<button class="ccard" data-id="${esc(l.id)}"><b>${esc(l.id)}</b> <span class="pill ${st.k}">${esc(st.k==="open"?"Đang mở":st.k==="wait"?"Chưa mở":"Đóng")}</span><br>${esc(l.ten||"")}<br><span class="msg">${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${l.siSo|0} SV · ${THOI_GIAN_CHUNG} phút</span></button>`}).join("")+"</div>":'<p class="msg">Chưa có lớp nào.</p>';
     $$(".ccard").forEach(b=>b.onclick=()=>location.hash="#quan-tri/"+encodeURIComponent(b.dataset.id));
   }catch(x){$("#a-list").innerHTML='<p class="err">Không tải được danh sách lớp ('+esc(x.code||x.message)+').</p>'}
 }
@@ -592,12 +595,12 @@ function classForm(l){
       <div><label class="lab" for="cf-ten">Tên lớp</label><input type="text" id="cf-ten" maxlength="80" value="${esc(l?l.ten:"")}" placeholder="K25 Luật A"></div></div>
     <div class="row"><div><label class="lab" for="cf-hp">Học phần</label><select id="cf-hp">${HOCPHAN.filter(h=>!h.legacy||(l&&l.hocPhan===h.id)).map(h=>`<option value="${h.id}"${l&&l.hocPhan===h.id?" selected":""}>${esc(h.name)}</option>`).join("")}</select></div>
       <div><label class="lab" for="cf-nh">Năm học</label><input type="text" id="cf-nh" maxlength="20" value="${esc(l?l.namHoc:"2026–2027")}"></div>
-      <div><label class="lab" for="cf-tg">Thời gian làm bài (phút)</label><input type="number" id="cf-tg" min="5" max="180" value="${l?l.thoiGian|0:40}"></div></div>
+      <div><label class="lab" for="cf-tg">Thời gian làm bài (phút)</label><input type="number" id="cf-tg" min="5" max="180" value="${THOI_GIAN_CHUNG}" readonly></div></div>
     <div class="row"><div><label class="lab" for="cf-a">Mở từ</label><input type="datetime-local" id="cf-a" value="${dtLocal(a)}"></div><div><label class="lab" for="cf-b">Đóng lúc</label><input type="datetime-local" id="cf-b" value="${dtLocal(b)}"></div></div>
     <label style="display:flex;gap:8px;margin:0 0 10px"><input type="checkbox" id="cf-open" ${!l||l.open?"checked":""}> Cho phép làm bài trong khung giờ trên</label>
     <div class="err" id="cf-err"></div><div class="row" style="justify-content:flex-end"><button class="btn" type="button" id="cf-x">Hủy</button><button class="btn primary" type="submit">Lưu</button></div></form>`);
   m.querySelector("#cf-x").onclick=closeModal;
-  if(!l)m.querySelector("#cf-hp").onchange=e=>{m.querySelector("#cf-tg").value=hpOf(e.target.value).thoiGian||40};
+  
   m.querySelector("#cf").onsubmit=async e=>{e.preventDefault();const err=m.querySelector("#cf-err");
     const ma=l?l.id:m.querySelector("#cf-ma").value.trim().toUpperCase();
     if(!/^[A-Z0-9_-]{2,24}$/.test(ma)){err.textContent="Mã lớp chỉ gồm chữ, số, dấu gạch (2–24 ký tự).";return}
@@ -606,12 +609,12 @@ function classForm(l){
     const hp=m.querySelector("#cf-hp").value;
      if(!l&&!HOCPHAN.some(h=>h.id===hp&&!h.legacy)){err.textContent="Học phần chưa được cấu hình kiểm tra.";return}
     const data={ten:m.querySelector("#cf-ten").value.trim(),hocPhan:hp,hocPhanTen:(HOCPHAN.find(h=>h.id===hp)||{}).name||hp,namHoc:m.querySelector("#cf-nh").value.trim(),
-      thoiGian:Math.max(5,Math.min(180,parseInt(m.querySelector("#cf-tg").value,10)||40)),openAt:TS.fromDate(A),closeAt:TS.fromDate(Bd),open:m.querySelector("#cf-open").checked};
+      thoiGian:THOI_GIAN_CHUNG,openAt:TS.fromDate(A),closeAt:TS.fromDate(Bd),open:m.querySelector("#cf-open").checked};
     try{const ref=db.doc("pnl_dg_lop/"+ma);if(!l){if((await ref.get()).exists){err.textContent="Mã lớp này đã có.";return}data.created=FV.serverTimestamp();data.siSo=0}
       await ref.set(data,{merge:true});closeModal();location.hash="#quan-tri/"+encodeURIComponent(ma);route()}catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
 async function makeDemo(hpId){
-  const hp=hpOf(hpId||"luat-dan-su"),ma="THU-"+(hp.ma||"DS"),tg=hp.thoiGian||40;if(!await ask("Tạo lớp thử","Tạo lớp <b>"+ma+"</b> ("+esc(hp.name)+", "+tg+" phút, mở 14 ngày) với 5 sinh viên giả TEST001–TEST005. Nếu lớp đã có, danh sách được làm mới.","Tạo lớp thử"))return;
+  const hp=hpOf(hpId||"luat-dan-su"),ma="THU-"+(hp.ma||"DS"),tg=THOI_GIAN_CHUNG;if(!await ask("Tạo lớp thử","Tạo lớp <b>"+ma+"</b> ("+esc(hp.name)+", "+tg+" phút, mở 14 ngày) với 5 sinh viên giả TEST001–TEST005. Nếu lớp đã có, danh sách được làm mới.","Tạo lớp thử"))return;
   const now=new Date();const rows=[["TEST001","Nguyễn Văn An","01/01/2005"],["TEST002","Trần Thị Bình","02/02/2005"],["TEST003","Lê Minh Châu","03/03/2005"],["TEST004","Phạm Thu Dung","04/04/2005"],["TEST005","Hoàng Đức Em","05/05/2005"]].map(r=>({mssv:r[0],hoTen:r[1],ngaySinh:r[2]}));
   await db.doc("pnl_dg_lop/"+ma).set({ten:"Lớp thử "+hp.name,hocPhan:hp.id,hocPhanTen:hp.name,namHoc:"2026–2027",thoiGian:tg,openAt:TS.fromDate(new Date(now.getTime()-6e4)),closeAt:TS.fromDate(new Date(now.getTime()+14*864e5)),open:true,created:FV.serverTimestamp(),siSo:0,thu:true},{merge:true});
   await saveRoster(ma,rows);location.hash="#quan-tri/"+ma;route();
@@ -639,7 +642,7 @@ async function classView(ma){
   AD={...AD,ma,l,ds,bai,cham,B,BL};
   const st=lopTrangThai(l);
   $("#app").innerHTML=`<p><a href="#quan-tri">← Danh sách lớp</a></p><h1>${esc(ma)} <span class="pill ${st.k}" style="vertical-align:middle;font-size:13px">${esc(st.t)}</span></h1>
-    <p class="lead">${esc(l.ten||"")} · ${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${l.thoiGian|0} phút · mở ${esc(fmtDT(toDate(l.openAt)))} → đóng ${esc(fmtDT(toDate(l.closeAt)))}</p>
+    <p class="lead">${esc(l.ten||"")} · ${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${THOI_GIAN_CHUNG} phút · mở ${esc(fmtDT(toDate(l.openAt)))} → đóng ${esc(fmtDT(toDate(l.closeAt)))}</p>
     <div class="tabs"><button data-t="diem">Bảng điểm</button><button data-t="ds">Danh sách sinh viên (${ds.length})</button><button data-t="cai">Cài đặt lớp</button></div><div id="tab"></div>`;
   $$(".tabs button").forEach(b=>{b.classList.toggle("on",b.dataset.t===AD.tab);b.onclick=()=>{AD.tab=b.dataset.t;$$(".tabs button").forEach(x=>x.classList.toggle("on",x===b));renderTab()}});
   renderTab();
