@@ -76,7 +76,7 @@ window.addEventListener("hashchange",navigate);
 function confirmStudentIdentity(ma,sv,hoTen,l){
  return new Promise(resolve=>{
   const old=app.innerHTML;
-  app.innerHTML='<article><h2>Xác nhận thông tin sinh viên</h2><p>Kiểm tra thông tin trước khi vào bài kiểm tra. Nếu họ tên không đúng, chọn Quay lại và thông báo giảng viên.</p><div class="case"><p><b>Họ và tên:</b> '+E(hoTen||"(Chưa có họ tên)")+'</p><p><b>Mã sinh viên:</b> '+E(sv)+'</p><p><b>Mã lớp:</b> '+E(ma)+'</p><p><b>Tên lớp:</b> '+E(l.ten||"")+'</p><p><b>Học phần:</b> '+E(l.hocPhanTen||"Luật Dân sự")+'</p><p><b>Thời gian:</b> '+E(l.thoiGian||40)+' phút</p></div><button id="identityYes">Xác nhận đúng thông tin và tiếp tục</button><button id="identityNo" class="secondary">Quay lại</button></article>';
+  app.innerHTML='<article><h2>Xác nhận thông tin sinh viên</h2><p>Kiểm tra thông tin trước khi vào bài kiểm tra. Nếu họ tên không đúng, chọn Quay lại và thông báo giảng viên.</p><div class="case"><p><b>Họ và tên:</b> '+E(hoTen||"(Chưa có họ tên)")+'</p><p><b>Mã sinh viên:</b> '+E(sv)+'</p><p><b>Mã lớp:</b> '+E(ma)+'</p><p><b>Tên lớp:</b> '+E(l.ten||"")+'</p><p><b>Học phần:</b> '+E(l.hocPhanTen||"Luật Dân sự")+'</p><p><b>Thời gian:</b> 40 phút</p></div><button id="identityYes">Xác nhận đúng thông tin và tiếp tục</button><button id="identityNo" class="secondary">Quay lại</button></article>';
   $("#identityYes").onclick=()=>resolve(true);
   $("#identityNo").onclick=()=>{app.innerHTML=old;studentEntry();resolve(false)};
  });
@@ -87,7 +87,7 @@ function studentEntry(){app.innerHTML=`<article>
 <p class="muted">Hình thức kiểm tra chính thức: <b>Trắc nghiệm kết hợp tự luận</b>. Ngân hàng câu hỏi và đáp án đã được phê duyệt.</p>
 <div class="grid"><div class="panel"><strong>12 câu trắc nghiệm</strong><p class="mini muted">08 lý thuyết + 04 câu hỏi tình huống · 06 điểm</p></div>
 <div class="panel"><strong>01 tình huống tự luận</strong><p class="mini muted">04 yêu cầu × 01 điểm = 04 điểm</p></div>
-<div class="panel"><strong>Thời gian theo lớp</strong><p class="mini muted">Thời lượng chính xác được hiển thị khi xác nhận</p></div></div>
+<div class="panel"><strong>40 phút</strong><p class="mini muted">Áp dụng chung cho tất cả bài kiểm tra</p></div></div>
 <h3>Hướng dẫn trước khi làm bài</h3>
 <ol><li>Phần trắc nghiệm có 12 câu, mỗi câu chọn một phương án đúng; 0,5 điểm/câu.</li>
 <li>Phần tự luận gồm 01 tình huống và 04 yêu cầu; phân tích, lập luận và nêu căn cứ pháp luật.</li>
@@ -115,7 +115,7 @@ function renderExam(){
  const de=b.de||{},mixed=de.essayMode==="mixed12x1",ids=de.caseIds||[];
  if(mixed&&(!Array.isArray(de.mcq)||de.mcq.length!==12||ids.length!==1))throw Error("Đề hỗn hợp không hợp lệ.");
  if(!mixed&&ids.length!==2)throw Error("Đề cũ không hợp lệ.");
- const a=answerMap(b),total=(Number(S.l.thoiGian)||40)*60000;
+ const a=answerMap(b),total=40*60000;
  const started=until(b.startedAt).getTime();
  let h='<article><div class="top"><div><h2>Luật Dân sự – Mã đề '+E(de.set)+'</h2><span class="muted">'+E(b.hoTen)+' · '+E(S.sv)+'</span></div><div><strong id="clock" class="score"></strong><div id="saveStatus" class="mini muted">Tự động lưu bài</div></div></div><p class="warn">'+(mixed?'Phần I: 12 câu trắc nghiệm × 0,5 = 6 điểm. Phần II: 1 tình huống tự luận (4 yêu cầu × 1 điểm) = 4 điểm.':'Đề tự luận cũ: 2 tình huống × 5 điểm.')+' Hết giờ bài tự nộp.</p></article>';
  if(mixed){
@@ -318,7 +318,7 @@ async function saveStudents(ma,rows,previous=[]){
  for(let i=0;i<tasks.length;i+=350){const batch=db.batch();tasks.slice(i,i+350).forEach(fn=>fn(batch));await batch.commit()}
 }
 function createClass(){
- app.innerHTML='<article><h2>Tạo lớp đánh giá định kỳ</h2><p class="muted">Chọn học phần trong quản trị chung; lớp Luật Dân sự sử dụng 12 câu trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm).</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-K25A"><label>Tên lớp</label><input name="ten" required placeholder="Lớp K25A"><label>Thời gian (phút)</label><input name="time" type="number" min="10" max="180" value="40"><label>Nhập danh sách sinh viên (mỗi dòng: MSSV; Họ tên hoặc Họ tên; MSSV)</label><textarea name="roster" rows="5" placeholder="SV001; Nguyễn Văn A"></textarea><label>Tải danh sách từ Excel hoặc CSV</label><input id="rosterFile" type="file" accept=".xlsx,.xls,.csv,.txt"><p class="mini muted">Có thể tạo lớp trước và thêm sinh viên sau. Tệp tải lên tự chuyển thành danh sách để kiểm tra.</p><label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" name="open" checked style="width:auto"> Mở lớp ngay sau khi tạo</label><button type="submit">Tạo lớp</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';
+ app.innerHTML='<article><h2>Tạo lớp đánh giá định kỳ</h2><p class="muted">Chọn học phần trong quản trị chung; lớp Luật Dân sự sử dụng 12 câu trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm).</p><form id="cf"><label>Mã lớp</label><input name="ma" required placeholder="DS-K25A"><label>Tên lớp</label><input name="ten" required placeholder="Lớp K25A"><label>Thời gian (phút)</label><input name="time" type="number" min="40" max="40" value="40" readonly><label>Nhập danh sách sinh viên (mỗi dòng: MSSV; Họ tên hoặc Họ tên; MSSV)</label><textarea name="roster" rows="5" placeholder="SV001; Nguyễn Văn A"></textarea><label>Tải danh sách từ Excel hoặc CSV</label><input id="rosterFile" type="file" accept=".xlsx,.xls,.csv,.txt"><p class="mini muted">Có thể tạo lớp trước và thêm sinh viên sau. Tệp tải lên tự chuyển thành danh sách để kiểm tra.</p><label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" name="open" checked style="width:auto"> Mở lớp ngay sau khi tạo</label><button type="submit">Tạo lớp</button><button class="secondary" type="button" id="back">Hủy</button></form><p id="msg" class="error"></p></article>';
  $("#back").onclick=adminHome;
  $("#rosterFile").onchange=async e=>{try{const raw=await readRosterFile(e.target.files[0]),rows=parseStudentRows(raw);$("#cf").elements.roster.value=rows.map(x=>x.mssv+"; "+x.hoTen).join("\n");note("Đã đọc "+rows.length+" sinh viên. Kiểm tra danh sách trước khi lưu.")}catch(x){err(x)}};
  $("#cf").onsubmit=async e=>{
@@ -327,7 +327,7 @@ function createClass(){
   if(!valid(ma)||!form.elements.ten.value.trim()){note("Nhập mã lớp và tên lớp hợp lệ.");return}
   try{
    const ref=db.doc("pnl_dg_lop/"+ma);if((await ref.get()).exists)throw Error("Mã lớp đã tồn tại.");
-   const now=Date.now(),mins=Math.max(10,Math.min(180,Number(form.elements.time.value)||40));
+   const now=Date.now(),mins=40;
    await ref.set({ten:form.elements.ten.value.trim(),hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Đánh giá định kỳ",namHoc:"2026–2027",thoiGian:mins,open:form.elements.open.checked,openAt:TS.fromDate(new Date(now-60000)),closeAt:TS.fromDate(new Date(now+7*86400000)),siSo:0,created:FV.serverTimestamp()});
    await saveStudents(ma,rows,[]);await manageClass(ma);
   }catch(x){err(x)}
@@ -377,7 +377,7 @@ async function editSingleStudent(ma,students,sv,papers){
 async function manageClass(ma){CURRENT=ma;app.innerHTML='<article><h2>Quản lý lớp '+E(ma)+'</h2><p id="msg" class="error">Đang tải…</p></article>';try{const [ls,ro,bs,gr]=await Promise.all([db.doc("pnl_dg_lop/"+ma).get(),db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);if(!ls.exists)throw Error("Không tìm thấy lớp.");
 const l=ls.data(),students=ro.exists?ro.data().rows:[],papers=Object.fromEntries(bs.docs.map(d=>[d.data().mssv,d.data()])),grades=Object.fromEntries(gr.docs.map(d=>[d.data().mssv,d.data()]));
 const resultAuto=await markPending(ma,papers,grades);
-let h='<article><div class="top"><h2>'+E(ma)+' · '+E(l.ten)+'</h2><button class="secondary" id="back">Các lớp</button></div><p>Trạng thái: <b>'+(l.open?"Đang mở":"Đang khóa")+'</b>. Đề mới: 12 trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm); thời gian lớp: '+E(l.thoiGian||40)+' phút.</p><button id="toggle">'+(l.open?"Khóa bài kiểm tra":"Mở cho sinh viên")+'</button><button id="roster" class="secondary">Nhập / sửa danh sách sinh viên ('+students.length+')</button><button id="csv" class="secondary">Xuất điểm CSV</button><p class="mini muted">Phần tự luận: 04 yêu cầu, tối đa 01 điểm mỗi yêu cầu. Bài đã nộp được máy tự chấm khi quản trị mở lớp; giảng viên có thể sửa điểm.</p><p id="msg" class="error"></p></article>';
+let h='<article><div class="top"><h2>'+E(ma)+' · '+E(l.ten)+'</h2><button class="secondary" id="back">Các lớp</button></div><p>Trạng thái: <b>'+(l.open?"Đang mở":"Đang khóa")+'</b>. Đề mới: 12 trắc nghiệm (6 điểm) và 1 tình huống tự luận (4 điểm); thời gian lớp: 40 phút.</p><button id="toggle">'+(l.open?"Khóa bài kiểm tra":"Mở cho sinh viên")+'</button><button id="roster" class="secondary">Nhập / sửa danh sách sinh viên ('+students.length+')</button><button id="csv" class="secondary">Xuất điểm CSV</button><p class="mini muted">Phần tự luận: 04 yêu cầu, tối đa 01 điểm mỗi yêu cầu. Bài đã nộp được máy tự chấm khi quản trị mở lớp; giảng viên có thể sửa điểm.</p><p id="msg" class="error"></p></article>';
 h+='<article><h3>Danh sách và bài làm</h3><p class="mini muted">Đã tự chấm thêm '+resultAuto.done+' bài; lỗi: '+resultAuto.errors.length+(resultAuto.errors.length?' — '+E(resultAuto.errors.join('; ')):'')+'</p>';
 students.forEach(s=>{const b=papers[s.mssv],g=grades[s.mssv];h+='<div class="student"><div class="top"><span><b>'+E(s.mssv)+'</b> · '+E(s.hoTen)+' <button class="secondary" data-edit-sv="'+E(s.mssv)+'" style="padding:3px 9px;margin-left:8px">Sửa</button></span><span>'+(!b?"Chưa làm":b.status==="da-nop"?"Đã nộp":"Đang làm")+' · Rời trang: '+E(b?.roiTrang||0)+' lần · '+(g&&g.xacNhan?E(g.diem)+"/10"+(g.nguon==="tu-dong"?" · tự động":" · giảng viên"):"Chưa chấm")+'</span></div>'+(b&&b.status==="da-nop"?'<button data-grade="'+E(s.mssv)+'">Chấm bài</button>':'')+'</div>'});h+='</article>';app.innerHTML=h;
 $("#back").onclick=adminHome;$("#roster").onclick=()=>editClassRoster(ma,students,l);$("#toggle").onclick=async()=>{if(!confirm(l.open?"Khóa lớp?":"Mở lớp cho sinh viên làm bài? Đảm bảo đã rà soát đề và đáp án."))return;try{await db.doc("pnl_dg_lop/"+ma).update({open:!l.open});manageClass(ma)}catch(x){err(x)}};
@@ -404,17 +404,16 @@ function legalGrade(essay,answer){
    if(ratio>=.52&&same>=3){hit.push({clause,ratio});total+=ratio}else miss.push(clause)
  }
  const coverage=A.length?hit.length/A.length:0;
- const evidence=Math.min(1,seen.length/18);
- const conclusion=Math.min(.4,.4*coverage*1.25*evidence);
- const reasoning=Math.min(.4,.4*(total/Math.max(1,A.length))*evidence);
- const branchText=(essay||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
- const branches=(branchText.match(/neu |truong hop|mat khac|nguoc lai|tuy thuoc|khi |co quyet dinh|khong co/g)||[]).length;
- const refBranches=(String(answer).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().match(/neu |truong hop|mat khac|nguoc lai|tuy thuoc|khi /g)||[]).length;
- const branch= refBranches ? .3*Math.min(1,branches/Math.max(1,Math.min(2,refBranches)))*coverage : .3*coverage;
+ /* Chấm rộng tay: đúng một nửa nội dung => 70% điểm câu.
+    Chỉ tính các ý có mức khớp đủ rõ; bỏ trống và không liên quan không được điểm. */
+ const gradeCurve=p=>p<=0?0:p<.5?1.4*p:.7+.6*(Math.min(1,p)-.5);
+ const substantive=hit.length>0&&seen.length>=4;
  const cited=legalCites(essay),model=legalCites(answer);
- const citation=model.size?(.15*Math.min(1,[...model].filter(x=>cited.has(x)).length/Math.min(2,model.size))):(.15*(cited.size>0?1:0));
- const parts=[conclusion,reasoning,branch,citation].map(x=>Math.round(x*100)/100);
- return {score:Math.min(1.25,Math.round(parts.reduce((a,b)=>a+b,0)*100)/100),parts,hits:hit,missing:miss,warning:hit.length===0?"Không nhận diện được ý pháp lý đủ rõ; cần chấm thủ công.":"Máy chỉ so khớp dấu hiệu nội dung; kiểm tra kết luận và lập luận trước khi duyệt."};
+ const citationRatio=model.size?[...model].filter(x=>cited.has(x)).length/model.size:0;
+ const detail=hit.length?hit.reduce((a,x)=>a+x.ratio,0)/hit.length:0;
+ const weighted=Math.min(1,coverage*(.9+.1*Math.min(1,detail)));
+ const score=substantive?Math.min(1.25,Math.max(coverage>=.5?.7:0,gradeCurve(weighted)+Math.min(.05,.05*citationRatio))*1.25):0;
+ return {score:Math.round(score*100)/100,parts:[Math.round(score*100)/100,0,0,0],hits:hit,missing:miss,warning:!substantive?"Không nhận diện được ý pháp lý đủ rõ; cần giảng viên chấm thủ công.":"Gợi ý theo độ bao phủ ý đúng; giảng viên kiểm tra lập luận và tính chính xác trước khi duyệt."};
 }
 const b64ToBytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function decryptRubric(password){
