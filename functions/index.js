@@ -111,6 +111,15 @@ async function handlePrepare(req,res,u,p){
  const token=await mintToken({name:st.data().hoTen,course:lop.hocPhanTen,previous:Array.isArray(p.previous)?p.previous:[]});
  return json(res,200,{...token,preview:false,startedAt,endsAt:startedAt+LIMIT,name:st.data().hoTen||sv,ma,sv});
 }
+async function handleCheckpoint(req,res,u,p){
+ const ma=String(p.ma||"").trim().toUpperCase(),sv=String(p.sv||"").trim().toUpperCase();
+ if(!goodCode(ma,24)||!goodCode(sv,20))fail(400,"Mã lớp hoặc mã sinh viên không hợp lệ.");
+ const ref=db.doc("pnl_vd_phien/"+ma+"__"+sv),snap=await ref.get();
+ if(!snap.exists||snap.data().uid!==u.uid||snap.data().status!=="dang-thi")fail(403,"Không có quyền lưu nháp.");
+ const rows=Array.isArray(p.transcript)?p.transcript.slice(0,100).filter(x=>x&&["student","teacher"].includes(x.role)).map(x=>({role:x.role,text:safe(x.text)})).filter(x=>x.text):[];
+ await ref.update({draftTranscript:rows,transcriptSource:"client-unverified",checkpointAt:admin.firestore.FieldValue.serverTimestamp()});
+ return json(res,200,{ok:true,count:rows.length});
+}
 async function handleFinish(req,res,u,p){
  const ma=String(p.ma||"").trim().toUpperCase(),sv=String(p.sv||"").trim().toUpperCase();
  if(!goodCode(ma,24)||!goodCode(sv,20))fail(400,"Thông tin lớp không hợp lệ.");
@@ -157,6 +166,7 @@ exports.vanDapApi=onRequest({region:REGION,cors:["https://luuhuongnnpl-apag.gith
   if(req.headers.origin&&!allowedOrigin.test(req.headers.origin)&&!/^http:\/\/localhost(:\d+)?$/.test(req.headers.origin))fail(403,"Nguồn truy cập không được cấp phép.");
   const u=await identity(req),p=req.body||{};
   if(p.action==="prepare")return await handlePrepare(req,res,u,p);
+  if(p.action==="checkpoint")return await handleCheckpoint(req,res,u,p);
   if(p.action==="finish")return await handleFinish(req,res,u,p);
   if(["configure","list","approve"].includes(p.action))return await handleAdmin(req,res,u,p);
   fail(400,"Thao tác không hợp lệ.");
