@@ -1,69 +1,79 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>PNL Vấn đáp AI — Bản thiết kế tương tác</title>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PNL Vấn đáp AI — Gemini Live</title>
 <style>
-:root{color-scheme:light;--blue:#185474;--ink:#1c2e40;--bg:#f1f5fa;--border:#d4e1ea}*{box-sizing:border-box}
-body{margin:0;background:var(--bg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Arial;color:var(--ink)}
-header{background:linear-gradient(120deg,#123c56,#226484);color:#fff;padding:24px max(16px,calc((100% - 1100px)/2))}
-header h1{margin:0;font-size:clamp(22px,4vw,31px);line-height:1.25}header p{margin:4px 0 12px;color:#d5e9f3}header a{color:white}
-main{max-width:1100px;margin:24px auto;padding:0 16px 56px}.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(290px,1fr);gap:18px}
-.card{border:1px solid var(--border);border-radius:18px;background:#fff;padding:22px;box-shadow:0 3px 15px #1d55700a;margin-bottom:18px}
-h2{font-size:20px;margin:0 0 12px}h3{font-size:16px;margin:16px 0 8px}
-small,.muted{color:#63788b}.tag{display:inline-block;padding:3px 10px;background:#fff0d9;color:#795113;border-radius:50px;font-size:12px;font-weight:700}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.spread{justify-content:space-between}
-button,input,select,textarea{font:inherit}button{border:1px solid #a8c1d1;border-radius:10px;background:#e9f1f7;color:#17445f;padding:10px 14px;cursor:pointer}
-button.primary{background:var(--blue);color:#fff;border-color:var(--blue)}button:disabled{opacity:.5;cursor:not-allowed}
-label{font-weight:650;display:block;margin:12px 0 4px}input,select,textarea{border:1px solid #b9cad6;border-radius:10px;background:white;color:var(--ink);width:100%;padding:10px}
-textarea{min-height:98px;resize:vertical}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:#eff5f9;padding:10px;text-align:center;border-radius:12px}.stat b{font-size:22px;display:block}.stat span{font-size:12px;color:#64788a}
-.bubble{padding:13px 15px;border-radius:14px;margin:12px 0;max-width:94%;white-space:pre-wrap}
-.teacher{background:#e9f3fa;border:1px solid #d1e5f1}.student{background:#f0f2f5;border:1px solid #e4e8ed;margin-left:auto}
-.bubble strong{display:block;font-size:12px;margin-bottom:3px;color:#34576c}
-#log{max-height:455px;overflow:auto;padding-right:5px}.hint{background:#fff7e9;border:1px solid #efd8b4;border-radius:12px;padding:11px 13px;font-size:14px}
-ul{padding-left:20px}.phase{padding:7px 10px;background:#e9f2f8;border-radius:9px;font-size:13px}
-.status{font-size:13px;color:#596e7d}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #76b4db}
-@media(max-width:750px){.grid{grid-template-columns:1fr}.card{padding:17px}.stat b{font-size:19px}}
-</style></head><body>
-<header><h1>PHÚC NGUYÊN LIBRARY · VẤN ĐÁP AI</h1><p>Thi tình huống pháp lý bằng đối thoại — bản thiết kế tương tác</p><div class="row"><a href="./index.html">Đánh giá định kỳ</a><a href="../index.html">Thư viện</a><span class="tag">BẢN MÔ PHỎNG — CHƯA CHẤM ĐIỂM THẬT</span></div></header>
-<main><section class="card"><div class="row spread"><div><h2>Thử luồng thi vấn đáp</h2><p class="muted" style="margin:0">Mẫu: Năng lực hành vi dân sự — Điều 24 BLDS 2015</p></div><button id="reset">Làm lại mô phỏng</button></div>
-<div class="stats" style="margin-top:18px"><div class="stat"><b>40'</b><span>Giới hạn dự kiến</span></div><div class="stat"><b id="step">0/5</b><span>Lượt hỏi mô phỏng</span></div><div class="stat"><b>10</b><span>Thang điểm dự kiến</span></div></div></section>
-<div class="grid"><div><section class="card"><div class="row spread"><h2>Phòng thi đối thoại</h2><span class="phase" id="phase">Chưa bắt đầu</span></div>
-<div id="log" aria-live="polite"><p class="muted">Bấm Bắt đầu để xem cách AI điều chỉnh câu hỏi theo nội dung trả lời.</p></div>
-<label for="answer">Câu trả lời của sinh viên</label><textarea id="answer" placeholder="Trình bày nhận định và căn cứ pháp luật..." disabled></textarea>
-<div class="row" style="margin-top:12px"><button class="primary" id="start" type="button">Bắt đầu thử hỏi đáp</button><button id="send" type="button" disabled>Gửi câu trả lời</button><button id="mic" type="button" disabled>🎙 Trả lời bằng giọng nói</button><button id="speak" type="button" disabled>🔊 Nghe câu hỏi</button></div>
-<p class="status" id="status" role="status" aria-live="polite">Bấm “Bắt đầu thử hỏi đáp”. Nếu không dùng được micro, có thể nhập câu trả lời bằng bàn phím.</p>
-</section></div>
-<aside><section class="card"><h2>Cách hệ thống sẽ vận hành</h2>
-<ol><li>Xác nhận mã lớp, mã SV và đồng ý ghi nhận nội dung thi.</li><li>Rút ngẫu nhiên tình huống từ ngân hàng đã duyệt.</li><li>AI lần lượt hỏi, nghe, phân loại câu trả lời và hỏi phản biện.</li><li>AI thay đổi giả thiết pháp lý nhằm kiểm tra khả năng vận dụng.</li><li>Hết giờ hoặc đủ tiêu chí: kết thúc, chấm sơ bộ và chuyển giảng viên.</li></ol>
-<div class="hint"><strong>Lưu ý:</strong> Đây là bản mô phỏng. Giọng nói sử dụng chức năng của trình duyệt và có thể không hoạt động trong trình duyệt nhúng trên iPhone. Chưa có AI Live, chấm điểm thật, xác thực sinh viên hay lưu Firebase. Nếu màn hình không phản hồi, hãy mở bằng Safari thay vì trình duyệt bên trong ứng dụng.</div></section>
-<section class="card"><h2>Thang điểm dự kiến</h2><ul><li>Nhận diện vấn đề: 2 điểm</li><li>Căn cứ pháp luật: 2 điểm</li><li>Lập luận và phân tích: 2,5 điểm</li><li>Thay đổi giả thiết: 2,5 điểm</li><li>Trình bày rõ ràng: 1 điểm</li></ul><p class="muted">Điểm AI chỉ là đề xuất; giảng viên chốt điểm. Không đánh giá giọng vùng miền hoặc tốc độ nói.</p></section></aside></div></main>
-<script>
-"use strict";
-const $=s=>document.querySelector(s),log=$("#log"),ans=$("#answer");let turn=0,history=[],question="",mode="start";
-const scenarios=[
- {q:"Anh A, 30 tuổi, nghiện rượu và thường xuyên mang tài sản của gia đình đi cầm cố. Em hãy xác định tình trạng năng lực hành vi dân sự của A và những điều kiện pháp lý liên quan.",phase:"Nhận diện vấn đề"},
- {q:"Giả sử Tòa án đã có quyết định tuyên bố A bị hạn chế năng lực hành vi dân sự. A tự bán tài sản riêng có giá trị lớn. Em đánh giá giao dịch và vai trò người đại diện như thế nào?",phase:"Vận dụng quy định"},
- {q:"Thay đổi giả thiết: A vẫn nghiện rượu nhưng chưa có quyết định của Tòa án. Em có giữ nguyên kết luận không? Vì sao?",phase:"Phân nhánh giả thiết"},
- {q:"Giả sử A đã khắc phục tình trạng nghiện và có yêu cầu hủy bỏ quyết định hạn chế năng lực hành vi dân sự. Cơ quan nào có thẩm quyền và hậu quả pháp lý ra sao?",phase:"Xử lý tình huống mới"},
- {q:"Em hãy tổng kết ngắn gọn: phân biệt người bị hạn chế năng lực hành vi dân sự với người mất năng lực hành vi dân sự, đặc biệt về người đại diện và phạm vi giao dịch.",phase:"Tổng hợp"}
-];
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&quot;"}[c]))}
-function bubble(who,text){const d=document.createElement("div");d.className="bubble "+(who==="Giảng viên AI"?"teacher":"student");const b=document.createElement("strong");b.textContent=who;const p=document.createElement("div");p.textContent=text;d.append(b,p);log.append(d);log.scrollTop=log.scrollHeight}
-function speak(t){if(!("speechSynthesis" in window)){status("Trình duyệt không hỗ trợ đọc thành tiếng. Câu hỏi vẫn hiển thị trên màn hình.");return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="vi-VN";u.rate=.95;u.onerror=()=>status("Không phát được giọng đọc. Có thể đọc câu hỏi trên màn hình.");speechSynthesis.speak(u)}catch(e){status("Không phát được giọng đọc. Có thể đọc câu hỏi trên màn hình.")}}
-function status(t){$("#status").textContent=t}
-function ask(q,phase){question=q;$("#phase").textContent=phase;bubble("Giảng viên AI",q);$("#step").textContent=turn+"/5";$("#speak").disabled=false;status("Câu hỏi đã hiển thị. Bấm “Nghe câu hỏi”, “Trả lời bằng giọng nói” hoặc nhập văn bản rồi gửi.")}
-function reset(){turn=0;history=[];mode="start";question="";log.replaceChildren();ans.value="";ans.disabled=true;$("#start").disabled=false;$("#send").disabled=true;$("#mic").disabled=true;$("#speak").disabled=true;$("#step").textContent="0/5";$("#phase").textContent="Chưa bắt đầu";status("Bản mô phỏng, không sử dụng API chấm thi.");if("speechSynthesis" in window)speechSynthesis.cancel()}
-$("#reset").onclick=reset;
-$("#start").onclick=()=>{try{turn=1;mode="exam";$("#start").disabled=true;$("#send").disabled=false;$("#mic").disabled=!SR;ans.disabled=false;log.replaceChildren();ask(scenarios[0].q,scenarios[0].phase);if(!SR)status("Đã bắt đầu. Trình duyệt này không hỗ trợ nhận diện giọng nói, hãy nhập văn bản hoặc mở bằng Safari.")}catch(e){status("Không mở được bài thử: "+e.message);$("#start").disabled=false}};
-$("#send").onclick=()=>{const t=ans.value.trim();if(!t){status("Hãy nhập nội dung trả lời trước khi tiếp tục.");return}bubble("Sinh viên",t);history.push({question,answer:t});ans.value="";if(turn>=5){bubble("Giảng viên AI","Bài vấn đáp mô phỏng đã kết thúc. Trong bản triển khai thật, hệ thống chuyển bản ghi và gợi ý chấm đến giảng viên.");$("#phase").textContent="Kết thúc";$("#send").disabled=true;$("#mic").disabled=true;ans.disabled=true;mode="done";return}
-const lower=t.toLocaleLowerCase("vi-VN");let next;
-if(turn===1){
- if(/tòa án|toa an|quyết định|quyet dinh/i.test(lower))next=scenarios[1].q;
- else if(/đương nhiên|duong nhien|mặc nhiên|mac nhien|chắc chắn bị/i.test(lower))next="Em hãy kiểm tra lại: chỉ vì nghiện rượu thì A có tự động bị hạn chế năng lực hành vi dân sự không? Điều kiện nào theo Điều 24 Bộ luật Dân sự 2015 phải được xác lập?";
- else next="Em hãy phân tích hai trường hợp: đã có quyết định của Tòa án và chưa có quyết định của Tòa án. Kết luận của em thay đổi thế nào?";
-}else next=scenarios[turn].q;
-turn++;ask(next,scenarios[turn-1].phase);status("Hỏi tiếp theo nhánh minh họa. Bản này chưa dùng AI để đánh giá đúng sai.")};
-$("#speak").onclick=()=>question&&speak(question);
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR){$("#mic").title="Không hỗ trợ micro nhận dạng trên trình duyệt hiện tại. Hãy nhập văn bản hoặc thử Safari.";$("#mic").disabled=true;status("Bấm Bắt đầu để thi thử. Trình duyệt này chưa hỗ trợ nhận diện giọng nói; có thể trả lời bằng văn bản.")}
-let activeRecognition=null;$("#mic").onclick=()=>{if(!SR){status("Trình duyệt không hỗ trợ nhận diện giọng nói. Có thể nhập văn bản.");return}if(activeRecognition){try{activeRecognition.stop()}catch(e){}return}try{const rec=new SR();activeRecognition=rec;rec.lang="vi-VN";rec.interimResults=false;rec.maxAlternatives=1;$("#mic").textContent="■ Dừng nghe";rec.onresult=e=>{const transcript=e.results[0]?.[0]?.transcript||"";ans.value=(ans.value?ans.value+" ":"")+transcript;status(transcript?"Đã nhận dạng lời nói. Kiểm tra và bấm Gửi câu trả lời.":"Chưa nhận được lời nói; hãy thử lại.")};rec.onerror=e=>status("Không nhận diện được giọng nói ("+e.error+"). Kiểm tra quyền micro trong Safari hoặc nhập văn bản.");rec.onend=()=>{activeRecognition=null;$("#mic").textContent="🎙 Trả lời bằng giọng nói"};rec.start();status("Đang nghe… Hãy nói câu trả lời và bấm Dừng nghe khi xong.")}catch(e){activeRecognition=null;$("#mic").textContent="🎙 Trả lời bằng giọng nói";status("Không mở được micro: "+e.message+". Có thể nhập văn bản.")}};
-</script></body></html>
+:root{color-scheme:light;--main:#175576;--ink:#20384c;--bg:#f3f6fa;--line:#d2e0ea}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+header{background:#194f70;color:white;padding:20px max(16px,calc((100% - 1100px)/2))}
+header h1{font-size:clamp(22px,4vw,30px);margin:0}header p{margin:3px 0;color:#d9e9f2}header a{color:#fff}
+main{max-width:1100px;padding:18px 16px 50px;margin:auto}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:19px;margin-bottom:16px;box-shadow:0 2px 9px #1643660b}
+h2{font-size:20px;margin:0 0 12px}h3{font-size:16px;margin:8px 0}
+.two{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+button,input,textarea{font:inherit}button{padding:10px 13px;border:1px solid #a8bdcb;border-radius:10px;background:#eaf2f7;color:#174762;font-weight:600;cursor:pointer}
+button.primary{background:var(--main);color:#fff;border-color:var(--main)}button.danger{background:#a72e36;color:#fff;border-color:#a72e36}
+button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #6cb7df}
+label{font-weight:650;display:block;margin:9px 0 4px}input:not([type=checkbox]),textarea{border:1px solid #b6cbd8;border-radius:10px;padding:10px;min-height:42px;color:var(--ink);background:#fff;width:100%}
+textarea{min-height:90px;resize:vertical}input[type=checkbox]{width:auto;vertical-align:middle;margin-right:5px}
+.muted{font-size:13px;color:#5d7281}.warn{background:#fff7e9;color:#644e25;border:1px solid #f2dcaf;padding:12px;border-radius:11px;font-size:14px}
+.status{padding:12px 14px;border:1px solid #c7dce7;border-radius:11px;background:#e9f4fa;min-height:48px}
+.status.error{background:#fff0f1;border-color:#eeadb2;color:#8b212a}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat{padding:12px;text-align:center;background:#eff5fa;border-radius:11px}.stat b{font-size:23px;display:block}.stat span{font-size:12px;color:#62788b}
+#log{min-height:190px;max-height:420px;overflow:auto;background:#f9fbfd;border:1px solid var(--line);border-radius:11px;padding:10px}
+.bubble{white-space:pre-wrap;padding:10px 13px;border-radius:12px;margin:7px 0;background:#e7f1f9;max-width:96%}
+.bubble.student{background:#eceff3;margin-left:auto}.bubble b{display:block;font-size:12px;color:#355973}
+.pill{display:inline-block;border-radius:30px;background:#e9eff4;padding:4px 11px;font-size:12px;color:#344f62}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button{flex:1}.tabs button.active{background:var(--main);color:white}
+#studentPanel[hidden],#adminPanel[hidden],#examPanel[hidden],#reviewPanel[hidden]{display:none}
+.tableWrap{overflow:auto}.table{border-collapse:collapse;width:100%;min-width:530px}.table td,.table th{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top;font-size:13px}
+details{margin-top:8px}details pre{white-space:pre-wrap;font:13px/1.5 inherit;background:#f4f6f9;padding:9px;border-radius:7px}
+footer{color:#7c8b98;text-align:center;padding:0 16px 25px;font-size:12px}
+@media(max-width:760px){.two{grid-template-columns:1fr}.card{padding:15px}.stat b{font-size:19px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
+<script src="./van-dap-live.js?v=20261108a" defer></script>
+</head><body>
+<header><h1>PHÚC NGUYÊN LIBRARY · VẤN ĐÁP AI</h1><p>Gemini Live · Hỏi đáp trực tiếp theo tình huống pháp lý</p>
+<div class="row"><a href="./index.html">Đánh giá định kỳ</a><a href="../index.html">Thư viện</a><span class="pill">Thử nghiệm có kiểm soát</span></div></header>
+<main>
+<div id="health" class="status" role="status" aria-live="polite">Đang kiểm tra khả năng kết nối dịch vụ Gemini Live…</div>
+<div class="two" style="margin-top:16px">
+<section>
+<div class="card" id="entryPanel"><h2>Đăng nhập phòng thi</h2>
+<div class="tabs"><button id="studentTab" class="active" type="button">Sinh viên</button><button id="teacherTab" type="button">Giảng viên thử nghiệm</button></div>
+<div id="studentPanel"><label for="ma">Mã lớp</label><input id="ma" autocomplete="off" placeholder="DS-K25A">
+<label for="sv">Mã sinh viên</label><input id="sv" autocomplete="off" placeholder="2251010001">
+<p class="muted">Lớp phải được giảng viên bật chức năng vấn đáp. Hệ thống xác nhận danh sách sinh viên bằng Firebase.</p></div>
+<div id="adminPanel" hidden><label for="email">Email quản trị PNL</label><input id="email" type="email" autocomplete="username">
+<label for="password">Mật khẩu quản trị</label><input id="password" type="password" autocomplete="current-password">
+<div class="row" style="margin-top:10px"><button id="adminLogin" type="button">Đăng nhập quản trị</button><span id="adminName" class="muted"></span></div>
+<p class="muted">Tài khoản quản trị dùng để thử Gemini Live trước khi mở cho sinh viên.</p></div>
+<label><input id="consent" type="checkbox"> Tôi đồng ý việc ghi nhận nội dung hỏi đáp để giảng viên rà soát, chấm điểm.</label>
+<div class="row" style="margin-top:12px"><button class="primary" id="startLive" type="button">🎙 Bắt đầu vấn đáp trực tiếp</button><button id="startText" type="button">Dùng văn bản dự phòng</button></div>
+<div id="notice" class="muted" aria-live="polite" style="margin-top:9px">Thời gian bài thi: 40 phút. Cho phép sử dụng micro trong Safari khi được hỏi.</div>
+</div>
+<div id="examPanel" class="card" hidden>
+<div class="row" style="justify-content:space-between"><h2>Phòng thi Gemini Live</h2><span class="pill" id="liveState">Chưa kết nối</span></div>
+<div class="stats"><div class="stat"><b id="clock">40:00</b><span>Thời gian còn lại</span></div>
+<div class="stat"><b id="turnCount">0</b><span>Lượt hỏi đáp</span></div><div class="stat"><b>10</b><span>Thang điểm</span></div></div>
+<div id="log" aria-live="polite"><p class="muted">Chưa có bản ghi hỏi đáp.</p></div>
+<label for="typed">Trả lời bằng văn bản (dự phòng khi micro gián đoạn)</label>
+<textarea id="typed" placeholder="Nhập câu trả lời nếu không sử dụng được micro..."></textarea>
+<div class="row" style="margin-top:10px"><button id="sendText" type="button">Gửi câu trả lời</button><button id="mute" type="button">Tắt micro</button><button id="endLive" class="danger" type="button">Kết thúc và nộp</button></div>
+<p class="muted" id="connectionInfo">Âm thanh được truyền trực tiếp tới Gemini. Bản ghi chữ chỉ lưu khi nộp bài.</p>
+</div>
+<div class="card" id="reviewPanel" hidden><h2>Bài vấn đáp đã kết thúc</h2><p id="reviewMessage"></p><p class="muted">Điểm AI chỉ là đề xuất và cần giảng viên phê duyệt.</p></div>
+</section>
+<aside>
+<div class="card"><h2>Trình tự thi</h2><p>AI nêu tình huống → sinh viên trả lời → AI hỏi phản biện → thay đổi giả thiết → ghi nhận đánh giá.</p>
+<div class="warn"><strong>Lưu ý:</strong> bản thử nghiệm chỉ dùng khi dịch vụ Firebase được triển khai và lớp đã bật thi vấn đáp. Không dùng điểm AI làm điểm chính thức trước khi giảng viên duyệt.</div>
+<h3>Quy định</h3><p class="muted">40 phút mỗi bài, một sinh viên một lượt. Phiên có thể cần nối lại do giới hạn kết nối Gemini Live.</p></div>
+<div class="card" id="teacherTools" hidden><h2>Quản trị vấn đáp</h2>
+<label for="adminClass">Mã lớp cần bật/tắt vấn đáp</label><input id="adminClass" placeholder="DS-K25A">
+<div class="row" style="margin-top:9px"><button id="enableClass" type="button">Bật vấn đáp</button><button id="disableClass" type="button">Tắt vấn đáp</button><button id="loadClass" type="button">Xem bài</button></div>
+<p id="adminInfo" class="muted"></p><div class="tableWrap" id="resultList"></div></div>
+</aside></div>
+</main><footer>Phúc Nguyên Library · AI đề xuất điểm, giảng viên quyết định điểm chính thức.</footer>
+</body></html>
