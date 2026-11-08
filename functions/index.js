@@ -62,7 +62,7 @@ async function gradeTranscript(transcript){
 Chỉ sử dụng những nội dung thực sự có trong bản ghi; không suy đoán học lực hay giọng vùng miền.
 Tình huống A nghiện rượu, tẩu tán tài sản. Căn cứ trọng tâm: Điều 24 Bộ luật Dân sự 2015.
 Cần nhận diện quyết định Tòa án, điều kiện hạn chế năng lực, phạm vi người đại diện, hiệu lực giao dịch, thay đổi giả thiết.
-Chấm rộng tay với cách diễn đạt tương đương; trả lời đúng khoảng một nửa nội dung có thể đạt 70% điểm ý tương ứng; không cho điểm nếu không có chứng cứ hay sai bản chất pháp lý.
+Chấm theo nội dung có trong bản ghi và thang điểm tiêu chí; không tự động nâng điểm hoặc quy đổi tỷ lệ nội dung thành điểm ưu đãi.
 Tiêu chí: nhận diện vấn đề /2, căn cứ pháp luật /2, lập luận /2.5, xử lý giả thiết /2.5, trình bày mạch lạc /1.
 Trả về JSON: {"points":[0,0,0,0,0],"total":0,"feedback":"...","reviewFlags":["..."],"legalBasis":["..."]}. Mỗi điểm phải nằm trong thang quy định. Chỉ là ĐỀ XUẤT; giảng viên chốt điểm.
 Bản ghi lời nói (nguồn từ trình duyệt, chưa xác minh độc lập):
@@ -90,6 +90,8 @@ async function handlePrepare(req,res,u,p){
   const token=await mintToken({name:"Giảng viên chạy thử",course:"Luật Dân sự",previous:p.previous||[]});
   return json(res,200,{...token,preview:true,startedAt:Date.now(),endsAt:Date.now()+LIMIT,name:"Giảng viên chạy thử"});
  }
+ const settings=await getExamSettings();
+ const examLimit=settings.durationMinutes*60*1000;
  const classRef=db.doc("pnl_dg_lop/"+ma),studentRef=db.doc("pnl_dg_sv/"+ma+"__"+sv),examRef=db.doc("pnl_vd_phien/"+ma+"__"+sv);
  const [ls,st]=await Promise.all([classRef.get(),studentRef.get()]);
  if(!ls.exists||!st.exists||st.data().maLop!==ma)fail(403,"Không tìm thấy sinh viên thuộc lớp này.");
@@ -102,14 +104,15 @@ async function handlePrepare(req,res,u,p){
   if(d&&d.uid!==u.uid)fail(403,"Mã sinh viên đang gắn với thiết bị khác. Liên hệ giảng viên.");
   if(d&&d.status!=="dang-thi")fail(403,"Bài vấn đáp đã kết thúc.");
   startedAt=d?asDate(d.startedAt).getTime():now;
-  if(now-startedAt>=LIMIT)fail(403,"Đã hết 40 phút.");
+  if(now-startedAt>=((d?.durationMinutes||settings.durationMinutes)*60*1000))fail(403,"Đã hết thời gian thi.");
   if(d?.lastTokenAt&&now-asDate(d.lastTokenAt).getTime()<GAP)fail(429,"Vừa cấp phiên Live. Chỉ thử nối lại sau một phút.");
   tx.set(examRef,{maLop:ma,mssv:sv,hoTen:st.data().hoTen||"",hocPhan:lop.hocPhanTen||lop.hocPhan||"Luật Dân sự",
    uid:u.uid,status:"dang-thi",startedAt:admin.firestore.Timestamp.fromMillis(startedAt),
-   lastTokenAt:admin.firestore.Timestamp.fromMillis(now),thoiGian:40,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+   lastTokenAt:admin.firestore.Timestamp.fromMillis(now),durationMinutes:d?.durationMinutes||settings.durationMinutes,targetBranches:d?.targetBranches||settings.targetBranches,gradingMode:d?.gradingMode||settings.gradingMode,thoiGian:d?.durationMinutes||settings.durationMinutes,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
  });
  const token=await mintToken({name:st.data().hoTen,course:lop.hocPhanTen,previous:Array.isArray(p.previous)?p.previous:[]});
- return json(res,200,{...token,preview:false,startedAt,endsAt:startedAt+LIMIT,name:st.data().hoTen||sv,ma,sv});
+ const saved=await examRef.get();const minutes=saved.data()?.durationMinutes||settings.durationMinutes;
+ return json(res,200,{...token,preview:false,startedAt,endsAt:startedAt+minutes*60*1000,name:st.data().hoTen||sv,ma,sv});
 }
 async function handleCheckpoint(req,res,u,p){
  const ma=String(p.ma||"").trim().toUpperCase(),sv=String(p.sv||"").trim().toUpperCase();
@@ -131,9 +134,39 @@ async function handleFinish(req,res,u,p){
  // Chốt bài trước khi gọi AI, tránh bị chấm trùng hoặc mất bài nếu Gemini lỗi.
  await ref.update({status:"cho-duyet",transcript,transcriptSource:"client-unverified",submittedAt:admin.firestore.FieldValue.serverTimestamp(),reviewRequired:true});
  let suggestion;
- try{suggestion=await gradeTranscript(transcript)}catch(e){console.error("grading fail",e?.message);suggestion={status:"can-giang-vien",reason:"Không chấm được, xin giảng viên rà soát"}}
+ try{suggestion=snap.data().gradingMode==="manual"?{status:"can-giang-vien",reason:"Chế độ giảng viên chấm hoàn toàn"}:await gradeTranscript(transcript)}catch(e){console.error("grading fail",e?.message);suggestion={status:"can-giang-vien",reason:"Không chấm được, xin giảng viên rà soát"}}
  await ref.update({suggestion,scoredAt:admin.firestore.FieldValue.serverTimestamp()});
- json(res,200,{saved:true,status:"cho-duyet",suggestion});
+ json(res,200,{saved:true,status:"cho-duyet"});
+}
+// Cấu hình khảo thí: chỉ quản trị được đọc/ghi; không chia sẻ rubric/điểm cho sinh viên.
+const DEFAULT_EXAM_SETTINGS=Object.freeze({
+  durationMinutes:40,
+  targetBranches:4,
+  gradingMode:"ai_review",
+  publishedFeedback:false,
+  rubricVersion:"draft-1"
+});
+function normalizeExamSettings(input={}){
+  const duration=Number(input.durationMinutes),branches=Number(input.targetBranches);
+  if(!Number.isInteger(duration)||![20,30,40,60].includes(duration))fail(400,"Thời gian thi không hợp lệ.");
+  if(!Number.isInteger(branches)||branches<2||branches>8)fail(400,"Số câu hỏi nhánh phải từ 2 đến 8.");
+  if(!["ai_review","manual"].includes(input.gradingMode))fail(400,"Chế độ chấm không hợp lệ.");
+  return {durationMinutes:duration,targetBranches:branches,gradingMode:input.gradingMode,
+    publishedFeedback:false,rubricVersion:String(input.rubricVersion||"draft-1").slice(0,50)};
+}
+async function getExamSettings(){
+  const doc=await db.doc("pnl_vd_config/default").get();
+  return {...DEFAULT_EXAM_SETTINGS,...(doc.exists?doc.data():{}) ,publishedFeedback:false};
+}
+async function handleExamSettings(req,res,u,p){
+  if(!isAdmin(u))fail(403,"Chỉ giảng viên quản trị được cấu hình khảo thí.");
+  if(p.action==="settings_get")return json(res,200,{settings:await getExamSettings()});
+  if(p.action!=="settings_save")fail(400,"Thao tác không hợp lệ.");
+  const settings=normalizeExamSettings(p.settings);
+  // Phiên đang thi giữ cấu hình đã chốt; bản mới chỉ áp dụng cho phiên bắt đầu sau.
+  const ref=db.doc("pnl_vd_config/default");
+  await ref.set({...settings,updatedBy:u.uid,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  return json(res,200,{ok:true,settings});
 }
 async function handleAdmin(req,res,u,p){
  if(!isAdmin(u))fail(403,"Chỉ giảng viên quản trị được dùng chức năng này.");
@@ -165,6 +198,7 @@ exports.vanDapApi=onRequest({region:REGION,cors:["https://luuhuongnnpl-apag.gith
   if(req.method!=="POST")fail(405,"Chỉ cho phép POST.");
   if(req.headers.origin&&!allowedOrigin.test(req.headers.origin)&&!/^http:\/\/localhost(:\d+)?$/.test(req.headers.origin))fail(403,"Nguồn truy cập không được cấp phép.");
   const u=await identity(req),p=req.body||{};
+  if(["settings_get","settings_save"].includes(p.action))return await handleExamSettings(req,res,u,p);
   if(p.action==="prepare")return await handlePrepare(req,res,u,p);
   if(p.action==="checkpoint")return await handleCheckpoint(req,res,u,p);
   if(p.action==="finish")return await handleFinish(req,res,u,p);
