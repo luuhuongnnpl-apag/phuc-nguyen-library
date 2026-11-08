@@ -153,14 +153,16 @@
   const b=$("#startLive"),t=$("#startText");b.disabled=true;t.disabled=true;
   if(!$("#consent").checked){status("Cần xác nhận đồng ý ghi nhận nội dung hỏi đáp để dự thi.",true);b.disabled=false;t.disabled=false;return}
   try{
-   await ensureLogin();state.preview=tab==="teacher";({ma:state.ma,sv:state.sv}=state.preview?{ma:"",sv:""}:validStudent());
+   state.preview=tab==="teacher";({ma:state.ma,sv:state.sv}=state.preview?{ma:"",sv:""}:validStudent());
    state.textOnly=!!textOnly;state.history=[];state.input="";state.output="";state.start=0;state.end=0;state.finishing=false;state.muted=false;reconnects=0;
    if(!textOnly){
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)throw Error("Thiết bị không hỗ trợ phát/thu âm thanh thời gian thực.");
-    state.ctx=new AC({latencyHint:"interactive"});await state.ctx.resume();
-    state.stream=await getMic();
+    state.ctx=new AC({latencyHint:"interactive"});
+    const unlocked=state.ctx.resume(),mic=getMic();
+    const ready=await Promise.all([unlocked,mic]);state.stream=ready[1];
    }else{const AC=window.AudioContext||window.webkitAudioContext;if(AC){state.ctx=new AC();await state.ctx.resume()}}
+   await ensureLogin();
    status("Đang xin phiên Gemini Live từ Firebase…");state.running=true;
    visible("#examPanel",true);visible("#entryPanel",false);$("#log").replaceChildren();$("#turnCount").textContent="0";
    $("#mute").disabled=textOnly;$("#mute").textContent="Tắt micro";$("#liveState").textContent="Đang kết nối";
