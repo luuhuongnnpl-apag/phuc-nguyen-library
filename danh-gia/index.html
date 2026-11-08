@@ -125,6 +125,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
 <div id="modal" hidden></div>
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
+<script src="qt-apag.js?v=20261108a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -412,7 +413,7 @@ function nav(){
   if(ADMIN)h+=location.hash.startsWith("#quan-tri")?'<a href="#">Giao diện sinh viên</a><button id="n-out">Đăng xuất quản trị</button>':'<a href="#quan-tri">Quản trị</a>';
   n.innerHTML=h;if($("#n-out"))$("#n-out").onclick=async()=>{await auth.signOut();USER=(await auth.signInAnonymously()).user;ADMIN=false;location.hash="";route()};
 }
-function route(){nav();const h=location.hash;if(h.startsWith("#quan-tri"))return adminView();if(EXAM&&EXAM.active)return;studentEntry()}
+function route(){nav();const h=location.hash;if(h.startsWith("#quan-tri"))return adminView();QTA.unmount();QTA.close();if(EXAM&&EXAM.active)return;studentEntry()}
 window.addEventListener("hashchange",route);
 
 /* =================== SINH VIÊN =================== */
@@ -607,7 +608,7 @@ function roiWarn(){const E=EXAM;if(!E||!E.active||!E.roi)return;let w=$("#x-roi"
 window.addEventListener("beforeunload",e=>{if(EXAM&&EXAM.active){e.preventDefault();e.returnValue=""}});
 
 /* =================== QUẢN TRỊ =================== */
-let AD={tab:"diem"};
+let AD={view:"ds"};
 function adminLogin(){
   $("#app").innerHTML=`<section class="card narrow"><h1>Đăng nhập quản trị</h1><p class="lead">Dùng tài khoản quản trị của Phúc Nguyên Library (cùng tài khoản quản lý mã lớp).</p>
   <form id="al" novalidate><div class="row"><div><label class="lab" for="al-em">Email</label><input type="email" id="al-em" autocomplete="username" value="luuhuong.nnpl@gmail.com"></div></div>
@@ -617,16 +618,132 @@ function adminLogin(){
   $("#al").onsubmit=async e=>{e.preventDefault();try{const r=await auth.signInWithEmailAndPassword($("#al-em").value.trim(),$("#al-pw").value);after(r.user)}catch(x){$("#al-err").textContent="Sai email hoặc mật khẩu."}};
   $("#al-g").onclick=async()=>{try{const r=await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());after(r.user)}catch(x){$("#al-err").textContent="Không đăng nhập được bằng Google."}};
 }
+/* ==== QUẢN TRỊ – giao diện kiểu APAG (qt-apag.js, 08/11/2026) ==== */
+function sideItems(ma,view){
+  const it=[{label:"Trang chủ thư viện",icon:"home",href:"../index.html"},{grp:"Quản lý lớp học"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
+    {id:"new",label:"Tạo lớp mới",icon:"plus",href:"#quan-tri",onClick:()=>classForm()}];
+  if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},
+    {label:"Thống kê",icon:"chart",href:"#quan-tri/"+encodeURIComponent(ma)+"/thong-ke",on:view==="tk",sub:true},
+    {label:"Cài đặt lớp",icon:"cog",href:"#quan-tri/"+encodeURIComponent(ma)+"/cai-dat",on:view==="cai",sub:true});
+  it.push({grp:"Khác"},{label:"Lớp Luật Dân sự (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri"},{label:"Giao diện sinh viên",icon:"users",href:"#"});
+  return it}
+async function adminLogout(){await auth.signOut();USER=(await auth.signInAnonymously()).user;ADMIN=false;QTA.unmount();location.hash="";route()}
+function shell(o){return QTA.mount({user:USER&&USER.email,onLogout:adminLogout,...o})}
 async function adminView(){
-  if(!ADMIN)return adminLogin();
-  const parts=location.hash.split("/");if(parts[1])return classView(decodeURIComponent(parts[1]));
-  $("#app").innerHTML=`<h1>Đánh giá định kỳ — Quản trị</h1><p class="lead">Mỗi lớp có mã lớp và danh sách sinh viên riêng. Sinh viên vào làm bài bằng mã lớp + mã sinh viên.</p>
-    <div class="row"><button class="btn primary" id="a-new">+ Tạo lớp đánh giá</button>${HOCPHAN.filter(h=>h.mode==="tn").map(h=>`<button class="btn" data-demo="${h.id}">Lớp thử ${esc(h.name)}</button>`).join("")}</div><div id="a-list"><p class="msg">Đang tải…</p></div>`;
-  $("#a-new").onclick=()=>classForm();$$("[data-demo]").forEach(b=>b.onclick=()=>makeDemo(b.dataset.demo));
-  try{const qs=await db.collection("pnl_dg_lop").get();const xs=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0));
-    $("#a-list").innerHTML=xs.length?'<div class="classes">'+xs.map(l=>{const st=lopTrangThai(l);return `<button class="ccard" data-id="${esc(l.id)}"><b>${esc(l.id)}</b> <span class="pill ${st.k}">${esc(st.k==="open"?"Đang mở":st.k==="wait"?"Chưa mở":"Đóng")}</span><br>${esc(l.ten||"")}<br><span class="msg">${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${l.siSo|0} SV · ${THOI_GIAN_CHUNG} phút</span></button>`}).join("")+"</div>":'<p class="msg">Chưa có lớp nào.</p>';
-    $$(".ccard").forEach(b=>b.onclick=()=>location.hash="#quan-tri/"+encodeURIComponent(b.dataset.id));
-  }catch(x){$("#a-list").innerHTML='<p class="err">Không tải được danh sách lớp ('+esc(x.code||x.message)+').</p>'}
+  if(!ADMIN){QTA.unmount();return adminLogin()}
+  const parts=location.hash.split("/");
+  if(parts[1]){const ma=decodeURIComponent(parts[1]),v=parts[2]==="thong-ke"?"tk":parts[2]==="cai-dat"?"cai":"ds";return showClass(ma,v)}
+  const body=shell({side:sideItems(null),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Đánh giá định kỳ"},{t:"Danh sách lớp"}],
+    actions:[{id:"new",label:"Tạo lớp mới",icon:"plus",kind:"blue",onClick:()=>classForm()},...HOCPHAN.filter(h=>h.mode==="tn").map(h=>({id:"demo-"+h.id,label:"Lớp thử "+h.name,kind:"ghost",onClick:()=>makeDemo(h.id)}))],
+    body:'<p class="qta-msg">Đang tải danh sách lớp…</p>'});
+  try{const qs=await db.collection("pnl_dg_lop").get();
+    const xs=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0)).map(l=>({...l,st:lopTrangThai(l).k,khung:fmtDT(toDate(l.openAt))+" → "+fmtDT(toDate(l.closeAt))}));
+    QTA.classTable(body,xs,{onOpen:id=>location.hash="#quan-tri/"+encodeURIComponent(id)});
+  }catch(x){body.innerHTML='<p class="qta-err">Không tải được danh sách lớp ('+esc(x.code||x.message)+').</p>'}
+}
+/* ---- trang một lớp ---- */
+async function loadClass(ma){
+  const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists)return null;
+  const l={id:ma,...ls.data()};
+  if(l.hocPhan==="luat-dan-su-tu-luan"){location.href="tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma);return "redirect"}
+  const [d1,d2,d3]=await Promise.all([db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
+  const ds=d1.exists?(d1.data().rows||[]):[];const bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});const cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
+  const B=await loadBank(l.hocPhan,true);let BL=null;
+  if(isTN(l.hocPhan)&&Object.values(bai).some(b=>b.de&&b.de.tl))BL=await loadTL(l.hocPhan,true);
+  AD={...AD,ma,l,ds,bai,cham,B,BL,loaded:Date.now()};return AD;
+}
+async function showClass(ma,view,force){
+  AD.view=view||AD.view||"ds";
+  if(force||AD.ma!==ma||!AD.loaded){const body=shell({side:sideItems(ma,AD.view),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Danh sách lớp",href:"#quan-tri"},{t:ma}],body:'<p class="qta-msg">Đang tải lớp '+esc(ma)+'…</p>'});
+    try{const r=await loadClass(ma);if(r==="redirect")return;if(!r){body.innerHTML='<p class="qta-err">Không có lớp '+esc(ma)+'.</p>';return}}
+    catch(x){console.error(x);body.innerHTML='<p class="qta-err">Không tải được dữ liệu lớp ('+esc(x.code||x.message)+').</p>';return}}
+  renderView();
+}
+function classView(ma){return showClass(ma||AD.ma,AD.view,true)}
+function renderView(){({ds:viewDS,tk:viewTK,cai:viewCai})[AD.view||"ds"]()}
+const BB=b=>(b&&AD.BL&&laTLCu(AD.l.hocPhan,b.de))?AD.BL:AD.B;
+function ketQua(sv){
+  const b=AD.bai[sv.mssv];if(!b)return {sv,b:null};const B=BB(b);
+  if(!b.de.tl){const t=chamTNTH(B,b.de,b.answers);return {sv,b,lt:0,th:t.diem,sai:t.sai,tl:0,xn:true,tong:t.diem,t10:Math.round(t.diem*10)/10,tn:t}}
+  const tn=chamTN(B,b.de,b.answers);const c=AD.cham[sv.mssv];const cs=B.cases[b.de.tl];
+  let tl,xn=false,ys=null;
+  if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(B));
+    if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
+  else tl=c&&c.xacNhan?(xn=true,c.diem):0;
+  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:B.tl?Math.round(tong*10)/10:Math.round(tong)/10};
+}
+function classHead(extra){const l=AD.l,st=lopTrangThai(l);
+  return `<div class="qta-meta"><span>Lớp: <b>${esc(l.id)}</b>${l.ten?" · "+esc(l.ten):""}</span><span>Học phần: <b>${esc(l.hocPhanTen||l.hocPhan)}</b></span>${l.apag&&l.apag.tenLopTc?`<span>Lớp tín chỉ APAG: <b>${esc(l.apag.tenLopTc)}</b></span>`:""}<span>Năm học: <b>${esc(l.namHoc||"")}</b></span><span>${THOI_GIAN_CHUNG} phút · mở ${esc(fmtDT(toDate(l.openAt)))} → đóng ${esc(fmtDT(toDate(l.closeAt)))}</span><span><span class="tag ${st.k==="open"?"nop":st.k==="wait"?"dang":"lock"}">${esc(st.t)}</span></span>${extra||""}</div>`}
+function rowsDS(){return AD.ds.map(sv=>{const r=ketQua(sv),b=r.b,nop=b&&b.status==="da-nop",c=AD.cham[sv.mssv];
+  const bai=[];if(b)bai.push({a:"xem",t:"Xem bài"});if(nop&&!r.tn)bai.push({a:"cham",t:r.xn?"Sửa điểm TL":"Chấm tự luận",kind:r.xn?"link":"blue"});
+  const ghi=[{a:"sua",t:"Sửa"},{a:"xoa",t:"Xóa",kind:"link red"}];if(b)ghi.push({a:"mo",t:"Mở lại lượt",kind:"link red"});
+  return {mssv:sv.mssv,hoTen:sv.hoTen,ngaySinh:sv.ngaySinh||"",diem:nop?r.t10:null,tam:nop&&!r.xn,st:!b?"chua":nop?"nop":"dang",roi:b?(b.roiTrang|0):null,ghiChu:c&&c.note||"",bai,ghi,r}})}
+function viewDS(){
+  const l=AD.l,rows=rowsDS(),nop=rows.filter(x=>x.st==="nop");const coTLcu=nop.some(x=>x.r.b.de&&x.r.b.de.tl);
+  const body=shell({side:sideItems(AD.ma,"ds"),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Danh sách lớp",href:"#quan-tri"},{t:"Lớp "+AD.ma,href:"#quan-tri/"+encodeURIComponent(AD.ma)},{t:l.hocPhanTen||l.hocPhan}],
+    actions:[{id:"add",label:"Thêm sinh viên",icon:"plus",kind:"blue",onClick:()=>editSV()},{id:"imp",label:"Import excel",icon:"up",kind:"imp",onClick:importDS},
+      {id:"exp",label:"Export excel",icon:"down",kind:"exp",onClick:()=>QTA.exportDialog({lop:AD.l,rows,tamNote:"Bấm “Chấm tự luận” ở cột Bài làm để xác nhận trước khi nhập điểm chính thức."})},
+      {id:"lock",label:l.open?"Khóa":"Mở lớp",icon:l.open?"lock":"unlock",kind:l.open?"lock":"unlock",onClick:toggleOpen},
+      coTLcu?{id:"cl",label:"Chấm lại tự luận",kind:"ghost",onClick:()=>chamLai(nop)}:null,{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>classView(AD.ma)}],
+    body:classHead(`<span>Sĩ số: <b>${AD.ds.length}</b> · đã nộp <b>${nop.length}</b></span>`)+'<div id="qg"></div>'});
+  QTA.grid(body.querySelector("#qg"),rows,{state:AD.gs||(AD.gs={}),maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
+    note:(AD.B.tn?"Điểm = số câu đúng / tổng số câu × 10, máy chấm ngay khi sinh viên nộp.":"Điểm thang 10 của bài đã nộp.")+" Ô viền vàng “tạm” là bài tự luận chưa xác nhận. Sửa, xóa sinh viên ở cột Ghi chú.",
+    onAction:(a,ms)=>{if(a==="xem")paperView(ms);else if(a==="cham")gradeView(ms);else if(a==="sua")editSV(ms);else if(a==="xoa")delSV(ms);else if(a==="mo")resetSV(ms)}});
+}
+async function toggleOpen(){const l=AD.l;if(!await QTA.ask(l.open?"Khóa lớp":"Mở lớp",l.open?"Sinh viên sẽ không vào làm bài được cho đến khi mở lại.":"Cho phép sinh viên làm bài trong khung giờ đã đặt.",l.open?"Khóa":"Mở lớp",l.open))return;
+  try{await db.doc("pnl_dg_lop/"+l.id).set({open:!l.open},{merge:true});classView(l.id)}catch(x){QTA.info("Không lưu được: "+esc(x.code||x.message))}}
+function importDS(){QTA.rosterDialog({count:AD.ds.length,replaceNote:"bài làm đã có vẫn được giữ",onSave:async(rows,info,mode)=>{
+  await saveRoster(AD.ma,QTA.mergeRows(AD.ds,rows,mode));
+  if(info&&(info.tenLopTc||info.tenMon))await db.doc("pnl_dg_lop/"+AD.ma).set({apag:info},{merge:true});
+  classView(AD.ma)}})}
+function editSV(ms){const r=ms?AD.ds.find(x=>x.mssv===ms):null;
+  QTA.studentDialog({row:r,lockMssv:r&&AD.bai[ms]?"Sinh viên đã có bài làm nên không đổi được mã sinh viên.":"",
+    onSave:async v=>{let rows=AD.ds.slice();
+      if(!r&&rows.some(x=>x.mssv===v.mssv))throw new Error("Mã sinh viên "+v.mssv+" đã có trong lớp.");
+      if(r&&v.mssv!==r.mssv&&rows.some(x=>x.mssv===v.mssv))throw new Error("Mã sinh viên "+v.mssv+" đã có trong lớp.");
+      rows=r?rows.map(x=>x.mssv===r.mssv?v:x):rows.concat([v]);
+      try{await saveRoster(AD.ma,rows)}catch(x){throw new Error("Không lưu được ("+(x.code||x.message)+").")}
+      AD.ds=rows;AD.l.siSo=rows.length;viewDS()},
+    onDelete:r?()=>{QTA.close();delSV(r.mssv)}:null})}
+async function delSV(ms){const r=AD.ds.find(x=>x.mssv===ms);if(!r)return;const has=!!AD.bai[ms];
+  if(!await QTA.ask("Xóa sinh viên khỏi lớp","Xóa <b>"+esc(r.hoTen)+"</b> ("+esc(ms)+") khỏi danh sách lớp."+(has?" Bài làm đã có vẫn được giữ trong dữ liệu nhưng không hiện trong bảng điểm.":""),"Xóa",true))return;
+  const rows=AD.ds.filter(x=>x.mssv!==ms);try{await saveRoster(AD.ma,rows);AD.ds=rows;AD.l.siSo=rows.length;viewDS()}catch(x){QTA.info("Không xóa được: "+esc(x.code||x.message))}}
+async function resetSV(ms){const r=AD.ds.find(x=>x.mssv===ms)||{hoTen:""};
+  if(!await QTA.ask("Mở lại lượt làm bài","Xóa bài làm hiện có của <b>"+esc(r.hoTen)+"</b> ("+esc(ms)+") để sinh viên làm lại từ đầu với đề mới. Không khôi phục được bài cũ.","Xóa và mở lại",true))return;
+  try{await db.doc("pnl_dg_bai/"+AD.ma+"__"+ms).delete();await db.doc("pnl_dg_cham/"+AD.ma+"__"+ms).delete();classView(AD.ma)}catch(x){QTA.info("Không xóa được: "+esc(x.code||x.message))}}
+async function chamLai(nop){const xs=nop.filter(r=>AD.cham[r.mssv]&&AD.cham[r.mssv].xacNhan);
+  if(!await QTA.ask("Chấm lại tự luận","Tất cả "+nop.length+" bài đã nộp sẽ dùng điểm máy chấm theo đáp án hiện hành. "+(xs.length?"<b>"+xs.length+"</b> bài đã xác nhận sẽ trở về trạng thái \"tạm\" (điểm cũ được lưu lại trong dữ liệu chấm).":"Chưa có bài nào đã xác nhận, điểm tạm đã tự cập nhật."),"Chấm lại"))return;
+  try{for(const r of xs){const c=AD.cham[r.mssv];await db.doc("pnl_dg_cham/"+AD.ma+"__"+r.mssv).set({maLop:AD.ma,mssv:r.mssv,xacNhan:false,note:c.note||"",
+      cu:{diem:c.diem==null?null:c.diem,muc:c.muc||null,buoc:c.buoc||null,luc:c.luc||null},chamLai:FV.serverTimestamp()})}
+    classView(AD.ma)}catch(x){QTA.info("Không chấm lại được: "+esc(x.code||x.message))}}
+function viewTK(){
+  const l=AD.l,rows=AD.ds.map(ketQua);const nop=rows.filter(r=>r.b&&r.b.status==="da-nop"),dang=rows.filter(r=>r.b&&r.b.status!=="da-nop");
+  const t10=nop.map(r=>r.t10),avg=t10.length?r2(t10.reduce((a,b)=>a+b,0)/t10.length):0;
+  const bins=[[0,4,"<4"],[4,5,"4–<5"],[5,6.5,"5–<6,5"],[6.5,8,"6,5–<8"],[8,10.01,"8–10"]].map(([a,b,t])=>({t,n:t10.filter(x=>x>=a&&x<b).length}));const mx=Math.max(1,...bins.map(x=>x.n));
+  const wrong={};nop.forEach(r=>r.sai.forEach(id=>wrong[id]=(wrong[id]||0)+1));const top=Object.entries(wrong).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const chuaXN=nop.filter(r=>!r.xn).length;
+  shell({side:sideItems(AD.ma,"tk"),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Danh sách lớp",href:"#quan-tri"},{t:"Lớp "+AD.ma,href:"#quan-tri/"+encodeURIComponent(AD.ma)},{t:"Thống kê"}],
+    actions:[{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>classView(AD.ma)}],
+    body:classHead()+`<div class="qta-stats"><div class="qta-stat"><b>${nop.length}/${AD.ds.length}</b><span>đã nộp</span></div><div class="qta-stat"><b>${dang.length}</b><span>đang làm</span></div><div class="qta-stat"><b>${t10.length?String(avg).replace(".",","):"–"}</b><span>điểm trung bình (thang 10)</span></div><div class="qta-stat"><b>${chuaXN}</b><span>bài tự luận chưa xác nhận</span></div></div>
+    ${nop.length?`<div class="qta-card"><h3>Phổ điểm (thang 10)</h3><div class="bars">${bins.map(x=>`<div style="height:${x.n/mx*100}%"><span>${x.n}</span></div>`).join("")}</div><div class="barlab">${bins.map(x=>"<span>"+x.t+"</span>").join("")}</div></div>
+      ${top.length?`<div class="qta-card"><h3>Câu sai nhiều nhất</h3><ol style="margin:0;padding-left:20px">${top.map(([id,n])=>{const q=AD.B.byId[id];return `<li>${esc(q?q.q:id)} <span class="qta-msg">(${id} · ${n}/${nop.length} sai)</span></li>`}).join("")}</ol></div>`:""}`:'<div class="qta-card"><p class="qta-msg" style="margin:0">Chưa có bài nộp.</p></div>'}`});
+}
+function viewCai(){
+  const l=AD.l;
+  const body=shell({side:sideItems(AD.ma,"cai"),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Danh sách lớp",href:"#quan-tri"},{t:"Lớp "+AD.ma,href:"#quan-tri/"+encodeURIComponent(AD.ma)},{t:"Cài đặt lớp"}],
+    actions:[{id:"edit",label:"Sửa thông tin, giờ mở/đóng",icon:"cog",kind:"blue",onClick:()=>classForm(l)},{id:"lock",label:l.open?"Khóa":"Mở lớp",icon:l.open?"lock":"unlock",kind:l.open?"lock":"unlock",onClick:toggleOpen}],
+    body:classHead()+`<div class="qta-card"><h3>Cấu trúc đề</h3><p style="margin:0">${isTN(l.hocPhan)?`Đề mỗi sinh viên: ${hpOf(l.hocPhan).tnCases||3} tình huống tư vấn khác chương, rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống của ngân hàng ôn tập (Chương 2–6); lấy đủ các câu ABCD của mỗi tình huống theo 5 bước tư vấn (khoảng ${(hpOf(l.hocPhan).tnCases||3)*8} câu), đảo thứ tự phương án. Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Bài tự luận đã nộp theo đề cũ vẫn giữ cách chấm cũ.`:isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống; sinh viên điền phiếu tư vấn 5 bước. Chấm: làm đủ 5 bước = 5 điểm; nội dung theo 5 ý chính = 5 điểm; máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
+    <div class="qta-card"><h3>Thông tin lớp tín chỉ APAG (tiêu đề bảng điểm)</h3><p class="qta-msg" style="margin-top:0">Tự điền khi Import excel bằng file Export excel của APAG. Có thể sửa tay.</p>
+      <div class="qta-filters"><div><label for="ap-mon">Tên môn</label><input type="text" id="ap-mon" value="${esc((l.apag||{}).tenMon||"")}"></div><div><label for="ap-lop">Tên lớp tín chỉ</label><input type="text" id="ap-lop" value="${esc((l.apag||{}).tenLopTc||"")}"></div>
+      <div><label for="ap-hk">Học kỳ/Năm học</label><input type="text" id="ap-hk" value="${esc((l.apag||{}).hocKy||"")}" placeholder="1_2026-2027"></div><div><label for="ap-tc">Số tín chỉ</label><input type="text" id="ap-tc" value="${esc((l.apag||{}).soTc||"")}"></div></div>
+      <p style="margin:12px 0 0"><button class="qb save" id="ap-save" type="button">Lưu</button> <span class="qta-ok" id="ap-ok"></span></p></div>
+    <div class="qta-card"><h3>Xóa lớp</h3><p class="qta-msg" style="margin-top:0">Xóa lớp, danh sách sinh viên, bài làm và điểm của lớp. Không khôi phục được — nên Export excel bảng điểm trước.</p><button class="qb lock" id="c-del" type="button">Xóa lớp ${esc(l.id)}</button></div>`});
+  body.querySelector("#ap-save").onclick=async()=>{const apag={tenMon:$("#ap-mon").value.trim(),tenLopTc:$("#ap-lop").value.trim(),hocKy:$("#ap-hk").value.trim(),soTc:$("#ap-tc").value.trim()};
+    try{await db.doc("pnl_dg_lop/"+l.id).set({apag},{merge:true});AD.l.apag=apag;$("#ap-ok").textContent="Đã lưu."}catch(x){$("#ap-ok").textContent="Không lưu được ("+(x.code||x.message)+")"}};
+  body.querySelector("#c-del").onclick=async()=>{if(!await QTA.ask("Xóa lớp "+l.id,"Toàn bộ danh sách, bài làm và điểm của lớp <b>"+esc(l.id)+"</b> sẽ bị xóa vĩnh viễn.","Xóa vĩnh viễn",true))return;
+    try{const refs=[];for(const c of ["pnl_dg_sv","pnl_dg_bai","pnl_dg_cham"]){(await db.collection(c).where("maLop","==",l.id).get()).docs.forEach(d=>refs.push(d.ref))}
+      refs.push(db.doc("pnl_dg_ds/"+l.id),db.doc("pnl_dg_lop/"+l.id));for(let i=0;i<refs.length;i+=400){const b=db.batch();refs.slice(i,i+400).forEach(r=>b.delete(r));await b.commit()}
+      AD={view:"ds"};location.hash="#quan-tri"}catch(x){QTA.info("Không xóa được: "+esc(x.code||x.message))}};
 }
 function classForm(l){
   const now=new Date(),a=l?toDate(l.openAt):now,b=l?toDate(l.closeAt):new Date(now.getTime()+7*864e5);
@@ -651,13 +768,13 @@ function classForm(l){
     const data={ten:m.querySelector("#cf-ten").value.trim(),hocPhan:hp,hocPhanTen:(HOCPHAN.find(h=>h.id===hp)||{}).name||hp,namHoc:m.querySelector("#cf-nh").value.trim(),
       thoiGian:THOI_GIAN_CHUNG,openAt:TS.fromDate(A),closeAt:TS.fromDate(Bd),open:m.querySelector("#cf-open").checked};
     try{const ref=db.doc("pnl_dg_lop/"+ma);if(!l){if((await ref.get()).exists){err.textContent="Mã lớp này đã có.";return}data.created=FV.serverTimestamp();data.siSo=0}
-      await ref.set(data,{merge:true});closeModal();location.hash="#quan-tri/"+encodeURIComponent(ma);route()}catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+")."}};
+      await ref.set(data,{merge:true});closeModal();AD.loaded=0;location.hash="#quan-tri/"+encodeURIComponent(ma);route()}catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
 async function makeDemo(hpId){
   const hp=hpOf(hpId||"luat-dan-su"),ma="THU-"+(hp.ma||"DS"),tg=THOI_GIAN_CHUNG;if(!await ask("Tạo lớp thử","Tạo lớp <b>"+ma+"</b> ("+esc(hp.name)+", "+tg+" phút, mở 14 ngày) với 5 sinh viên giả TEST001–TEST005. Nếu lớp đã có, danh sách được làm mới.","Tạo lớp thử"))return;
   const now=new Date();const rows=[["TEST001","Nguyễn Văn An","01/01/2005"],["TEST002","Trần Thị Bình","02/02/2005"],["TEST003","Lê Minh Châu","03/03/2005"],["TEST004","Phạm Thu Dung","04/04/2005"],["TEST005","Hoàng Đức Em","05/05/2005"]].map(r=>({mssv:r[0],hoTen:r[1],ngaySinh:r[2]}));
   await db.doc("pnl_dg_lop/"+ma).set({ten:"Lớp thử "+hp.name,hocPhan:hp.id,hocPhanTen:hp.name,namHoc:"2026–2027",thoiGian:tg,openAt:TS.fromDate(new Date(now.getTime()-6e4)),closeAt:TS.fromDate(new Date(now.getTime()+14*864e5)),open:true,created:FV.serverTimestamp(),siSo:0,thu:true},{merge:true});
-  await saveRoster(ma,rows);location.hash="#quan-tri/"+ma;route();
+  await saveRoster(ma,rows);AD.loaded=0;location.hash="#quan-tri/"+ma;route();
 }
 async function saveRoster(ma,rows){
   const old=await db.collection("pnl_dg_sv").where("maLop","==",ma).get();const keep=new Set(rows.map(r=>r.mssv));
@@ -666,69 +783,6 @@ async function saveRoster(ma,rows){
   ops.push(b=>b.set(db.doc("pnl_dg_ds/"+ma),{rows,updated:FV.serverTimestamp()}));
   ops.push(b=>b.set(db.doc("pnl_dg_lop/"+ma),{siSo:rows.length},{merge:true}));
   for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(f=>f(b));await b.commit()}
-}
-/* ---- trang một lớp ---- */
-async function classView(ma){
-  $("#app").innerHTML='<p class="msg">Đang tải lớp '+esc(ma)+'…</p>';
-  let l,ds,bai,cham,B,BL=null;
-  try{const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists){$("#app").innerHTML='<p class="err">Không có lớp '+esc(ma)+'.</p><a href="#quan-tri">← Danh sách lớp</a>';return}
-    l={id:ma,...ls.data()};
-    if(l.hocPhan==="luat-dan-su-tu-luan"){location.href="tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma);return}
-    const [d1,d2,d3]=await Promise.all([db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
-    ds=d1.exists?(d1.data().rows||[]):[];bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
-    B=await loadBank(l.hocPhan,true);
-    if(isTN(l.hocPhan)&&Object.values(bai).some(b=>b.de&&b.de.tl))BL=await loadTL(l.hocPhan,true);
-  }catch(x){console.error(x);$("#app").innerHTML='<p class="err">Không tải được dữ liệu lớp ('+esc(x.code||x.message)+').</p>';return}
-  AD={...AD,ma,l,ds,bai,cham,B,BL};
-  const st=lopTrangThai(l);
-  $("#app").innerHTML=`<p><a href="#quan-tri">← Danh sách lớp</a></p><h1>${esc(ma)} <span class="pill ${st.k}" style="vertical-align:middle;font-size:13px">${esc(st.t)}</span></h1>
-    <p class="lead">${esc(l.ten||"")} · ${esc(l.hocPhanTen||l.hocPhan)} · ${esc(l.namHoc||"")} · ${THOI_GIAN_CHUNG} phút · mở ${esc(fmtDT(toDate(l.openAt)))} → đóng ${esc(fmtDT(toDate(l.closeAt)))}</p>
-    <div class="tabs"><button data-t="diem">Bảng điểm</button><button data-t="ds">Danh sách sinh viên (${ds.length})</button><button data-t="cai">Cài đặt lớp</button></div><div id="tab"></div>`;
-  $$(".tabs button").forEach(b=>{b.classList.toggle("on",b.dataset.t===AD.tab);b.onclick=()=>{AD.tab=b.dataset.t;$$(".tabs button").forEach(x=>x.classList.toggle("on",x===b));renderTab()}});
-  renderTab();
-}
-function renderTab(){({diem:tabDiem,ds:tabDS,cai:tabCai})[AD.tab]()}
-/* Ngân hàng dùng để chấm một bài: bài tự luận cũ của học phần đã chuyển sang trắc nghiệm dùng ngân hàng tự luận */
-const BB=b=>(b&&AD.BL&&laTLCu(AD.l.hocPhan,b.de))?AD.BL:AD.B;
-function ketQua(sv){
-  const b=AD.bai[sv.mssv];if(!b)return {sv,b:null};const B=BB(b);
-  if(!b.de.tl){const t=chamTNTH(B,b.de,b.answers);return {sv,b,lt:0,th:t.diem,sai:t.sai,tl:0,xn:true,tong:t.diem,t10:Math.round(t.diem*10)/10,tn:t}}
-  const tn=chamTN(B,b.de,b.answers);const c=AD.cham[sv.mssv];const cs=B.cases[b.de.tl];
-  let tl,xn=false,ys=null;
-  if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(B));
-    if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
-  else tl=c&&c.xacNhan?(xn=true,c.diem):0;
-  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:B.tl?Math.round(tong*10)/10:Math.round(tong)/10};
-}
-function tabDiem(){
-  const rows=AD.ds.map(ketQua);const nop=rows.filter(r=>r.b&&r.b.status==="da-nop"),dang=rows.filter(r=>r.b&&r.b.status!=="da-nop");
-  const t10=nop.map(r=>r.t10),avg=t10.length?r2(t10.reduce((a,b)=>a+b,0)/t10.length):0;
-  const bins=[[0,4,"<4"],[4,5,"4–<5"],[5,6.5,"5–<6,5"],[6.5,8,"6,5–<8"],[8,10.01,"8–10"]].map(([a,b,t])=>({t,n:t10.filter(x=>x>=a&&x<b).length}));const mx=Math.max(1,...bins.map(x=>x.n));
-  const wrong={};nop.forEach(r=>r.sai.forEach(id=>wrong[id]=(wrong[id]||0)+1));const top=Object.entries(wrong).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const chuaXN=nop.filter(r=>!r.xn).length;
-  $("#tab").innerHTML=`<div class="stats"><div class="stat"><b>${nop.length}/${AD.ds.length}</b><span>đã nộp</span></div><div class="stat"><b>${dang.length}</b><span>đang làm</span></div><div class="stat"><b>${t10.length?avg.toString().replace(".",","):"–"}</b><span>điểm TB (thang 10)</span></div><div class="stat"><b>${chuaXN}</b><span>bài tự luận chưa xác nhận</span></div></div>
-    ${nop.length?`<div class="card"><h3 style="margin-top:0">Phổ điểm (thang 10)</h3><div class="bars">${bins.map(x=>`<div style="height:${x.n/mx*100}%"><span>${x.n}</span></div>`).join("")}</div><div class="barlab">${bins.map(x=>"<span>"+x.t+"</span>").join("")}</div>
-      ${top.length?`<h3>Câu sai nhiều nhất</h3><ol>${top.map(([id,n])=>{const q=AD.B.byId[id];return `<li>${esc(q?q.q:id)} <span class="msg">(${id} · ${n}/${nop.length} sai)</span></li>`}).join("")}</ol>`:""}</div>`:""}
-    <div class="row"><button class="btn primary" id="d-xls">Xuất bảng điểm Excel</button><button class="btn" id="d-re">Tải lại</button>${nop.some(r=>r.b.de&&r.b.de.tl)?'<button class="btn" id="d-cl">Chấm lại tự luận theo đáp án mới</button>':""}</div>
-    <p class="msg">${AD.B.tn?"Điểm thang 10 = số câu đúng / tổng số câu × 10. Bài tự luận nộp theo đề cũ (nếu có) vẫn chấm như trước; điểm ghi \"tạm\" là bài tự luận chưa xác nhận.":AD.B.tl?"Điểm là tổng bài trên thang 10.":"Điểm là tổng bài trên thang 10 (100 điểm quy đổi)."} Điểm ghi "tạm" là bài có câu tự luận đang dùng điểm máy gợi ý theo từ khóa, bấm "Chấm tự luận" để xác nhận.</p>
-    <div class="card tblwrap"><table class="sheet"><thead><tr><th class="c">STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Trạng thái</th><th class="c">Điểm<br><span class="msg">(thang 10)</span></th><th class="c">Tự luận</th><th class="c">Rời trang</th><th>Thao tác</th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r.sv.mssv)}</td><td>${esc(r.sv.hoTen)}</td><td>${esc(r.sv.ngaySinh||"")}</td>
-      <td>${!r.b?'<span class="msg">Chưa làm</span>':r.b.status==="da-nop"?'<span class="pill open">Đã nộp</span>':'<span class="pill wait">Đang làm</span>'}</td>
-      <td class="c score">${r.b?String(r.t10).replace(".",",")+(r.xn?"":' <span class="msg">tạm</span>'):""}</td>
-      <td class="c">${!r.b?"":r.tn?'<span class="msg">Trắc nghiệm</span>':r.xn?'<span class="ok">Đã chấm</span>':`<button class="btn small primary" data-sv="${esc(r.sv.mssv)}">Chấm tự luận</button>`}</td>
-      <td class="c">${r.b?`<span class="${(r.b.roiTrang|0)>MAX_ROI?"wrong":""}">${r.b.roiTrang|0}</span>`:""}</td>
-      <td style="white-space:nowrap">${r.b?`<button class="btn small" data-paper="${esc(r.sv.mssv)}">Xem bài</button> ${r.xn&&!r.tn?`<button class="btn small" data-sv="${esc(r.sv.mssv)}">Sửa điểm TL</button> `:""}<button class="btn small danger" data-reset="${esc(r.sv.mssv)}">Mở lại lượt</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
-  $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
-  $("#d-re").onclick=()=>classView(AD.ma);$("#d-xls").onclick=()=>exportXls(rows);
-  if($("#d-cl"))$("#d-cl").onclick=async()=>{const xs=nop.filter(r=>AD.cham[r.sv.mssv]&&AD.cham[r.sv.mssv].xacNhan);
-    if(!await ask("Chấm lại tự luận","Tất cả "+nop.length+" bài đã nộp sẽ dùng điểm máy chấm theo đáp án hiện hành. "+(xs.length?"<b>"+xs.length+"</b> bài đã xác nhận sẽ trở về trạng thái \"tạm\" (điểm cũ được lưu lại trong dữ liệu chấm); sếp xác nhận lại sau.":"Chưa có bài nào đã xác nhận, điểm tạm đã tự cập nhật."),"Chấm lại"))return;
-    try{for(const r of xs){const c=AD.cham[r.sv.mssv];await db.doc("pnl_dg_cham/"+AD.ma+"__"+r.sv.mssv).set({maLop:AD.ma,mssv:r.sv.mssv,xacNhan:false,note:c.note||"",
-        cu:{diem:c.diem==null?null:c.diem,muc:c.muc||null,buoc:c.buoc||null,luc:c.luc||null},chamLai:FV.serverTimestamp()})}
-      classView(AD.ma)}catch(x){alertMsg("Không chấm lại được: "+(x.code||x.message))}};
-  $$("[data-sv]").forEach(a=>a.onclick=e=>{e.preventDefault();gradeView(a.dataset.sv)});
-  $$("[data-reset]").forEach(b=>b.onclick=async()=>{const sv=b.dataset.reset;const r=rows.find(x=>x.sv.mssv===sv);
-    if(!await ask("Mở lại lượt làm bài","Xóa bài làm hiện có của <b>"+esc(r.sv.hoTen)+"</b> ("+esc(sv)+") để sinh viên làm lại từ đầu với đề mới. Không khôi phục được bài cũ.","Xóa và mở lại",true))return;
-    try{await db.doc("pnl_dg_bai/"+AD.ma+"__"+sv).delete();await db.doc("pnl_dg_cham/"+AD.ma+"__"+sv).delete();classView(AD.ma)}catch(x){alertMsg("Không xóa được: "+(x.code||x.message))}});
 }
 function alertMsg(t){const m=modal('<p>'+esc(t)+'</p><div class="row" style="justify-content:flex-end"><button class="btn primary" id="m-ok">Đóng</button></div>',"sm");m.querySelector("#m-ok").onclick=closeModal}
 function gradeView(mssv){
@@ -760,10 +814,10 @@ function gradeView(mssv){
     m.querySelectorAll(".y").forEach(el=>{const x=+el.querySelector("select").value;el.classList.toggle("d1",x===1);el.classList.toggle("d05",x>0&&x<1)});
     const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(B.tl?Math.round(tong*10)/10:Math.round(tong)/10).replace(".",",");return {v,bv,tl}};
   calc();m.querySelectorAll(".g-muc,.g-buoc").forEach(s=>s.onchange=calc);
-  m.querySelector("#g-x").onclick=()=>{closeModal();tabDiem()};
+  m.querySelector("#g-x").onclick=()=>{closeModal();renderView()};
   m.querySelector("#g-save").onclick=async()=>{const {v,bv,tl}=calc();
     try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:tlMaxOf(B),xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
-      AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,xacNhan:true,luc:TS.now()};closeModal();tabDiem()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
+      AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,xacNhan:true,luc:TS.now()};closeModal();renderView()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
 function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
   const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';
@@ -790,51 +844,6 @@ function paperView(mssv){
     ${B.tl&&de.tl?"":'<p class="msg">Phương án hiển thị đúng thứ tự A, B, C, D như sinh viên đã thấy khi làm bài. Ô viền xanh là đáp án đúng.</p>'}${h}`);
   m.querySelector("#p-x").onclick=closeModal;m.querySelector("#p-print").onclick=()=>window.print();
 }
-function loadXLSX(){return window.XLSX?Promise.resolve(window.XLSX):new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=()=>res(window.XLSX);s.onerror=()=>rej(new Error("Không tải được thư viện Excel"));document.head.appendChild(s)})}
-async function exportXls(rows){
-  const X=await loadXLSX();
-  const data=[["STT","Mã sinh viên","Họ và tên","Ngày sinh","Điểm"]];
-  rows.forEach((r,i)=>data.push([i+1,r.sv.mssv,r.sv.hoTen,r.sv.ngaySinh||"",r.b?r.t10:""]));
-  const ws=X.utils.aoa_to_sheet(data);ws["!cols"]=[{wch:5},{wch:14},{wch:28},{wch:12},{wch:8}];
-  const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Bang diem");X.writeFile(wb,"Bang-diem-"+AD.ma+".xlsx");
-  const cho=rows.filter(r=>r.b&&!r.xn).length;if(cho)alertMsg("Đã xuất bảng điểm. Lưu ý: còn "+cho+" bài chưa xác nhận điểm tự luận, điểm của các bài này đang là điểm tạm.");
-}
-function tabDS(){
-  $("#tab").innerHTML=`<div class="card"><h3 style="margin-top:0">Thêm sinh viên thủ công</h3>
-    <form id="ds-one" novalidate><div class="row">
-      <div style="flex:2 1 220px"><label class="lab" for="one-ten">Họ và tên</label><input type="text" id="one-ten" maxlength="80" autocomplete="off"></div>
-      <div><label class="lab" for="one-sv">Mã sinh viên</label><input type="text" id="one-sv" maxlength="20" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></div>
-      <div><label class="lab" for="one-ns">Ngày sinh <span class="msg">(không bắt buộc)</span></label><input type="text" id="one-ns" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"></div></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit" id="one-go">Thêm vào lớp</button><span class="err" id="one-err" role="alert"></span><span class="ok" id="one-ok" aria-live="polite"></span></div></form></div>
-    <div class="card"><h3 style="margin-top:0">Nhập danh sách sinh viên</h3>
-    <p class="msg">Chọn file Excel (.xlsx, .xls, .csv) có các cột Mã sinh viên, Họ và tên và cột Ngày sinh nếu có (cột "Họ đệm" + "Tên" tách riêng cũng được). Hoặc sao chép các dòng trong Excel rồi dán vào ô dưới (mỗi dòng: MSSV ⇥ Họ tên ⇥ Ngày sinh — ngày sinh có thể bỏ trống).</p>
-    <div class="row"><div><input type="file" id="ds-file" accept=".xlsx,.xls,.csv"></div></div>
-    <div class="row"><div><textarea id="ds-paste" rows="5" placeholder="2251010001	Nguyễn Văn A	01/02/2005"></textarea></div></div>
-    <div class="row"><button class="btn" id="ds-read">Đọc danh sách dán vào</button></div><div id="ds-prev"></div></div>
-    <div class="card tblwrap"><h3 style="margin-top:0">Danh sách hiện tại (${AD.ds.length})</h3>${AD.ds.length?`<table><thead><tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Ngày sinh</th><th>Lịch sử làm bài</th><th></th></tr></thead><tbody>${AD.ds.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.mssv)}</td><td>${esc(s.hoTen)}</td><td>${esc(s.ngaySinh||"")}</td><td>${lichSu(s.mssv)}</td><td><button class="btn small" data-edit="${esc(s.mssv)}">Sửa</button> <button class="btn small danger" data-del="${esc(s.mssv)}">Xóa</button></td></tr>`).join("")}</tbody></table>`:'<p class="msg">Chưa có sinh viên.</p>'}</div>`;
-  $$("[data-paper]").forEach(b=>b.onclick=()=>paperView(b.dataset.paper));
-  const f1=$("#ds-one");let editing=null;
-  f1.onsubmit=async e=>{e.preventDefault();const err=$("#one-err"),ok=$("#one-ok");err.textContent="";ok.textContent="";
-    const hoTen=$("#one-ten").value.replace(/\s+/g," ").trim(),mssv=$("#one-sv").value.trim().toUpperCase().replace(/\s+/g,""),ns=$("#one-ns").value.trim();
-    if(!hoTen){err.textContent="Nhập họ và tên.";$("#one-ten").focus();return}
-    if(!/^[A-Z0-9_-]{2,20}$/.test(mssv)){err.textContent="Mã sinh viên chỉ gồm chữ, số, dấu gạch (2–20 ký tự).";$("#one-sv").focus();return}
-    if(ns&&!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(ns)){err.textContent="Ngày sinh ghi theo dạng dd/mm/yyyy, hoặc để trống.";$("#one-ns").focus();return}
-    const ngaySinh=ns?ns.split("/").map((x,i)=>i<2?pad(+x):x).join("/"):"";
-    let rows=AD.ds.slice();
-    if(editing&&editing!==mssv&&rows.some(r=>r.mssv===mssv)){err.textContent="Mã sinh viên "+mssv+" đã có trong lớp.";return}
-    if(!editing&&rows.some(r=>r.mssv===mssv)){err.textContent="Mã sinh viên "+mssv+" đã có trong lớp. Bấm Sửa ở dòng đó nếu muốn đổi thông tin.";return}
-    if(editing){if(editing!==mssv&&AD.bai[editing]){err.textContent="Sinh viên này đã có bài làm, không đổi mã sinh viên được.";return}rows=rows.map(r=>r.mssv===editing?{mssv,hoTen,ngaySinh}:r)}else rows.push({mssv,hoTen,ngaySinh});
-    $("#one-go").disabled=true;
-    try{await saveRoster(AD.ma,rows);AD.ds=rows;AD.l.siSo=rows.length;const was=editing;editing=null;AD.tab="ds";tabDS();
-      $("#one-ok").textContent=(was?"Đã sửa ":"Đã thêm ")+hoTen+" ("+mssv+").";const tb=$$(".tabs button")[1];if(tb)tb.textContent="Danh sách sinh viên ("+rows.length+")";$("#one-ten").focus()}
-    catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+").";$("#one-go").disabled=false}};
-  $$("[data-edit]").forEach(b=>b.onclick=()=>{const r=AD.ds.find(x=>x.mssv===b.dataset.edit);if(!r)return;editing=r.mssv;$("#one-ten").value=r.hoTen;$("#one-sv").value=r.mssv;$("#one-ns").value=r.ngaySinh||"";$("#one-go").textContent="Lưu thay đổi";$("#one-ok").textContent="";f1.scrollIntoView({behavior:"smooth"});$("#one-ten").focus()});
-  $$("[data-del]").forEach(b=>b.onclick=async()=>{const r=AD.ds.find(x=>x.mssv===b.dataset.del);if(!r)return;
-    const has=!!AD.bai[r.mssv];if(!await ask("Xóa sinh viên khỏi lớp","Xóa <b>"+esc(r.hoTen)+"</b> ("+esc(r.mssv)+") khỏi danh sách lớp."+(has?" Bài làm đã có của sinh viên này vẫn được giữ nhưng không hiện trong bảng điểm.":""),"Xóa",true))return;
-    const rows=AD.ds.filter(x=>x.mssv!==r.mssv);try{await saveRoster(AD.ma,rows);AD.ds=rows;AD.l.siSo=rows.length;tabDS();const tb=$$(".tabs button")[1];if(tb)tb.textContent="Danh sách sinh viên ("+rows.length+")"}catch(x){alertMsg("Không xóa được: "+(x.code||x.message))}});
-  $("#ds-file").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const X=await loadXLSX();const wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:true});const aoa=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:""});preview(parseRows(aoa,X))}catch(x){$("#ds-prev").innerHTML='<p class="err">Không đọc được file: '+esc(x.message)+'</p>'}};
-  $("#ds-read").onclick=()=>preview(parseRows($("#ds-paste").value.split(/\r?\n/).filter(s=>s.trim()).map(s=>s.split(/\t|;|,(?=\s*\S)/)),null));
-}
 function fmtNS(v,X){if(v instanceof Date&&!isNaN(v)){const d=new Date(v.getTime()+12*36e5);return pad(d.getUTCDate())+"/"+pad(d.getUTCMonth()+1)+"/"+d.getUTCFullYear()}
   if(typeof v==="number"&&X&&v>10000&&v<80000){const p=X.SSF.parse_date_code(v);return pad(p.d)+"/"+pad(p.m)+"/"+p.y}return String(v||"").trim()}
 function parseRows(aoa,X){
@@ -847,23 +856,6 @@ function parseRows(aoa,X){
     mssv=String(mssv==null?"":mssv).trim().toUpperCase().replace(/\s+/g,"");ten=String(ten||"").replace(/\s+/g," ").trim();
     if(!/^[A-Z0-9_-]{2,20}$/.test(mssv)||!ten||seen.has(mssv))return;seen.add(mssv);out.push({mssv,hoTen:ten,ngaySinh:fmtNS(ns,X)})});
   return out;
-}
-function preview(rows){
-  const p=$("#ds-prev");if(!rows.length){p.innerHTML='<p class="err">Không tìm thấy dòng hợp lệ (cần có MSSV và họ tên).</p>';return}
-  p.innerHTML=`<p class="ok">Đọc được ${rows.length} sinh viên. Kiểm tra vài dòng đầu:</p><table><tbody>${rows.slice(0,5).map(s=>`<tr><td>${esc(s.mssv)}</td><td>${esc(s.hoTen)}</td><td>${esc(s.ngaySinh)}</td></tr>`).join("")}</tbody></table>
-    <p class="msg">Lưu sẽ <b>thay thế</b> danh sách hiện tại. Bài làm đã có của sinh viên vẫn được giữ.</p><button class="btn primary" id="ds-save">Lưu danh sách</button> <span class="err" id="ds-err"></span>`;
-  $("#ds-save").onclick=async()=>{$("#ds-save").disabled=true;try{await saveRoster(AD.ma,rows);AD.tab="ds";classView(AD.ma)}catch(x){$("#ds-err").textContent="Không lưu được ("+(x.code||x.message)+")";$("#ds-save").disabled=false}};
-}
-function tabCai(){
-  const l=AD.l;$("#tab").innerHTML=`<div class="card"><div class="row"><button class="btn primary" id="c-edit">Sửa thông tin, giờ mở/đóng</button><button class="btn" id="c-tog">${l.open?"Khóa ngay (không cho làm bài)":"Mở lại cho làm bài"}</button></div>
-    <p class="msg">${isTN(l.hocPhan)?`Đề mỗi sinh viên: ${hpOf(l.hocPhan).tnCases||3} tình huống tư vấn khác chương, rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống của ngân hàng ôn tập (Chương 2–6); lấy đủ các câu ABCD của mỗi tình huống theo 5 bước tư vấn (khoảng ${(hpOf(l.hocPhan).tnCases||3)*8} câu), đảo thứ tự phương án. Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Bài tự luận đã nộp theo đề cũ vẫn giữ cách chấm cũ.`:isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống (xây dựng từ án lệ, Chương 2–6); sinh viên điền phiếu tư vấn 5 bước (Tiếp xúc khách hàng → Vấn đề pháp lý → Luật áp dụng → Phương án giải quyết → Trả lời tư vấn). Chấm: làm đủ 5 bước = 5 điểm (mỗi bước 1 điểm); nội dung theo 5 ý chính của từng bước = 5 điểm (0,5 / 1,0 / 1,0 / 1,75 / 0,75); máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}, rải đều các chương), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm: trả lời đủ các yêu cầu = 5; nội dung theo từ khóa điều luật, kết quả tính toán, ý diễn đạt = 5), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
-    <div class="card"><h3 style="margin-top:0">Xóa lớp</h3><p class="msg">Xóa lớp, danh sách sinh viên, bài làm và điểm của lớp. Không khôi phục được — nên xuất bảng điểm Excel trước.</p><button class="btn danger" id="c-del">Xóa lớp ${esc(l.id)}</button></div>`;
-  $("#c-edit").onclick=()=>classForm(l);
-  $("#c-tog").onclick=async()=>{await db.doc("pnl_dg_lop/"+l.id).set({open:!l.open},{merge:true});classView(l.id)};
-  $("#c-del").onclick=async()=>{if(!await ask("Xóa lớp "+l.id,"Toàn bộ danh sách, bài làm và điểm của lớp <b>"+esc(l.id)+"</b> sẽ bị xóa vĩnh viễn.","Xóa vĩnh viễn",true))return;
-    try{const refs=[];for(const c of ["pnl_dg_sv","pnl_dg_bai","pnl_dg_cham"]){(await db.collection(c).where("maLop","==",l.id).get()).docs.forEach(d=>refs.push(d.ref))}
-      refs.push(db.doc("pnl_dg_ds/"+l.id),db.doc("pnl_dg_lop/"+l.id));for(let i=0;i<refs.length;i+=400){const b=db.batch();refs.slice(i,i+400).forEach(r=>b.delete(r));await b.commit()}
-      location.hash="#quan-tri"}catch(x){alertMsg("Không xóa được: "+(x.code||x.message))}};
 }
 
 /* ====== KHỞI ĐỘNG ====== */
