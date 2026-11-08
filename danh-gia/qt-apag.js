@@ -237,10 +237,11 @@ function classTable(el,list,opts){
 
 /* ---------- thư viện Excel (tải khi cần) ---------- */
 const LIB={xlsx:["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"],
-  exceljs:["https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js","https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"]};
+  exceljs:["https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js","https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"],
+  jszip:["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js","https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"]};
 const loading={};
 function addScript(u){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=u;s.onload=res;s.onerror=()=>{s.remove();rej()};document.head.appendChild(s)})}
-function lib(name){const g=name==="xlsx"?"XLSX":"ExcelJS";if(window[g])return Promise.resolve(window[g]);
+function lib(name){const g=name==="xlsx"?"XLSX":name==="jszip"?"JSZip":"ExcelJS";if(window[g])return Promise.resolve(window[g]);
   return loading[name]||(loading[name]=(async()=>{for(const u of LIB[name]){try{await addScript(u);if(window[g])return window[g]}catch(x){}}loading[name]=null;throw new Error("Không tải được thư viện Excel. Kiểm tra mạng rồi thử lại.")})())}
 
 /* ---------- đọc danh sách sinh viên (Excel APAG, Excel bất kỳ, CSV, dán) ---------- */
@@ -362,27 +363,46 @@ async function buildAPAG(l,rows,m){
   ws.views=[{state:"frozen",ySplit:11}];
   return wb.xlsx.writeBuffer();
 }
-/* Điền điểm vào file Export excel tải từ APAG (giữ nguyên mọi thứ khác, kể cả cột ẩn ID) để Import excel lại */
+/* Điền điểm vào file Export excel tải từ APAG để Import excel lại (sửa 09/11/2026).
+   Chỉ sửa đúng các ô điểm trong XML của trang tính; mọi phần khác của file APAG (cột ẩn ID_diem/ID_sv/ID_dt/ID_he, logo,
+   thuộc tính tệp, kiểu ô, tên vùng) giữ nguyên từng byte — trước đây ghi lại cả file bằng ExcelJS làm mất logo và thuộc tính. */
+const xmlDec=s=>s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#(\d+);/g,(m,n)=>String.fromCharCode(+n)).replace(/&amp;/g,"&");
+const colNum=c=>c.split("").reduce((n,ch)=>n*26+ch.charCodeAt(0)-64,0);
 async function fillAPAG(file,rows,m,colKey){
-  const EJ=await lib("exceljs");const wb=new EJ.Workbook();await wb.xlsx.load(await file.arrayBuffer());
-  const ws=wb.worksheets.find(w=>w.state!=="hidden"&&w.actualRowCount>5)||wb.worksheets[0];
-  const txt=v=>v==null?"":typeof v==="object"?(v.richText?v.richText.map(x=>x.text).join(""):v.text!=null?String(v.text):v.result!=null?String(v.result):""):String(v);
-  const nk=v=>strip(txt(v)).replace(/[^a-z0-9]/g,"");
-  let cM=0,cD=0,start=0;
-  /* 1) dòng tên trường (ẩn) của APAG: Ma_sv / TP2 */
-  for(let r=1;r<=15&&!cM;r++){ws.getRow(r).eachCell({includeEmpty:false},(c,j)=>{const k=nk(c.value);if(k==="masv")cM=j;if(k===(colKey||"tp2"))cD=j})}
-  /* 2) dòng tiêu đề hiển thị */
-  for(let r=1;r<=20;r++){const row=ws.getRow(r);row.eachCell({includeEmpty:false},(c,j)=>{const k=nk(c.value);
-      if(!cM&&/^(masinhvien|mssv|masosinhvien)$/.test(k))cM=j;if(/kiemtradinhky/.test(k)){cD=cD||j;start=Math.max(start,r+1)}if(/^(masinhvien|mssv)$/.test(k))start=Math.max(start,r+1)})}
+  const JZ=await lib("jszip");const zip=await JZ.loadAsync(await file.arrayBuffer());
+  const wbx=await zip.file("xl/workbook.xml").async("string"),rels=await zip.file("xl/_rels/workbook.xml.rels").async("string");
+  const sheets=[...wbx.matchAll(/<sheet\b[^>]*>/g)].map(x=>({name:(x[0].match(/name="([^"]*)"/)||[])[1],rid:(x[0].match(/r:id="([^"]*)"/)||[])[1],hidden:/state="(hidden|veryHidden)"/.test(x[0])}));
+  const target=rid=>{const r=[...rels.matchAll(/<Relationship\b[^>]*>/g)].map(x=>x[0]).find(x=>x.includes('Id="'+rid+'"'));const t=r&&(r.match(/Target="([^"]*)"/)||[])[1];return t?(t.startsWith("/")?t.slice(1):"xl/"+t.replace(/^\.\//,"")):null};
+  const sh=sheets.find(x=>!x.hidden)||sheets[0];const path=target(sh.rid);if(!path||!zip.file(path))throw new Error("Không đọc được trang tính trong file APAG.");
+  const ssf=zip.file("xl/sharedStrings.xml"),sst=ssf?[...(await ssf.async("string")).matchAll(/<si>([\s\S]*?)<\/si>/g)].map(x=>xmlDec([...x[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(y=>y[1]).join(""))):[];
+  let xml=await zip.file(path).async("string");
+  const cellRe=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+  const val=(attrs,inner)=>{inner=inner||"";const t=(attrs.match(/\bt="([^"]*)"/)||[])[1];const v=(inner.match(/<v>([\s\S]*?)<\/v>/)||[])[1];
+    if(t==="s")return sst[+v]||"";if(t==="inlineStr")return xmlDec([...inner.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(y=>y[1]).join(""));return v==null?"":xmlDec(v)};
+  const rowsX=[...xml.matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)].map(x=>({r:+x[1],cells:[...x[2].matchAll(cellRe)].map(c=>({ref:(c[1].match(/\br="([A-Z]+)\d+"/)||[])[1],v:val(c[1],c[2])}))}));
+  const nk=v=>strip(v).replace(/[^a-z0-9]/g,"");let cM="",cD="",start=0;
+  for(const R of rowsX.filter(x=>x.r<=20)){for(const c of R.cells){const k=nk(c.v);
+    if(k==="masv"&&!cM)cM=c.ref;if(k===(colKey||"tp2"))cD=c.ref;
+    if(/^(masinhvien|mssv|masosinhvien)$/.test(k)){cM=cM||c.ref;start=Math.max(start,R.r+1)}if(/kiemtradinhky/.test(k)){cD=cD||c.ref;start=Math.max(start,R.r+1)}}}
   if(!cM)throw new Error("Không tìm thấy cột Mã sinh viên trong file. Hãy dùng đúng file Export excel tải từ APAG.");
   if(!cD)throw new Error("Không tìm thấy cột “Kiểm tra định kỳ” trong file APAG.");
-  const by=new Map(rows.map(r=>[String(r.mssv).toUpperCase(),r]));const used=new Set();const thieu=[];let ghi=0,last=start;
-  for(let r=Math.max(start,2);r<=ws.rowCount;r++){const row=ws.getRow(r);const ms=txt(row.getCell(cM).value).trim().toUpperCase();if(!OKMS(ms)||!/\d/.test(ms))continue;last=r;
-    const s=by.get(ms);if(!s){thieu.push({mssv:ms,hoTen:txt(row.getCell(cM+1).value),ly:"không có trong lớp trên web"});continue}used.add(ms);
+  const by=new Map(rows.map(r=>[String(r.mssv).toUpperCase(),r]));const used=new Set(),thieu=[],ghiMap=new Map();
+  for(const R of rowsX){if(R.r<start)continue;const ms=String((R.cells.find(c=>c.ref===cM)||{}).v||"").trim().toUpperCase();if(!OKMS(ms)||!/\d/.test(ms))continue;
+    const ten=(R.cells.find(c=>colNum(c.ref)===colNum(cM)+1)||{}).v||"";const s=by.get(ms);
+    if(!s){thieu.push({mssv:ms,hoTen:ten,ly:"không có trong lớp trên web"});continue}used.add(ms);
     if(s.diem==null){thieu.push({mssv:ms,hoTen:s.hoTen,ly:s.st==="dang"?"đang làm, chưa nộp":"chưa làm bài"});continue}
-    const cell=row.getCell(cD);cell.value=rnd(s.diem,m);ghi++}
+    ghiMap.set(R.r,rnd(s.diem,m))}
+  /* thay từng ô điểm, giữ kiểu ô (s="…") */
+  xml=xml.replace(/<row\b[^>]*\br="(\d+)"[^>]*>([\s\S]*?)<\/row>/g,(whole,rn,inner)=>{rn=+rn;if(!ghiMap.has(rn))return whole;const ref=cD+rn,num=String(ghiMap.get(rn));
+    const re=new RegExp('<c\\b([^>]*?)\\br="'+ref+'"([^>]*?)(?:/>|>[\\s\\S]*?</c>)');
+    const st=(a,b)=>((a+b).match(/\bs="(\d+)"/)||[])[0]||"";
+    let out;if(re.test(inner))out=inner.replace(re,(c,a,b)=>'<c r="'+ref+'" '+st(a,b)+'><v>'+num+'</v></c>');
+    else{const cells=[...inner.matchAll(/<c\b[^>]*\br="([A-Z]+)\d+"/g)];const after=cells.find(c=>colNum(c[1])>colNum(cD));const nc='<c r="'+ref+'"><v>'+num+'</v></c>';
+      out=after?inner.slice(0,after.index)+nc+inner.slice(after.index):inner+nc}
+    return whole.replace(inner,out)});
+  zip.file(path,xml,{createFolders:false});
   const ngoai=rows.filter(r=>!used.has(String(r.mssv).toUpperCase())&&r.diem!=null);
-  return {buf:await wb.xlsx.writeBuffer(),ghi,thieu,ngoai};
+  return {buf:await zip.generateAsync({type:"uint8array",compression:"DEFLATE",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),ghi:ghiMap.size,thieu,ngoai};
 }
 /* hộp xuất: o = {lop, rows:[{mssv,hoTen,ngaySinh,diem,tam,st}], tamNote} */
 function exportDialog(o){
@@ -390,9 +410,9 @@ function exportDialog(o){
   const d=modal(`<h2>Export excel – bảng điểm Kiểm tra định kỳ</h2>
     <p class="qta-msg" style="margin-top:0">Lớp <b>${esc(l.id)}</b> · ${esc(tenMonOf(l))} · ${co}/${o.rows.length} sinh viên có điểm (thang 10).</p>
     ${cho?`<p class="qta-err" style="font-weight:500">Còn ${cho} bài có điểm tạm (chưa xác nhận). ${esc(o.tamNote||"")}</p>`:""}
-    <label class="opt"><input type="radio" name="qx-k" value="mau" checked><b>Bảng điểm theo mẫu APAG</b><span>File Excel đúng bố cục “Bảng điểm quá trình”: TT · Mã sinh viên · Họ và tên · Ngày sinh · Điểm quá trình (Kiểm tra thường xuyên | Kiểm tra định kỳ) · Số tiết nghỉ · TBCBP · Ghi chú; mỗi sinh viên một dòng, mỗi điểm một ô. Dùng để lưu, in, ký.</span></label>
-    <label class="opt"><input type="radio" name="qx-k" value="apag"><b>Điền điểm vào file Export excel của APAG</b><span>Trên APAG bấm Export excel ở lớp này, chọn file đó ở dưới. Web ghi điểm vào cột “Kiểm tra định kỳ” theo mã sinh viên, giữ nguyên các cột khác → tải về rồi Import excel lên APAG.</span></label>
-    <div id="qx-fwrap" hidden class="fr"><div><label for="qx-f">File Export excel của APAG</label><input type="file" id="qx-f" accept=".xlsx" style="border:0;padding:4px 0"></div></div>
+    <label class="opt"><input type="radio" name="qx-k" value="mau"><b>Bảng điểm theo mẫu APAG</b><span>File Excel đúng bố cục “Bảng điểm quá trình”: TT · Mã sinh viên · Họ và tên · Ngày sinh · Điểm quá trình (Kiểm tra thường xuyên | Kiểm tra định kỳ) · Số tiết nghỉ · TBCBP · Ghi chú; mỗi sinh viên một dòng, mỗi điểm một ô. Dùng để lưu, in, ký — <b>không dùng để Import lên APAG</b> (thiếu mã định danh ẩn của APAG).</span></label>
+    <label class="opt"><input type="radio" name="qx-k" value="apag" checked><b>Điền điểm vào file Export excel của APAG</b><span>Dùng để nhập điểm lên APAG. Ngay trước khi nhập, trên APAG bấm Export excel ở lớp này (file mới nhất), chọn file đó ở dưới. Web ghi điểm vào cột “Kiểm tra định kỳ” theo mã sinh viên, giữ nguyên các cột khác → tải về rồi Import excel lên APAG.</span></label>
+    <div id="qx-fwrap" class="fr"><div><label for="qx-f">File Export excel của APAG</label><input type="file" id="qx-f" accept=".xlsx" style="border:0;padding:4px 0"></div></div>
     <div class="fr"><div><label for="qx-r">Làm tròn điểm</label><select id="qx-r"><option value="2">Giữ nguyên (tối đa 2 chữ số thập phân)</option><option value="1">1 chữ số thập phân</option><option value="05">Đến 0,5</option></select></div></div>
     <div id="qx-res"></div><div class="qta-err" id="qx-err"></div>
     <div class="foot"><button class="qb ghost" id="qx-x">Đóng</button><button class="qb exp" id="qx-ok">${ICON.down}Tải file Excel</button></div>`,true);

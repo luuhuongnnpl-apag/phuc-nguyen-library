@@ -125,7 +125,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
 <div id="modal" hidden></div>
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
-<script src="qt-apag.js?v=20261108a"></script>
+<script src="qt-apag.js?v=20261109a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -622,7 +622,8 @@ function adminLogin(){
 function sideItems(ma,view){
   const it=[{label:"Trang chủ thư viện",icon:"home",href:"../index.html"},{grp:"Quản lý lớp học"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
     {id:"new",label:"Tạo lớp mới",icon:"plus",href:"#quan-tri",onClick:()=>classForm()}];
-  if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},
+  if(ma&&AD.cu)it.push({grp:"Lớp "+ma},{label:"Bài đề cũ 30+10+1",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma)+"/de-cu",on:true,sub:true},{label:"Về lớp (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma),sub:true});
+  else if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},
     {label:"Thống kê",icon:"chart",href:"#quan-tri/"+encodeURIComponent(ma)+"/thong-ke",on:view==="tk",sub:true},
     {label:"Cài đặt lớp",icon:"cog",href:"#quan-tri/"+encodeURIComponent(ma)+"/cai-dat",on:view==="cai",sub:true});
   it.push({grp:"Khác"},{label:"Lớp Luật Dân sự (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri"},{label:"Giao diện sinh viên",icon:"users",href:"#"});
@@ -632,7 +633,7 @@ function shell(o){return QTA.mount({user:USER&&USER.email,onLogout:adminLogout,.
 async function adminView(){
   if(!ADMIN){QTA.unmount();return adminLogin()}
   const parts=location.hash.split("/");
-  if(parts[1]){const ma=decodeURIComponent(parts[1]),v=parts[2]==="thong-ke"?"tk":parts[2]==="cai-dat"?"cai":"ds";return showClass(ma,v)}
+  if(parts[1]){const ma=decodeURIComponent(parts[1]),v=parts[2]==="thong-ke"?"tk":parts[2]==="cai-dat"?"cai":"ds";const cu=parts[2]==="de-cu";if(cu!==!!AD.cuReq){AD.cuReq=cu;AD.loaded=0}return showClass(ma,v)}
   const body=shell({side:sideItems(null),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Đánh giá định kỳ"},{t:"Danh sách lớp"}],
     actions:[{id:"new",label:"Tạo lớp mới",icon:"plus",kind:"blue",onClick:()=>classForm()},...HOCPHAN.filter(h=>h.mode==="tn").map(h=>({id:"demo-"+h.id,label:"Lớp thử "+h.name,kind:"ghost",onClick:()=>makeDemo(h.id)}))],
     body:'<p class="qta-msg">Đang tải danh sách lớp…</p>'});
@@ -645,12 +646,14 @@ async function adminView(){
 async function loadClass(ma){
   const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists)return null;
   const l={id:ma,...ls.data()};
-  if(l.hocPhan==="luat-dan-su-tu-luan"){location.href="tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma);return "redirect"}
+  const deCu=l.hocPhan==="luat-dan-su-tu-luan"&&!!AD.cuReq;
+  if(l.hocPhan==="luat-dan-su-tu-luan"&&!deCu){location.href="tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma);return "redirect"}
   const [d1,d2,d3]=await Promise.all([db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
-  const ds=d1.exists?(d1.data().rows||[]):[];const bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});const cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
-  const B=await loadBank(l.hocPhan,true);let BL=null;
+  let ds=d1.exists?(d1.data().rows||[]):[];const bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});const cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
+  if(deCu)ds=ds.filter(s=>laDeCu(bai[s.mssv]));
+  const B=await loadBank(deCu?"luat-dan-su":l.hocPhan,true);let BL=null;
   if(isTN(l.hocPhan)&&Object.values(bai).some(b=>b.de&&b.de.tl))BL=await loadTL(l.hocPhan,true);
-  AD={...AD,ma,l,ds,bai,cham,B,BL,loaded:Date.now()};return AD;
+  AD={...AD,ma,l,ds,bai,cham,B,BL,cu:deCu,loaded:Date.now()};return AD;
 }
 async function showClass(ma,view,force){
   AD.view=view||AD.view||"ds";
@@ -660,6 +663,15 @@ async function showClass(ma,view,force){
   renderView();
 }
 function classView(ma){return showClass(ma||AD.ma,AD.view,true)}
+/* Bài đề cũ 30+10+1 (học phần luat-dan-su) còn trong lớp đã chuyển sang đề 12+1 */
+const laDeCu=b=>!!b&&!!b.de&&!b.de.essayMode&&!b.de.caseIds&&(b.hocPhan==="luat-dan-su"||(Array.isArray(b.de.lt)&&b.de.lt.length>0));
+const t10Of=(B,tong)=>B.tl?Math.round(r2(tong)*10)/10:Math.round(r2(tong))/10;
+/* Xác nhận điểm máy cho mọi bài tự luận đã nộp chưa xác nhận (ghi cả tổng thang 10 để trang Luật Dân sự hiển thị) */
+async function xacNhanTatCa(rows){const xs=rows.filter(x=>x.st==="nop"&&x.tam);if(!xs.length)return;
+  if(!await QTA.ask("Xác nhận điểm máy","Ghi điểm máy chấm (tự luận theo 2 tiêu chí: làm đủ yêu cầu + nội dung theo từ khóa, chấm rộng tay) làm điểm chính thức cho <b>"+xs.length+"</b> bài. Sau đó vẫn sửa từng bài được bằng nút Sửa điểm TL.","Xác nhận "+xs.length+" bài"))return;
+  try{for(const x of xs){const b=x.r.b,B=BB(b),cs=B.cases[b.de.tl];if(!cs||!cs.guide)continue;const ys=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(B)),tl=tongTL(bs,ys);
+      await db.doc("pnl_dg_cham/"+AD.ma+"__"+x.mssv).set({maLop:AD.ma,mssv:x.mssv,muc:ys.map(y=>y.muc),buoc:bs.map(y=>y.muc),diem:tl,tlMax:tlMaxOf(B),tong10:t10Of(B,x.r.lt+x.r.th+tl),nguon:"may-xac-nhan",xacNhan:true,note:"",luc:FV.serverTimestamp()})}
+    classView(AD.ma)}catch(e){QTA.info("Không lưu được: "+esc(e.code||e.message))}}
 function renderView(){({ds:viewDS,tk:viewTK,cai:viewCai})[AD.view||"ds"]()}
 const BB=b=>(b&&AD.BL&&laTLCu(AD.l.hocPhan,b.de))?AD.BL:AD.B;
 function ketQua(sv){
@@ -684,8 +696,9 @@ function viewDS(){
     actions:[{id:"add",label:"Thêm sinh viên",icon:"plus",kind:"blue",onClick:()=>editSV()},{id:"imp",label:"Import excel",icon:"up",kind:"imp",onClick:importDS},
       {id:"exp",label:"Export excel",icon:"down",kind:"exp",onClick:()=>QTA.exportDialog({lop:AD.l,rows,tamNote:"Bấm “Chấm tự luận” ở cột Bài làm để xác nhận trước khi nhập điểm chính thức."})},
       {id:"lock",label:l.open?"Khóa":"Mở lớp",icon:l.open?"lock":"unlock",kind:l.open?"lock":"unlock",onClick:toggleOpen},
-      coTLcu?{id:"cl",label:"Chấm lại tự luận",kind:"ghost",onClick:()=>chamLai(nop)}:null,{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>classView(AD.ma)}],
-    body:classHead(`<span>Sĩ số: <b>${AD.ds.length}</b> · đã nộp <b>${nop.length}</b></span>`)+'<div id="qg"></div>'});
+      nop.some(x=>x.tam)?{id:"xn",label:"Xác nhận điểm máy ("+nop.filter(x=>x.tam).length+")",kind:"save",onClick:()=>xacNhanTatCa(rows)}:null,
+      coTLcu&&!AD.cu?{id:"cl",label:"Chấm lại tự luận",kind:"ghost",onClick:()=>chamLai(nop)}:null,{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>classView(AD.ma)}],
+    body:(AD.cu?`<div class="qta-card" style="border-color:#e0b252"><b>Bài làm theo đề cũ 30+10+1</b> — các sinh viên dưới đây làm bài trước khi lớp chuyển sang đề 12 trắc nghiệm + 1 tự luận. Chấm ở đây (máy gợi ý tự luận rộng tay, giảng viên xác nhận); điểm thang 10 hiện sang bảng điểm lớp ở <a href="tu-luan-luat-dan-su.html#quan-tri/${encodeURIComponent(AD.ma)}">trang Luật Dân sự</a>.</div>`:"")+classHead(`<span>Sĩ số: <b>${AD.ds.length}</b> · đã nộp <b>${nop.length}</b></span>`)+'<div id="qg"></div>'});
   QTA.grid(body.querySelector("#qg"),rows,{state:AD.gs||(AD.gs={}),maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
     note:(AD.B.tn?"Điểm = số câu đúng / tổng số câu × 10, máy chấm ngay khi sinh viên nộp.":"Điểm thang 10 của bài đã nộp.")+" Ô viền vàng “tạm” là bài tự luận chưa xác nhận. Sửa, xóa sinh viên ở cột Ghi chú.",
     onAction:(a,ms)=>{if(a==="xem")paperView(ms);else if(a==="cham")gradeView(ms);else if(a==="sua")editSV(ms);else if(a==="xoa")delSV(ms);else if(a==="mo")resetSV(ms)}});
@@ -816,8 +829,9 @@ function gradeView(mssv){
   calc();m.querySelectorAll(".g-muc,.g-buoc").forEach(s=>s.onchange=calc);
   m.querySelector("#g-x").onclick=()=>{closeModal();renderView()};
   m.querySelector("#g-save").onclick=async()=>{const {v,bv,tl}=calc();
-    try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:tlMaxOf(B),xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
-      AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,xacNhan:true,luc:TS.now()};closeModal();renderView()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
+    const tong10=t10Of(B,r.lt+r.th+tl);
+    try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:tlMaxOf(B),tong10,nguon:"giang-vien",xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
+      AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tong10,xacNhan:true,luc:TS.now()};closeModal();renderView()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
 function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
   const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';

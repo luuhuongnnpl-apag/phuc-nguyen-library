@@ -5,7 +5,7 @@
 :root{font-family:"Segoe UI",Arial,sans-serif;color:#172c40;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}header{background:#164f70;color:white;padding:16px 4%}header a{color:#fff}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{font-size:23px;margin:0}main{max-width:1080px;margin:24px auto;padding:0 16px 50px}h2{font-size:21px}h3{font-size:18px}article,.panel{background:white;border:1px solid #d5dfeb;border-radius:13px;padding:20px;margin-bottom:16px}label{display:block;font-weight:600;margin:12px 0 5px}input,textarea,button,select{font:inherit}input,textarea,select{border:1px solid #b9c9d7;border-radius:8px;padding:9px 11px;width:100%}textarea{line-height:1.55;min-height:130px;resize:vertical}button,.btn{background:#19597b;color:white;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;margin:5px 6px 5px 0;text-decoration:none;display:inline-block}button.secondary,.btn.secondary{background:#eef2f6;color:#16405b;border:1px solid #b8c9d7}button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.muted{color:#607287}.warn{background:#fff2d9;border-left:4px solid #b77922;padding:12px;border-radius:5px}.ok{color:#167148}.error{color:#af2626;white-space:pre-wrap}.case{background:#f5f8fb;padding:16px;border-radius:10px;line-height:1.7}.q{padding:12px 0;border-bottom:1px solid #e3e9ef}.q:last-child{border:0}.q strong{display:block;margin-bottom:6px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.score{font-size:25px;font-weight:700}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1 1 150px}.mini{font-size:13px}.ans{white-space:pre-wrap;background:#f7f9fc;padding:10px;border-radius:8px}.student{border-top:1px solid #d6e0e9;padding-top:15px;margin-top:15px}.hide{display:none}footer{padding:20px;text-align:center;color:#607287;font-size:13px}
 </style></head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
 <main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
-<script src="./qt-apag.js?v=20261108a"></script>
+<script src="./qt-apag.js?v=20261109a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -287,15 +287,19 @@ function gradeAutomatic(b){
  const tn=mixed?markMCQ(de,ans):{score:0,correct:0,items:[]};
  return {diem:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
 }
+/* 09/11/2026: chấm tự luận rộng tay (mỗi yêu cầu: 0,5 trả lời đúng hướng + 0,5 nội dung). Bài máy chấm theo bản cũ được chấm lại; bài giảng viên đã chấm giữ nguyên. */
+const GRADE_POLICY="2026-11-09-v4";
+/* Bài làm theo đề cũ 30+10+1 (học phần luat-dan-su) nằm trong lớp đã chuyển: chấm ở quản trị chung (index.html#quan-tri/<lớp>/de-cu). */
+const laDeCu=b=>!!b&&!!b.de&&!b.de.essayMode&&!b.de.caseIds&&(b.hocPhan==="luat-dan-su"||(Array.isArray(b.de.lt)&&b.de.lt.length>0));
 async function markPending(ma,papers,grades){
- const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!grades[sv]?.xacNhan);
+ const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!laDeCu(b)&&(!grades[sv]?.xacNhan||(grades[sv].nguon==="tu-dong"&&grades[sv].gradePolicyVersion!==GRADE_POLICY)));
  if(!entries.length)return {done:0,errors:[]};
  try{await Promise.all([loadAutoKey(),loadMCQ()])}catch(x){return {done:0,errors:[x.message||String(x)]}}
  let done=0,errors=[];
  for(const [sv,b] of entries){
   try{
    const r=gradeAutomatic(b);
-   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:"2026-11-08-v3",xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,cu:grades[sv]&&grades[sv].nguon==="tu-dong"?{diem:grades[sv].diem,tuLuan:grades[sv].tuLuan,v:grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
    grades[sv]=saved;done++;
   }catch(e){errors.push(sv+": "+e.message)}
@@ -433,9 +437,10 @@ async function manageClass(ma,view){CURRENT=ma;view=view||"ds";
  if(view==="cai")return tlSettings();
  const {l,students,papers,grades,auto}=TLC;
  const rows=students.map(s=>{const b=papers[s.mssv],g=grades[s.mssv],nop=b&&b.status==="da-nop";
-  const bai=nop?[{a:"cham",t:"Xem / chấm bài",kind:"link"}]:[];const ghi=[{a:"sua",t:"Sửa"},{a:"xoa",t:"Xóa",kind:"link red"}];if(b)ghi.push({a:"mo",t:"Mở lại lượt",kind:"link red"});
-  return {mssv:s.mssv,hoTen:s.hoTen,ngaySinh:s.ngaySinh||"",diem:nop&&g&&g.xacNhan?g.diem:null,tam:false,st:!b?"chua":nop?"nop":(b.roiTrang|0)>MAX_ROI?"khoa":"dang",roi:b?(b.roiTrang|0):null,
-   ghiChu:nop&&!(g&&g.xacNhan)?"Chưa chấm được":g&&g.xacNhan?(g.nguon==="giang-vien"?"GV đã chấm"+(g.note?": "+g.note:""):"Máy chấm tự động"):"",bai,ghi}});
+  const cu=laDeCu(b);const bai=nop?[cu?{a:"cu",t:"Chấm bài (đề cũ)",kind:"blue"}:{a:"cham",t:"Xem / chấm bài",kind:"link"}]:[];const ghi=[{a:"sua",t:"Sửa"},{a:"xoa",t:"Xóa",kind:"link red"}];if(b)ghi.push({a:"mo",t:"Mở lại lượt",kind:"link red"});
+  const diem=!nop?null:cu?(g&&g.xacNhan&&g.tong10!=null?g.tong10:null):(g&&g.xacNhan?g.diem:null);
+  return {mssv:s.mssv,hoTen:s.hoTen,ngaySinh:s.ngaySinh||"",diem,tam:false,st:!b?"chua":nop?"nop":(b.roiTrang|0)>MAX_ROI?"khoa":"dang",roi:b?(b.roiTrang|0):null,
+   ghiChu:cu&&nop?(diem==null?"Đề cũ 30+10+1 – chờ chấm":"Đề cũ 30+10+1 – GV đã chấm"):nop&&!(g&&g.xacNhan)?"Chưa chấm được":g&&g.xacNhan?(g.nguon==="giang-vien"?"GV đã chấm"+(g.note?": "+g.note:""):"Máy chấm tự động"):"",bai,ghi}});
  const nop=rows.filter(r=>r.st==="nop").length;
  const body=tlShell({side:tlSide(ma,"ds"),crumbs:crumbs.concat([{t:"Danh sách & điểm"}]),
   actions:[{id:"add",label:"Thêm sinh viên",icon:"plus",kind:"blue",onClick:()=>tlEditSV()},{id:"imp",label:"Import excel",icon:"up",kind:"imp",onClick:tlImport},
@@ -444,7 +449,7 @@ async function manageClass(ma,view){CURRENT=ma;view=view||"ds";
   body:tlHead()+`<p id="msg" class="qta-err" style="margin:0 0 8px">${auto.errors.length?E("Lỗi tự chấm: "+auto.errors.join("; ")):""}</p><div id="qg"></div>`});
  QTA.grid(body.querySelector("#qg"),rows,{state:TLC.gs,maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
   note:`Sĩ số ${students.length} · đã nộp ${nop}${auto.done?` · vừa tự chấm thêm ${auto.done} bài`:""}. Điểm = trắc nghiệm (6) + tự luận (4), máy chấm khi mở lớp; bấm “Xem / chấm bài” để xem bài và sửa điểm. Sửa, xóa sinh viên ở cột Ghi chú.`,
-  onAction:(a,sv)=>{if(a==="cham")grade(ma,sv,papers[sv],grades[sv]);else if(a==="sua")tlEditSV(sv);else if(a==="xoa")tlDelSV(sv);else if(a==="mo")tlReset(sv)}});
+  onAction:(a,sv)=>{if(a==="cu")location.href="./index.html#quan-tri/"+encodeURIComponent(ma)+"/de-cu";else if(a==="cham")grade(ma,sv,papers[sv],grades[sv]);else if(a==="sua")tlEditSV(sv);else if(a==="xoa")tlDelSV(sv);else if(a==="mo")tlReset(sv)}});
 }
 async function tlToggle(){const l=TLC.l;if(!await QTA.ask(l.open?"Khóa lớp":"Mở lớp cho sinh viên",l.open?"Sinh viên sẽ không vào làm bài được cho đến khi mở lại.":"Bảo đảm đã rà soát đề và đáp án. Sinh viên làm được bài trong khung giờ đã đặt.",l.open?"Khóa":"Mở lớp",l.open))return;
  try{await db.doc("pnl_dg_lop/"+l.id).update({open:!l.open});manageClass(l.id,"ds")}catch(x){QTA.info(E(x.message||x))}}
@@ -483,31 +488,44 @@ function similarity(a,b){const A=new Set(normalize(a)),B=new Set(normalize(b));i
 
 /* Đề xuất điểm theo ý pháp lý: chỉ là trợ giúp, không phải quyết định tự động.
    Đáp án chỉ giải mã trong phiên quản trị hoặc được chọn từ tệp nội bộ. */
-const STOP_LEGAL=new Set("cua nhung trong theo nguoi truong hop phap luat quy dinh neu thi va hoac cua cac duoc khong cho voi mot hai ba nay do can phai xac dinh xem xet dieu kien dieu khoan bo luat toan bo phan tuong ung ngay thoi diem".split(" "));
-function legalWords(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/đ/g,"d").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(w=>w.length>2&&!STOP_LEGAL.has(w))}
-function uniqueWords(s){return [...new Set(legalWords(s))]}
-function legalSentences(s){return String(s||"").split(/[.;\n]+/).map(x=>x.trim()).filter(x=>x.length>25&&uniqueWords(x).length>=4).slice(0,14)}
-function legalCites(s){const v=new Set(),re=/(?:điều|dieu|đ\.|d\.)\s*(\d{1,3})/gi;let m;while((m=re.exec(s||"")))v.add(m[1]);return v}
+/* Chấm tự luận rộng tay (09/11/2026): mỗi yêu cầu 1 điểm = 0,5 trả lời đúng hướng (có viết, có nội dung liên quan đến yêu cầu)
+   + 0,5 nội dung (điều luật, số liệu, cụm ý của đáp án; "hiểu ý là được" — khoảng 1/3 ý đặc trưng là đủ điểm).
+   Cụm từ được tính trọng số theo độ đặc trưng trong toàn ngân hàng đáp án (từ chung chung như "thỏa thuận", "quy định" nặng ít). */
+const STOP_TL=new Set("va hoac la cua cac nhung mot hai ba nay do thi neu khi de voi cho trong theo tai ve tu den duoc bi phai can co khong chua da se dang rang nhu vay ma nen con cung deu moi anh chi ong ba em toi ho no kia day sau truoc ra vao len xuong nao gi".split(" "));
+const BO_TIEN_TO=/^\s*(định hướng đáp án( và phân hóa trường hợp)?|gợi ý|đáp án)\s*:\s*/i;
+const kd=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/đ/g,"d");
+function amTiet(s){return kd(s).replace(/(\d+(?:[.,]\d+)?)\s*%/g," $1phantram ").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(Boolean)}
+function capTu(s){const t=amTiet(s),out=new Set();for(let i=0;i<t.length-1;i++){const a=t[i],b=t[i+1];if(STOP_TL.has(a)||STOP_TL.has(b)||/^\d+$/.test(a)||/^\d+$/.test(b))continue;out.add(a+" "+b)}return out}
+function tuDon(s){return new Set(amTiet(s).filter(w=>w.length>2&&!STOP_TL.has(w)&&!/^\d+$/.test(w)))}
+/* "Điều 463, 466", "Điều 463 và Điều 466", "khoản 4 Điều 466" → {463,466} */
+function dieuLuat(s){const v=new Set(),t=kd(s),re=/dieu\s*(\d{1,3})((?:\s*(?:,|va|;|\/)\s*(?:dieu\s*)?\d{1,3}(?![\d%]))*)/g;let m;while((m=re.exec(t))){v.add(m[1]);(m[2].match(/\d{1,3}/g)||[]).forEach(x=>v.add(x))}return v}
+/* số liệu: tỷ lệ % và số tiền/diện tích/thời hạn (không tính số điều luật, năm ban hành) */
+function soLieu(s){const v=new Set(),d=dieuLuat(s),t=amTiet(s);t.forEach((w,i)=>{if(/^\d+(?:[.,]\d+)?phantram$/.test(w))v.add(w);else if(/^\d+$/.test(w)&&!d.has(w)&&!/^(19|20)\d\d$/.test(w)&&/^(trieu|ty|nghin|dong|m2|thang|ngay|nam|lan)$/.test(t[i+1]||""))v.add(w+" "+t[i+1])});return v}
+let DF=null,NDOC=1;
+function hocNganHang(answers){DF=new Map();NDOC=answers.length||1;answers.forEach(a=>{const s=String(a||"").replace(BO_TIEN_TO,"");new Set([...capTu(s),...tuDon(s)]).forEach(k=>DF.set(k,(DF.get(k)||0)+1))})}
+const W=k=>DF?Math.log((NDOC+1)/((DF.get(k)||0)+1))+0.15:1;
 function legalGrade(essay,answer){
- const A=legalSentences(answer),R=legalSentences(essay);
- if(!String(essay||"").trim())return {score:0,parts:[0,0,0,0],hits:[],missing:A,warning:"Bỏ trống"};
- const seen=uniqueWords(essay),seenSet=new Set(seen),hit=[],miss=[];
- let total=0;
- for(const clause of A){
-   const terms=uniqueWords(clause),same=terms.filter(w=>seenSet.has(w)).length,ratio=terms.length?same/terms.length:0;
-   if(ratio>=.62&&same>=4){hit.push({clause,ratio});total+=ratio}else miss.push(clause)
- }
- const coverage=A.length?hit.length/A.length:0;
- /* Chấm rộng tay: đúng một nửa nội dung => 70% điểm câu.
-    Chỉ tính các ý có mức khớp đủ rõ; bỏ trống và không liên quan không được điểm. */
- const gradeCurve=p=>Math.pow(Math.max(0,Math.min(1,p)),1.2);
- const substantive=hit.length>0&&seen.length>=6;
- const cited=legalCites(essay),model=legalCites(answer);
- const citationRatio=model.size?[...model].filter(x=>cited.has(x)).length/model.size:0;
- const detail=hit.length?hit.reduce((a,x)=>a+x.ratio,0)/hit.length:0;
- const weighted=Math.min(1,coverage*(.9+.1*Math.min(1,detail)));
- const score=substantive?Math.min(1.25,gradeCurve(weighted)*(model.size&&citationRatio===0?.85:1)*1.25):0;
- return {score:Math.round(score*100)/100,parts:[Math.round(score*100)/100,0,0,0],hits:hit,missing:miss,warning:!substantive?"Không nhận diện được ý pháp lý đủ rõ; cần giảng viên chấm thủ công.":"Gợi ý theo độ bao phủ ý đúng; giảng viên kiểm tra lập luận và tính chính xác trước khi duyệt."};
+ if(!DF&&RUBRIC&&RUBRIC.case_bank)hocNganHang(RUBRIC.case_bank.flatMap(c=>c.answer||[]));
+ const ans=String(answer||"").replace(BO_TIEN_TO,""),e=String(essay||"").trim();
+ if(!e)return {score:0,diem:0,t1:0,t2:0,parts:[0,0,0,0],hits:[],missing:["(bỏ trống)"],warning:"Bỏ trống"};
+ const A2=capTu(ans),E2=capTu(e),A1=tuDon(ans),E1=tuDon(e),Ad=dieuLuat(ans),Ed=dieuLuat(e),As=soLieu(ans),Es=soLieu(e);
+ const hit2=[...A2].filter(x=>E2.has(x)),hit1=[...A1].filter(x=>E1.has(x)),hitD=[...Ad].filter(x=>Ed.has(x)),hitS=[...As].filter(x=>Es.has(x));
+ const sum=xs=>xs.reduce((a,k)=>a+W(k),0);
+ const cum=Math.min(1,sum(hit2)/(0.3*sum([...A2])||1)),tu=Math.min(1,sum(hit1)/(0.35*sum([...A1])||1));
+ const yNghia=Math.max(cum,0.5*tu);
+ const soTu=amTiet(e).length;
+ /* Tiêu chí 1 (0,5): có trả lời, nội dung liên quan đến yêu cầu */
+ const lienQuan=hitD.length>0||hitS.length>0||cum>=0.25;
+ const t1=soTu>=5&&lienQuan?0.5:soTu>=3&&cum>=0.1?0.25:0;
+ /* Tiêu chí 2 (0,5): nội dung */
+ let nd=Ad.size?0.6*yNghia+0.4*(hitD.length/Ad.size):yNghia;
+ if(As.size)nd+=0.2*(hitS.length/As.size);
+ const t2=t1>0?Math.round(Math.min(1,nd)*0.5*20)/20:0;
+ const pts=Math.round((t1+t2)*100)/100;
+ return {score:Math.round(pts*1.25*100)/100,diem:pts,t1,t2,parts:[t1,t2,0,0],
+  hits:[...hitD.map(x=>({clause:"Điều "+x})),...hitS.map(x=>({clause:x.replace("phantram","%")})),...hit2.sort((a,b)=>W(b)-W(a)).slice(0,10).map(x=>({clause:x}))],
+  missing:[...Ad].filter(x=>!Ed.has(x)).map(x=>"Chưa nêu Điều "+x),
+  warning:t1===0?"Không nhận diện được nội dung liên quan; giảng viên xem lại.":"Trả lời: "+String(t1).replace(".",",")+" · Nội dung: "+String(t2).replace(".",",")};
 }
 const b64ToBytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function decryptRubric(password){
@@ -542,7 +560,7 @@ async function grade(ma,sv,b,g){
    const key=id+"_"+j,guide=guideFor(id,j),input=ans[key]||"",pos=i*4+j;
    const ev=legalGrade(input,guide),suggested=mixed?Math.round(ev.score*.8*100)/100:ev.score;
    const selected=g?.muc?.[pos]!=null?g.muc[pos]:suggested;
-   h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div><details><summary>Đáp án và nhận xét</summary><div class="ans">'+E(guide)+'</div>'+(ev.missing.length?'<p>Các ý cần rà soát:</p><ul>'+ev.missing.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul>':'')+'</details><p class="mini muted">Điểm máy gợi ý: '+suggested.toFixed(2)+' / '+max.toFixed(2)+' điểm</p><label>Điểm tự luận (0 – '+max.toFixed(2)+')</label><input data-point="'+pos+'" type="number" min="0" max="'+max+'" step="0.05" value="'+E(selected)+'"></div>';
+   h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div><details><summary>Đáp án và các ý còn thiếu</summary><div class="ans">'+E(guide)+'</div>'+(ev.missing.length?'<p>Các ý cần rà soát:</p><ul>'+ev.missing.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul>':'')+'</details>'+(ev.hits&&ev.hits.length?'<p class="mini">Ý trùng với đáp án: '+ev.hits.map(x=>E(x.clause)).join(' · ')+'</p>':'')+'<p class="mini muted">'+E(ev.warning||'')+'. Điểm máy gợi ý: '+suggested.toFixed(2)+' / '+max.toFixed(2)+' điểm</p><label>Điểm tự luận (0 – '+max.toFixed(2)+')</label><input data-point="'+pos+'" type="number" min="0" max="'+max+'" step="0.05" value="'+E(selected)+'"></div>';
   });
  });h+='</article><article><div class="top"><span>Tổng điểm</span><strong class="score" id="total"></strong></div><label>Nhận xét</label><textarea id="review" maxlength="1000">'+E(g?.note||"")+'</textarea><button id="saveGrade">Lưu điểm đã điều chỉnh</button><p id="msg" class="error"></p></article>';
  const svName=(TLC&&TLC.ma===ma&&(TLC.students.find(x=>x.mssv===sv)||{}).hoTen)||"";
