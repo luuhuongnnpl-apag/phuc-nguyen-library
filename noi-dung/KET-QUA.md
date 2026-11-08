@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 08:13 08/11/2026
+# Kết quả dựng nội dung — 08:24 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/VAN-DAP-LIVE-SETUP.md
+      - functions/package.json
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42433324348 · commit 65a1b5c
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42434141787 · commit dfc81a0
