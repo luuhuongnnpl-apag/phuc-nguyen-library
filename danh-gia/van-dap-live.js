@@ -5,7 +5,7 @@
  const API="https://asia-southeast1-phuc-nguyen-library.cloudfunctions.net/vanDapApi";
  const WS="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
  const FB={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
- let tab="student",reconnects=0;
+ let tab="student",reconnects=0,checkpointTimer=null;
  const state={running:false,finishing:false,preview:false,textOnly:false,ws:null,stream:null,ctx:null,src:null,processor:null,volume:null,
   timer:null,reconnect:null,start:0,end:0,ma:"",sv:"",history:[],input:"",output:"",playingUntil:0,muted:false,lastTokenAt:0};
  function status(message,error=false,selector="#health"){const el=$(selector);if(!el)return;el.textContent=message;el.classList.toggle("error",error)}
@@ -13,9 +13,18 @@
  function msg(t){$("#notice").textContent=t}
  function time(ms){const sec=Math.max(0,Math.ceil(ms/1000));return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")}
  function addBubble(role,text){const log=$("#log");if(log.querySelector(".muted"))log.replaceChildren();const node=document.createElement("div");node.className="bubble "+(role==="student"?"student":"");const b=document.createElement("b");b.textContent=role==="student"?"Sinh viên":"Giảng viên AI";const p=document.createElement("div");p.textContent=text;node.append(b,p);log.append(node);log.scrollTop=log.scrollHeight}
- function record(role,text){const t=String(text||"").trim();if(!t)return;state.history.push({role,text:t.slice(0,1800)});if(state.history.length>100)state.history.shift();addBubble(role,t);$("#turnCount").textContent=String(state.history.filter(x=>x.role==="student").length)}
+ function record(role,text){const t=String(text||"").trim();if(!t)return;state.history.push({role,text:t.slice(0,1800)});if(state.history.length>100)state.history.shift();addBubble(role,t);$("#turnCount").textContent=String(state.history.filter(x=>x.role==="student").length);scheduleCheckpoint()}
  function accumulate(old,text){text=String(text||"");if(!text)return old;if(text===old||old.endsWith(text))return old;if(text.startsWith(old))return text;return old+text}
  function flush(){if(state.input.trim()){record("student",state.input);state.input=""}if(state.output.trim()){record("teacher",state.output);state.output=""}}
+ function scheduleCheckpoint(){
+  if(state.preview||!state.running||state.finishing)return;
+  if(checkpointTimer)clearTimeout(checkpointTimer);
+  checkpointTimer=setTimeout(async()=>{checkpointTimer=null;
+   if(!state.running||state.finishing||!state.history.length)return;
+   try{await api("checkpoint",{ma:state.ma,sv:state.sv,transcript:state.history.slice(-100)},15000)}
+   catch(e){console.warn("Không lưu được biên bản nháp",e.message)}
+  },12000);
+ }
  async function api(action,data={},timeout=22000){
   const user=firebase.auth().currentUser;
   if(!user)throw Error("Chưa đăng nhập Firebase. Hãy thử lại.");
@@ -94,7 +103,7 @@
    status("Đã kết nối Gemini Live. Hãy lắng nghe câu hỏi và trả lời qua micro.");
    $("#liveState").textContent="Đang đối thoại";
    attachMicro();
-   send({clientContent:{turns:[{role:"user",parts:[{text:"Bắt đầu phần thi vấn đáp. Xin mời giảng viên nêu câu hỏi đầu tiên."}]}],turnComplete:true}});
+   send({clientContent:{turns:[{role:"user",parts:[{text:state.history.length?"Hãy tiếp tục bài vấn đáp từ những lượt đã có; đừng lặp lại tình huống mở đầu.":"Bắt đầu phần thi vấn đáp. Xin mời giảng viên nêu câu hỏi đầu tiên."}]}],turnComplete:true}});
   }
   const sc=obj.serverContent||{};
   if(sc.interrupted){state.playingUntil=state.ctx?.currentTime||0}
@@ -163,7 +172,7 @@
   }
  }
  function stopResources(){
-  state.running=false;if(state.timer)clearInterval(state.timer);if(state.reconnect)clearTimeout(state.reconnect);
+  state.running=false;if(state.timer)clearInterval(state.timer);if(state.reconnect)clearTimeout(state.reconnect);if(checkpointTimer)clearTimeout(checkpointTimer);checkpointTimer=null;
   state.timer=null;state.reconnect=null;stopInput();
   if(state.ws){const ws=state.ws;state.ws=null;try{ws.onclose=null;ws.close()}catch{}}
   if(state.stream){state.stream.getTracks().forEach(t=>t.stop());state.stream=null}
