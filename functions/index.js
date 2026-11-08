@@ -38,7 +38,7 @@ async function mintToken(context){
  const key=GEMINI_API_KEY.value();
  if(!key)fail(503,"Chưa cấu hình secret Gemini API trên Firebase.");
  const tokenBody={
-  uses:1,expireTime:new Date(Date.now()+4*60000).toISOString(),
+  uses:1,expireTime:new Date(Date.now()+30*60000).toISOString(),newSessionExpireTime:new Date(Date.now()+2*60000).toISOString(),
   liveConnectConstraints:{
    model:"models/"+MODEL,
    config:{
@@ -54,7 +54,7 @@ async function mintToken(context){
  });
  if(!resp.ok){const msg=await resp.text();console.error("Gemini token status",resp.status,msg.slice(0,250));fail(502,"Gemini chưa cấp được phiên Live. Kiểm tra model, hạn mức hoặc thanh toán API.")}
  const data=await resp.json();if(!data.name)fail(502,"Gemini không trả về token phiên.");
- return {token:data.name,model:MODEL,expiresIn:240};
+ return {token:data.name,model:MODEL,expiresIn:120};
 }
 async function gradeTranscript(transcript){
  if(!transcript.length)return {status:"can-giang-vien",reason:"Không có nội dung lời nói để đối chiếu."};
