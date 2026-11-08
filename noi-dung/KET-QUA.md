@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 08:06 08/11/2026
+# Kết quả dựng nội dung — 08:07 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - functions/.gitignore
+      - functions/index.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42432735772 · commit cc5fa6f
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42432832149 · commit e2ed36b
