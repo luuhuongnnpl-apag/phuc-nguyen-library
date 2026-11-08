@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 08:11 08/11/2026
+# Kết quả dựng nội dung — 08:12 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -11,4 +11,4 @@
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
       - danh-gia/van-dap-live.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42433167463 · commit a5b1ace
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42433204396 · commit 4d6bfda
