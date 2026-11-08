@@ -130,7 +130,7 @@
   return new Promise((resolve,reject)=>{
    const ws=new WebSocket(WS+"?access_token="+encodeURIComponent(token));state.ws=ws;
    let settled=false;const timer=setTimeout(()=>{if(!settled){settled=true;ws.close();reject(Error("Gemini Live không mở được kết nối trong 15 giây."))}},15000);
-   ws.onopen=()=>{try{ws.send(JSON.stringify({setup:{model:"models/"+model,generationConfig:{responseModalities:["AUDIO"]},inputAudioTranscription:{},outputAudioTranscription:{}}}))}catch(e){if(!settled){settled=true;clearTimeout(timer);reject(e)}}};
+   ws.onopen=()=>{try{ws.send(JSON.stringify({setup:{model:"models/"+model,generationConfig:{responseModalities:["AUDIO"]},realtimeInputConfig:{automaticActivityDetection:{disabled:true}},inputAudioTranscription:{},outputAudioTranscription:{}}}))}catch(e){if(!settled){settled=true;clearTimeout(timer);reject(e)}}};
    ws.onmessage=async e=>{try{const raw=typeof e.data==="string"?e.data:await e.data.text(),obj=JSON.parse(raw);
     if(obj.setupComplete&&!settled){settled=true;clearTimeout(timer);resolve()}
     serverMessage(obj);
@@ -221,13 +221,13 @@
  $("#mute").onclick=()=>{
   if(state.textOnly||!state.running||state.finishing||!state.muted)return;
   if(!state.ws||state.ws.readyState!==WebSocket.OPEN){status("Chưa có kết nối Gemini Live.",true);return}
-  state.muted=false;attachMicro();$("#mute").disabled=true;$("#finishTurn").disabled=false;
+  state.muted=false;send({realtimeInput:{activityStart:{}}});attachMicro();$("#mute").disabled=true;$("#finishTurn").disabled=false;
   status("Đang nghe. Bấm Tôi đã trả lời xong sau khi kết thúc câu trả lời.");
  };
  $("#finishTurn").onclick=()=>{
   if(!state.running||state.finishing||state.muted)return;
   state.muted=true;stopInput();$("#finishTurn").disabled=true;
-  send({realtimeInput:{audioStreamEnd:true}});
+  send({realtimeInput:{activityEnd:{}}});
   $("#mute").textContent="Đang chờ câu hỏi tiếp";$("#mute").disabled=true;
   status("Đã kết thúc lượt trả lời. Hội đồng AI sẽ tiếp tục hỏi nhánh mở rộng.");
  };
