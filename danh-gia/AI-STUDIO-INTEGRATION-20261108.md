@@ -27,3 +27,19 @@ Bản ZIP xuất từ Google AI Studio: ứng dụng React + Vite + Express, g�
 6. Triển khai Functions/secret/rules theo tài khoản quản trị được phép, sau đó mới phê duyệt đưa lên nhánh `main`.
 
 **Lưu ý:** Bản thay đổi trong PR này chưa được chạy Gemini Live thật, chưa cập nhật Firebase production, chưa công bố website. Không ghi đè các bộ đề hay điểm cũ.
+
+## Bổ sung sau khi phê duyệt phương án (08/11/2026)
+- API `draw` bốc thăm trên Firebase theo mã lớp/mã SV và UID; kết quả ghi một lần vào `pnl_vd_phien` bằng transaction. API `prepare` chỉ cấp phiên sau khi bốc đề.
+- Ngân hàng đề `pnl_vd_de`: giảng viên quản trị nhập đề nháp qua trang cấu hình, duyệt mới được bốc; tuyệt đối không đưa đáp án/rubric vào mã HTML công khai.
+- Trên phòng thi thêm nút bốc đề và nút `Tôi đã trả lời xong`. Gemini Live sử dụng manual VAD `activityStart`/`activityEnd` theo tài liệu Live API để không ngắt khi sinh viên tạm dừng nói.
+- Hướng dẫn hội đồng AI lấy tình huống đã bốc thay vì cố định một tình huống cho mọi sinh viên; chấm sơ bộ nhận tình huống được lưu cùng phiên.
+- Tệp JavaScript của backend, phòng thi và quản trị đã qua **kiểm tra cú pháp JS bằng trình phân tích**, nhưng chưa chạy bài thi/giả lập Firestore/Gemini Live. Đây không phải kiểm thử end-to-end.
+
+## Các điểm còn phải xác minh/giải quyết
+- Chưa nhập, duyệt hoặc xuất bản đề vào Firestore thật. Nếu chưa có đề ở `pnl_vd_de`, nút bốc thăm báo chưa có đề; đây là điều kiện an toàn có chủ đích.
+- Cơ chế Live Audio/token thực tế, hỗ trợ manual VAD ở model được sử dụng và độ trễ; kiểm thử lần lượt micro máy tính, Android, iOS.
+- Cơ chế duyệt và phiên bản rubric theo học phần; hiện `rubricVersion` chỉ có tính ghi nhận, chưa điều chỉnh trọng số từ giao diện.
+- Kiểm tra Google Cloud billing, Secret Manager, Firebase Function và Security Rules đang vận hành; kiểm tra giới hạn truy cập, tải lại và mất mạng.
+- Bộ đếm nhánh hiện chỉ là hướng dẫn cho AI (không phải cơ chế xác nhận chắc chắn số nhánh). Cần máy trạng thái server-side trước khi công bố chính thức.
+- Chưa giải quyết việc khôi phục đầy đủ ngữ cảnh Live sau khi rớt mạng.
+- Chưa hợp nhất sang `main`; chưa triển khai website, Firebase hay dữ liệu production.
