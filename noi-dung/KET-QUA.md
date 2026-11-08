@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 11:02 08/11/2026
+# Kết quả dựng nội dung — 11:07 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,11 +9,6 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/AI-STUDIO-INTEGRATION-20261108.md
-      - danh-gia/quan-tri-khao-thi.html
       - danh-gia/quan-tri-khao-thi.js
-      - danh-gia/van-dap-ai.html
-      - danh-gia/van-dap-live.js
-      - functions/index.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42445120466 · commit 64fa92a
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42445477761 · commit 1a31133
