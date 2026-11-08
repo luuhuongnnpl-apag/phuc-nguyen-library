@@ -51,6 +51,7 @@ footer{color:#7c8b98;text-align:center;padding:0 16px 25px;font-size:12px}
 <div class="row" style="margin-top:10px"><button id="adminLogin" type="button">Đăng nhập quản trị</button><span id="adminName" class="muted"></span></div>
 <p class="muted">Tài khoản quản trị dùng để thử Gemini Live trước khi mở cho sinh viên.</p></div>
 <label><input id="consent" type="checkbox"> Tôi đồng ý việc ghi nhận nội dung hỏi đáp để giảng viên rà soát, chấm điểm.</label>
+<div id="drawPanel" class="card" style="margin:14px 0 0;padding:14px"><h3>Bốc thăm đề ngẫu nhiên</h3><p class="muted">Sinh viên phải bốc thăm trước khi thi. Đề được lưu trên máy chủ và không thể đổi bằng cách tải lại trang.</p><button id="drawTicket" type="button">🎲 BỐC THĂM ĐỀ THI</button><div id="drawInfo" class="muted" aria-live="polite" style="margin-top:8px">Chưa bốc thăm.</div></div>
 <div class="row" style="margin-top:12px"><button class="primary" id="startLive" type="button">🎙 Bắt đầu vấn đáp trực tiếp</button><button id="startText" type="button">Dùng văn bản dự phòng</button></div>
 <div id="notice" class="muted" aria-live="polite" style="margin-top:9px">Thời gian bài thi: 40 phút. Cho phép sử dụng micro trong Safari khi được hỏi.</div>
 </div>
@@ -61,8 +62,8 @@ footer{color:#7c8b98;text-align:center;padding:0 16px 25px;font-size:12px}
 <div id="log" aria-live="polite"><p class="muted">Chưa có bản ghi hỏi đáp.</p></div>
 <label for="typed">Trả lời bằng văn bản (dự phòng khi micro gián đoạn)</label>
 <textarea id="typed" placeholder="Nhập câu trả lời nếu không sử dụng được micro..."></textarea>
-<div class="row" style="margin-top:10px"><button id="sendText" type="button">Gửi câu trả lời</button><button id="mute" type="button">Tắt micro</button><button id="endLive" class="danger" type="button">Kết thúc và nộp</button></div>
-<p class="muted" id="connectionInfo">Âm thanh được truyền trực tiếp tới Gemini. Bản ghi chữ chỉ lưu khi nộp bài.</p>
+<div class="row" style="margin-top:10px"><button id="sendText" type="button">Gửi câu trả lời</button><button id="mute" type="button">Bắt đầu trả lời</button><button class="primary" id="finishTurn" type="button" disabled>✓ Tôi đã trả lời xong</button><button id="endLive" class="danger" type="button">Kết thúc và nộp</button></div>
+<p class="muted" id="connectionInfo">Chỉ bấm “Tôi đã trả lời xong” sau khi kết thúc mỗi câu trả lời. Hệ thống sẽ ghi nhận lượt và tiếp tục hỏi nhánh.</p>
 </div>
 <div class="card" id="reviewPanel" hidden><h2>Bài vấn đáp đã kết thúc</h2><p id="reviewMessage"></p><p class="muted">Bài thi đã được ghi nhận. Kết quả sẽ được giảng viên phụ trách xem xét và phê duyệt theo quy định.</p></div>
 </section>
