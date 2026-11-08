@@ -17,12 +17,12 @@ button:disabled{opacity:.55;cursor:not-allowed}button.secondary{background:#e8f0
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
-<script src="./quan-tri-khao-thi.js?v=20261108a" defer></script>
+<script src="./quan-tri-khao-thi.js?v=20261108b" defer></script>
 </head><body>
 <header><h1>QUẢN TRỊ KHẢO THÍ AI · PNL</h1><div><a href="./van-dap-ai.html">Về phòng thi vấn đáp</a> · <a href="../index.html">Thư viện</a></div></header>
 <main>
 <p class="muted">Chỉ dành cho giảng viên quản trị. Cấu hình được lưu trên Firebase và áp dụng cho phiên thi bắt đầu sau khi lưu; phiên đang thi giữ thông số cũ.</p>
-<div id="status" class="status" role="status" aria-live="polite">Vui lòng đăng nhập để xem cấu hình.</div>
+<div id="status" class="status" role="status" aria-live="polite">Vui lòng đăng nhập để xem cấu hình.</div><div class="row"><button type="button" class="secondary" id="checkServer">Kiểm tra kết nối máy chủ</button></div>
 <section id="loginSection">
 <h2>Đăng nhập quản trị</h2>
 <div class="grid"><div><label for="email">Email quản trị</label><input id="email" autocomplete="username" type="email"></div>
@@ -51,5 +51,5 @@ button:disabled{opacity:.55;cursor:not-allowed}button.secondary{background:#e8f0
 <p class="muted" id="questionResult" aria-live="polite"></p>
 <p class="muted">Chỉ bấm duyệt sau khi đã đối chiếu nội dung và căn cứ pháp luật. Nếu muốn thay nội dung đề đã duyệt, hãy tạo phiên bản đề mới để giữ lịch sử.</p>
 </section>
-<section><h2>Trạng thái triển khai</h2><p class="muted">Trang này quản lý các thiết lập do máy chủ PNL hỗ trợ. Kết nối ứng dụng xuất từ Google AI Studio cần một đợt tích hợp riêng vì bản xuất sử dụng máy chủ Express, lưu phiên trong RAM và chưa có xác thực đầy đủ. Không sử dụng mã nguồn xuất đó trực tiếp cho điểm chính thức.</p></section>
+<section><h2>Trạng thái triển khai</h2><p class="muted"><strong>Lưu ý:</strong> Đăng nhập Firebase thành công không đồng nghĩa máy chủ thi vấn đáp đã sẵn sàng. Nếu trang báo chưa kết nối được <code>vanDapApi</code>, cần triển khai Firebase Functions và cấu hình Gemini API trên dịch vụ phía máy chủ.</p><p class="muted">Trang này quản lý các thiết lập do máy chủ PNL hỗ trợ. Kết nối ứng dụng xuất từ Google AI Studio cần một đợt tích hợp riêng vì bản xuất sử dụng máy chủ Express, lưu phiên trong RAM và chưa có xác thực đầy đủ. Không sử dụng mã nguồn xuất đó trực tiếp cho điểm chính thức.</p></section>
 </main><footer>Phúc Nguyên Library · Nội bộ giảng viên</footer></body></html>
