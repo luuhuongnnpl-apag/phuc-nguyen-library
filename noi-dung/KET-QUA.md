@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 11:07 08/11/2026
+# Kết quả dựng nội dung — 15:59 08/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,6 +9,8 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/quan-tri-khao-thi.html
+      - danh-gia/de/luat-dan-su-tu-luan-rubric.enc.json
+      - danh-gia/de/luat-dan-su-tu-luan-rubric.json
+      - danh-gia/tu-luan-luat-dan-su.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42445492089 · commit 514e7c0
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42465215282 · commit 472f571
