@@ -4,7 +4,7 @@
 <style>
 :root{font-family:"Segoe UI",Arial,sans-serif;color:#172c40;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}header{background:#164f70;color:white;padding:16px 4%}header a{color:#fff}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{font-size:23px;margin:0}main{max-width:1080px;margin:24px auto;padding:0 16px 50px}h2{font-size:21px}h3{font-size:18px}article,.panel{background:white;border:1px solid #d5dfeb;border-radius:13px;padding:20px;margin-bottom:16px}label{display:block;font-weight:600;margin:12px 0 5px}input,textarea,button,select{font:inherit}input,textarea,select{border:1px solid #b9c9d7;border-radius:8px;padding:9px 11px;width:100%}textarea{line-height:1.55;min-height:130px;resize:vertical}button,.btn{background:#19597b;color:white;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;margin:5px 6px 5px 0;text-decoration:none;display:inline-block}button.secondary,.btn.secondary{background:#eef2f6;color:#16405b;border:1px solid #b8c9d7}button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.muted{color:#607287}.warn{background:#fff2d9;border-left:4px solid #b77922;padding:12px;border-radius:5px}.ok{color:#167148}.error{color:#af2626;white-space:pre-wrap}.case{background:#f5f8fb;padding:16px;border-radius:10px;line-height:1.7}.q{padding:12px 0;border-bottom:1px solid #e3e9ef}.q:last-child{border:0}.q strong{display:block;margin-bottom:6px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.score{font-size:25px;font-weight:700}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1 1 150px}.mini{font-size:13px}.ans{white-space:pre-wrap;background:#f7f9fc;padding:10px;border-radius:8px}.student{border-top:1px solid #d6e0e9;padding-top:15px;margin-top:15px}.hide{display:none}footer{padding:20px;text-align:center;color:#607287;font-size:13px}
 </style></head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
-<main id="app"><article>Đang nạp dữ liệu…</article></main><footer>12 câu trắc nghiệm × 0,5 điểm + 1 tình huống tự luận × 4 điểm = 10 điểm · Thời gian theo cấu hình lớp</footer>
+<main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -18,7 +18,8 @@ const db=firebase.firestore(),auth=firebase.auth(),FV=firebase.firestore.FieldVa
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $=s=>document.querySelector(s);
 const isAdmin=u=>u&&!u.isAnonymous&&(u.uid===ADMIN_UID||(u.emailVerified&&ADMINS.includes(u.email)));
-let BANK=null,SESSION=null,TIMER=null,RUBRIC=null,CURRENT=null;
+let BANK=null,SESSION=null,TIMER=null,RUBRIC=null,CURRENT=null,DETACH=null,SAVE_Q=Promise.resolve();
+const MAX_ROI=10;
 const caseBy=id=>BANK.cases.find(c=>c.id===id);
 async function bankLoad(){if(BANK)return BANK;const r=await fetch("./de/luat-dan-su-tu-luan.b64",{cache:"no-cache"});if(!r.ok)throw Error("Không tải được ngân hàng đề.");
 const data=atob((await r.text()).trim()),bytes=Uint8Array.from(data,c=>c.charCodeAt(0)),stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
@@ -75,7 +76,7 @@ const valid=s=>/^[A-Z0-9_-]{2,24}$/.test(s);
 const until=d=>d&&d.toDate?d.toDate():new Date(d);
 function access(l){const t=Date.now();return l.open&&(!l.openAt||until(l.openAt).getTime()<=t)&&(!l.closeAt||until(l.closeAt).getTime()>=t)}
 async function ensureAnon(){if(auth.currentUser)return auth.currentUser;return(await auth.signInAnonymously()).user}
-function navigate(){clearInterval(TIMER);if(location.hash.startsWith("#quan-tri"))return adminEntry();studentEntry()}
+function navigate(){if(DETACH){DETACH();DETACH=null}clearInterval(TIMER);if(location.hash.startsWith("#quan-tri"))return adminEntry();studentEntry()}
 window.addEventListener("hashchange",navigate);
 function confirmStudentIdentity(ma,sv,hoTen,l){
  return new Promise(resolve=>{
@@ -89,14 +90,14 @@ function studentEntry(){app.innerHTML=`<article>
 <h2>ĐÁNH GIÁ ĐỊNH KỲ</h2>
 <p class="mini muted">Học phần: Luật Dân sự</p>
 <p class="muted">Hình thức kiểm tra chính thức: <b>Trắc nghiệm kết hợp tự luận</b>. Ngân hàng câu hỏi và đáp án đã được phê duyệt.</p>
-<div class="grid"><div class="panel"><strong>12 câu trắc nghiệm</strong><p class="mini muted">08 lý thuyết + 04 câu hỏi tình huống · 06 điểm</p></div>
-<div class="panel"><strong>01 tình huống tự luận</strong><p class="mini muted">04 yêu cầu × 01 điểm = 04 điểm</p></div>
+<div class="grid"><div class="panel"><strong>12 câu trắc nghiệm</strong><p class="mini muted">08 câu lý thuyết + 04 câu hỏi tình huống</p></div>
+<div class="panel"><strong>01 tình huống tự luận</strong><p class="mini muted">04 yêu cầu, trả lời có căn cứ pháp luật</p></div>
 <div class="panel"><strong>40 phút</strong><p class="mini muted">Áp dụng chung cho tất cả bài kiểm tra</p></div></div>
 <h3>Hướng dẫn trước khi làm bài</h3>
-<ol><li>Phần trắc nghiệm có 12 câu, mỗi câu chọn một phương án đúng; 0,5 điểm/câu.</li>
+<ol><li>Phần trắc nghiệm có 12 câu, mỗi câu chọn một phương án đúng nhất; mỗi lần hiện một câu, đã chuyển thì không quay lại.</li>
 <li>Phần tự luận gồm 01 tình huống và 04 yêu cầu; phân tích, lập luận và nêu căn cứ pháp luật.</li>
 <li>Hệ thống phân phối một mã đề ngẫu nhiên; mỗi sinh viên chỉ làm một lần trong đợt kiểm tra.</li>
-<li>Bài tự lưu và tự động nộp khi hết thời gian quy định.</li></ol>
+<li>Bài tự lưu và tự động nộp khi hết thời gian quy định.</li><li>Phần tự luận phải tự gõ, không sao chép, dán được. Mỗi lần rời khỏi trang làm bài đều bị ghi lại; <b>rời trang quá 10 lần, bài bị khóa và tự động nộp</b>.</li></ol>
 <form id="entry"><label>Mã lớp kiểm tra</label><input name="ma" required maxlength="24" autocomplete="off" placeholder="Mã lớp giảng viên cung cấp">
 <label>Mã sinh viên</label><input name="sv" required maxlength="20" autocomplete="off" placeholder="Mã sinh viên">
 <label style="display:flex;gap:9px;align-items:center;font-weight:400"><input id="agree" type="checkbox" style="width:auto" required> Tôi đã đọc quy định kiểm tra định kỳ.</label>
@@ -106,10 +107,10 @@ $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.tri
 try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
 const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
 if(!await confirmStudentIdentity(ma,sv,ss.data().hoTen,l))return;
-const id=ma+"__"+sv;let old=await db.doc("pnl_dg_bai/"+id).get();
+const id=ma+"__"+sv,readPaper=async()=>{try{return await db.doc("pnl_dg_bai/"+id).get()}catch(x){if(x.code==="permission-denied")throw Error("Mã sinh viên này đã bắt đầu hoặc đã nộp bài trên một thiết bị hoặc trình duyệt khác. Mỗi sinh viên chỉ làm một lần, trên một máy. Hãy quay lại đúng máy, trình duyệt đã làm bài, hoặc báo giảng viên mở lại lượt.");throw x}};let old=await readPaper();
 if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức trắc nghiệm kết hợp tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;await loadMCQ();const de=newMixedExam();
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
-old=await db.doc("pnl_dg_bai/"+id).get()}
+old=await readPaper()}
 if(!old.exists)throw Error("Không đọc được bài làm. Vui lòng liên hệ giảng viên.");
 const b=old.data();if(b.hocPhan!==COURSE)throw Error("Mã sinh viên đã có bài của học phần khác.");SESSION={id,ma,sv,l,b};await loadMCQ();renderExam()}catch(x){err(x)}}}
 function answerMap(b){try{return JSON.parse(b.essay||"{}")}catch(x){return{}}}
@@ -127,74 +128,124 @@ function renderExam(){
  /* Tương thích bài đang làm theo giao diện cũ (mỗi yêu cầu là một bước). */
  const step=Math.max(0,Math.min(steps.length-1,Number.isInteger(b.step)?b.step:0));
  const current=steps[step],last=step===steps.length-1,started=until(b.startedAt).getTime(),total=40*60000;
+ /* Hạn nộp = 40 phút kể từ khi nhận đề, nhưng không vượt giờ đóng lớp. */
+ let deadline=started+total;if(S.l&&S.l.closeAt){const c=until(S.l.closeAt).getTime();if(c&&c<deadline)deadline=c}
  let h='<article><div class="top"><div><h2>Luật Dân sự – Mã đề '+E(de.set)+'</h2><span class="muted">'+E(b.hoTen)+' · '+E(S.sv)+'</span></div><div><strong id="clock" class="score"></strong><div id="saveStatus" class="mini muted">Tự động lưu bài</div></div></div><p class="warn">'+(current.kind==="mcq"?'Câu trắc nghiệm '+(step+1)+'/'+(mixed?de.mcq.length:0)+'. Mỗi lần hiển thị một câu; không thể quay lại.':'Phần tự luận: hiển thị toàn bộ tình huống và các yêu cầu để trả lời cùng lúc.')+' Hết 40 phút bài tự nộp.</p></article>';
  h+='<article><h3>'+(current.kind==="mcq"?'PHẦN I. TRẮC NGHIỆM — Câu '+(step+1):'PHẦN II. TỰ LUẬN — Tình huống '+(current.i+1))+'</h3>';
  if(current.kind==="mcq"){
    const q=MCQ?.questions[current.id];if(!q)throw Error("Thiếu câu trắc nghiệm "+current.id);
    if(current.i>=8){const c=MCQ.contexts.find(x=>x.cid===de.mcqCase);if(c)h+='<div class="case">'+E(c.text)+'</div>'}
    const perm=de.perm?.[current.id]||[0,1,2,3],selected=a["mcq_"+current.id];
-   h+='<div class="q"><strong>'+E(q.q)+' (0,5 điểm)</strong>';
+   h+='<div class="q"><strong>'+E(q.q)+'</strong>';
    for(let j=0;j<4;j++){h+='<label style="display:flex;align-items:flex-start;gap:9px;font-weight:400"><input type="radio" name="currentMcq" value="'+j+'" style="width:auto;margin-top:4px"'+(selected===j?' checked':'')+'> <span>'+"ABCD"[j]+'. '+E(q.o[perm[j]])+'</span></label>'}
    h+='</div>';
  }else{
    h+='<div class="case" style="white-space:pre-wrap"><strong>Đề bài — Tình huống đầy đủ</strong><p>'+E(current.caseText)+'</p></div>';
    current.questions.forEach((question,j)=>{
-     h+='<div class="q"><strong>Yêu cầu '+(j+1)+'. '+E(question)+'</strong><textarea data-essay-key="'+E(current.id+"_"+j)+'" maxlength="2300" placeholder="Trình bày câu trả lời, lập luận và căn cứ pháp luật">'+E(a[current.id+"_"+j]||"")+'</textarea><div class="mini muted">Tối đa '+(mixed?'1':'1,25')+' điểm</div></div>';
+     h+='<div class="q"><strong>Yêu cầu '+(j+1)+'. '+E(question)+'</strong><textarea data-essay-key="'+E(current.id+"_"+j)+'" maxlength="2300" placeholder="Trình bày câu trả lời, lập luận và căn cứ pháp luật">'+E(a[current.id+"_"+j]||"")+'</textarea></div>';
    });
  }
  h+='</article><article><button id="saveNow" class="secondary">Lưu nháp</button><button id="nextStep">'+(last?'Nộp bài':'Lưu và sang câu tiếp theo')+'</button><p id="msg" class="error"></p></article>';
  app.innerHTML=h;
- let dirty=false,saving=false;
+ let dirty=false,lastSave=Date.now();
  const gather=()=>{const values=Object.assign({},answerMap(SESSION.b));
    if(current.kind==="mcq"){const el=$('input[name="currentMcq"]:checked');if(el)values["mcq_"+current.id]=Number(el.value)}
    else app.querySelectorAll("[data-essay-key]").forEach(el=>values[el.dataset.essayKey]=el.value);
    delete values._step;return values};
- async function save(final=false,advance=false){
-   if(!SESSION||SESSION.b.status==="da-nop"||saving)return false;
-   saving=true;const values=gather(),answer=JSON.stringify(values);
-   try{const update={essay:answer,luu:FV.serverTimestamp()};
+ /* Các lần lưu xếp hàng nối tiếp: bấm "sang câu" hoặc hết giờ đúng lúc đang tự lưu vẫn được thực hiện, không bị bỏ qua. */
+ async function save(final=false,advance=false,extra=null){
+   const run=async()=>{
+     if(!SESSION||SESSION.b.status==="da-nop")return false;
+     const values=gather(),answer=JSON.stringify(values);
+     const update={essay:answer,luu:FV.serverTimestamp()};
+     if(extra)Object.assign(update,extra);
      if(advance)update.step=step+1;
      if(final){update.status="da-nop";update.submittedAt=FV.serverTimestamp()}
-     await db.doc("pnl_dg_bai/"+SESSION.id).update(update);
-     SESSION.b.essay=answer;dirty=false;
-     if(advance)SESSION.b.step=step+1;
-     if(final){SESSION.b.status="da-nop";renderExam()}
-     else if(advance)renderExam();
-     else{const status=$("#saveStatus");if(status)status.textContent="Đã lưu lúc "+new Date().toLocaleTimeString("vi-VN")}
-     return true;
-   }catch(e){const msg=$("#msg");if(msg)msg.textContent="Chưa lưu được bài. Kiểm tra kết nối trước khi tiếp tục.";console.error(e);return false}
-   finally{saving=false}
+     for(let i=0;i<(final?3:1);i++){
+       try{
+         await db.doc("pnl_dg_bai/"+SESSION.id).update(update);
+         SESSION.b.essay=answer;if(extra)Object.assign(SESSION.b,extra);dirty=false;lastSave=Date.now();
+         if(advance)SESSION.b.step=step+1;
+         if(final){SESSION.b.status="da-nop";detach();renderExam()}
+         else if(advance){detach();renderExam()}
+         else{const status=$("#saveStatus");if(status)status.textContent="Đã lưu lúc "+new Date().toLocaleTimeString("vi-VN")}
+         return true;
+       }catch(e){console.error(e);if(final&&i<2){await new Promise(r=>setTimeout(r,1500));continue}
+         const msg=$("#msg");if(msg)msg.textContent="Chưa lưu được bài. Kiểm tra kết nối rồi bấm lại.";return false}
+     }
+   };
+   const p=SAVE_Q.then(run,run);SAVE_Q=p.catch(()=>false);return p;
  }
  app.querySelectorAll('input[name="currentMcq"],[data-essay-key]').forEach(x=>x.addEventListener("input",()=>{dirty=true;const st=$("#saveStatus");if(st)st.textContent="Chưa lưu"}));
  const block=e=>{if(!SESSION||SESSION.b.status==="da-nop"||!app.contains(e.target))return;
    e.preventDefault();const msg=$("#msg");if(msg)msg.textContent="Không được sao chép, cắt, dán hoặc kéo thả nội dung khi kiểm tra."};
- ["copy","cut","paste","drop"].forEach(type=>app.addEventListener(type,block,{capture:true,once:false}));
- app.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))block(e)},{capture:true});
+ const keyBlock=e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(String(e.key).toLowerCase()))block(e)};
+ /* Đếm số lần rời trang; quá 10 lần khóa và tự nộp (theo quy định Đánh giá định kỳ). */
+ const onVisible=async()=>{
+   if(!SESSION||SESSION.b.status==="da-nop")return;
+   if(document.visibilityState==="hidden"){
+     const n=(SESSION.b.roiTrang|0)+1;
+     if(n>MAX_ROI){save(true,false,{roiTrang:n});return}
+     save(false,false,{roiTrang:n});
+   }else{
+     const n=SESSION.b.roiTrang|0,msg=$("#msg");
+     if(n&&msg)msg.textContent="Cảnh báo: bạn đã rời khỏi trang làm bài "+n+"/"+MAX_ROI+" lần. Quá "+MAX_ROI+" lần bài sẽ bị khóa và tự động nộp.";
+   }
+ };
+ const detach=()=>{clearInterval(TIMER);TIMER=null;["copy","cut","paste","drop"].forEach(t=>app.removeEventListener(t,block,true));app.removeEventListener("keydown",keyBlock,true);document.removeEventListener("visibilitychange",onVisible)};
+ if(DETACH)DETACH();DETACH=detach;
+ ["copy","cut","paste","drop"].forEach(type=>app.addEventListener(type,block,true));
+ app.addEventListener("keydown",keyBlock,true);
+ document.addEventListener("visibilitychange",onVisible);
  $("#saveNow").onclick=()=>save();
  $("#nextStep").onclick=async()=>{
+   const btn=$("#nextStep");if(btn.disabled)return;
    const complete=current.kind==="mcq"?Boolean($('input[name="currentMcq"]:checked')):[...app.querySelectorAll("[data-essay-key]")].every(el=>el.value.trim());
-   if(!complete){const msg=$("#msg");if(msg)msg.textContent="Hãy hoàn thành tất cả yêu cầu của phần đang làm trước khi tiếp tục.";return}
-   if(last){if(confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))await save(true)}
-   else await save(false,true);
+   if(!complete){const msg=$("#msg");if(msg)msg.textContent=current.kind==="mcq"?"Hãy chọn một phương án trước khi sang câu tiếp theo.":"Hãy trả lời tất cả yêu cầu của tình huống trước khi nộp bài.";return}
+   if(last&&!confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))return;
+   btn.disabled=true;const msg=$("#msg");if(msg)msg.textContent="Đang lưu…";
+   const ok=last?await save(true):await save(false,true);
+   if(!ok){const b2=$("#nextStep");if(b2)b2.disabled=false}
  };
  const clockTick=()=>{
-   if(!SESSION||SESSION.b.status==="da-nop"){clearInterval(TIMER);return}
-   const ms=Math.max(0,total-(Date.now()-started)),el=$("#clock");
+   if(!SESSION||SESSION.b.status==="da-nop"){detach();return}
+   const ms=Math.max(0,deadline-Date.now()),el=$("#clock");
    if(el)el.textContent=Math.floor(ms/60000)+":"+String(Math.floor(ms/1000)%60).padStart(2,"0");
-   if(ms===0){clearInterval(TIMER);save(true)}else if(dirty)save();
+   if(ms===0){detach();save(true);return}
+   if(dirty&&Date.now()-lastSave>10000)save();
  };
- TIMER=setInterval(clockTick,10000);clockTick();
+ TIMER=setInterval(clockTick,1000);clockTick();
+ if(SESSION.b.roiTrang>MAX_ROI)save(true,false,{});
 }
 function adminEntry(){if(!isAdmin(auth.currentUser)){app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};
 $("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};return}const ma=decodeURIComponent(location.hash.split("/")[1]||"");if(ma)return manageClass(ma);adminHome()}
 
-async function loadAutoKey(){
+/* Đáp án tự luận được mã hóa trên web (sinh viên không tải được bản rõ).
+   Khóa giải mã nhập một lần ở trang quản trị, lưu vào kho chỉ quản trị đọc được (Firestore) nên các máy sau tự dùng. */
+const KHOA_DOC="pnl_dg_cham/_khoa-dap-an-ds",KHOA_LS="pnl-khoa-dap-an-ds";
+async function decryptAutoKey(code){
+ const r=await fetch("./de/luat-dan-su-tu-luan-rubric.enc.json",{cache:"no-cache"});if(!r.ok)throw Error("Không tải được tệp đáp án mã hóa.");
+ const c=await r.json(),secret=await crypto.subtle.importKey("raw",new TextEncoder().encode(code),"PBKDF2",false,["deriveKey"]);
+ const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64ToBytes(c.salt),iterations:c.rounds,hash:"SHA-256"},secret,{name:"AES-GCM",length:256},false,["decrypt"]);
+ let zipped;try{zipped=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64ToBytes(c.iv)},key,b64ToBytes(c.payload))}catch(x){throw Error("Khóa đáp án không đúng.")}
+ const stream=new Blob([zipped]).stream().pipeThrough(new DecompressionStream("deflate"));
+ return JSON.parse(await new Response(stream).text());
+}
+let AUTOKEY_P=null;
+function loadAutoKey(){if(RUBRIC)return Promise.resolve(RUBRIC);if(!AUTOKEY_P)AUTOKEY_P=loadAutoKeyOnce().finally(()=>{AUTOKEY_P=null});return AUTOKEY_P}
+async function loadAutoKeyOnce(){
  if(RUBRIC)return RUBRIC;
- const r=await fetch("./de/luat-dan-su-tu-luan-rubric.json",{cache:"no-cache"});
- if(!r.ok)throw Error("Không tải được đáp án.");
- const d=await r.json();
+ let code="";
+ try{const k=await db.doc(KHOA_DOC).get();if(k.exists)code=k.data().k||""}catch(x){console.warn(x)}
+ if(!code){try{code=localStorage.getItem(KHOA_LS)||""}catch(x){}}
+ let d=null,fresh=false;
+ while(!d){
+  if(!code){code=(prompt("Nhập khóa đáp án tự luận Luật Dân sự (chỉ cần nhập một lần):")||"").trim().toUpperCase();fresh=true;if(!code)throw Error("Chưa có khóa đáp án nên chưa chấm tự động được. Mở lại lớp để nhập khóa.")}
+  try{d=await decryptAutoKey(code)}catch(x){if(!fresh)console.warn(x);alert(x.message);code=""}
+ }
  if(!Array.isArray(d.cases)||d.cases.length!==30||!d.cases.every(x=>x.answers?.length===4))throw Error("Dữ liệu đáp án không hợp lệ.");
+ if(fresh){try{localStorage.setItem(KHOA_LS,code)}catch(x){}try{await db.doc(KHOA_DOC).set({k:code,luc:FV.serverTimestamp()})}catch(x){console.warn("Không lưu khóa lên kho quản trị",x)}}
  RUBRIC={case_bank:d.cases.map(x=>({id:x.id,answer:x.answers}))};
  return RUBRIC;
 }
@@ -215,7 +266,7 @@ function gradeAutomatic(b){
 async function markPending(ma,papers,grades){
  const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!grades[sv]?.xacNhan);
  if(!entries.length)return {done:0,errors:[]};
- await Promise.all([loadAutoKey(),loadMCQ()]);
+ try{await Promise.all([loadAutoKey(),loadMCQ()])}catch(x){return {done:0,errors:[x.message||String(x)]}}
  let done=0,errors=[];
  for(const [sv,b] of entries){
   try{
@@ -232,7 +283,7 @@ async function adminHome(){
  app.innerHTML='<article><h2>Quản trị · Đánh giá định kỳ</h2><p class="mini muted">Học phần: Luật Dân sự</p><p><a href="./index.html#quan-tri">Quản lý chung tất cả học phần</a></p><p class="muted">Chấm tự động theo đáp án đã bật (6 điểm trắc nghiệm và 4 điểm tự luận). Không cần mật khẩu, giải mã hoặc tải tệp thủ công. Khi mở lớp, hệ thống tự đối chiếu và ghi điểm cho bài đã nộp chưa được chấm.</p><p class="warn">Máy chấm theo dấu hiệu nội dung và căn cứ pháp luật; không thay thế hoàn toàn việc đánh giá lập luận. Giảng viên có thể xem, điều chỉnh điểm.</p><button id="newClass">Tạo lớp kiểm tra</button><button id="migrateOld" class="secondary">Chuyển lớp Luật Dân sự cũ sang đề hỗn hợp</button><p id="msg" class="error"></p></article><div id="classes"></div>';
  $("#newClass").onclick=createClass;$("#migrateOld").onclick=migrateLegacyClasses;
  try{
-  await loadAutoKey();
+  loadAutoKey().catch(x=>note(x.message));
   const q=await db.collection("pnl_dg_lop").get(),rows=q.docs.filter(d=>d.data().hocPhan===COURSE);
   $("#classes").innerHTML=rows.length?rows.map(d=>'<article><div class="top"><div><h3>'+E(d.id)+' · '+E(d.data().ten||"")+'</h3><span class="mini muted">'+(d.data().open?"Mở":"Khóa")+' · '+E(d.data().siSo||0)+' sinh viên</span></div><button data-class="'+E(d.id)+'">Mở lớp và xem kết quả chấm</button></div></article>').join(""):'<article>Chưa có lớp đánh giá Luật Dân sự.</article>';
   document.querySelectorAll("[data-class]").forEach(b=>b.onclick=()=>manageClass(b.dataset.class));
@@ -453,8 +504,9 @@ async function decryptRubric(password){
 }
 
 function guideFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);if(!c)return"";const a=c.answer||[];return a.length===4?a[j]:(a[j*2+1]||"")}
-function grade(ma,sv,b,g){
- if(!RUBRIC){app.innerHTML='<article><h2>Không tải được đáp án</h2><button id="back">Về quản trị</button></article>';$("#back").onclick=adminHome;return}
+async function grade(ma,sv,b,g){
+ try{await Promise.all([loadAutoKey(),loadMCQ()])}catch(x){console.error(x)}
+ if(!RUBRIC||!MCQ){app.innerHTML='<article><h2>Không tải được đáp án</h2><p class="error">Chưa có khóa đáp án hoặc lỗi kết nối.</p><button id="back">Về quản trị</button></article>';$("#back").onclick=adminHome;return}
  const de=b.de||{},mixed=de.essayMode==="mixed12x1",ids=de.caseIds||[],ans=answerMap(b),max=mixed?1:1.25;
  const auto=gradeAutomatic(b),tn=mixed?markMCQ(de,ans):{score:0,correct:0,items:[]};
  let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Máy tự chấm theo ngân hàng đáp án. Phần trắc nghiệm được so với đáp án đúng; điểm tự luận dựa trên dấu hiệu lập luận và căn cứ. Giảng viên có thể hiệu chỉnh kết quả tự luận.</p></article>';
@@ -492,5 +544,5 @@ function grade(ma,sv,b,g){
   }catch(e){err(e)}
  };
 }
-(async()=>{try{await bankLoad();if(auth.currentUser){navigate()}else{auth.onAuthStateChanged(()=>{if(location.hash.startsWith("#quan-tri")&&isAdmin(auth.currentUser))adminEntry();else if(!location.hash.startsWith("#quan-tri"))studentEntry();else adminEntry()})}}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
+(async()=>{try{await bankLoad();let first=true;const stop=auth.onAuthStateChanged(()=>{if(!first)return;first=false;if(typeof stop==="function")stop();navigate()})}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
 </script></body></html>
