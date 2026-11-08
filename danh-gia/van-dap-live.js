@@ -188,7 +188,7 @@
   try{
    if(preview){$("#reviewMessage").textContent="Đã kết thúc buổi thử nghiệm. Số lượt ghi nhận: "+transcript.length+". Không ghi điểm thử lên Firebase."}
    else{const r=await api("finish",{ma,sv,transcript},55000);
-    $("#reviewMessage").textContent="Đã lưu bài thi để giảng viên duyệt. Điểm AI đề xuất: "+(r.suggestion?.total!=null?r.suggestion.total+"/10":"chưa có, cần giảng viên rà soát")+".";
+    $("#reviewMessage").textContent="Bài thi đã được ghi nhận. Kết quả sẽ được giảng viên phụ trách xem xét và phê duyệt theo quy định.";
    }
    visible("#examPanel",false);visible("#reviewPanel",true);status("Đã kết thúc phiên. Giảng viên có thể xem biên bản và quyết định điểm cuối cùng.");
   }catch(e){
