@@ -408,7 +408,7 @@ function ask(title,text,okLabel,danger){return new Promise(res=>{const m=modal('
 
 /* ====== ĐIỀU HƯỚNG ====== */
 function nav(){
-  const n=$("#nav");let h='<a href="../index.html">Trang chủ</a><a href="tu-luan-luat-dan-su.html">Đánh giá định kỳ Luật Dân sự</a>';
+  const n=$("#nav");let h='<a href="../index.html">Trang chủ</a><a href="tu-luan-luat-dan-su.html">Đánh giá định kỳ Luật Dân sự</a><a href="van-dap-ai.html">Thi vấn đáp AI</a>';
   if(ADMIN)h+=location.hash.startsWith("#quan-tri")?'<a href="#">Giao diện sinh viên</a><button id="n-out">Đăng xuất quản trị</button>':'<a href="#quan-tri">Quản trị</a>';
   n.innerHTML=h;if($("#n-out"))$("#n-out").onclick=async()=>{await auth.signOut();USER=(await auth.signInAnonymously()).user;ADMIN=false;location.hash="";route()};
 }
