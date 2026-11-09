@@ -11,8 +11,8 @@ Trang ôn tập luật học theo học phần. © Bản quyền thuộc Phúc N
 
 Mã lớp, số người dùng mã và góp ý lưu trên **Firebase Firestore** (dự án `phuc-nguyen-library`, collection `pnl_ma`, `pnl_ma/{mã}/luot`, `pnl_gopy`). Mỗi lớp một mã, cả lớp dùng chung.
 
-- Giảng viên: trang chủ → **Quản lý mã lớp** → đăng nhập bằng email và mật khẩu admin (Firebase). Máy nhớ đăng nhập. Cấp, sửa, xóa mã có hiệu lực ngay, không qua GitHub.
-- Lần đầu: trang hỏi **mật khẩu quản trị cũ** để chuyển toàn bộ mã cũ (kèm số người đã dùng) từ `data/ma-lop.json` sang Firebase. Nếu máy đã ghi nhớ mật khẩu cũ, việc chuyển tự chạy.
+- Giảng viên: trang chủ → **Quản lý mã lớp** → **Đăng nhập Google** bằng tài khoản quản trị duy nhất `luuhuong.nnpl@gmail.com` (từ 09/11/2026 toàn hệ sinh thái Phúc Nguyên chỉ dùng một cách đăng nhập này; đã bỏ ô email/mật khẩu và hệ mật khẩu quản trị cũ + token GitHub). Máy nhớ đăng nhập. Cấp, sửa, xóa mã có hiệu lực ngay, không qua GitHub.
+- Lần đầu (nếu mã lớp cũ chưa được chuyển): trang hỏi **mật khẩu quản trị cũ** một lần duy nhất để chuyển toàn bộ mã cũ (kèm số người đã dùng) từ `data/ma-lop.json` sang Firebase. Nếu máy đã ghi nhớ mật khẩu cũ, việc chuyển tự chạy.
 - Sinh viên: đăng nhập ẩn danh tự động (không phải tạo tài khoản); mỗi trình duyệt được tính một lượt cho mỗi mã; người vượt quá số người cho phép bị chặn.
 - Quy tắc bảo mật: chỉ tra được mã khi biết đúng mã, không xem được danh sách mã; chỉ admin cấp/sửa/xóa.
 - `data/ma-lop.json` (bản cũ, chỉ chứa dấu băm): giữ làm dự phòng cho tới khi chuyển xong, sau đó không dùng nữa. Bản trước khi chuyển: nhánh `backup-truoc-firebase-20261104`.

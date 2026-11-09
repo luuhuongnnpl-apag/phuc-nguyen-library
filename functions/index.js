@@ -10,7 +10,7 @@ const db=admin.firestore(), GEMINI_API_KEY=defineSecret("PNL_GEMINI_API_KEY");
 const MODEL="gemini-3.8-live", GRADE_MODEL="gemini-2.5-flash";
 const REGION="asia-southeast1", LIMIT=40*60*1000, GAP=45000;
 const ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1";
-const ADMIN_EMAILS=new Set(["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"]);
+const ADMIN_EMAILS=new Set(["luuhuong.nnpl@gmail.com"]); /* quản trị duy nhất của hệ sinh thái Phúc Nguyên */
 const allowedOrigin=/^https:\/\/luuhuongnnpl-apag\.github\.io$/;
 const safe=x=>String(x||"").replace(/[<>]/g,"").slice(0,1800);
 const goodCode=(s,max)=>typeof s==="string"&&new RegExp("^[A-Z0-9_-]{2,"+max+"}$").test(s);

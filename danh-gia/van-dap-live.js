@@ -63,7 +63,7 @@
  $("#teacherTab").onclick=()=>selectTab("teacher");
  $("#adminLogin").onclick=async()=>{
   const b=$("#adminLogin");b.disabled=true;status("Đang đăng nhập quản trị…",false);
-  try{await firebase.auth().signInWithEmailAndPassword($("#email").value.trim(),$("#password").value);
+  try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:"luuhuong.nnpl@gmail.com"});await firebase.auth().signInWithPopup(p);
    const u=firebase.auth().currentUser;$("#adminName").textContent=u.email||"Đã đăng nhập";
    visible("#teacherTools",true);status("Đã đăng nhập Firebase. Có thể thử Gemini Live hoặc bật vấn đáp cho lớp.");
   }catch(e){status("Đăng nhập không thành công: "+e.message,true)}

@@ -311,8 +311,8 @@ const CONFIG={
 /* Firebase (bản web GitHub): mã lớp, lượt dùng, góp ý lưu trên Firestore dự án phuc-nguyen-library */
 const FB_CFG={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
 const FB_ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1"; /* luuhuong.nnpl@gmail.com */
-const FB_ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
-/* Hệ sinh thái PN dùng chung phiên đăng nhập: quản trị nhận theo UID hoặc email Google của giảng viên */
+const FB_ADMIN_EMAILS=["luuhuong.nnpl@gmail.com"];
+/* Hệ sinh thái PN dùng chung phiên đăng nhập: quản trị duy nhất là luuhuong.nnpl@gmail.com, đăng nhập bằng Google */
 const fbIsAdmin=u=>!!u&&!u.isAnonymous&&(u.uid===FB_ADMIN_UID||(!!u.email&&u.emailVerified!==false&&FB_ADMIN_EMAILS.includes(u.email.toLowerCase())));
 let FBW=false,fbAuth=null,MIGRATED=false; /* FBW: đang chạy bản web có Firebase */
 /* Bản cũ trên GitHub (chỉ đọc, dự phòng trước khi chuyển xong): data/ma-lop.json */
@@ -529,21 +529,15 @@ function connectBox(first){return `<section class="frame"><div class="ftitle">${
 function admin2HTML(){
   const head=adminHead();
   if(FBW&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
-    <form id="fa-form" novalidate class="admin"><p class="msg">Đăng nhập bằng tài khoản quản trị (email/mật khẩu hoặc Google). Đăng nhập một lần là dùng chung cho PN Library, PN Work, PN Digital trên máy này, cho đến khi bấm Đăng xuất.</p>
-    <div class="row"><div><label class="lab" for="fa-email">Email</label><input type="email" id="fa-email" autocomplete="username" required></div>
-    <div><label class="lab" for="fa-pw">Mật khẩu</label><input type="password" id="fa-pw" autocomplete="current-password" required></div></div>
-    <div class="err" id="fa-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" id="fa-google">Đăng nhập Google</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
+    <form id="fa-form" novalidate class="admin"><p class="msg">Đăng nhập bằng Google với tài khoản quản trị <b>luuhuong.nnpl@gmail.com</b>. Đăng nhập một lần là dùng chung cho toàn hệ sinh thái Phúc Nguyên trên máy này, cho đến khi bấm Đăng xuất.</p>
+    <div class="err" id="fa-err" role="alert"></div><div class="row"><button class="btn primary" type="button" id="fa-google">Đăng nhập Google</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
   if(DB&&!isOwner)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Quản lý mã lớp</div><p class="msg">Chỉ chủ trang mới được quản lý mã lớp.</p></section></main>`;
   if(FBW&&!MIGRATED)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Chuyển mã lớp cũ sang Firebase (làm một lần)</div>
     <form id="mg-form" novalidate class="admin"><p class="msg">Danh sách mã lớp cũ trên GitHub được khóa bằng <b>mật khẩu quản trị cũ</b>. Nhập mật khẩu đó để chuyển toàn bộ mã (kèm số người đã dùng) sang Firebase. Sinh viên đang dùng mã không phải nhập lại.</p>
     <div class="row"><div><label class="lab" for="mg-pw">Mật khẩu quản trị cũ</label><input type="password" id="mg-pw" autocomplete="off"></div></div>
     <div class="err" id="mg-err" role="alert"></div><div class="row" style="align-items:center"><button class="btn primary" type="submit">Chuyển mã lớp</button><button class="btn" type="button" id="mg-skip">Bỏ qua (bắt đầu danh sách mới)</button><span class="msg" id="mg-msg" aria-live="polite"></span></div></form></section>
     <section class="frame"><div class="row"><button class="btn" type="button" data-home>Về trang chủ</button><button class="btn" type="button" id="fa-out">Đăng xuất quản trị</button></div></section></main>`;
-  if(!DB&&!ST)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div>
-    <form id="ak-form" novalidate class="admin"><p class="msg">Tài khoản quản trị dành cho giảng viên. Nhập mật khẩu quản trị để vào phần cấp mã lớp.</p>
-    <div class="row"><div><label class="lab" for="ak-in">Mật khẩu quản trị</label><input type="password" id="ak-in" autocomplete="current-password" required></div></div>
-    <label class="admin-course" style="border:0;padding:0"><input type="checkbox" id="ak-keep" checked><span>Ghi nhớ đăng nhập trên máy này (không dùng trên máy dùng chung)</span></label>
-    <div class="err" id="ak-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" data-home>Về trang chủ</button></div></form></section></main>`;
+  if(!DB)return head+`<main class="wrap admin"><section class="frame"><div class="ftitle">Đăng nhập quản trị</div><p class="msg">Chưa kết nối được máy chủ đăng nhập Phúc Nguyên. Kiểm tra mạng rồi tải lại trang, sau đó đăng nhập Google bằng luuhuong.nnpl@gmail.com.</p><div class="row"><button class="btn primary" type="button" onclick="location.reload()">Tải lại trang</button><button class="btn" type="button" data-home>Về trang chủ</button></div></section></main>`;
   const web=!DB;
   if(web&&!ST.tok)return head+`<main class="wrap admin">${connectBox(true)}
     <section class="frame"><div class="row"><button class="btn" type="button" data-home>Về trang chủ</button><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button></div></section></main>`;
@@ -573,14 +567,7 @@ function admin2HTML(){
     <div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Học phần</th><th>Hạn dùng</th><th>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="l-body"><tr><td colspan="7" class="msg">Đang tải…</td></tr></tbody></table></div>
     <p class="msg" style="margin-top:8px">Mỗi trình duyệt trên một máy được tính là một người. Xóa mã sẽ thu hồi quyền truy cập: sinh viên dùng mã đó phải nhập mã mới ở lần mở trang kế tiếp.</p>
   </section>
-  ${web?`<section class="frame"><div class="ftitle">Đổi mật khẩu quản trị</div>
-    <form id="p-form" novalidate class="admin">
-      <div class="row"><div><label class="lab" for="p-new">Mật khẩu mới (ít nhất 10 ký tự)</label><input type="password" id="p-new" autocomplete="new-password"></div>
-      <div><label class="lab" for="p-new2">Nhập lại mật khẩu mới</label><input type="password" id="p-new2" autocomplete="new-password"></div></div>
-      <div class="err" id="p-err" role="alert"></div>
-      <div class="row" style="align-items:center"><button class="btn primary" type="submit">Đổi mật khẩu</button><button class="btn" type="button" id="l-out">Đăng xuất quản trị</button><span class="msg" id="p-msg" aria-live="polite"></span></div>
-    </form></section>
-  <details class="frame"><summary class="msg" style="cursor:pointer">Đổi token GitHub (chỉ khi token cũ hết hạn)</summary>${connectBox(false)}</details>`:""}
+  
   </main>`;
 }
 function bindToken(){const f=$("#t-form");if(!f)return;
@@ -598,14 +585,14 @@ async function migrateOld(pw){const d=await loadMa(true);const v=await openVault
   await DB.doc("meta/migrated").set({at:new Date().toISOString(),codes:n});MIGRATED=true;return n}
 async function admin2Bind(){
   const fa=$("#fa-form");
-  if(fa){$("#fa-google").onclick=async()=>{$("#fa-err").textContent="Đang mở cửa sổ đăng nhập Google…";
-      try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});const r=await fbAuth.signInWithPopup(p);UID=r.user.uid;isOwner=fbIsAdmin(r.user);
-        if(!isOwner){$("#fa-err").textContent="Tài khoản "+r.user.email+" không phải quản trị.";return}grantAdmin();renderWho();route("quan-ly-ma")}
-      catch(err){$("#fa-err").textContent=err.code==="auth/popup-closed-by-user"?"Cửa sổ đăng nhập đã đóng.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}};
-    fa.addEventListener("submit",async e=>{e.preventDefault();const em=$("#fa-email").value.trim(),pw=$("#fa-pw").value;if(!em||!pw){$("#fa-err").textContent="Nhập email và mật khẩu.";return}
-      $("#fa-err").textContent="Đang đăng nhập…";
-      try{const r=await fbAuth.signInWithEmailAndPassword(em,pw);UID=r.user.uid;isOwner=fbIsAdmin(r.user);if(!isOwner){await fbAuth.signOut();$("#fa-err").textContent="Tài khoản này không phải quản trị.";return}grantAdmin();renderWho();route("quan-ly-ma")}
-      catch(err){$("#fa-err").textContent=/invalid|wrong|not-found/.test(err.code||"")?"Email hoặc mật khẩu chưa đúng.":err.code==="auth/too-many-requests"?"Sai quá nhiều lần, chờ ít phút rồi thử lại.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}});return}
+  if(fa){fa.addEventListener("submit",e=>e.preventDefault());
+    $("#fa-google").onclick=async()=>{$("#fa-err").textContent="Đang mở cửa sổ đăng nhập Google…";
+      const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:FB_ADMIN_EMAILS[0]});
+      try{const r=await fbAuth.signInWithPopup(p);UID=r.user.uid;isOwner=fbIsAdmin(r.user);
+        if(!isOwner){const em=r.user.email;await fbAuth.signOut();$("#fa-err").textContent="Tài khoản "+em+" không phải quản trị. Hãy chọn "+FB_ADMIN_EMAILS[0]+".";return}grantAdmin();renderWho();route("quan-ly-ma")}
+      catch(err){if(err.code==="auth/popup-blocked"||err.code==="auth/operation-not-supported-in-this-environment"){fbAuth.signInWithRedirect(p);return}
+        $("#fa-err").textContent=err.code==="auth/popup-closed-by-user"||err.code==="auth/cancelled-popup-request"?"Cửa sổ đăng nhập đã đóng.":"Chưa đăng nhập được ("+(err.code||"lỗi mạng")+")."}};
+    return}
   const mg=$("#mg-form");
   if(mg){const run=async(pw,auto)=>{$("#mg-err").textContent="";$("#mg-msg").textContent="Đang chuyển mã lớp…";
       try{const n=await migrateOld(pw);$("#mg-msg").textContent="";route("quan-ly-ma");setTimeout(()=>{if($("#c-msg"))$("#c-msg").textContent="Đã chuyển "+n+" mã lớp cũ sang Firebase."},0)}

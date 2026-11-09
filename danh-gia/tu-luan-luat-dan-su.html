@@ -12,7 +12,7 @@
 <script>
 "use strict";
 const COURSE="luat-dan-su-tu-luan",ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1";
-const ADMINS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
+const ADMINS=["luuhuong.nnpl@gmail.com"]; /* quản trị duy nhất của hệ sinh thái Phúc Nguyên */
 const cfg={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
 firebase.initializeApp(cfg);
 const db=firebase.firestore(),auth=firebase.auth(),FV=firebase.firestore.FieldValue,TS=firebase.firestore.Timestamp,app=document.getElementById("app");
@@ -228,9 +228,9 @@ function tlSide(ma,view){const it=[{label:"Trang chủ thư viện",icon:"home",
   if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},{label:"Cài đặt lớp",icon:"cog",href:"#quan-tri/"+encodeURIComponent(ma)+"/cai-dat",on:view==="cai",sub:true});
   it.push({grp:"Khác"},{label:"Giao diện sinh viên",icon:"users",href:"#"});return it}
 function tlShell(o){return QTA.mount({user:auth.currentUser&&auth.currentUser.email,onLogout:async()=>{await auth.signOut();QTA.unmount();location.hash="";navigate()},...o})}
-function adminEntry(){if(!isAdmin(auth.currentUser)){QTA.unmount();app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Đăng nhập bằng tài khoản quản trị Phúc Nguyên Library.</p><form id="login"><label>Email</label><input type="email" name="email" autocomplete="username" required><label>Mật khẩu</label><input type="password" name="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button><button type="button" id="google">Google</button></form><p id="msg" class="error"></p></article>';
-$("#login").onsubmit=async e=>{e.preventDefault();try{await auth.signInWithEmailAndPassword(e.target.email.value,e.target.password.value);if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};
-$("#google").onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());if(!isAdmin(auth.currentUser))throw Error("Tài khoản không có quyền quản trị.");adminEntry()}catch(x){err(x)}};return}
+function adminEntry(){if(!isAdmin(auth.currentUser)){QTA.unmount();app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Đăng nhập bằng Google với tài khoản quản trị <b>luuhuong.nnpl@gmail.com</b>.</p><form id="login"><button type="button" id="google">Đăng nhập Google</button></form><p id="msg" class="error"></p></article>';
+$("#login").onsubmit=e=>e.preventDefault();
+$("#google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:ADMINS[0]});try{await auth.signInWithPopup(p);if(!isAdmin(auth.currentUser)){const em=auth.currentUser&&auth.currentUser.email;await auth.signOut();throw Error("Tài khoản "+(em||"")+" không phải quản trị. Hãy chọn "+ADMINS[0]+".")}adminEntry()}catch(x){if(x.code==="auth/popup-blocked"){auth.signInWithRedirect(p);return}err(x)}};return}
  const parts=location.hash.split("/"),ma=decodeURIComponent(parts[1]||"");if(ma)return manageClass(ma,parts[2]==="cai-dat"?"cai":"ds");adminHome()}
 
 async function adminHome(){

@@ -17,7 +17,7 @@ button:disabled{opacity:.55;cursor:not-allowed}button.secondary{background:#e8f0
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
-<script src="./quan-tri-khao-thi.js?v=20261108b" defer></script>
+<script src="./quan-tri-khao-thi.js?v=20261109a" defer></script>
 </head><body>
 <header><h1>QUẢN TRỊ KHẢO THÍ AI · PNL</h1><div><a href="./van-dap-ai.html">Về phòng thi vấn đáp</a> · <a href="../index.html">Thư viện</a></div></header>
 <main>
@@ -25,9 +25,8 @@ button:disabled{opacity:.55;cursor:not-allowed}button.secondary{background:#e8f0
 <div id="status" class="status" role="status" aria-live="polite">Vui lòng đăng nhập để xem cấu hình.</div><div class="row"><button type="button" class="secondary" id="checkServer">Kiểm tra kết nối máy chủ</button></div>
 <section id="loginSection">
 <h2>Đăng nhập quản trị</h2>
-<div class="grid"><div><label for="email">Email quản trị</label><input id="email" autocomplete="username" type="email"></div>
-<div><label for="password">Mật khẩu</label><input id="password" autocomplete="current-password" type="password"></div></div>
-<div class="row" style="margin-top:16px"><button type="button" id="signIn">Đăng nhập</button><button type="button" class="secondary" id="signOut" hidden>Đăng xuất</button><span id="who" class="muted"></span></div>
+<p class="muted">Đăng nhập bằng Google với tài khoản quản trị <b>luuhuong.nnpl@gmail.com</b>.</p>
+<div class="row" style="margin-top:16px"><button type="button" id="signIn">Đăng nhập Google</button><button type="button" class="secondary" id="signOut" hidden>Đăng xuất</button><span id="who" class="muted"></span></div>
 </section>
 <section id="settingsSection" hidden>
 <h2>Cấu hình phiên thi</h2>

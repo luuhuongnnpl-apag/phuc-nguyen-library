@@ -8,7 +8,7 @@ Trạng thái: **mã nguồn được tạo, chưa có xác nhận triển khai 
 
 - Trang học viên/giảng viên: `danh-gia/van-dap-ai.html` + `danh-gia/van-dap-live.js`, chạy trên GitHub Pages.
 - Backend bảo mật: `functions/index.js`, hàm HTTP `vanDapApi` trên Firebase Functions gen 2, vùng `asia-southeast1`.
-- Firebase Authentication: đăng nhập ẩn danh cho SV, email/mật khẩu quản trị cho GV.
+- Firebase Authentication: đăng nhập ẩn danh cho SV, đăng nhập Google (luuhuong.nnpl@gmail.com) cho GV.
 - Firestore: `pnl_dg_lop`, `pnl_dg_sv` hiện có; `pnl_vd_phien` mới (trạng thái, biên bản chữ, điểm AI đề xuất, điểm GV duyệt).
 - Gemini Live WebSocket: chỉ nhận **ephemeral token** cấp từ backend sau xác thực; khóa API vĩnh viễn không xuất hiện trong GitHub Pages.
 

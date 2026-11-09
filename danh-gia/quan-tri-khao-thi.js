@@ -51,7 +51,10 @@
     $("settingsSection").hidden=true;$("questionSection").hidden=true;
     if(user&&!user.isAnonymous)try{await load()}catch(e){report("Không đọc được cấu hình: "+e.message,true)}
   });
-  $("signIn").onclick=async()=>{const btn=$("signIn");btn.disabled=true;try{await auth.signInWithEmailAndPassword($("email").value.trim(),$("password").value);$("password").value=""}catch(e){report("Đăng nhập không thành công: "+e.message,true)}finally{btn.disabled=false}};
+  const ADMIN_EMAIL="luuhuong.nnpl@gmail.com"; /* quản trị duy nhất của hệ sinh thái Phúc Nguyên */
+  $("signIn").onclick=async()=>{const btn=$("signIn");btn.disabled=true;const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:ADMIN_EMAIL});
+    try{const r=await auth.signInWithPopup(p);if((r.user.email||"").toLowerCase()!==ADMIN_EMAIL){const em=r.user.email;await auth.signOut();report("Tài khoản "+em+" không phải quản trị. Hãy chọn "+ADMIN_EMAIL+".",true)}}
+    catch(e){if(e.code==="auth/popup-blocked"){auth.signInWithRedirect(p);return}report("Đăng nhập không thành công: "+e.message,true)}finally{btn.disabled=false}};
   $("signOut").onclick=()=>auth.signOut();
   $("reloadSettings").onclick=()=>load().catch(e=>report(e.message,true));
   $("createQuestion").onclick=async()=>{

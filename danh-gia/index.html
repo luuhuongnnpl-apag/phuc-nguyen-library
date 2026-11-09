@@ -134,7 +134,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
 /* ====== CẤU HÌNH ====== */
 const FB_CFG={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
 const ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1";
-const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com","luuhuong.dhnv@gmail.com"];
+const ADMIN_EMAILS=["luuhuong.nnpl@gmail.com"]; /* quản trị duy nhất của hệ sinh thái Phúc Nguyên */
 /* Học phần đã có đủ ngân hàng (Lý thuyết ABCD + Tình huống có câu ABCD và gợi ý giải quyết). Thêm học phần mới vào đây. */
 /* tuLuan: chương lấy tình huống tự luận (so khớp tên nhóm tình huống) */
 /* mode:"tl" = bài chỉ có 01 câu tự luận (đề trong de/<id>.json, ý chính + từ khóa trong de/<id>.dat, chỉ quản trị tải) */
@@ -610,13 +610,13 @@ window.addEventListener("beforeunload",e=>{if(EXAM&&EXAM.active){e.preventDefaul
 /* =================== QUẢN TRỊ =================== */
 let AD={view:"ds"};
 function adminLogin(){
-  $("#app").innerHTML=`<section class="card narrow"><h1>Đăng nhập quản trị</h1><p class="lead">Dùng tài khoản quản trị của Phúc Nguyên Library (cùng tài khoản quản lý mã lớp).</p>
-  <form id="al" novalidate><div class="row"><div><label class="lab" for="al-em">Email</label><input type="email" id="al-em" autocomplete="username" value="luuhuong.nnpl@gmail.com"></div></div>
-  <div class="row"><div><label class="lab" for="al-pw">Mật khẩu</label><input type="password" id="al-pw" autocomplete="current-password"></div></div>
-  <div class="err" id="al-err" role="alert"></div><div class="row"><button class="btn primary" type="submit">Đăng nhập</button><button class="btn" type="button" id="al-g">Đăng nhập bằng Google</button><a class="btn" href="#" style="text-decoration:none">Giao diện sinh viên</a></div></form></section>`;
-  const after=u=>{USER=u;ADMIN=isAdminUser(u);if(!ADMIN){$("#al-err").textContent="Tài khoản này không phải quản trị.";auth.signOut().then(()=>auth.signInAnonymously())}else route()};
-  $("#al").onsubmit=async e=>{e.preventDefault();try{const r=await auth.signInWithEmailAndPassword($("#al-em").value.trim(),$("#al-pw").value);after(r.user)}catch(x){$("#al-err").textContent="Sai email hoặc mật khẩu."}};
-  $("#al-g").onclick=async()=>{try{const r=await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());after(r.user)}catch(x){$("#al-err").textContent="Không đăng nhập được bằng Google."}};
+  $("#app").innerHTML=`<section class="card narrow"><h1>Đăng nhập quản trị</h1><p class="lead">Đăng nhập bằng Google với tài khoản quản trị <b>luuhuong.nnpl@gmail.com</b> (dùng chung cho toàn hệ sinh thái Phúc Nguyên).</p>
+  <form id="al" novalidate>
+  <div class="err" id="al-err" role="alert"></div><div class="row"><button class="btn primary" type="button" id="al-g">Đăng nhập Google</button><a class="btn" href="#" style="text-decoration:none">Giao diện sinh viên</a></div></form></section>`;
+  const after=u=>{USER=u;ADMIN=isAdminUser(u);if(!ADMIN){$("#al-err").textContent="Tài khoản "+(u.email||"")+" không phải quản trị. Hãy chọn "+ADMIN_EMAILS[0]+".";auth.signOut().then(()=>auth.signInAnonymously())}else route()};
+  $("#al").onsubmit=e=>e.preventDefault();
+  $("#al-g").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:ADMIN_EMAILS[0]});
+    try{const r=await auth.signInWithPopup(p);after(r.user)}catch(x){if(x.code==="auth/popup-blocked"||x.code==="auth/operation-not-supported-in-this-environment"){auth.signInWithRedirect(p);return}$("#al-err").textContent=x.code==="auth/popup-closed-by-user"?"Cửa sổ đăng nhập đã đóng.":"Không đăng nhập được bằng Google."}};
 }
 /* ==== QUẢN TRỊ – giao diện kiểu APAG (qt-apag.js, 08/11/2026) ==== */
 function sideItems(ma,view){
