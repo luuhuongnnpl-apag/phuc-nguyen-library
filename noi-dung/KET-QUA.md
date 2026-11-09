@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 21:47 08/11/2026
+# Kết quả dựng nội dung — 08:14 09/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -10,7 +10,6 @@
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
       - danh-gia/index.html
-      - danh-gia/qt-apag.js
-      - danh-gia/tu-luan-luat-dan-su.html
+      - danh-gia/van-dap-ai.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42491531481 · commit b9be551
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/42544463647 · commit 6f195b7
