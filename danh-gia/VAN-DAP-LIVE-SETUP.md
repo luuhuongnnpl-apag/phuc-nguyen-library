@@ -1,5 +1,7 @@
 # PNL Vấn đáp AI — Thiết lập Gemini Live (pilot)
 
+> **09/11/2026 — TẠM NGƯNG theo quyết định của giảng viên**: tài khoản hiện có chưa đủ điều kiện (Firebase gói Spark, chưa có Gemini API trả phí). Đã bỏ nút "Thi vấn đáp AI" khỏi menu; `van-dap-ai.html` chỉ còn trang thông báo. Bản thử đầy đủ ở commit `cd48fb3`. Muốn làm lại: khôi phục `van-dap-ai.html` từ commit đó, làm các bước dưới đây.
+
 Trạng thái: **mã nguồn được tạo, chưa có xác nhận triển khai Firebase Functions, chưa chạy kiểm thử kết nối Gemini thật**.
 
 ## Kiến trúc
