@@ -72,7 +72,12 @@ function markMCQ(de,ans){
 }
 
 function note(text){const p=$("#msg");if(p)p.textContent=text}
-function err(x){console.error(x);note(x.message||String(x))}
+function err(x){console.error(x);note((x.message||String(x))+(x.code?" (mã lỗi: "+x.code+")":""))}
+/* Hộp xác nhận trong trang: trình duyệt trong Zalo/Facebook/Messenger thường chặn confirm() → bấm không có phản ứng. */
+function hoi(title,text,ok){return new Promise(res=>{const w=document.createElement("div");
+ w.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px";
+ w.innerHTML='<div role="dialog" aria-modal="true" style="background:#fff;border-radius:10px;max-width:460px;width:100%;padding:18px 20px;box-shadow:0 10px 30px rgba(0,0,0,.25)"><h3 style="margin:0 0 8px">'+E(title)+'</h3><p style="margin:0 0 14px">'+E(text)+'</p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" class="secondary" data-n>Quay lại</button><button type="button" data-y>'+E(ok||"Đồng ý")+'</button></div></div>';
+ document.body.appendChild(w);const done=v=>{w.remove();res(v)};w.querySelector("[data-n]").onclick=()=>done(false);w.querySelector("[data-y]").onclick=()=>done(true)})}
 const valid=s=>/^[A-Z0-9_-]{2,24}$/.test(s);
 const until=d=>d&&d.toDate?d.toDate():new Date(d);
 function access(l){const t=Date.now();return l.open&&(!l.openAt||until(l.openAt).getTime()<=t)&&(!l.closeAt||until(l.closeAt).getTime()>=t)}
@@ -109,7 +114,7 @@ try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("p
 const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
 if(!await confirmStudentIdentity(ma,sv,ss.data().hoTen,l))return;
 const id=ma+"__"+sv,readPaper=async()=>{try{return await db.doc("pnl_dg_bai/"+id).get()}catch(x){if(x.code==="permission-denied")throw Error("Mã sinh viên này đã bắt đầu hoặc đã nộp bài trên một thiết bị hoặc trình duyệt khác. Mỗi sinh viên chỉ làm một lần, trên một máy. Hãy quay lại đúng máy, trình duyệt đã làm bài, hoặc báo giảng viên mở lại lượt.");throw x}};let old=await readPaper();
-if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!confirm("Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự theo hình thức trắc nghiệm kết hợp tự luận? Thời gian sẽ được tính khi nhận đề; mỗi sinh viên chỉ được làm một lần."))return;await loadMCQ();const de=newMixedExam();
+if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!await hoi("Bắt đầu làm bài","Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự (trắc nghiệm kết hợp tự luận). Thời gian 40 phút được tính từ lúc nhận đề; mỗi sinh viên chỉ làm một lần.","Bắt đầu làm bài")){studentEntry();return}await loadMCQ();const de=newMixedExam();
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
 old=await readPaper()}
 if(!old.exists)throw Error("Không đọc được bài làm. Vui lòng liên hệ giảng viên.");
@@ -203,7 +208,7 @@ function renderExam(){
    const btn=$("#nextStep");if(btn.disabled)return;
    const complete=current.kind==="mcq"?Boolean($('input[name="currentMcq"]:checked')):[...app.querySelectorAll("[data-essay-key]")].every(el=>el.value.trim());
    if(!complete){const msg=$("#msg");if(msg)msg.textContent=current.kind==="mcq"?"Hãy chọn một phương án trước khi sang câu tiếp theo.":"Hãy trả lời tất cả yêu cầu của tình huống trước khi nộp bài.";return}
-   if(last&&!confirm("Xác nhận nộp bài? Sau khi nộp không thể sửa."))return;
+   if(last&&!await hoi("Nộp bài","Xác nhận nộp bài? Sau khi nộp không thể sửa.","Nộp bài"))return;
    btn.disabled=true;const msg=$("#msg");if(msg)msg.textContent="Đang lưu…";
    const ok=last?await save(true):await save(false,true);
    if(!ok){const b2=$("#nextStep");if(b2)b2.disabled=false}
