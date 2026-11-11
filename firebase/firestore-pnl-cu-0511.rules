@@ -1,0 +1,73 @@
+    // SAO LƯU — khối PNL đã chạy trong console từ 05/11/2026 đến 11/11/2026 15:11 (đã thay bằng firestore-pnl.rules).
+    // Lỗi: pnl_dg_bai create không cho 'essay', update không cho 'step' → SV không tạo/chuyển câu được từ 07/11.
+
+    // ===== PNL - Phúc Nguyên Library =====
+
+    // ----- Đánh giá định kỳ (05/11/2026) -----
+    function dgLop(ma) { return get(/databases/$(database)/documents/pnl_dg_lop/$(ma)).data; }
+    function dgMo(l) { return l.open == true && request.time >= l.openAt && request.time <= l.closeAt; }
+    // Lớp: tra được khi biết đúng mã lớp, không liệt kê được
+    match /pnl_dg_lop/{ma} {
+      allow get: if true;
+    }
+    // Sinh viên: tra được khi biết đúng mã lớp + MSSV (chỉ có họ tên)
+    match /pnl_dg_sv/{svId} {
+      allow get: if true;
+    }
+    // Bài làm (id = MÃLỚP__MSSV): mỗi sinh viên một lượt; chỉ chủ bài và admin xem
+    match /pnl_dg_bai/{baiId} {
+      allow get: if resource == null || isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['maLop','mssv','hoTen','uid','status','startedAt','de','hocPhan','roiTrang'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'dang-lam'
+        && request.resource.data.startedAt == request.time
+        && baiId == request.resource.data.maLop + '__' + request.resource.data.mssv
+        && exists(/databases/$(database)/documents/pnl_dg_sv/$(baiId))
+        && request.resource.data.hoTen == get(/databases/$(database)/documents/pnl_dg_sv/$(baiId)).data.hoTen
+        && dgMo(dgLop(request.resource.data.maLop));
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && resource.data.status == 'dang-lam'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answers','essay','status','submittedAt','roiTrang','luu'])
+        && request.resource.data.status in ['dang-lam', 'da-nop']
+        && (request.resource.data.status == 'dang-lam' || request.resource.data.submittedAt == request.time)
+        && request.resource.data.get('essay', '').size() <= 20000
+        && request.time <= dgLop(resource.data.maLop).closeAt + duration.value(15, 'm');
+    }
+    // pnl_dg_ds (danh sách kèm ngày sinh), pnl_dg_cham (điểm tự luận): chỉ admin (theo quy tắc mặc định)
+
+    // Mã lớp: tra được khi biết đúng mã (get), không liệt kê được danh sách
+    match /pnl_ma/{code} {
+      allow get: if true;
+      // Lượt dùng mã: mỗi trình duyệt (đăng nhập ẩn danh) tự ghi một lượt của mình
+      match /luot/{uid} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/pnl_ma/$(code));
+      }
+    }
+    match /pnl_meta/{id} {
+      allow get: if true;
+    }
+    // Góp ý: ai cũng xem; mỗi người chỉ ghi vào mục của mình
+    match /pnl_gopy/{uid} {
+      allow read: if true;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.items is list && request.resource.data.items.size() <= 40;
+    }
+    // Đợt kiểm tra (giai đoạn sau): thông tin đợt công khai, không chứa đáp án
+    match /pnl_tests/{testId} {
+      allow read: if true;
+    }
+    // Bài nộp: chỉ được NỘP vào đợt đang mở; không xem, sửa, xóa
+    match /pnl_submissions/{subId} {
+      allow create: if
+        exists(/databases/$(database)/documents/pnl_tests/$(request.resource.data.testId))
+        && get(/databases/$(database)/documents/pnl_tests/$(request.resource.data.testId)).data.open == true
+        && request.time >= get(/databases/$(database)/documents/pnl_tests/$(request.resource.data.testId)).data.openAt
+        && request.time <= get(/databases/$(database)/documents/pnl_tests/$(request.resource.data.testId)).data.closeAt
+        && request.resource.data.keys().hasOnly(['testId','classId','hoTen','mssv','answers','startedAt','submittedAt','questionIds'])
+        && request.resource.data.hoTen is string && request.resource.data.hoTen.size() <= 100
+        && request.resource.data.mssv is string && request.resource.data.mssv.size() <= 30;
+    }
