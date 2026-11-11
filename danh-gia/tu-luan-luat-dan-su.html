@@ -72,7 +72,11 @@ function markMCQ(de,ans){
 }
 
 function note(text){const p=$("#msg");if(p)p.textContent=text}
-function err(x){console.error(x);note((x.message||String(x))+(x.code?" (mã lỗi: "+x.code+")":""))}
+function err(x){console.error(x);const t=(x.message||String(x))+(x.code?" (mã lỗi: "+x.code+")":"");
+ if($("#msg")){note(t);return}
+ /* Màn hình hiện tại không có ô thông báo (vd. màn Xác nhận thông tin) → hiện màn báo lỗi để sinh viên chụp gửi giảng viên. */
+ app.innerHTML='<article><h2>Chưa vào được bài kiểm tra</h2><p class="error">'+E(t)+'</p><p class="muted">Chụp màn hình này gửi giảng viên nếu lỗi lặp lại.</p><button id="errBack">Quay lại</button></article>';
+ $("#errBack").onclick=()=>studentEntry()}
 /* Hộp xác nhận trong trang: trình duyệt trong Zalo/Facebook/Messenger thường chặn confirm() → bấm không có phản ứng. */
 function hoi(title,text,ok){return new Promise(res=>{const w=document.createElement("div");
  w.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px";
@@ -87,8 +91,8 @@ window.addEventListener("hashchange",navigate);
 function confirmStudentIdentity(ma,sv,hoTen,l){
  return new Promise(resolve=>{
   const old=app.innerHTML;
-  app.innerHTML='<article><h2>Xác nhận thông tin sinh viên</h2><p>Kiểm tra thông tin trước khi vào bài kiểm tra. Nếu họ tên không đúng, chọn Quay lại và thông báo giảng viên.</p><div class="case"><p><b>Họ và tên:</b> '+E(hoTen||"(Chưa có họ tên)")+'</p><p><b>Mã sinh viên:</b> '+E(sv)+'</p><p><b>Mã lớp:</b> '+E(ma)+'</p><p><b>Tên lớp:</b> '+E(l.ten||"")+'</p><p><b>Học phần:</b> '+E(l.hocPhanTen||"Luật Dân sự")+'</p><p><b>Thời gian:</b> 40 phút</p></div><button id="identityYes">Xác nhận đúng thông tin và tiếp tục</button><button id="identityNo" class="secondary">Quay lại</button></article>';
-  $("#identityYes").onclick=()=>resolve(true);
+  app.innerHTML='<article><h2>Xác nhận thông tin sinh viên</h2><p>Kiểm tra thông tin trước khi vào bài kiểm tra. Nếu họ tên không đúng, chọn Quay lại và thông báo giảng viên.</p><div class="case"><p><b>Họ và tên:</b> '+E(hoTen||"(Chưa có họ tên)")+'</p><p><b>Mã sinh viên:</b> '+E(sv)+'</p><p><b>Mã lớp:</b> '+E(ma)+'</p><p><b>Tên lớp:</b> '+E(l.ten||"")+'</p><p><b>Học phần:</b> '+E(l.hocPhanTen||"Luật Dân sự")+'</p><p><b>Thời gian:</b> 40 phút</p></div><button id="identityYes">Xác nhận đúng thông tin và tiếp tục</button><button id="identityNo" class="secondary">Quay lại</button><p id="msg" class="error"></p></article>';
+  $("#identityYes").onclick=()=>{const b=$("#identityYes");b.disabled=true;b.textContent="Đang vào bài…";resolve(true)};
   $("#identityNo").onclick=()=>{app.innerHTML=old;studentEntry();resolve(false)};
  });
 }
@@ -113,11 +117,11 @@ $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.tri
 try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
 const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
 if(!await confirmStudentIdentity(ma,sv,ss.data().hoTen,l))return;
-const id=ma+"__"+sv,readPaper=async()=>{try{return await db.doc("pnl_dg_bai/"+id).get()}catch(x){if(x.code==="permission-denied")throw Error("Mã sinh viên này đã bắt đầu hoặc đã nộp bài trên một thiết bị hoặc trình duyệt khác. Mỗi sinh viên chỉ làm một lần, trên một máy. Hãy quay lại đúng máy, trình duyệt đã làm bài, hoặc báo giảng viên mở lại lượt.");throw x}};let old=await readPaper();
+const id=ma+"__"+sv,readPaper=async()=>{try{return await db.doc("pnl_dg_bai/"+id).get()}catch(x){if(x.code==="permission-denied")throw Error("Mã sinh viên này đã bắt đầu hoặc đã nộp bài trên một thiết bị hoặc trình duyệt khác. Mỗi sinh viên chỉ làm một lần, trên một máy. Hãy quay lại đúng máy, trình duyệt đã làm bài, hoặc báo giảng viên mở lại lượt.");throw x}};let old=await readPaper(),createErr=null;
 if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!await hoi("Bắt đầu làm bài","Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự (trắc nghiệm kết hợp tự luận). Thời gian 40 phút được tính từ lúc nhận đề; mỗi sinh viên chỉ làm một lần.","Bắt đầu làm bài")){studentEntry();return}await loadMCQ();const de=newMixedExam();
-try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,essay:JSON.stringify({}),status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x}
+try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x;createErr=x}
 old=await readPaper()}
-if(!old.exists)throw Error("Không đọc được bài làm. Vui lòng liên hệ giảng viên.");
+if(!old.exists){const e=Error("Hệ thống chưa tạo được bài làm (lớp chưa mở, đã hết giờ hoặc mã sinh viên chưa có trong danh sách). Vui lòng liên hệ giảng viên.");if(createErr)e.code=createErr.code;throw e}
 const b=old.data();if(b.hocPhan!==COURSE)throw Error("Mã sinh viên đã có bài của học phần khác.");SESSION={id,ma,sv,l,b};await loadMCQ();renderExam()}catch(x){err(x)}}}
 function answerMap(b){try{return JSON.parse(b.essay||"{}")}catch(x){return{}}}
 function renderExam(){
@@ -132,7 +136,8 @@ function renderExam(){
  ids.forEach((id,i)=>{const c=caseBy(id);if(!c)throw Error("Thiếu tình huống "+id);
   steps.push({kind:"essay",id,i,questions:c.questions,caseText:c.text})});
  /* Tương thích bài đang làm theo giao diện cũ (mỗi yêu cầu là một bước). */
- const step=Math.max(0,Math.min(steps.length-1,Number.isInteger(b.step)?b.step:0));
+ const savedStep=Number.isInteger(b.step)?b.step:(Number.isInteger(a._step)?a._step:0);
+ const step=Math.max(0,Math.min(steps.length-1,savedStep));
  const current=steps[step],last=step===steps.length-1,started=until(b.startedAt).getTime(),total=40*60000;
  /* Hạn nộp = 40 phút kể từ khi nhận đề, nhưng không vượt giờ đóng lớp. */
  let deadline=started+total;if(S.l&&S.l.closeAt){const c=until(S.l.closeAt).getTime();if(c&&c<deadline)deadline=c}
@@ -162,16 +167,15 @@ function renderExam(){
  async function save(final=false,advance=false,extra=null){
    const run=async()=>{
      if(!SESSION||SESSION.b.status==="da-nop")return false;
-     const values=gather(),answer=JSON.stringify(values);
+     const values=gather();values._step=advance?step+1:step;const answer=JSON.stringify(values);
      const update={essay:answer,luu:FV.serverTimestamp()};
      if(extra)Object.assign(update,extra);
-     if(advance)update.step=step+1;
      if(final){update.status="da-nop";update.submittedAt=FV.serverTimestamp()}
      for(let i=0;i<(final?3:1);i++){
        try{
          await db.doc("pnl_dg_bai/"+SESSION.id).update(update);
          SESSION.b.essay=answer;if(extra)Object.assign(SESSION.b,extra);dirty=false;lastSave=Date.now();
-         if(advance)SESSION.b.step=step+1;
+         if(advance){SESSION.b.step=step+1}else if(Number.isInteger(SESSION.b.step))SESSION.b.step=step;
          if(final){SESSION.b.status="da-nop";detach();renderExam()}
          else if(advance){detach();renderExam()}
          else{const status=$("#saveStatus");if(status)status.textContent="Đã lưu lúc "+new Date().toLocaleTimeString("vi-VN")}
