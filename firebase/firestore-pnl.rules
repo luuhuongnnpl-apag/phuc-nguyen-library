@@ -1,0 +1,87 @@
+    // ===== PNL - Phúc Nguyên Library (viết lại 11/11/2026 — khớp mã đang chạy, bỏ toàn bộ quy tắc PNL cũ) =====
+    // Dán khối này THAY cho toàn bộ phần PNL cũ (từ dòng "===== PNL" đến ngay trước dòng "===== PNW").
+    // Không đụng phần PNW, PND và hàm isAdmin() ở đầu tệp.
+
+    function pnlAdmin() {
+      return request.auth != null
+        && (request.auth.uid == 'smoIpuX7qseqTeu9nToc9RYigku1'
+            || (request.auth.token.email == 'luuhuong.nnpl@gmail.com' && request.auth.token.email_verified == true));
+    }
+    function pnlSignedIn() {
+      return request.auth != null;
+    }
+
+    // --- Mã lớp ôn tập (trang chủ) ---
+    match /pnl_ma/{code} {
+      allow get: if true;
+      allow list, write: if pnlAdmin();
+      match /luot/{uid} {
+        allow read: if pnlSignedIn();
+        allow create: if pnlSignedIn() && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/pnl_ma/$(code));
+        allow update, delete: if pnlAdmin();
+      }
+    }
+    match /pnl_meta/{id} {
+      allow get: if true;
+      allow list, write: if pnlAdmin();
+    }
+    // Góp ý / báo lỗi: ai cũng xem; mỗi người chỉ ghi vào mục của mình
+    match /pnl_gopy/{uid} {
+      allow read: if true;
+      allow create, update: if pnlSignedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['items'])
+        && request.resource.data.items is list && request.resource.data.items.size() <= 40;
+      allow delete: if pnlAdmin();
+    }
+
+    // --- Đánh giá định kỳ ---
+    function pnlLop(ma) {
+      return get(/databases/$(database)/documents/pnl_dg_lop/$(ma)).data;
+    }
+    function pnlMo(l) {
+      return l.open == true
+        && (!('openAt' in l) || request.time >= l.openAt)
+        && (!('closeAt' in l) || request.time <= l.closeAt);
+    }
+    // Lớp và tên sinh viên: tra được khi biết đúng mã; chỉ quản trị liệt kê và sửa
+    match /pnl_dg_lop/{ma} {
+      allow get: if true;
+      allow list, write: if pnlAdmin();
+    }
+    match /pnl_dg_sv/{id} {
+      allow get: if true;
+      allow list, write: if pnlAdmin();
+    }
+    // Danh sách kèm ngày sinh, điểm, khóa đáp án: chỉ quản trị
+    match /pnl_dg_ds/{ma} {
+      allow read, write: if pnlAdmin();
+    }
+    match /pnl_dg_cham/{id} {
+      allow read, write: if pnlAdmin();
+    }
+    // Bài làm: sinh viên tạo một lần khi lớp đang mở, chỉ đọc/sửa bài của chính mình đến giờ đóng + 15 phút
+    match /pnl_dg_bai/{baiId} {
+      allow get: if resource == null || pnlAdmin()
+        || (pnlSignedIn() && resource.data.uid == request.auth.uid);
+      allow list, delete: if pnlAdmin();
+      allow create: if pnlAdmin() || (pnlSignedIn()
+        && request.resource.data.keys().hasOnly(['maLop','mssv','hoTen','uid','status','startedAt','de','hocPhan','roiTrang','essay','answers','step'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'dang-lam'
+        && request.resource.data.startedAt == request.time
+        && baiId == request.resource.data.maLop + '__' + request.resource.data.mssv
+        && exists(/databases/$(database)/documents/pnl_dg_sv/$(baiId))
+        && request.resource.data.hoTen == get(/databases/$(database)/documents/pnl_dg_sv/$(baiId)).data.hoTen
+        && request.resource.data.hocPhan == pnlLop(request.resource.data.maLop).hocPhan
+        && pnlMo(pnlLop(request.resource.data.maLop)));
+      allow update: if pnlAdmin() || (pnlSignedIn()
+        && resource.data.uid == request.auth.uid
+        && resource.data.status == 'dang-lam'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answers','essay','status','submittedAt','roiTrang','luu','step','khoaVi'])
+        && request.resource.data.status in ['dang-lam', 'da-nop']
+        && (request.resource.data.status == 'dang-lam' || request.resource.data.submittedAt == request.time)
+        && request.resource.data.get('essay', '').size() <= 20000
+        && request.time <= pnlLop(resource.data.maLop).get('closeAt', request.time) + duration.value(15, 'm'));
+    }
+    // Hết khối PNL
