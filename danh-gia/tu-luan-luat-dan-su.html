@@ -235,7 +235,7 @@ $("#google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.
 
 async function adminHome(){
  const body=tlShell({side:tlSide(null),crumbs:[{t:"Quản trị",href:"./index.html#quan-tri"},{t:"Đánh giá định kỳ"},{t:"Luật Dân sự"}],
-  actions:[{id:"new",label:"Tạo lớp mới",icon:"plus",kind:"blue",onClick:createClass},{id:"mig",label:"Chuyển lớp Luật Dân sự cũ sang đề hỗn hợp",kind:"ghost",onClick:migrateLegacyClasses}],
+  actions:[{id:"new",label:"Tạo lớp mới",icon:"plus",kind:"blue",onClick:createClass},{id:"reset",label:"Reset toàn bộ lớp (làm lại từ đầu)",icon:"unlock",kind:"lock",onClick:resetAllClasses},{id:"mig",label:"Chuyển lớp Luật Dân sự cũ sang đề hỗn hợp",kind:"ghost",onClick:migrateLegacyClasses}],
   body:'<div class="qta-card"><p style="margin:0">Đề: 12 câu trắc nghiệm (6 điểm) + 1 tình huống tự luận 4 yêu cầu (4 điểm), 40 phút, thang 10. Bài đã nộp được máy tự chấm khi mở lớp; giảng viên xem và sửa điểm ở cột Bài làm.</p><p id="msg" class="qta-err"></p></div><div id="classes"><p class="qta-msg">Đang tải…</p></div>'});
  try{
   loadAutoKey().catch(x=>note(x.message));
@@ -366,6 +366,49 @@ async function migrateLegacyClasses(){
  finally{const b=$("#migrateOld");if(b)b.disabled=false}
 }
 
+
+/* RESET TOÀN BỘ LỚP LUẬT DÂN SỰ (11/11/2026): sinh viên kẹt giữa đề cũ 30+10+1 và đề mới 12+1.
+   Tải bản sao lưu JSON về máy → xóa mọi bài làm (pnl_dg_bai) và điểm (pnl_dg_cham) của các lớp chọn →
+   GIỮ mã lớp, danh sách (pnl_dg_ds), đồng bộ lại pnl_dg_sv → chuyển hẳn sang đề 12+1 → MỞ lớp theo khung giờ mới. */
+async function resetAllClasses(){
+ const pad=n=>String(n).padStart(2,"0"),loc=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+ let q;try{q=await db.collection("pnl_dg_lop").get()}catch(x){QTA.info("Không đọc được danh sách lớp: "+E(x.code||x.message));return}
+ const ls=q.docs.filter(d=>{const h=d.data().hocPhan;return h===COURSE||h==="luat-dan-su"});
+ if(!ls.length){QTA.info("Không có lớp Luật Dân sự nào.");return}
+ const now=new Date(),end=new Date(now.getTime()+7*86400000);end.setHours(23,0,0,0);
+ const d=QTA.modal(`<h2>Reset toàn bộ lớp Luật Dân sự</h2>
+  <p>Xóa <b>toàn bộ bài làm và điểm</b> của các lớp được chọn để sinh viên làm lại từ đầu bằng đề 12 trắc nghiệm + 1 tự luận. <b>Giữ nguyên mã lớp và danh sách sinh viên.</b> Trước khi xóa, web tự tải một tệp sao lưu (.json) về máy.</p>
+  <div style="max-height:220px;overflow:auto;border:1px solid #ddd;padding:6px 10px;margin:8px 0">${ls.map(c=>{const l=c.data();return `<label style="display:block;font-weight:400"><input type="checkbox" class="rs-c" value="${E(c.id)}" checked style="width:auto"> <b>${E(c.id)}</b> — ${E(l.ten||"")} · sĩ số ${l.siSo||0}${l.hocPhan==="luat-dan-su"?" · <i>đề cũ</i>":""}</label>`}).join("")}</div>
+  <div class="qta-filters"><div><label for="rs-a">Mở từ</label><input type="datetime-local" id="rs-a" value="${loc(now)}"></div><div><label for="rs-b">Đóng lúc</label><input type="datetime-local" id="rs-b" value="${loc(end)}"></div></div>
+  <p>Gõ <b>RESET</b> để xác nhận: <input type="text" id="rs-ok" autocomplete="off" style="width:120px"></p><p id="rs-msg" class="qta-err"></p>
+  <div class="foot"><button class="qb ghost" data-x>Quay lại</button><button class="qb lock" data-ok>Sao lưu, xóa và mở lại</button></div>`,true);
+ const m=t=>{const p=d.querySelector("#rs-msg");if(p)p.textContent=t};
+ d.querySelector("[data-x]").onclick=()=>QTA.close();
+ d.querySelector("[data-ok]").onclick=async()=>{
+  const pick=[...d.querySelectorAll(".rs-c:checked")].map(x=>x.value),A=new Date(d.querySelector("#rs-a").value),B=new Date(d.querySelector("#rs-b").value);
+  if(!pick.length){m("Chưa chọn lớp nào.");return}if(isNaN(A)||isNaN(B)||B<=A||B<=new Date()){m("Giờ đóng phải sau giờ mở và sau thời điểm hiện tại.");return}
+  if(d.querySelector("#rs-ok").value.trim().toUpperCase()!=="RESET"){m("Gõ RESET để xác nhận.");return}
+  d.querySelectorAll("button,input").forEach(x=>x.disabled=true);
+  try{
+   const bk={luc:new Date().toISOString(),lop:{}},rows=[];
+   for(const ma of pick){m("Đang sao lưu lớp "+ma+"…");
+    const [l,ds,b,g]=await Promise.all([db.doc("pnl_dg_lop/"+ma).get(),db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
+    bk.lop[ma]={lop:l.data(),ds:ds.exists?ds.data():null,bai:Object.fromEntries(b.docs.map(x=>[x.id,x.data()])),cham:Object.fromEntries(g.docs.map(x=>[x.id,x.data()]))};
+    rows.push({ma,ref:l.ref,ds:ds.exists?(ds.data().rows||[]):[],nb:b.size,ng:g.size});}
+   const url=URL.createObjectURL(new Blob([JSON.stringify(bk,null,1)],{type:"application/json"})),a=document.createElement("a");
+   a.href=url;a.download="SAO-LUU-DGDK-LUAT-DAN-SU-"+loc(new Date()).replace(/[-:T]/g,"")+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+   let tb=0,tg=0;
+   for(const r of rows){m("Đang reset lớp "+r.ma+"…");
+    await r.ref.update({open:false});
+    for(const col of ["pnl_dg_bai","pnl_dg_cham"])while(true){const more=await db.collection(col).where("maLop","==",r.ma).limit(300).get();if(more.empty)break;const bt=db.batch();more.docs.forEach(x=>bt.delete(x.ref));await bt.commit()}
+    for(let i=0;i<r.ds.length;i+=300){const bt=db.batch();r.ds.slice(i,i+300).forEach(x=>{if(x&&x.mssv)bt.set(db.doc("pnl_dg_sv/"+r.ma+"__"+x.mssv),{maLop:r.ma,mssv:x.mssv,hoTen:x.hoTen||""},{merge:true})});await bt.commit()}
+    await r.ref.update({hocPhan:COURSE,hocPhanTen:"Luật Dân sự – Đánh giá định kỳ (trắc nghiệm + tự luận)",thoiGian:40,siSo:r.ds.length,open:true,openAt:TS.fromDate(A),closeAt:TS.fromDate(B),resetAt:FV.serverTimestamp(),resetOldPaperCount:r.nb,resetOldGradeCount:r.ng});
+    tb+=r.nb;tg+=r.ng;}
+   QTA.close();await adminHome();
+   QTA.info("Đã reset <b>"+rows.length+"</b> lớp: "+rows.map(r=>E(r.ma)+" ("+r.ds.length+" SV)").join(", ")+".<br>Đã xóa "+tb+" bài làm và "+tg+" bản ghi điểm (bản sao lưu .json đã tải về máy).<br>Các lớp <b>đang mở</b> từ "+fmtT(TS.fromDate(A))+" đến "+fmtT(TS.fromDate(B))+"; sinh viên vào bằng mã lớp + mã sinh viên để làm từ đầu.","Hoàn tất");
+  }catch(x){console.error(x);d.querySelectorAll("button,input").forEach(y=>y.disabled=false);m("Gián đoạn: "+(x.code||x.message||x)+". Lớp đang xử lý có thể đang khóa — chạy lại để hoàn tất.")}
+ };
+}
 
 /* Thống nhất danh sách sinh viên: MSSV; Họ tên hoặc Họ tên; MSSV */
 function parseStudentRows(text){
