@@ -269,6 +269,16 @@ ol.mm-d li{margin:1px 0}
 #c-frame.editing{box-shadow:0 0 0 3px #e3a43b inset}
 #c-frame.editing .ftitle{color:#b06a00}
 #c-code[readonly]{opacity:.7;cursor:not-allowed}
+/* Tóm tắt lý thuyết của chương soạn trên Quản trị */
+.ly-frame{margin-top:18px}
+.ly section{margin:0 0 10px}
+.ly .lv1>.lh{font:900 17px/1.35 var(--f-display);color:var(--head);text-transform:uppercase;margin-top:6px}
+.ly .lv2>.lh{font:700 15.5px/1.35 var(--f-display);color:var(--head)}
+.ly .lv3>.lh,.ly .lv4>.lh,.ly .lv5>.lh{font:700 14.5px/1.35 var(--f-body);color:var(--ink)}
+.ly .lv2,.ly .lv3,.ly .lv4,.ly .lv5{margin-left:14px;padding-left:12px;border-left:2px solid var(--line)}
+.ly .cs{font-size:13px;color:var(--muted);font-style:italic;margin:2px 0}
+.ly ul{margin:4px 0 8px;padding-left:22px}
+.ly li{margin:3px 0}
 </style>
 </head>
 <body>
@@ -723,10 +733,9 @@ function renderWho(){const w=$("#who");
   if(session&&session.admin){w.innerHTML="Giảng viên (quản trị) · mở mọi học phần";}
   else if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';}
   else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>';
-  w.insertAdjacentHTML("beforeend",'<br><button type="button" id="manage-codes">Quản lý mã</button><br><a href="danh-gia/" id="dg-link" style="color:inherit;font-weight:700">Đánh giá định kỳ</a>');
+  w.insertAdjacentHTML("beforeend",'<br><a href="quan-tri/" id="manage-codes" style="color:inherit;font-weight:700">Quản trị</a> · <a href="danh-gia/" id="dg-link" style="color:inherit;font-weight:700">Đánh giá định kỳ</a>');
   if($("#logout"))$("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")};
   if($("#login"))$("#login").onclick=()=>{pending=null;showGate()};
-  $("#manage-codes").onclick=()=>route("quan-ly-ma");
 }
 function enter(sv){session=sv;store.set(KEY,JSON.stringify(sv));hideGate();renderWho();
   if(pending){const t=pending;pending=null;route(t)}}
@@ -748,9 +757,10 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   cur=id;const m=$("#main");
   if(id==="home"){m.innerHTML=homeHTML();bindDg()}
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
-  else if(id==="quan-ly-ma"){m.innerHTML=admin2HTML();admin2Bind()}
+  else if(id==="quan-ly-ma"){if(!onClaude){location.href="quan-tri/#ma";return}m.innerHTML=admin2HTML();admin2Bind()}
   else if(tlRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
+    if(!c.src&&TL[id]&&TL[id].chapters.some(x=>x.maps.length)){route("tl-"+id);return}
     if(c.src&&c.skin){document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${c.src}" title="Ôn tập ${c.name}"></iframe></section>`}
     else m.innerHTML=c.src
       ?`<div class="subbar"><div class="wrap"><button type="button" data-home>← Thư viện</button><h2>${c.name}</h2><div class="sp"></div><a href="${c.src}" target="_blank" rel="noopener">Mở trong thẻ mới</a></div></div><section class="viewer"><iframe src="${c.src}" title="Tài liệu ${c.name}"></iframe></section>`
@@ -768,7 +778,7 @@ function bindDg(){const f=$("#dg-form");if(!f)return;
     if(!/^[A-Z0-9_-]{2,20}$/.test(sv)){$("#dg-err").textContent="Nhập mã sinh viên.";$("#dg-sv").focus();return}
     store.set("pndg-last",JSON.stringify({ma,sv}));store.set("pndg-go","1");location.href="danh-gia/"}}
 function homeHTML(){
-  const list=COURSES.map(c=>`<li data-comment-target><button type="button" class="${c.src?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${c.name}</span><span class="st">${c.src?"Đã có":"Sắp có"}</span></button></li>`).join("");
+  const list=COURSES.map(c=>{const has=courseReady(c);return `<li data-comment-target><button type="button" class="${has?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${esc(c.name)}</span><span class="st">${has?"Đã có":"Sắp có"}</span></button></li>`}).join("");
   const docs=DOCS.map(d=>{const has=!!(d.tl&&TL[d.tl]);
     return `<div class="doc${has?"":" soon"}" data-comment-target><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="tl-${d.tl}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
   if(BE()&&stats){visits=stats.users}
@@ -786,7 +796,7 @@ function homeHTML(){
         <button class="dg-go" type="submit">Vào kiểm tra định kỳ</button>
       </form>
       <p class="dg-err" id="dg-err" role="alert"></p>
-      ${isOwner?'<p class="dg-admin"><a href="danh-gia/#quan-tri">Quản trị đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
+      ${isOwner?'<p class="dg-admin"><a href="quan-tri/#danh-gia">Quản trị đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
     </section>
     <section class="frame center"><div class="ftitle">MIND-MAP HỌC PHẦN</div><div class="docs">${docs}</div></section>
     </div>
@@ -798,7 +808,7 @@ function homeHTML(){
     <section class="frame" data-comment-target><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
       <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}${BE()&&stats&&visits!=null?'<span class="val na">người đã dùng mã</span>':''}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
       <div class="fb"><div class="bubble" aria-hidden="true">“</div>${sendLink()}</div>
-      ${(!onClaude||isOwner)?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':''}
+      ${(!onClaude||isOwner)?(onClaude?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':'<p class="admin-link">Giảng viên: <a href="quan-tri/" style="font-weight:700">Quản trị</a></p>'):''}
     </section>
   </div></main>`}
 function sendLink(){if(BE()||!onClaude)return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
@@ -966,11 +976,47 @@ function bindMM(){mmZoom=null;
 window.addEventListener("resize",()=>{if(document.querySelector(".mm-vp"))mmFit()});
 
 function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
-  if(p.ch){const h=tlChapterHTML(p.k,p.ch,p.mi);if(!h)return false;m.innerHTML=h;setTimeout(bindMM,0)}
+  if(p.ch){const c0=TL[p.k].chapters.find(x=>x.n===p.ch);
+    if(c0&&c0.dyn&&!c0.loaded){m.innerHTML=tlNav(p.k,true)+'<main class="wrap tl-main"><section class="frame"><p class="msg">Đang tải sơ đồ…</p></section></main>';
+      dynChapter(p.k,c0).then(()=>{if(cur===id)route(id)}).catch(()=>{m.querySelector(".msg").textContent="Chưa tải được chương này. Tải lại trang để thử lại."});return true}
+    const h=tlChapterHTML(p.k,p.ch,p.mi);if(!h)return false;m.innerHTML=h;
+    if(c0&&c0.ly){m.querySelector(".tl-main").insertAdjacentHTML("beforeend",`<section class="frame ly-frame"><div class="ftitle">Tóm tắt lý thuyết</div>${lyHTML(c0.ly)}</section>`);m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go))}
+    setTimeout(bindMM,0)}
   else m.innerHTML=tlHomeHTML(p.k);
   return true}
 
 window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const target=String(e.data.course||"");route("home");if(target){pending=target;showGate("Nhập mã có quyền truy cập học phần này để tiếp tục.")}}});
+
+/* ===== Dữ liệu thêm trên trang Quản trị (quan-tri/): học phần mới, chương bổ sung — lưu Firestore pnl_hp, pnl_hp_ch ===== */
+function courseReady(c){return !!(c.src||(TL[c.id]&&TL[c.id].chapters.some(x=>x.maps.length)))}
+function coverSVG(name,c){const n=String(name||"").toUpperCase(),words=n.split(/\s+/),lines=[];let cur="";
+  words.forEach(w=>{if((cur+" "+w).trim().length>22){if(cur)lines.push(cur);cur=w}else cur=(cur+" "+w).trim()});if(cur)lines.push(cur);
+  const L=lines.slice(0,4),y0=150-(L.length-1)*17;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="#12395c"/></linearGradient></defs><rect width="480" height="300" fill="url(#g)"/><circle cx="430" cy="40" r="90" fill="#fff" opacity=".08"/><circle cx="40" cy="290" r="70" fill="#fff" opacity=".07"/><path d="M0 250 L480 205 L480 300 L0 300Z" fill="#000" opacity=".12"/>${L.map((l,i)=>`<text x="240" y="${y0+i*34}" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="25" fill="#fff">${esc(l)}</text>`).join("")}<text x="240" y="272" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="13" letter-spacing="3" fill="#e8c766">PHÚC NGUYÊN LIBRARY</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)}
+function lyHTML(root){const sec=(n,lv)=>`<section class="lv${lv}"><div class="lh">${esc(n.t)}</div>${n.cs?`<div class="cs">CS: ${esc(n.cs)}</div>`:""}${n.b?`<ul>${n.b.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}${(n.c||[]).map(k=>sec(k,lv+1)).join("")}</section>`;
+  return `<div class="ly">${root.cs?`<div class="cs">CS: ${esc(root.cs)}</div>`:""}${root.b?`<ul>${root.b.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}${(root.c||[]).map(k=>sec(k,1)).join("")}</div>`}
+let DYN_FS=null;
+async function dynChapter(k,c){const s=await DYN_FS.doc("pnl_hp_ch/"+k+"__"+String(c.n).padStart(2,"0")).get();
+  if(!s.exists)throw new Error("missing");const x=s.data()||{};c.maps=Array.isArray(x.maps)?x.maps:[];c.ly=x.ly||null;if(x.t)c.t=x.t;c.loaded=true}
+async function loadDyn(fs){DYN_FS=fs;let docs;
+  try{docs=(await fs.collection("pnl_hp").where("pub","==",true).get()).docs}catch(e){console.warn("Quản trị:",e&&e.code);return false}
+  const items=docs.map(d=>Object.assign({id:d.id},d.data()||{}));
+  items.filter(h=>h.kind==="moi").sort((a,b)=>String(a.created||"").localeCompare(String(b.created||""))).forEach(h=>{
+    if(COURSES.some(c=>c.id===h.id))return;
+    const entry={id:h.id,name:h.name,c:h.c||"#1d5677",dyn:true};
+    const i=h.after?COURSES.findIndex(c=>c.id===h.after):-1;if(i>=0)COURSES.splice(i+1,0,entry);else COURSES.push(entry);
+    if(!ALL.some(c=>c.id===h.id))ALL.push(entry);
+    const d={id:h.id,name:h.name,img:h.img||coverSVG(h.name,h.c||"#1d5677"),tl:h.id};const j=h.after?DOCS.findIndex(x=>x.id===h.after):-1;if(j>=0)DOCS.splice(j+1,0,d);else DOCS.push(d);
+    TL[h.id]={name:h.name,review:h.id,chapters:[],laws:[],refs:[],cases:[]}});
+  items.forEach(h=>{const T=TL[h.id]||(course(h.id)?(TL[h.id]={name:course(h.id).name,review:h.id,chapters:[],laws:[],refs:[],cases:[]}):null);if(!T)return;
+    if(h.kind!=="moi"&&!DOCS.some(x=>x.id===h.id)){const c=course(h.id);DOCS.push({id:h.id,name:c.name,img:h.img||coverSVG(c.name,c.c||"#1d5677"),tl:h.id})}
+    (h.chapters||[]).forEach(x=>{let c=T.chapters.find(y=>y.n===x.n);
+      if(c&&c.maps.length&&!c.dyn)return; /* chương đã có trên GitHub: giữ nguyên */
+      if(!c){c={n:x.n,t:x.t,maps:[]};T.chapters.push(c)}
+      c.t=x.t||c.t;if(x.has&&!x.draft){c.dyn=true;c.loaded=false;c.maps=new Array(Math.max(1,x.nmaps|0)).fill(null)}});
+    T.chapters.sort((a,b)=>a.n-b.n)});
+  return items.length>0}
 (async function boot(){
   session=loadSession();
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
@@ -988,7 +1034,9 @@ window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const targe
     /* Đăng nhập/đăng xuất ở trang PN khác (cùng máy) được cập nhật ngay */
     fbAuth.onAuthStateChanged(async x=>{if(!x){try{x=(await fbAuth.signInAnonymously()).user}catch(e){return}}
       const was=isOwner;UID=x.uid;isOwner=fbIsAdmin(x);if(isOwner!==was){if(isOwner)grantAdmin();else dropAdmin();renderWho();if(cur==="quan-ly-ma")route("quan-ly-ma")}});
-    MIGRATED=(await DB.doc("meta/migrated").get()).exists}
+    MIGRATED=(await DB.doc("meta/migrated").get()).exists;
+    loadDyn(fs).then(any=>{if(!any)return;const h=(location.hash||"").slice(1);
+      if(h&&h!=="home"&&(cur==="home"||cur===h)&&(course(h)||tlParse(h)))route(h);else if(cur==="home")route("home")}).catch(()=>{})}
   catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
   if(isOwner){grantAdmin();renderWho()}
   dbReadyRes();

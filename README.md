@@ -54,3 +54,15 @@ Luật Hiến pháp (9 chương, thêm khung chương cùng ngày). Khi biên so
 - Mind map chia tờ theo bề rộng đo thực tế (tách mục rộng quá 1.500 px, gộp các mục nhỏ liền nhau tới 1.720 px).
 - ChatGPT và người soạn nội dung chỉ sửa trong `noi-dung/`. `tools/xuat_noi_dung.py` xuất lại Tóm tắt đang có ra file nguồn khi cần.
 - Nguồn đăng GitHub Pages: GitHub Actions (đổi 03/11/2026) — chỉ bản đã chạy thử đạt mới được đăng.
+
+## Quản trị thống nhất (13/11/2026) — `quan-tri/`
+
+Một mục **Quản trị** duy nhất cho PNL (nút "Quản trị" trên đầu trang chủ), đăng nhập Google bằng `luuhuong.nnpl@gmail.com`. Giao diện theo Phúc Nguyên Digital (PND).
+
+- **Học phần**: thêm học phần mới (tên, màu, ảnh bìa, trạng thái Ẩn / Sắp có / Công khai, vị trí trong cột Học phần, danh sách chương). Học phần có sẵn trên GitHub chỉ được bổ sung chương còn trống, không sửa nội dung cũ.
+- **Tóm tắt & Mind map**: soạn dàn ý từng chương (cùng định dạng `noi-dung/`), web tự dựng Tóm tắt lý thuyết và mind map theo đúng quy tắc của `tools/xay_dung.py` (chia tờ theo bề rộng đo thực tế), xem trước trước khi lưu, có chế độ nháp.
+- **Gói & mã truy cập**: mã lớp giữ nguyên cấu trúc `pnl_ma` (sinh viên đang dùng mã không bị ảnh hưởng); gói = bộ học phần đặt sẵn để cấp mã nhanh.
+- **Đánh giá định kỳ**: nhúng trang quản trị `danh-gia/#quan-tri`. **Góp ý**, **Sao lưu** (tải JSON).
+- **Ngân hàng câu hỏi**: đợt 2.
+
+Firestore: `pnl_hp/{id}` (kind `moi` = học phần mới, `bo-sung` = phần thêm cho học phần có sẵn), `pnl_hp_ch/{id}__{NN}` (md, maps, ly), `pnl_goi/{id}`. Quy tắc: `firebase/firestore-pnl.rules` (xuất bản 13/11/2026). Trang chủ đọc các tài liệu có `pub == true` và ghép vào cột Học phần, Mind-map học phần.

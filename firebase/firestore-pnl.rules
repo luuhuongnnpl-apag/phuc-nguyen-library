@@ -1,5 +1,5 @@
     // ===== PNL - Phúc Nguyên Library (viết lại 11/11/2026 — khớp mã đang chạy, bỏ toàn bộ quy tắc PNL cũ) =====
-    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11 (bản cũ: firestore-pnl-cu-0511.rules).
+    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026 (bản cũ: firestore-pnl-cu-0511.rules).
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
 
 
@@ -25,6 +25,21 @@
         && request.resource.data.keys().hasOnly(['items'])
         && request.resource.data.items is list && request.resource.data.items.size() <= 40;
       allow delete: if isAdmin();
+    }
+
+    // --- Quản trị (13/11/2026): học phần, chương thêm thủ công trên trang quan-tri/ ---
+    // Ai cũng đọc được khi đã công bố (pub == true); chỉ quản trị đọc bản ẩn/nháp và ghi.
+    match /pnl_hp/{id} {
+      allow read: if isAdmin() || resource.data.pub == true;
+      allow write: if isAdmin();
+    }
+    match /pnl_hp_ch/{id} {
+      allow read: if isAdmin() || resource.data.pub == true;
+      allow write: if isAdmin();
+    }
+    // Gói truy cập: chỉ quản trị
+    match /pnl_goi/{id} {
+      allow read, write: if isAdmin();
     }
 
     // --- Đánh giá định kỳ ---
