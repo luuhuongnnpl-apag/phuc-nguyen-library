@@ -280,6 +280,7 @@ ol.mm-d li{margin:1px 0}
 .ly ul{margin:4px 0 8px;padding-left:22px}
 .ly li{margin:3px 0}
 </style>
+<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114a">
 </head>
 <body>
 
@@ -300,17 +301,28 @@ ol.mm-d li{margin:1px 0}
 </div>
 
 <div id="app" hidden>
-  <header class="band"><div class="wrap">
-    <div class="logo"><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"></div>
-    <div class="titles"><div class="kicker">Thư viện Phúc Nguyên</div><h1>Tài liệu luật học</h1><div class="copy">Bản quyền thuộc Phúc Nguyên</div></div>
-    <div class="who" id="who"></div>
+  <header class="top"><div class="top-in">
+    <button type="button" class="brand" data-home-top><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"><span class="brand-name">PHÚC NGUYÊN LIBRARY<small>TÀI LIỆU LUẬT HỌC</small></span></button>
+    <nav class="top-act" id="topAct" aria-label="Tài khoản"><button type="button" class="tbtn home" data-home-top>🏠 Trang chủ</button><span id="who" class="whoami"></span></nav>
   </div></header>
-  <div id="main"></div>
+  <section class="hero" aria-label="Giới thiệu"><div class="hero-in"><img src="assets/logo.png" alt="" class="hero-logo"><div><h1 class="hero-title">THƯ VIỆN PHÚC NGUYÊN · TÀI LIỆU LUẬT HỌC</h1><p class="hero-sub">RESEARCH LAW FOR BETTER LIFE</p></div></div></section>
+  <div class="layout" id="layout">
+    <aside class="side-nav" aria-label="Danh mục học phần">
+      <div><h2 class="sec-title">Danh mục học phần</h2><nav id="catNav" class="catnav"></nav></div>
+      <div id="adminNav" hidden><h2 class="sec-title">Quản trị</h2><nav class="catnav"></nav></div>
+    </aside>
+    <div class="content" id="main"></div>
+    <aside class="side-extra" id="sideExtra" aria-label="Hướng dẫn sử dụng"></aside>
+  </div>
+  <footer class="foot"><b>PHÚC NGUYÊN LIBRARY</b> · Research law for better life · © Bản quyền: Phúc Nguyên</footer>
+</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="assets/pnl-shell.js?v=20261114a"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -719,9 +731,9 @@ function fbApiBind(){
 
 
 /* Trang chủ mở tự do; lần đầu bấm vào nội dung (học phần, tài liệu, chương) mới hỏi mã */
-const FREE=["home","gop-y","quan-ly-ma"];
+const FREE=["home","gop-y","quan-ly-ma","qt-ma","qt-dg","qt-sl"];
 let pending=null,gateReturn=null,expiredMsg="";
-function scopeForRoute(id){const p=tlParse(id);if(p)return p.k;return course(id)?id:""}
+function scopeForRoute(id){const z=shScope(id);if(z!==null)return z;const p=tlParse(id);if(p)return p.k;return course(id)?id:""}
 function needsCode(id){if(FREE.includes(id))return false;if(!session)return true;const xs=session.courses;if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return false;const target=scopeForRoute(id);return !!target&&!xs.includes(target)}
 function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
 function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
@@ -729,14 +741,7 @@ function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(ga
 const ADMIN_SESSION={code:"QUAN-TRI",label:"Giảng viên (quản trị)",han:"2099-12-31",courses:["*"],admin:true};
 function grantAdmin(){if(!isOwner)return;session=ADMIN_SESSION;store.set(KEY,JSON.stringify(ADMIN_SESSION));expiredMsg=""}
 function dropAdmin(){if(session&&session.admin){session=null;store.del(KEY)}}
-function renderWho(){const w=$("#who");
-  if(session&&session.admin){w.innerHTML="Giảng viên (quản trị) · mở mọi học phần";}
-  else if(session){w.innerHTML=esc(session.label)+" · đến "+fmtDate(session.han)+'<br><button type="button" id="logout">Đổi mã</button>';}
-  else w.innerHTML='<button type="button" id="login">Nhập mã lớp</button>';
-  w.insertAdjacentHTML("beforeend",'<br><a href="quan-tri/" id="manage-codes" style="color:inherit;font-weight:700">Quản trị</a> · <a href="danh-gia/" id="dg-link" style="color:inherit;font-weight:700">Đánh giá định kỳ</a>');
-  if($("#logout"))$("#logout").onclick=()=>{store.del(KEY);session=null;$("#code-in").value="";renderWho();route("home")};
-  if($("#login"))$("#login").onclick=()=>{pending=null;showGate()};
-}
+function renderWho(){shWho();document.querySelectorAll("[data-home-top]").forEach(b=>b.onclick=()=>route("home"))}
 function enter(sv){session=sv;store.set(KEY,JSON.stringify(sv));hideGate();renderWho();
   if(pending){const t=pending;pending=null;route(t)}}
 $("#gate-x").onclick=()=>{pending=null;hideGate()};
@@ -751,14 +756,19 @@ $("#gate-form").addEventListener("submit",async e=>{e.preventDefault();
 $("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
 
 let cur="home";
+let ROUTE_POP=false;
+window.addEventListener("popstate",()=>{const h=decodeURIComponent((location.hash||"").slice(1))||"home";ROUTE_POP=true;try{route(h)}finally{ROUTE_POP=false}});
 function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
+  if(!ROUTE_POP){const want=id==="home"?"":"#"+id;if(location.hash!==want)history.pushState(null,"",want||location.pathname+location.search)}
+  document.querySelectorAll(".dlg,.dview").forEach(x=>x.remove());document.body.style.overflow="";
   if(id==="home"){m.innerHTML=homeHTML();bindDg()}
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
-  else if(id==="quan-ly-ma"){if(!onClaude){location.href="quan-tri/#ma";return}m.innerHTML=admin2HTML();admin2Bind()}
-  else if(tlRoute(id,m)){}
+  else if(id==="quan-ly-ma"){if(!onClaude){route("qt-ma");return}m.innerHTML=admin2HTML();admin2Bind()}
+  else if(tlRoute(id,m)){$("#layout").classList.add("no-tools")}
+  else if(shRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
     if(!c.src&&TL[id]&&TL[id].chapters.some(x=>x.maps.length)){route("tl-"+id);return}
     if(c.src&&c.skin){document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${c.src}" title="Ôn tập ${c.name}"></iframe></section>`}
@@ -768,7 +778,8 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   m.querySelectorAll("[data-home]").forEach(b=>b.onclick=()=>route("home"));
   m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
   m.querySelectorAll("[data-send]").forEach(b=>b.onclick=()=>sendFeedback(b));
-  window.scrollTo(0,0)}
+  if(id==="home"){$("#layout").classList.remove("no-tools");shBindPage(m)}else if(id==="gop-y")$("#layout").classList.add("no-tools");
+  shNav();shSide();window.scrollTo(0,0)}
 
 function bindDg(){const f=$("#dg-form");if(!f)return;
   try{const last=JSON.parse(store.get("pndg-last")||"{}");if(last.ma)$("#dg-ma").value=last.ma;if(last.sv)$("#dg-sv").value=last.sv}catch(e){}
@@ -777,18 +788,7 @@ function bindDg(){const f=$("#dg-form");if(!f)return;
     if(!/^[A-Z0-9_-]{2,24}$/.test(ma)){$("#dg-err").textContent="Nhập mã lớp (chỉ gồm chữ, số, dấu gạch).";$("#dg-ma").focus();return}
     if(!/^[A-Z0-9_-]{2,20}$/.test(sv)){$("#dg-err").textContent="Nhập mã sinh viên.";$("#dg-sv").focus();return}
     store.set("pndg-last",JSON.stringify({ma,sv}));store.set("pndg-go","1");location.href="danh-gia/"}}
-function homeHTML(){
-  const list=COURSES.map(c=>{const has=courseReady(c);return `<li data-comment-target><button type="button" class="${has?"open":"soon"}" data-go="${c.id}">${book(c.c)}<span class="nm">${esc(c.name)}</span><span class="st">${has?"Đã có":"Sắp có"}</span></button></li>`}).join("");
-  const docs=DOCS.map(d=>{const has=!!(d.tl&&TL[d.tl]);
-    return `<div class="doc${has?"":" soon"}" data-comment-target><div class="ph"><img src="${d.img}" alt="" loading="lazy">${has?"":'<span class="tag">Đang cập nhật</span>'}</div>${has?`<button type="button" class="ttl" data-go="tl-${d.tl}">${d.name}</button>`:`<span class="ttl">${d.name}</span>`}</div>`}).join("");
-  if(BE()&&stats){visits=stats.users}
-  const vTxt=BE()&&!stats?'<span class="val na">đang tải…</span>':visits!=null?`<span class="val">${visits.toLocaleString("vi-VN")}</span>`:(CONFIG.goatcounter?`<a class="val na" href="https://${esc(CONFIG.goatcounter)}.goatcounter.com" target="_blank" rel="noopener">xem thống kê</a>`:(onClaude?'<span class="val na">thống kê trên bản web</span>':'<span class="val na">chưa kết nối bộ đếm</span>'));
-  const fTxt=BE()?(stats?`<span class="val">${stats.feedback}</span>`:'<span class="val na">đang tải…</span>'):cmt?'<span class="val na">xem ở khung Bình luận</span>':!onClaude?'<span class="val na">gửi trực tiếp tới giảng viên</span>':(feedback==null?'<span class="val na">chưa kết nối biểu mẫu</span>':`<span class="val">${feedback.length}</span>`);
-  return `<main class="wrap">
-  <div class="grid-top">
-    <section class="frame"><div class="ftitle">Học phần</div><ul class="courses">${list}</ul></section>
-    <div class="col-r">
-    <section class="frame dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ</div>
+function homeHTML(){return shHomeHTML(`<section class="dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ</div>
       <p class="dg-lead">Hệ thống đánh giá định kỳ dùng chung cho tất cả học phần. Sinh viên nhập <b>mã lớp</b> và <b>mã sinh viên</b>; hệ thống tự xác định học phần, hiển thị cấu trúc đề, thời gian làm bài và yêu cầu xác nhận họ tên trước khi bắt đầu.</p>
       <form id="dg-form" class="dg-form" novalidate>
         <div><label class="dg-lab" for="dg-ma">Mã lớp</label><input type="text" id="dg-ma" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Ví dụ: DS-K25A"></div>
@@ -796,21 +796,8 @@ function homeHTML(){
         <button class="dg-go" type="submit">Vào kiểm tra định kỳ</button>
       </form>
       <p class="dg-err" id="dg-err" role="alert"></p>
-      ${isOwner?'<p class="dg-admin"><a href="quan-tri/#danh-gia">Quản trị đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
-    </section>
-    <section class="frame center"><div class="ftitle">MIND-MAP HỌC PHẦN</div><div class="docs">${docs}</div></section>
-    </div>
-  </div>
-  <div class="grid-bot">
-    <section class="frame"><div class="ftitle">Hướng dẫn sử dụng</div>
-      <ol class="guide"><li>Đăng nhập dữ liệu thông tin</li><li>Đọc tài liệu, sau đó làm các bài test kiểm tra kiến thức và luyện tập</li><li>Phản hồi, góp ý để hoàn thiện hệ thống.</li><li>Thông tin dữ liệu cung cấp vì mục đích học thuật, không có yếu tố thương mại.</li></ol>
-      <p class="thanks">Trân trọng cảm ơn!</p></section>
-    <section class="frame" data-comment-target><div class="ftitle" style="font-size:clamp(17px,2vw,21px)">Dữ liệu truy cập:</div>
-      <ul class="stats"><li><span class="lbl">Lượng truy cập</span>${vTxt}${BE()&&stats&&visits!=null?'<span class="val na">người đã dùng mã</span>':''}</li><li><button type="button" class="lbl" data-go="gop-y">Phản hồi góp ý</button>${fTxt}</li></ul>
-      <div class="fb"><div class="bubble" aria-hidden="true">“</div>${sendLink()}</div>
-      ${(!onClaude||isOwner)?(onClaude?'<p class="admin-link">Giảng viên: <button type="button" data-go="quan-ly-ma">Quản lý mã lớp</button></p>':'<p class="admin-link">Giảng viên: <a href="quan-tri/" style="font-weight:700">Quản trị</a></p>'):''}
-    </section>
-  </div></main>`}
+      ${isOwner?'<p class="dg-admin"><a href="#qt-dg" data-go="qt-dg">Quản trị đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
+    </section>`)}
 function sendLink(){if(BE()||!onClaude)return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
 async function sendFeedback(btn){
   if(cmt){const target=btn.closest("[data-comment-target]")||btn;
@@ -987,7 +974,7 @@ function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
 
 window.addEventListener("message",e=>{if(e.data&&e.data.pn==="home"){const target=String(e.data.course||"");route("home");if(target){pending=target;showGate("Nhập mã có quyền truy cập học phần này để tiếp tục.")}}});
 
-/* ===== Dữ liệu thêm trên trang Quản trị (quan-tri/): học phần mới, chương bổ sung — lưu Firestore pnl_hp, pnl_hp_ch ===== */
+/* ===== Dữ liệu thêm khi đăng nhập quản trị: học phần mới, chương bổ sung — lưu Firestore pnl_hp, pnl_hp_ch ===== */
 function courseReady(c){return !!(c.src||(TL[c.id]&&TL[c.id].chapters.some(x=>x.maps.length)))}
 function coverSVG(name,c){const n=String(name||"").toUpperCase(),words=n.split(/\s+/),lines=[];let cur="";
   words.forEach(w=>{if((cur+" "+w).trim().length>22){if(cur)lines.push(cur);cur=w}else cur=(cur+" "+w).trim()});if(cur)lines.push(cur);
@@ -1022,7 +1009,7 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
   else if(!session&&store.get(KEY))store.del(KEY);
   $("#app").hidden=false;renderWho();
-  const h0=(location.hash||"").slice(1);route(course(h0)||tlParse(h0)||h0==="gop-y"?h0:"home");
+  const h0=(location.hash||"").slice(1);ROUTE_POP=true;try{route(course(h0)||tlParse(h0)||h0==="gop-y"||shKnown(h0)?h0:"home")}finally{ROUTE_POP=false}
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
   try{DB=onClaude?await window.claude.use("db"):null}catch(e){DB=null}
   if(!onClaude&&window.firebase){try{
@@ -1033,10 +1020,10 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
     UID=u.uid;isOwner=fbIsAdmin(u);if(isOwner)grantAdmin();else dropAdmin();
     /* Đăng nhập/đăng xuất ở trang PN khác (cùng máy) được cập nhật ngay */
     fbAuth.onAuthStateChanged(async x=>{if(!x){try{x=(await fbAuth.signInAnonymously()).user}catch(e){return}}
-      const was=isOwner;UID=x.uid;isOwner=fbIsAdmin(x);if(isOwner!==was){if(isOwner)grantAdmin();else dropAdmin();renderWho();if(cur==="quan-ly-ma")route("quan-ly-ma")}});
+      const was=isOwner;UID=x.uid;isOwner=fbIsAdmin(x);if(isOwner!==was){if(isOwner)grantAdmin();else dropAdmin();renderWho();if(isOwner)await shLoadAdmin();shRefresh()}});
     MIGRATED=(await DB.doc("meta/migrated").get()).exists;
-    loadDyn(fs).then(any=>{if(!any)return;const h=(location.hash||"").slice(1);
-      if(h&&h!=="home"&&(cur==="home"||cur===h)&&(course(h)||tlParse(h)))route(h);else if(cur==="home")route("home")}).catch(()=>{})}
+    loadDyn(fs).then(()=>shLoad(fs)).then(()=>{const h=decodeURIComponent((location.hash||"").slice(1));
+      if(h&&h!=="home"&&(cur==="home"||cur===h)&&(course(h)||tlParse(h)||shKnown(h))){ROUTE_POP=true;try{route(h)}finally{ROUTE_POP=false}}}).catch(e=>console.warn(e))}
   catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
   if(isOwner){grantAdmin();renderWho()}
   dbReadyRes();

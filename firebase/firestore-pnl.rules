@@ -37,10 +37,10 @@
       allow read: if isAdmin() || resource.data.pub == true;
       allow write: if isAdmin();
     }
-    // Gói truy cập: chỉ quản trị
-    match /pnl_goi/{id} {
-      allow read, write: if isAdmin();
-    }
+    // Tài liệu, thư mục, liên kết thông dụng (14/11/2026): ai cũng đọc, chỉ quản trị ghi
+    match /pnl_docs/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /pnl_folders/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /pnl_links/{id} { allow read: if true; allow write: if isAdmin(); }
 
     // --- Đánh giá định kỳ ---
     function pnlLop(ma) {

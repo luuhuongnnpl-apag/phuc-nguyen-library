@@ -55,14 +55,14 @@ Luật Hiến pháp (9 chương, thêm khung chương cùng ngày). Khi biên so
 - ChatGPT và người soạn nội dung chỉ sửa trong `noi-dung/`. `tools/xuat_noi_dung.py` xuất lại Tóm tắt đang có ra file nguồn khi cần.
 - Nguồn đăng GitHub Pages: GitHub Actions (đổi 03/11/2026) — chỉ bản đã chạy thử đạt mới được đăng.
 
-## Quản trị thống nhất (13/11/2026) — `quan-tri/`
+## Giao diện PND và quản trị gộp chung (14/11/2026)
 
-Một mục **Quản trị** duy nhất cho PNL (nút "Quản trị" trên đầu trang chủ), đăng nhập Google bằng `luuhuong.nnpl@gmail.com`. Giao diện theo Phúc Nguyên Digital (PND).
+Trang chủ dựng lại theo bố cục Phúc Nguyên Digital (PND): thanh trên, băng giới thiệu, cột trái **Danh mục học phần**, cột giữa (Đánh giá định kỳ → Tài liệu, giáo trình ★ → Liên kết thông dụng), cột phải **Hướng dẫn sử dụng**. Mã khung: `assets/pnl-shell.js`, `assets/pnl-shell.css`.
 
-- **Học phần**: thêm học phần mới (tên, màu, ảnh bìa, trạng thái Ẩn / Sắp có / Công khai, vị trí trong cột Học phần, danh sách chương). Học phần có sẵn trên GitHub chỉ được bổ sung chương còn trống, không sửa nội dung cũ.
-- **Tóm tắt & Mind map**: soạn dàn ý từng chương (cùng định dạng `noi-dung/`), web tự dựng Tóm tắt lý thuyết và mind map theo đúng quy tắc của `tools/xay_dung.py` (chia tờ theo bề rộng đo thực tế), xem trước trước khi lưu, có chế độ nháp.
-- **Gói & mã truy cập**: mã lớp giữ nguyên cấu trúc `pnl_ma` (sinh viên đang dùng mã không bị ảnh hưởng); gói = bộ học phần đặt sẵn để cấp mã nhanh.
-- **Đánh giá định kỳ**: nhúng trang quản trị `danh-gia/#quan-tri`. **Góp ý**, **Sao lưu** (tải JSON).
-- **Ngân hàng câu hỏi**: đợt 2.
+- **Một trang, hai vai**: đăng nhập Google bằng tài khoản quản trị → hiện nút thêm/sửa ngay trên trang và mục Quản trị ở cột trái (Mã lớp, Đánh giá định kỳ, Góp ý, Sao lưu). Người vào bằng mã lớp chỉ đọc. Thư mục `quan-tri/` chỉ còn chuyển hướng về trang chủ.
+- **Trang học phần**: 6 mục mặc định cho mọi học phần (Thi thử, Lý thuyết, Tình huống, Văn bản & án lệ, Tóm tắt lý thuyết, Mind map) + Tài liệu, giáo trình (thư mục, tài liệu). Học phần chưa có trang riêng dùng `hp/hoc-phan.html?id=…` (đọc Firestore).
+- **Thêm học phần**: tên, màu, ảnh bìa, trạng thái, vị trí; danh sách chương gõ tay hoặc đọc từ đề cương chi tiết (PDF, .docx, .txt).
+- **Tài liệu**: tải tệp lên Google Drive của quản trị (thư mục "PNL - Phúc Nguyên Library", quyền `drive.file`, mở chế độ ai có link được xem) hoặc dán liên kết; đánh dấu ★ để hiện ở trang chủ.
+- **Tóm tắt & mind map**: soạn dàn ý từng chương trong trình soạn toàn màn hình; mind map dựng theo quy tắc `tools/xay_dung.py`.
 
-Firestore: `pnl_hp/{id}` (kind `moi` = học phần mới, `bo-sung` = phần thêm cho học phần có sẵn), `pnl_hp_ch/{id}__{NN}` (md, maps, ly), `pnl_goi/{id}`. Quy tắc: `firebase/firestore-pnl.rules` (xuất bản 13/11/2026). Trang chủ đọc các tài liệu có `pub == true` và ghép vào cột Học phần, Mind-map học phần.
+Firestore: `pnl_hp`, `pnl_hp_ch` (đọc khi `pub == true`), `pnl_docs`, `pnl_folders`, `pnl_links` (đọc công khai), `pnl_meta/drive` (thư mục Drive); ghi: chỉ quản trị. Quy tắc: `firebase/firestore-pnl.rules`.

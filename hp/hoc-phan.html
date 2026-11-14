@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tài liệu học phần · Phúc Nguyên Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Merriweather:wght@700;900&display=swap">
+<link rel="stylesheet" href="../assets/pnlib-course.css">
+<style>#pn-wait{font:15px "Be Vietnam Pro",system-ui,sans-serif;color:#475569;text-align:center;padding:60px 16px}</style>
+</head><body>
+<!-- Trang ôn tập dùng chung cho mọi học phần chưa có trang riêng (14/11/2026).
+     Dữ liệu đọc từ Firestore: pnl_hp/{id} (danh sách chương), pnl_hp_ch (tóm tắt từng chương).
+     Ngân hàng câu hỏi, tình huống, văn bản sẽ nạp từ Quản trị ở bước 2; khi chưa có, các mục hiện trống. -->
+<script>
+(function(){
+  const qs=new URLSearchParams(location.search),courseId=qs.get("id")||"";
+  function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+  let access=false;
+  try{const s=JSON.parse(localStorage.getItem("pnlib-ma-lop")||"null");const sc=s&&Array.isArray(s.courses)?s.courses:null;
+    access=!!(courseId&&s&&s.code&&s.han&&today()<=s.han&&(!sc||!sc.length||sc.includes("*")||sc.includes(courseId)))}catch(e){access=false}
+  if(!access){document.documentElement.style.visibility="hidden";
+    if(window.top!==window.self)window.parent.postMessage({pn:"home",course:courseId},"*");else window.location.replace("../index.html#"+courseId)}
+})();
+</script>
+<div id="pn-app"><p id="pn-wait">Đang tải học phần…</p></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(async function(){
+  const qs=new URLSearchParams(location.search),id=qs.get("id")||"",ten=qs.get("ten")||"Học phần";
+  const d=new Date(),asof=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+  let hp={},chs=[];
+  try{firebase.initializeApp({apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"});
+    const fs=firebase.firestore();
+    const h=await fs.doc("pnl_hp/"+id).get().catch(()=>null);if(h&&h.exists)hp=h.data()||{};
+    chs=(await fs.collection("pnl_hp_ch").where("hp","==",id).where("pub","==",true).get()).docs.map(x=>x.data()).sort((a,b)=>a.n-b.n)}
+  catch(e){console.warn("Chưa tải được dữ liệu học phần",e)}
+  const name=hp.name||ten;document.title="Tài liệu "+name+" · Phúc Nguyên Library";
+  const list=(hp.chapters||[]).length?hp.chapters:chs.map(c=>({n:c.n,t:c.t}));
+  const data={meta:{id,name,title:"Tài liệu "+name,menuTitle:name,asof,laws:[]},
+    chapters:list.map(c=>({n:c.n,name:c.t,ch:"Chương "+c.n})),
+    q:[],th:list.map(c=>({name:"Chương "+c.n+". "+c.t,items:[]})),vb:[],al:[],
+    ly:{root:name.toUpperCase(),ch:chs.filter(c=>c.ly).map(c=>c.ly),upd:null}};
+  const el=document.createElement("script");el.type="application/json";el.id="pn-data";el.textContent=JSON.stringify(data);document.body.appendChild(el);
+  document.getElementById("pn-app").innerHTML="";
+  const js=document.createElement("script");js.src="../assets/pnlib-course.js";document.body.appendChild(js);
+})();
+</script>
+</body></html>

@@ -30,7 +30,7 @@ PHIEN_THU = "localStorage.setItem('pnlib-ma-lop', JSON.stringify({code:'KIEM-THU
 def main():
     loi, ghi_chu = [], []
     # 1. dữ liệu đọc được
-    for f in sorted((ROOT / "hp").glob("*.html")):
+    for f in sorted(x for x in (ROOT / "hp").glob("*.html") if x.name != "hoc-phan.html"):  # hoc-phan.html: trang chung đọc dữ liệu Firestore
         m = PN_DATA.search(f.read_text(encoding="utf-8"))
         if not m:
             loi.append(f"hp/{f.name}: không thấy khối dữ liệu")
@@ -104,7 +104,7 @@ def chay_trinh_duyet(loi, ghi_chu):
         b = p.chromium.launch(**({"executable_path": exe} if exe else {}))
         # Trang học phần
         so_trang = 0
-        for f in sorted((ROOT / "hp").glob("*.html")):
+        for f in sorted(x for x in (ROOT / "hp").glob("*.html") if x.name != "hoc-phan.html"):  # hoc-phan.html: trang chung đọc dữ liệu Firestore
             pg = b.new_page(viewport={"width": 1366, "height": 900})
             errs = []
             pg.on("pageerror", lambda e, errs=errs: errs.append(str(e)))
