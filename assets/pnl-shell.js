@@ -91,13 +91,19 @@ function shSrc(c){return c.src||("hp/hoc-phan.html?id="+encodeURIComponent(c.id)
 function shHasMaps(id){return !!(TL[id]&&TL[id].chapters.some(x=>x.maps.length))}
 
 /* ================= Định tuyến ================= */
+/* Trang ôn tập nhúng: chuyển mục bằng nút menu (đã ẩn) của trang ôn tập */
+function shFrameTab(fr,tab){try{const d=fr.contentDocument;const go=()=>{const b=d.querySelector('.pn-menu [data-pn="'+tab+'"]');if(b){b.click();return true}return false};
+  if(!go()){let n=0;const t=setInterval(()=>{if(go()||++n>40)clearInterval(t)},150)}}catch(e){}}
 function shScope(id){if(/^on:/.test(id))return id.split(":")[1];if(/^tm:/.test(id)){const f=SH.folders.find(x=>x.id===id.slice(3));return f?f.course:""}if(/^qt-/.test(id))return "";return null}
 function shKnown(id){return !!(id&&(/^(on|tm):/.test(id)||/^qt-(ma|dg|sl|gy)$/.test(id)))}
 function shRoute(id,m){
   const lay=document.getElementById("layout");if(lay)lay.classList.toggle("no-tools",id!=="home");
   if(/^on:/.test(id)){const [,cid,tab]=id.split(":");const c=course(cid);if(!c){route("home");return true}
     if(tab==="mindmap"){route("tl-"+cid);return true}
-    document.body.classList.add("in-course");m.innerHTML=`<section class="viewer"><iframe src="${shSrc(c)}${tab?"#"+tab:""}" title="Ôn tập ${esc(c.name)}"></iframe></section>`;return true}
+    const old=m.querySelector("iframe.pnl-frame[data-cid='"+cid+"']");
+    if(old){m.querySelector(".chead").outerHTML=shCourseHead(cid,tab);shBindPage(m);shFrameTab(old,tab);return true}
+    m.innerHTML=shCourseHead(cid,tab)+`<iframe class="pnl-frame" data-cid="${esc(cid)}" src="${shSrc(c)}${tab?"#"+tab:""}" title="Ôn tập ${esc(c.name)}"></iframe>`;
+    const fr=m.querySelector("iframe.pnl-frame");fr.addEventListener("load",()=>{try{fr.contentDocument.documentElement.classList.add("pn-embed")}catch(e){}shFrameTab(fr,tab)});shBindPage(m);return true}
   if(/^tm:/.test(id)){m.innerHTML=shFolderHTML(id.slice(3));shBindPage(m);return true}
   if(id==="qt-ma"){m.innerHTML=shGuard()||shMaHTML();if(shAdmin())shMaBind(m);else shBindPage(m);return true}
   if(id==="qt-dg"){m.innerHTML=shGuard()||`<section class="box"><h2 class="box-title">Quản trị đánh giá định kỳ<span class="sp"></span><a class="b2 sm" href="danh-gia/#quan-tri" target="_blank" rel="noopener">Mở thẻ mới ↗</a></h2><iframe src="danh-gia/?nhung=1#quan-tri" title="Quản trị đánh giá định kỳ" style="width:100%;height:calc(100vh - 220px);min-height:640px;border:1px solid var(--p-line);border-radius:6px"></iframe></section>`;shBindPage(m);return true}

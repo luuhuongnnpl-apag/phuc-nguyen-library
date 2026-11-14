@@ -9,7 +9,7 @@
   --f-display:"Merriweather",Georgia,"Times New Roman",serif;
   --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme: dark){:root[data-theme="dark"]{
   --bg:#0f1513; --paper:#161e1b; --ink:#e5ece9; --muted:#97a6a0; --line:#28332f;
   --acc:#8fb8df; --acc-soft:#1b2838; --seal:#f08a80; --seal-soft:#3a1f1e;
   --ok:#6fd3a0; --ok-soft:#163327; --bad:#f08a80; --bad-soft:#3a1f1e; --warn:#e6b85c; --warn-soft:#33280f;
@@ -238,3 +238,32 @@ textarea{width:100%;min-height:96px;resize:vertical;font:400 14.5px/1.55 var(--f
 
 @media (max-width:520px){.qtext{font-size:16.5px}.timer{font-size:20px}}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}html{scroll-behavior:auto}}
+
+/* ===== Kiểu PND (14/11/2026): đồng bộ với trang chủ Phúc Nguyên Library ===== */
+:root{--bg:#f4f6f9;--paper:#fff;--ink:#0f172a;--muted:#3f4a5a;--line:#dce1e7;--acc:#1f527d;--acc-soft:#e8f0f8;--band:#193553;--head:#173a5e;--frame:#dce1e7;--tint:#eef3f9;color-scheme:light}
+body{font-size:15px}
+.pn-band{background:#193553;border-bottom:2px solid #214b2f}
+.pn-band .pn-wrap{padding-block:10px}
+.pn-logo{width:58px;border-width:2px}
+.pn-band h1{font:800 clamp(18px,2.4vw,24px)/1.2 var(--f-body);letter-spacing:.02em}
+.pn-kicker{font:700 11px var(--f-body);letter-spacing:.14em;color:#f2d27a}
+.pn-home{font:800 13px var(--f-body);letter-spacing:.04em}
+.pn-home .ic{width:30px;height:30px;border-radius:4px;border:1px solid #cbd5e1;background:#fff}
+.pn-frame{border:1px solid var(--line);border-radius:6px;box-shadow:0 2px 6px rgba(16,35,64,.07);padding:18px 20px}
+.pn-ftitle{display:block;font:800 16.5px/1.3 var(--f-body);color:var(--head);border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:14px;letter-spacing:.02em}
+.pn-menu button{font:700 14px/1.3 var(--f-body);border-radius:4px;padding:8px 10px}
+.pn-menu button[aria-current="true"]{background:#254b73;color:#fff;box-shadow:none}
+.pn-menu svg{width:30px;height:30px}
+.pn-vh{font:800 13px var(--f-body);color:var(--head)}
+.pn-ctrl .intro{font-family:var(--f-body);font-style:normal;font-size:14px;color:#334155}
+.btn,.chip,.opt,.card,.case,.verdict,.examhead,.kp,.tbl,.law-g,.mini,.result,.setup,.answer,.stats,select,input[type=search],input[type=number],input[type=text],textarea{border-radius:6px}
+.btn.primary{background:#254b73;border-color:#254b73}
+.chip[aria-pressed="true"]{background:#254b73;border-color:#254b73;color:#fff}
+.card,.case{border:1px solid var(--line);box-shadow:0 2px 6px rgba(16,35,64,.06)}
+.case h3,.law h2,.kp h3,.result .big{font-family:var(--f-body)}
+/* Nhúng trong trang học phần của Phúc Nguyên Library: đầu trang, menu do trang chủ đảm nhận */
+html.pn-embed body{background:transparent;font-size:15px}
+html.pn-embed body::before,html.pn-embed .pn-band,html.pn-embed .pn-homebar,html.pn-embed .pn-menu{display:none!important}
+html.pn-embed .pn-wrap{max-width:none;padding:0}
+html.pn-embed .pn-layout{padding:0 0 24px;gap:16px}
+html.pn-embed .pn-top{grid-template-columns:minmax(0,1fr)}
