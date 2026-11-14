@@ -307,8 +307,8 @@ ol.mm-d li{margin:1px 0}
   <section class="hero" aria-label="Giới thiệu"><div class="hero-in"><img src="assets/logo.png" alt="" class="hero-logo"><div><h1 class="hero-title">THƯ VIỆN PHÚC NGUYÊN · TÀI LIỆU LUẬT HỌC</h1><p class="hero-sub">RESEARCH LAW FOR BETTER LIFE</p></div></div></section>
   <div class="layout" id="layout">
     <aside class="side-nav" aria-label="Danh mục học phần">
-      <div><h2 class="sec-title">Danh mục học phần</h2><nav id="catNav" class="catnav"></nav></div>
-      <div id="adminNav" hidden><h2 class="sec-title">Quản trị</h2><nav class="catnav"></nav></div>
+      <nav id="catNav" class="catnav" aria-label="Danh mục học phần"></nav>
+      <div id="adminNav" hidden><nav class="catnav" aria-label="Quản trị"></nav></div>
     </aside>
     <div class="content" id="main"></div>
     <aside class="side-extra" id="sideExtra" aria-label="Hướng dẫn sử dụng"></aside>
@@ -321,7 +321,7 @@ ol.mm-d li{margin:1px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
-<script src="assets/pnl-shell.js?v=20261114b"></script>
+<script src="assets/pnl-shell.js?v=20261114c"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -1036,6 +1036,6 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
 </script>
 
 <link rel="stylesheet" href="assets/pnlib-standard.css">
-<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114b">
+<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114c">
 </body>
 </html>
