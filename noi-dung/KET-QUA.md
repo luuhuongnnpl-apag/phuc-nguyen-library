@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 08:44 14/11/2026
+# Kết quả dựng nội dung — 09:19 14/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -11,6 +11,7 @@
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
       - assets/pnl-shell.css
       - assets/pnl-shell.js
+      - assets/pnlib-course.css
       - index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/43542399966 · commit b023bb9
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/43545657529 · commit c994e09
