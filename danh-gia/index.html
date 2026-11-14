@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -115,6 +115,21 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
 @media (max-width:640px){h1{font-size:21px}.brand span{font-size:14px}.card{padding:16px}.timer{top:60px}}
 @media print{.band,.timer,.navq,footer{display:none}body.modal-open #app{display:none}body.modal-open #modal{position:static;background:none;padding:0;overflow:visible}body.modal-open .dlg{box-shadow:none;max-width:none}body.modal-open .dlg .btn{display:none}}
 </style>
+<style id="pnl-pnd-skin">/* 14/11/2026: đồng bộ kiểu với trang chủ Phúc Nguyên Library (PND) */
+:root{--bg:#f4f6f9;--paper:#fff;--ink:#0f172a;--muted:#3f4a5a;--line:#dce1e7;--band:#193553;--head:#173a5e;--tint:#eef3f9;color-scheme:light}
+body{background:var(--bg)!important;color:var(--ink)}
+.band{background:#193553!important;border-bottom:2px solid #214b2f}
+.brand span{font:800 16px/1.2 "Be Vietnam Pro",system-ui,sans-serif!important;letter-spacing:.02em}
+.brand small{color:#f2d27a;opacity:1}
+.brand img{border:2px solid #fff}
+#nav a,#nav button{border-radius:4px!important;border-color:rgba(255,255,255,.5)!important}
+h1,h2,h3{font-family:"Be Vietnam Pro",system-ui,sans-serif!important;color:#173a5e}
+h1{font-size:20px!important;font-weight:800}
+.card{border-radius:6px!important;box-shadow:0 2px 6px rgba(16,35,64,.07)}
+.btn{border-radius:4px!important}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=datetime-local],select,textarea{border-radius:4px!important;border-color:#cbd5e1!important}
+html.nhung .band{display:none}
+</style>
 </head>
 <body>
 <header class="band"><div class="wrap bar">
@@ -125,6 +140,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
 <div id="modal" hidden></div>
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
+<script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
 <script src="qt-apag.js?v=20261109a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>

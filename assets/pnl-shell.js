@@ -73,8 +73,12 @@ function shSortable(conts,sel,onDone,opt){opt=opt||{};conts=conts.filter(Boolean
 async function shLoadAdmin(){if(!shAdmin()||!SH.fs)return;
   try{(await SH.fs.collection("pnl_hp").get()).docs.forEach(d=>{SH.hp[d.id]=Object.assign({id:d.id},d.data()||{})})}catch(e){}
   Object.values(SH.hp).forEach(h=>shApplyHp(h,true));if(SH.loaded)shApplyOrder()}
+/* Vẽ lại trang hiện tại, không đổi lịch sử duyệt; trang chủ mà đường dẫn đang trỏ tới trang khác (mở thẳng link) thì đi tới trang đó */
+function shRerender(){if(typeof cur==="undefined")return;const h=decodeURIComponent((location.hash||"").slice(1));let t=cur;
+  if(cur==="home"&&h&&h!=="home"&&(course(h)||tlParse(h)||shKnown(h)))t=h;
+  ROUTE_POP=true;try{route(t)}finally{ROUTE_POP=false}}
 function shRefresh(){shNav();shSide();if(typeof cur==="undefined")return;
-  if(cur==="home"||course(cur)||/^tm:|^qt-/.test(cur))route(cur)}
+  if(cur==="home"||course(cur)||/^tm:|^qt-|^tim:/.test(cur))shRerender()}
 /* Ghép một học phần (Firestore) vào danh mục đang chạy */
 function shApplyHp(h,adminView){if(!h||h.kind!=="moi")return;
   let e=COURSES.find(c=>c.id===h.id);
@@ -94,8 +98,8 @@ function shHasMaps(id){return !!(TL[id]&&TL[id].chapters.some(x=>x.maps.length))
 /* Trang ôn tập nhúng: chuyển mục bằng nút menu (đã ẩn) của trang ôn tập */
 function shFrameTab(fr,tab){try{const d=fr.contentDocument;const go=()=>{const b=d.querySelector('.pn-menu [data-pn="'+tab+'"]');if(b){b.click();return true}return false};
   if(!go()){let n=0;const t=setInterval(()=>{if(go()||++n>40)clearInterval(t)},150)}}catch(e){}}
-function shScope(id){if(/^on:/.test(id))return id.split(":")[1];if(/^tm:/.test(id)){const f=SH.folders.find(x=>x.id===id.slice(3));return f?f.course:""}if(/^qt-/.test(id))return "";return null}
-function shKnown(id){return !!(id&&(/^(on|tm):/.test(id)||/^qt-(ma|dg|sl|gy)$/.test(id)))}
+function shScope(id){if(/^tim:/.test(id))return "";if(/^on:/.test(id))return id.split(":")[1];if(/^tm:/.test(id)){const f=SH.folders.find(x=>x.id===id.slice(3));return f?f.course:""}if(/^qt-/.test(id))return "";return null}
+function shKnown(id){return !!(id&&(/^(on|tm|tim):/.test(id)||/^qt-(ma|dg|sl|gy)$/.test(id)))}
 function shRoute(id,m){
   const lay=document.getElementById("layout");if(lay)lay.classList.toggle("no-tools",id!=="home");
   if(/^on:/.test(id)){const [,cid,tab]=id.split(":");const c=course(cid);if(!c){route("home");return true}
@@ -105,6 +109,7 @@ function shRoute(id,m){
     m.innerHTML=shCourseHead(cid,tab)+`<iframe class="pnl-frame" data-cid="${esc(cid)}" src="${shSrc(c)}${tab?"#"+tab:""}" title="Ôn tập ${esc(c.name)}"></iframe>`;
     const fr=m.querySelector("iframe.pnl-frame");fr.addEventListener("load",()=>{try{fr.contentDocument.documentElement.classList.add("pn-embed")}catch(e){}shFrameTab(fr,tab)});shBindPage(m);return true}
   if(/^tm:/.test(id)){m.innerHTML=shFolderHTML(id.slice(3));shBindPage(m);return true}
+  if(/^tim:/.test(id)){m.innerHTML=shSearchBar(id.slice(4))+shSearchHTML(id.slice(4));shBindPage(m);return true}
   if(id==="qt-ma"){m.innerHTML=shGuard()||shMaHTML();if(shAdmin())shMaBind(m);else shBindPage(m);return true}
   if(id==="qt-dg"){m.innerHTML=shGuard()||`<section class="box"><h2 class="box-title">Quản trị đánh giá định kỳ<span class="sp"></span><a class="b2 sm" href="danh-gia/#quan-tri" target="_blank" rel="noopener">Mở thẻ mới ↗</a></h2><iframe src="danh-gia/?nhung=1#quan-tri" title="Quản trị đánh giá định kỳ" style="width:100%;height:calc(100vh - 220px);min-height:640px;border:1px solid var(--p-line);border-radius:6px"></iframe></section>`;shBindPage(m);return true}
   if(id==="qt-sl"){m.innerHTML=shGuard()||shBackupHTML();if(shAdmin())shBackupBind(m);else shBindPage(m);return true}
@@ -180,7 +185,26 @@ async function shSaveLinkOrder(ids){try{
     shToast("Đã lưu thứ tự liên kết.");if(cur==="home")route("home")}catch(ex){shToast("Chưa lưu được: "+shErrMsg(ex))}}
 
 /* ================= Trang chủ ================= */
-function shHomeHTML(dgBox){SH._dg=dgBox;return shBlocks().main.map(shBlockHTML).join("")}
+function shHomeHTML(dgBox){SH._dg=dgBox;return shSearchBar("")+shBlocks().main.map(shBlockHTML).join("")}
+/* Tìm kiếm (như PND): tên học phần, chương, ý trong mind map, tài liệu */
+const shFold=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
+function shSearchBar(q){return `<form class="searchbar" data-search role="search"><input type="search" name="q" value="${esc(q)}" placeholder="Tìm học phần, chương, ý trong mind map, tài liệu… (đặt trong ngoặc kép để tìm đúng cụm từ)" aria-label="Tìm kiếm"><button type="submit">Tìm</button></form>`}
+function shSearchHTML(q){q=String(q||"").trim();if(!q)return `<section class="box"><p class="empty">Nhập từ cần tìm.</p></section>`;
+  const phr=[...q.matchAll(/"([^"]+)"/g)].map(m=>shFold(m[1])),words=shFold(q.replace(/"[^"]*"/g," ")).split(/\s+/).filter(w=>w.length>1);
+  const hit=t=>{const f=shFold(t);return (phr.length||words.length)&&phr.every(p=>f.includes(p))&&words.every(w=>f.includes(w))};
+  const adm=shAdmin(),out={hp:[],ch:[],mm:[],doc:[]};
+  COURSES.forEach(c=>{if(c.hidden&&!adm)return;if(hit(c.name))out.hp.push(c);const T=TL[c.id];if(!T)return;
+    T.chapters.forEach(x=>{if(hit("Chương "+x.n+" "+x.t))out.ch.push([c,x]);
+      (x.maps||[]).forEach((mp,mi)=>{if(!mp)return;const walk=(n,path)=>{if(out.mm.length>=60)return;const txt=n.t+" "+(n.d||"");if(hit(txt))out.mm.push([c,x,mi,n.t,n.d||"",path]);(n.c||[]).forEach(k=>walk(k,path.concat(n.t)))};(mp.c||[]).forEach(n=>walk(n,[]))})})});
+  SH.docs.forEach(d=>{if(hit(d.title+" "+(d.note||"")))out.doc.push(d)});
+  const n=out.hp.length+out.ch.length+out.mm.length+out.doc.length;
+  const sec=(t,arr,f)=>arr.length?`<div class="grp-title">${t} <span class="muted" style="text-transform:none">(${arr.length})</span></div><div class="sres">${arr.map(f).join("")}</div>`:"";
+  return `<section class="box"><h2 class="box-title">Kết quả tìm “${esc(q)}”<small>· ${n} kết quả</small></h2>${shCrumbs([["Tìm kiếm",""]])}
+    ${n?"":`<p class="empty">Không tìm thấy. Thử từ khác, bỏ dấu ngoặc kép hoặc ít từ hơn.</p>`}
+    ${sec("Học phần",out.hp,c=>`<button type="button" data-go="${esc(c.id)}"><b>${esc(c.name)}</b><small>Học phần</small></button>`)}
+    ${sec("Chương",out.ch,([c,x])=>`<button type="button" data-go="${x.maps.length?`tl-${esc(c.id)}-${x.n}`:esc(c.id)}"><b>Chương ${x.n}. ${esc(x.t)}</b><small>${esc(c.name)}</small></button>`)}
+    ${sec("Ý trong mind map",out.mm,([c,x,mi,t,d,path])=>`<button type="button" data-go="tl-${esc(c.id)}-${x.n}-${mi+1}"><b>${esc(t)}</b>${d?`<span>${esc(d.length>160?d.slice(0,158)+"…":d)}</span>`:""}<small>${esc(c.name)} · Chương ${x.n}${path.length?" · "+esc(path.join(" › ")):""}</small></button>`)}
+    ${sec("Tài liệu",out.doc,d=>`<button type="button" data-open="${esc(d.id)}"><b>${esc(d.title)}</b><small>${esc((course(d.course)||{}).name||"Tài liệu chung")}</small></button>`)}</section>`}
 function shHomePart(k){const adm=shAdmin();
   if(k==="hocphan"){const tiles=COURSES.filter(c=>!c.hidden||adm).map(c=>{const d=DOCS.find(x=>x.id===c.id),img=(d&&d.img)||coverSVG(c.name,c.c||"#1d5677"),ready=c.src||shHasMaps(c.id)||c.dyn&&c.status==="mo";
       return `<button type="button" class="htile${ready?"":" soon"}" data-go="${esc(c.id)}"><span class="im"><img src="${esc(img)}" alt="" loading="lazy" draggable="false">${c.hidden?'<span class="tg">Ẩn</span>':ready?"":'<span class="tg">Sắp có</span>'}</span><span class="nm"><i style="background:${esc(c.c||"#1d5677")}"></i>${esc(c.name)}</span></button>`}).join("");
@@ -213,30 +237,34 @@ function shCourseHead(cid,active,sub){const c=course(cid)||{id:cid,name:(TL[cid]
   const crumbs=[[c.name,active==="home"?"":cid]];if(active==="mindmap")crumbs.push(["Mind map",sub?"tl-"+cid:""]);if(sub)crumbs.push([sub,""]);
   return `<section class="box chead"><h2 class="box-title">${esc(c.name)}</h2>${shCrumbs(crumbs)}<nav class="ctabs" aria-label="Nội dung học phần">${SH_TASKS.map(([k,t,,col,ic],i)=>{const off=k==="mindmap"&&!has;
     return `<button type="button" class="${active===k?"on":""}${off?" off":""}" ${off?"disabled":`data-go="${shTaskHref(cid,k)}"`} style="--c1:${col[0]}"><b>${i+1}</b>${shSvg(ic)}${t}</button>`}).join("")}</nav></section>`}
+const SH_CBLK=["tasks","mindmap","chapters","docs"];
 function shCourseHTML(c){const adm=shAdmin();const has=shHasMaps(c.id);
   const st=c.dyn?(c.hidden?"Ẩn":SH_STATUS[c.status||"mo"][0]):c.src||has?"":"Sắp có";
   const tasks=SH_TASKS.map(([k,t,sub,col,ic],i)=>{const off=k==="mindmap"&&!has;
     return `<button type="button" class="card${off?" off":""}" data-task="${k}" ${off?"":`data-go="${shTaskHref(c.id,k)}"`} style="--c1:${col[0]};--c2:${col[1]}"><span class="cv">${shSvg(ic)}</span><span class="badge">${i+1}</span><span class="nm">${t}<small>${off?"Đang biên soạn":sub}</small></span></button>`}).join("");
   const T=TL[c.id],chs=T?T.chapters:[];
-  const mm=chs.length?`<div class="grp-title">Mind map theo chương</div><div class="chips2">${chs.map(x=>x.maps.length?`<button type="button" data-go="tl-${esc(c.id)}-${x.n}"><b>Chương ${x.n}</b>${esc(x.t)}<small>${x.maps.length} sơ đồ</small></button>`:`<span class="off"><b>Chương ${x.n}</b>${esc(x.t)}<small>Đang biên soạn</small></span>`).join("")}</div>`:"";
+  const parts={
+    tasks:`<div class="grp-title">Nội dung học tập</div><div class="cards tasks">${tasks}</div>`,
+    mindmap:chs.length?`<div class="grp-title">Mind map theo chương</div><div class="chips2">${chs.map(x=>x.maps.length?`<button type="button" data-go="tl-${esc(c.id)}-${x.n}"><b>Chương ${x.n}</b>${esc(x.t)}<small>${x.maps.length} sơ đồ</small></button>`:`<span class="off"><b>Chương ${x.n}</b>${esc(x.t)}<small>Đang biên soạn</small></span>`).join("")}</div>`:"",
+    chapters:adm?shChapterAdminHTML(c):"",
+    docs:shDocsBlock(c.id,"")};
+  const L=(SH.layout&&SH.layout.course)||[];const order=L.filter(k=>SH_CBLK.includes(k)).concat(SH_CBLK.filter(k=>!L.includes(k)));
   const tools=adm?`<div class="page-tools"><button type="button" class="hl" data-adddoc="${esc(c.id)}">⤒ Thêm tài liệu</button><button type="button" data-newfolder="${esc(c.id)}|">＋ Thư mục mới</button>
       ${c.dyn?`<button type="button" data-editcourse="${esc(c.id)}">✎ Sửa học phần</button>`:""}<button type="button" data-chapters="${esc(c.id)}">🗺 Soạn tóm tắt & mind map</button>
-      <button type="button" disabled title="Bước 2">❓ Ngân hàng câu hỏi (bước 2)</button></div>`:"";
+      <button type="button" disabled title="Bước 2">❓ Ngân hàng câu hỏi (bước 2)</button></div><p class="muted" style="margin:-6px 0 12px">Quản trị: giữ nút ⠿ để chuyển khung; kéo ô, thư mục, dòng tài liệu để đổi thứ tự; kéo tệp từ máy thả vào khung Tài liệu để tải lên.</p>`:"";
   return `<section class="box"><h2 class="box-title">${esc(c.name)}${st?`<small>· ${esc(st)}</small>`:""}</h2>${shCrumbs([[c.name,""]])}${tools}
-    <div class="grp-title" style="margin-top:0">Nội dung học tập${adm?' <span class="muted" style="text-transform:none;font-weight:500">(kéo thả để đổi thứ tự cho mọi học phần)</span>':""}</div><div class="cards tasks">${tasks}</div>
-    ${mm}
-    ${adm?shChapterAdminHTML(c):""}
-    ${shDocsBlock(c.id,"")}</section>`}
+    <div class="cblks" data-cblks>${order.filter(k=>parts[k]).map(k=>`<div class="cblk" data-cblk="${k}">${adm?'<button type="button" class="dh" title="Giữ và kéo để đổi vị trí khung">⠿</button>':""}${parts[k]}</div>`).join("")}</div></section>`}
 function shDocsBlock(cid,fid){const adm=shAdmin();
   const kids=SH.folders.filter(f=>f.course===cid&&(f.parent||"")===fid).sort((a,b)=>(a.order||0)-(b.order||0)||String(a.name).localeCompare(String(b.name),"vi"));
   const docs=SH.docs.filter(d=>d.course===cid&&(d.folder||"")===fid).sort((a,b)=>String(b.added||"").localeCompare(String(a.added||"")));
   const folders=kids.map(f=>{const n=SH.docs.filter(d=>d.folder===f.id).length;return `<div class="card-wrap" data-fid="${esc(f.id)}"><button type="button" class="card" data-go="tm:${esc(f.id)}" style="--c1:#2e5c8a;--c2:#4f86b8"><span class="cv">${shSvg("folder")}</span><span class="nm">${esc(f.name)}<small>${n} tài liệu</small></span></button>${adm?`<span class="ftools"><button type="button" title="Đổi tên" data-renfolder="${esc(f.id)}">✎</button><button type="button" title="Xóa thư mục" data-delfolder="${esc(f.id)}">🗑</button></span>`:""}</div>`}).join("");
+  docs.sort((a,b)=>(a.order??1e9)-(b.order??1e9)||String(b.added||"").localeCompare(String(a.added||"")));
   if(!folders&&!docs.length&&!adm)return `<div class="grp-title">Tài liệu, giáo trình</div><p class="empty">${SH.loaded?"Giảng viên chưa đưa tài liệu lên mục này.":"Đang tải…"}</p>`;
-  return `<div class="grp-title">${fid?"Nội dung thư mục":"Tài liệu, giáo trình"}</div>${folders||adm?`<div class="cards" style="margin-bottom:14px">${folders}${adm?`<button type="button" class="add-card" data-newfolder="${esc(cid)}|${esc(fid)}">＋ Thư mục mới</button><button type="button" class="add-card" data-adddoc="${esc(cid)}|${esc(fid)}">⤒ Thêm tài liệu${fid?" vào đây":""}</button>`:""}</div>`:""}
-    ${docs.length?shDocTable(docs):folders?"":`<p class="empty">Chưa có tài liệu.</p>`}`}
+  return `<div class="${adm?"dropz":""}" data-dropz="${esc(cid)}|${esc(fid)}"><div class="grp-title">${fid?"Nội dung thư mục":"Tài liệu, giáo trình"}</div>${folders||adm?`<div class="cards" style="margin-bottom:14px">${folders}${adm?`<button type="button" class="add-card" data-newfolder="${esc(cid)}|${esc(fid)}">＋ Thư mục mới</button><button type="button" class="add-card" data-adddoc="${esc(cid)}|${esc(fid)}">⤒ Thêm tài liệu${fid?" vào đây":""}</button>`:""}</div>`:""}
+    ${docs.length?shDocTable(docs):folders?"":`<p class="empty">Chưa có tài liệu.</p>`}${adm?'<p class="drophint">Kéo tệp từ máy tính thả vào khung này để tải lên.</p>':""}</div>`}
 function shDocTable(docs){const adm=shAdmin();
   return `<div class="dtbl"><table><thead><tr><th>Tài liệu</th><th>Loại</th><th>Ngày thêm</th>${adm?"<th></th>":""}</tr></thead><tbody>${docs.map(d=>{const [f,c]=shFmt(d);
-    return `<tr><td><button type="button" class="dn" data-open="${esc(d.id)}"><span class="fi" style="--c1:${c[0]};--c2:${c[1]}">${f}</span><span>${d.star?'<span class="star-on">★</span> ':""}${esc(d.title)}${d.note?`<br><span class="muted">${esc(d.note)}</span>`:""}</span></button></td><td>${f}</td><td style="white-space:nowrap">${esc(fmtDate(String(d.added||"").slice(0,10)))}</td>
+    return `<tr data-did="${esc(d.id)}"><td><button type="button" class="dn" data-open="${esc(d.id)}"><span class="fi" style="--c1:${c[0]};--c2:${c[1]}">${f}</span><span>${d.star?'<span class="star-on">★</span> ':""}${esc(d.title)}${d.note?`<br><span class="muted">${esc(d.note)}</span>`:""}</span></button></td><td>${f}</td><td style="white-space:nowrap">${esc(fmtDate(String(d.added||"").slice(0,10)))}</td>
       ${adm?`<td class="act"><button type="button" class="${d.star?"on":""}" data-star="${esc(d.id)}" title="Đánh dấu ★ để hiện ở trang chủ">★</button><button type="button" data-editdoc="${esc(d.id)}">Sửa</button><button type="button" class="del" data-deldoc="${esc(d.id)}">Gỡ</button></td>`:""}</tr>`}).join("")}</tbody></table></div>`}
 function shFolderHTML(fid){const f=SH.folders.find(x=>x.id===fid);if(!f)return `<section class="box"><p class="empty">${SH.loaded?"Không tìm thấy thư mục.":"Đang tải…"}</p><div class="page-tools"><button type="button" data-home>Về trang chủ</button></div></section>`;
   const c=course(f.course)||{id:f.course,name:f.course};const path=[];let p=f,g=0;while(p&&g++<10){path.unshift(p);p=SH.folders.find(x=>x.id===p.parent)}
@@ -259,11 +287,12 @@ function shBindPage(m){
   m.querySelectorAll("[data-go]").forEach(b=>b.onclick=e=>{e.preventDefault();route(b.dataset.go)});
   m.querySelectorAll("[data-glogin]").forEach(b=>b.onclick=shLogin);
   m.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>shOpenDoc(b.dataset.open));
+  m.querySelectorAll("[data-search]").forEach(f=>f.onsubmit=e=>{e.preventDefault();const v=f.q.value.trim();route(v?"tim:"+v:"home")});
   if(!shAdmin())return;
   m.querySelectorAll("[data-adddoc]").forEach(b=>b.onclick=()=>{const [c,f]=b.dataset.adddoc.split("|");shDocDlg(null,c||"",f||"")});
   m.querySelectorAll("[data-editdoc]").forEach(b=>b.onclick=()=>shDocDlg(SH.docs.find(d=>d.id===b.dataset.editdoc)));
   m.querySelectorAll("[data-star]").forEach(b=>b.onclick=async()=>{const d=SH.docs.find(x=>x.id===b.dataset.star);if(!d)return;d.star=!d.star;
-    try{await SH.fs.doc("pnl_docs/"+d.id).set({star:d.star},{merge:true});shToast(d.star?"Đã đánh dấu ★ — hiện ở trang chủ":"Đã bỏ ★");route(cur)}catch(ex){d.star=!d.star;shToast("Chưa lưu được: "+shErrMsg(ex))}});
+    try{await SH.fs.doc("pnl_docs/"+d.id).set({star:d.star},{merge:true});shToast(d.star?"Đã đánh dấu ★ — hiện ở trang chủ":"Đã bỏ ★");shRerender()}catch(ex){d.star=!d.star;shToast("Chưa lưu được: "+shErrMsg(ex))}});
   m.querySelectorAll("[data-deldoc]").forEach(b=>shArm(b,"Gỡ?",async()=>{await SH.fs.doc("pnl_docs/"+b.dataset.deldoc).delete();SH.docs=SH.docs.filter(d=>d.id!==b.dataset.deldoc);shToast("Đã gỡ khỏi thư viện (tệp trên Drive vẫn giữ)");shRefresh()}));
   m.querySelectorAll("[data-newfolder]").forEach(b=>b.onclick=()=>{const [c,p]=b.dataset.newfolder.split("|");shFolderDlg(null,c,p||"")});
   m.querySelectorAll("[data-renfolder]").forEach(b=>b.onclick=e=>{e.stopPropagation();shFolderDlg(SH.folders.find(f=>f.id===b.dataset.renfolder))});
@@ -277,7 +306,14 @@ function shBindPage(m){
     shPrompt("Thêm chương bổ sung","Tên Chương "+n+" (theo đề cương chi tiết)","",t=>shEditor(c,{n,t,gh:false,has:false,draft:false}))});
   m.querySelectorAll("[data-addlink]").forEach(b=>b.onclick=()=>shLinkDlg());
   m.querySelectorAll("[data-newcourse]").forEach(b=>b.onclick=()=>shCourseDlg(null));
-  const tk=m.querySelector(".cards.tasks");if(tk)shSortable([tk],".card[data-task]",()=>{const keys=[...tk.querySelectorAll(".card[data-task]")].map(x=>x.dataset.task);SH.layout.tasks=keys;shApplyOrder();shSaveLayout({tasks:keys});route(cur)},{axis:"x"});
+  const cb=m.querySelector("[data-cblks]");if(cb)shSortable([cb],".cblk",()=>shSaveLayout({course:[...cb.querySelectorAll(":scope>.cblk")].map(x=>x.dataset.cblk)}),{axis:"y",handle:".dh"});
+  m.querySelectorAll(".dtbl tbody").forEach(tb=>{if(!tb.querySelector("tr[data-did]"))return;shSortable([tb],"tr[data-did]",async()=>{const ids=[...tb.querySelectorAll("tr[data-did]")].map(x=>x.dataset.did);
+    try{for(const [i,id] of ids.entries()){const d=SH.docs.find(x=>x.id===id);if(d&&d.order!==i){d.order=i;await SH.fs.doc("pnl_docs/"+id).set({order:i},{merge:true})}}shToast("Đã lưu thứ tự tài liệu.")}catch(ex){shToast("Chưa lưu được: "+shErrMsg(ex))}},{axis:"y"})});
+  m.querySelectorAll("[data-dropz]").forEach(z=>{if(z._dz)return;z._dz=1;const isF=e=>e.dataTransfer&&[...e.dataTransfer.types].includes("Files");
+    z.addEventListener("dragover",e=>{if(SH_DRAG||!isF(e))return;e.preventDefault();z.classList.add("drag")});
+    z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("drag")});
+    z.addEventListener("drop",e=>{if(SH_DRAG||!isF(e)||!e.dataTransfer.files.length)return;e.preventDefault();z.classList.remove("drag");const [c,f]=z.dataset.dropz.split("|");shDocDlg(null,c,f||"",e.dataTransfer.files[0])})});
+  const tk=m.querySelector(".cards.tasks");if(tk)shSortable([tk],".card[data-task]",()=>{const keys=[...tk.querySelectorAll(".card[data-task]")].map(x=>x.dataset.task);SH.layout.tasks=keys;shApplyOrder();shSaveLayout({tasks:keys});shRerender()},{axis:"x"});
   m.querySelectorAll(".cards").forEach(cs=>{if(!cs.querySelector(":scope>.card-wrap[data-fid]"))return;shSortable([cs],".card-wrap[data-fid]",async()=>{const ids=[...cs.querySelectorAll(":scope>.card-wrap[data-fid]")].map(x=>x.dataset.fid);
     try{for(const [i,id] of ids.entries()){const f=SH.folders.find(x=>x.id===id);if(f&&f.order!==i){f.order=i;await SH.fs.doc("pnl_folders/"+id).set({order:i},{merge:true})}}shToast("Đã lưu thứ tự thư mục.")}catch(ex){shToast("Chưa lưu được: "+shErrMsg(ex))}},{axis:"x"})});
   m.querySelectorAll("[data-dellink]").forEach(b=>shArm(b,"✓",async()=>{await SH.fs.doc("pnl_links/"+b.dataset.dellink).delete();SH.links=SH.links.filter(l=>l.id!==b.dataset.dellink);shRefresh()}));
@@ -399,7 +435,7 @@ function shResizeImg(f,W,H){W=W||640;H=H||400;return new Promise((res,rej)=>{con
   const s=Math.max(W/im.width,H/im.height),w=im.width*s,h=im.height*s;g.drawImage(im,(W-w)/2,(H-h)/2,w,h);res(cv.toDataURL("image/jpeg",.82))};im.src=rd.result};rd.readAsDataURL(f)})}
 
 /* ---- Tài liệu ---- */
-function shDocDlg(doc,cid,fid){if(!shAdmin())return;const isNew=!doc;doc=doc||{title:"",url:"",course:cid||"",folder:fid||"",star:false,note:""};
+function shDocDlg(doc,cid,fid,preFile){if(!shAdmin())return;const isNew=!doc;doc=doc||{title:"",url:"",course:cid||"",folder:fid||"",star:false,note:""};
   const folderOpts=c=>`<option value="">— Thư mục gốc của học phần —</option>`+SH.folders.filter(f=>f.course===c).map(f=>`<option value="${esc(f.id)}"${doc.folder===f.id?" selected":""}>${esc(f.name)}</option>`).join("");
   const d=shDlg(isNew?"Thêm tài liệu":"Sửa tài liệu",`
     ${isNew?`<div class="seg2" data-src><button type="button" data-v="file" class="on">⤒ Tải tệp lên Google Drive</button><button type="button" data-v="link">🔗 Dán liên kết</button></div>`:""}
@@ -415,6 +451,8 @@ function shDocDlg(doc,cid,fid){if(!shAdmin())return;const isNew=!doc;doc=doc||{t
   const q=s=>d.querySelector(s);let mode="file",file=null;
   q("[data-f=course]").onchange=e=>{doc.folder="";q("[data-f=folder]").innerHTML=folderOpts(e.target.value)};
   if(isNew){q("[data-src]").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.v;d.querySelectorAll("[data-src] button").forEach(x=>x.classList.toggle("on",x===b));q("[data-file]").hidden=mode!=="file";q("[data-fname]").hidden=mode!=="file";q("[data-linkrow]").hidden=mode!=="link"};
+    const takeF=f=>{file=f;q("[data-fname]").textContent="Đã chọn: "+f.name+" ("+Math.round(f.size/1024)+" KB)";if(!q("[data-f=title]").value.trim())q("[data-f=title]").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ")};
+    if(preFile)setTimeout(()=>takeF(preFile),0);
     shPicker(q("[data-file]"),q("[data-filein]"),f=>{file=f;q("[data-fname]").textContent="Đã chọn: "+f.name+" ("+Math.round(f.size/1024)+" KB)";if(!q("[data-f=title]").value.trim())q("[data-f=title]").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ")},true)}
   q("[data-save]").onclick=async()=>{const err=t=>{q("[data-err]").textContent=t};const title=q("[data-f=title]").value.trim();
     if(title.length<2)return err("Nhập tên tài liệu.");
@@ -552,7 +590,7 @@ async function shEditor(c,ch){if(!shAdmin()||!c||!ch)return;let rec=null;
   if(q("[data-tpl]"))q("[data-tpl]").onclick=()=>{if(src.value.trim()&&!confirm("Thay nội dung đang soạn bằng mẫu?"))return;src.value=SH_TPL;later()};
   q("[data-tabs]").onclick=e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.v;ed.querySelectorAll("[data-tabs] button").forEach(x=>x.classList.toggle("on",x===b));show()};
   q("[data-ren]").onclick=()=>shPrompt("Đổi tên chương","Tên chương",title,t=>{title=t;q("[data-t]").textContent=t;later()});
-  const close=(force)=>{if(!force&&dirty&&!confirm("Đóng mà không lưu thay đổi?"))return;ed.remove();document.body.style.overflow="";route(cur)};
+  const close=(force)=>{if(!force&&dirty&&!confirm("Đóng mà không lưu thay đổi?"))return;ed.remove();document.body.style.overflow="";shRerender()};
   ed.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close());
   if(q("[data-del]"))shArm(q("[data-del]"),"Bấm lần nữa để xóa",async()=>{await SH.fs.doc("pnl_hp_ch/"+shChId(c.id,ch.n)).delete();await shChMeta(c,ch.n,title,null);shToast("Đã xóa nội dung Chương "+ch.n);close(true)});
   q("[data-save]").onclick=async()=>{clearTimeout(tm);if(document.fonts&&document.fonts.ready)await document.fonts.ready;const {r,maps}=build();show();

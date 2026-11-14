@@ -335,3 +335,22 @@ body{color:var(--p-ink);-webkit-font-smoothing:antialiased}
 .content .subbar .wrap{display:flex;align-items:center;gap:12px;padding:12px 18px!important}
 .content .subbar h2{font:800 16.5px/1.3 var(--p-sans)!important;color:#173a5e!important;text-transform:uppercase;margin:0}
 .content .subbar button,.content .subbar a{border:1px solid #cbd5e1!important;background:#fff!important;color:#173a5e!important;border-radius:4px;padding:5px 12px;font:600 13px var(--p-sans);text-decoration:none;cursor:pointer}
+
+/* Tìm kiếm (như PND) */
+.searchbar{display:flex;gap:8px;margin:0 0 20px}
+.searchbar input{flex:1;min-width:0;font:14.5px var(--p-sans);padding:11px 14px;border:1px solid #cbd5e1!important;border-radius:6px!important;background:#fff;color:var(--p-ink);box-shadow:var(--p-sh)}
+.searchbar input:focus{outline:2px solid #bfd3ea;border-color:#356596}
+.searchbar button{border:1px solid #254b73;background:#254b73;color:#fff;border-radius:6px;padding:0 20px;font:700 14px var(--p-sans);cursor:pointer}
+.sres{display:flex;flex-direction:column;gap:8px}
+.sres>button{display:flex;flex-direction:column;gap:2px;text-align:left;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #356596;border-radius:6px;padding:9px 12px;cursor:pointer;font:14px/1.45 var(--p-sans);color:var(--p-ink)}
+.sres>button:hover{box-shadow:var(--p-shh)}
+.sres b{color:#173a5e}.sres span{color:#334155;font-size:13px}.sres small{color:#3f4a5a;font-size:12px}
+/* Khung trong học phần kéo thả được; vùng thả tệp */
+.cblks{display:flex;flex-direction:column;gap:6px}
+.cblk{position:relative;border-radius:6px}
+.cblk>.dh{top:0;right:0}
+.cblk>.grp-title,.cblk>.dropz>.grp-title{padding-right:40px}
+.dropz{border:2px dashed transparent;border-radius:6px;padding:2px;transition:background .15s}
+.dropz.drag{border-color:#356596;background:#eef5fc}
+.drophint{font-size:12px;color:#3f4a5a;margin:8px 0 0}
+tr.dnd{cursor:grab}

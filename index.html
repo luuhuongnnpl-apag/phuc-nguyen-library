@@ -321,7 +321,7 @@ ol.mm-d li{margin:1px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
-<script src="assets/pnl-shell.js?v=20261114d"></script>
+<script src="assets/pnl-shell.js?v=20261114e"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -1030,12 +1030,12 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
   await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
   try{cmt=onClaude?await window.claude.use("comments"):null}catch(e){cmt=null}
   if(isOwner)renderWho();
-  if(cur==="home"||cur==="gop-y")route(cur);
+  if(cur==="home"||cur==="gop-y")shRerender();
   if(isOwner&&(location.hash||"").slice(1)==="quan-ly-ma")route("quan-ly-ma");
 })();
 </script>
 
 <link rel="stylesheet" href="assets/pnlib-standard.css">
-<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114d">
+<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114e">
 </body>
 </html>
