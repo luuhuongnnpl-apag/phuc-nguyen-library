@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -280,7 +280,6 @@ ol.mm-d li{margin:1px 0}
 .ly ul{margin:4px 0 8px;padding-left:22px}
 .ly li{margin:3px 0}
 </style>
-<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114a">
 </head>
 <body>
 
@@ -322,7 +321,7 @@ ol.mm-d li{margin:1px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
-<script src="assets/pnl-shell.js?v=20261114a"></script>
+<script src="assets/pnl-shell.js?v=20261114b"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -796,7 +795,6 @@ function homeHTML(){return shHomeHTML(`<section class="dg-box" aria-labelledby="
         <button class="dg-go" type="submit">Vào kiểm tra định kỳ</button>
       </form>
       <p class="dg-err" id="dg-err" role="alert"></p>
-      ${isOwner?'<p class="dg-admin"><a href="#qt-dg" data-go="qt-dg">Quản trị đánh giá định kỳ: lớp, danh sách sinh viên, bảng điểm →</a></p>':''}
     </section>`)}
 function sendLink(){if(BE()||!onClaude)return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}
 async function sendFeedback(btn){
@@ -885,7 +883,7 @@ function tlParse(id){ if(!id||id.indexOf("tl-")!==0)return null;
   return null}
 const HOUSE='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z" fill="currentColor"/></svg>';
 const BACK='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function tlNav(k,withBack){return `<nav class="tl-nav wrap"><button type="button" class="tl-pill" data-home><span class="ic">${HOUSE}</span>Trang chủ</button>${withBack?`<button type="button" class="tl-pill" data-go="tl-${k}"><span class="ic">${BACK}</span>Tóm tắt nội dung</button>`:""}</nav>`}
+function tlNav(k,withBack){return shCourseHead(k,"mindmap",withBack?" ":"")}
 
 function tlHomeHTML(k){const T=TL[k];
   const cards=T.chapters.map(c=>{const ph=c.img?`<span class="ph"><img src="${c.img}" alt="" loading="lazy"></span>`:`<span class="ph blank" aria-hidden="true">${c.n}</span>`;
@@ -896,8 +894,7 @@ function tlHomeHTML(k){const T=TL[k];
   const cases=(T.cases||[]).length?`<details class="law-g"><summary>Án lệ liên quan<span class="n">${T.cases.length}</span></summary><ol>${T.cases.map(r=>`<li><b>Án lệ ${esc(r[0])}</b> ${esc(r[1])}<span class="meta">${esc(r[2])}</span></li>`).join("")}</ol></details>`:"";
   const rv=course(T.review);
   return tlNav(k,false)+`<main class="wrap tl-main">
-  <div class="tl-head"><div class="kicker">Mind-map học phần</div><h2>${esc(T.name)}</h2>${rv&&rv.src?`<button type="button" class="btn primary" data-go="${rv.id}">Vào ôn tập học phần</button>`:""}</div>
-  <section class="frame"><div class="ftitle">Tóm tắt nội dung chính của học phần</div><div class="ch-grid">${cards}</div></section>
+  <section class="frame"><div class="ftitle">Mind map theo chương</div><div class="ch-grid">${cards}</div></section>
   <section class="frame"><div class="ftitle">Danh mục văn bản quy phạm pháp luật</div><p class="msg">Bấm vào từng nhóm để xem danh sách. Khi tra cứu, dùng bản hợp nhất đã cập nhật các lần sửa đổi, bổ sung.</p>${laws}</section>
   <section class="frame"><div class="ftitle">Tài liệu tham khảo khác</div><div class="refs">${refs}</div>${cases}</section>
   </main>`}
@@ -937,7 +934,7 @@ function tlChapterHTML(k,n,mi){const T=TL[k],c=T.chapters.find(x=>x.n===n);if(!c
   const tabs=c.maps.length>1?`<div class="mm-tabs" role="tablist">${c.maps.map((x,i)=>`<button type="button" role="tab" aria-selected="${i===mi}" data-go="tl-${k}-${n}-${i+1}">${esc(x.k)}</button>`).join("")}</div>`:"";
   const prev=T.chapters.filter(x=>x.n<n&&x.maps.length).pop(),next=T.chapters.find(x=>x.n>n&&x.maps.length);
   return tlNav(k,true)+`<main class="wrap tl-main">
-  <div class="ch-head"><div class="kicker">Tóm tắt nội dung · ${esc(T.name)}</div><h2>Chương ${n}. ${esc(c.t)}</h2></div>
+  <div class="ch-head"><div class="kicker">Mind map · ${esc(T.name)}</div><h2>Chương ${n}. ${esc(c.t)}</h2></div>
   ${tabs}
   <section class="sheet">
     <div class="sheet-deco" aria-hidden="true"></div><img class="sheet-logo" src="assets/logo.png" alt="">
@@ -1039,5 +1036,6 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
 </script>
 
 <link rel="stylesheet" href="assets/pnlib-standard.css">
+<link rel="stylesheet" href="assets/pnl-shell.css?v=20261114b">
 </body>
 </html>

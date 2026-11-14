@@ -222,3 +222,75 @@ body.in-course .layout{display:block;max-width:none;margin:0;padding:0}
   .row2{grid-template-columns:minmax(0,1fr)}
   .box{padding:14px}
 }
+
+/* Ô học phần ở trang chủ (14/11/2026) */
+.htiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px}
+.htile{display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:6px;box-shadow:var(--p-sh);padding:0;overflow:hidden;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.htile:hover{box-shadow:var(--p-shh);transform:translateY(-1px)}
+.htile .im{position:relative;aspect-ratio:16/10;background:#e8eef6;overflow:hidden}
+.htile .im img{width:100%;height:100%;object-fit:cover;display:block}
+.htile .tg{position:absolute;top:6px;right:6px;background:#fff3d6;color:#8a5a00;font:700 10.5px var(--p-sans);border-radius:999px;padding:1px 8px}
+.htile .nm{display:flex;gap:7px;align-items:flex-start;padding:9px 10px 11px;font:700 12.5px/1.35 var(--p-sans);color:var(--p-navy);text-transform:uppercase}
+.htile .nm i{width:8px;height:8px;border-radius:2px;flex:none;margin-top:4px}
+.htile.soon .im img{filter:grayscale(.55) opacity(.75)}
+/* Thanh task trong học phần */
+.chead{padding-bottom:14px}
+.ctabs{display:flex;flex-wrap:wrap;gap:8px}
+.ctabs button{display:inline-flex;align-items:center;gap:7px;border:1px solid #cbd5e1;background:#fff;color:var(--p-navy);border-radius:999px;padding:6px 14px 6px 6px;font:600 13px var(--p-sans);cursor:pointer}
+.ctabs button b{width:22px;height:22px;border-radius:50%;background:var(--c1);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px}
+.ctabs button svg{width:16px;height:16px}
+.ctabs button:hover{background:var(--p-soft)}
+.ctabs button.on{background:var(--p-navy);border-color:var(--p-navy);color:#fff}
+.ctabs button.off{opacity:.5;cursor:default}
+.card .badge{left:6px;right:auto;background:rgba(255,255,255,.25)}
+/* Mind map theo chương ngay trong học phần */
+.chips2{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.chips2>*{display:flex;flex-direction:column;gap:2px;text-align:left;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #d36d52;border-radius:6px;padding:9px 12px;font:600 13px/1.35 var(--p-sans);color:var(--p-ink);cursor:pointer;box-shadow:var(--p-sh)}
+.chips2>button:hover{box-shadow:var(--p-shh)}
+.chips2 b{font:800 11.5px var(--p-sans);color:#a5402d;text-transform:uppercase;letter-spacing:.04em}
+.chips2 small{font:500 11.5px var(--p-sans);color:var(--p-muted)}
+.chips2 .off{cursor:default;opacity:.6;border-left-color:#cbd5e1;box-shadow:none}
+.chips2 .off b{color:#64748b}
+/* Trang mind map nằm trong học phần */
+.content .tl-main{padding-top:0}
+
+/* Chữ rõ hơn (14/11/2026, góp ý: chữ trên banner, tiêu đề khung bị mờ) */
+:root{--p-ink:#0f172a;--p-muted:#3f4a5a}
+body{color:var(--p-ink);-webkit-font-smoothing:antialiased}
+.brand-name{font-size:18px;font-weight:800}
+.brand-name small{color:#f2d27a;font-weight:700}
+.tbtn{font-size:13.5px;font-weight:600;color:#fff;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.1)}
+.whoami{color:#fff;font-size:13px;font-weight:600}
+.hero-title{color:#173a5e;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.hero-sub{color:#1f4f7a;font-weight:800}
+.sec-title{color:#173a5e;font-weight:800}
+.box-title,.sbox-title,.content .dg-box .ftitle{color:#173a5e;font-weight:800;font-size:16.5px}
+.sbox-title{font-size:14.5px}
+.cat{font-size:14px;color:#0f172a;font-weight:600}
+.cat.soon{color:#334155;font-weight:600}
+.cat .tag{color:#7a4a00;background:#ffe9b8}
+.grp-title{color:#173a5e;font-weight:800;font-size:14.5px}
+.guide2{color:#0f172a;font-size:14px}
+.muted,.empty{color:var(--p-muted)}
+.card .nm,.htile .nm{color:#173a5e;font-weight:800}
+.card .nm small{color:#3f4a5a;font-weight:600}
+.content .dg-box .dg-lead{color:#0f172a}
+.crumbs{color:#3f4a5a;font-weight:500}
+.dtbl td{color:#0f172a}
+.htile.soon .im img{filter:grayscale(.35) opacity(.9)}
+.card.off{opacity:.8}
+
+/* Giao diện sáng cố định như PND: chặn chế độ tối của tệp kiểu cũ (pnlib-standard.css) làm chữ trắng nhạt trên nền trắng */
+:root{color-scheme:light;--pn-bg:#f4f6f9;--pn-paper:#fff;--pn-ink:#0f172a;--pn-muted:#3f4a5a;--pn-line:#dce1e7;--pn-primary:#1f527d;--pn-primary-dark:#17415f;--pn-primary-soft:#e8f0f8}
+@media (prefers-color-scheme: dark){
+  :root{--pn-bg:#f4f6f9;--pn-paper:#fff;--pn-ink:#0f172a;--pn-muted:#3f4a5a;--pn-line:#dce1e7;--pn-primary:#1f527d;--pn-primary-dark:#17415f;--pn-primary-soft:#e8f0f8;--pn-accent:#b3261e;--pn-ok:#1f7a4d;--pn-bad:#b3261e}
+  body{background:var(--p-bg)!important;color:var(--p-ink)!important}
+  .frame,.card,.panel,nav.tabs,.subbar{background:#fff!important}
+  h1,h2,h3,h4,.ftitle,.subbar h2{color:#173a5e!important}
+  .hero-title{color:#173a5e!important}
+  .btn.primary,button.primary{color:#fff!important}
+}
+.content .card,.content .frame{border-radius:6px!important}
+.top h1,.top h2{color:#fff}
+.dlg-head h3,.dlg-head h3 *{color:#fff!important}
+.dview-top b{color:#fff}

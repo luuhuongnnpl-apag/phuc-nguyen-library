@@ -15,9 +15,10 @@ const SH_DEF_LINKS=[{id:"_pnd",name:"Phúc Nguyên Digital (PND)",url:"https://l
   {id:"_tvpl",name:"Thư viện pháp luật",url:"https://thuvienphapluat.vn/",c:["#8a1c1c","#c0392b"],ab:"TVPL"}];
 const SH_PALETTE=["#1d5677","#3d7fc1","#6fa8d6","#2e7d6b","#7aa62e","#e3b928","#e08a3c","#c0392b","#8e2c3f","#6a3fa0","#4a5d8a","#3e4a57","#8a5a1e","#607d8b"];
 const SH_STATUS={an:["Ẩn","Chỉ quản trị thấy"],sap:["Sắp có","Hiện trong danh mục, ghi Sắp có"],mo:["Công khai","Người có mã được vào học"]};
-const SH_TASKS=[["thithu","Thi thử","Đề trộn ngẫu nhiên, chấm điểm",["#173f66","#3c6ea3"],"exam"],["luyentap","Lý thuyết","Câu hỏi theo chương, mức độ",["#1f527d","#5c8fbf"],"q"],
-  ["tinhhuong","Tình huống","Vận dụng giải quyết vụ việc",["#2f6f4f","#58a37a"],"case"],["vanban","Văn bản, án lệ","Văn bản hiện hành, án lệ",["#8a5a1e","#c08a45"],"law"],
-  ["tomtat","Tóm tắt lý thuyết","Cây kiến thức có cơ sở pháp lý",["#6a3fa0","#9a73c9"],"tree"],["mindmap","Mind map","Sơ đồ tư duy từng chương",["#a5402d","#d36d52"],"map"]];
+/* Thứ tự học trong mỗi học phần (14/11/2026): Tóm tắt → Mind map → Câu hỏi lý thuyết → Câu hỏi tình huống → Thi thử → Văn bản */
+const SH_TASKS=[["tomtat","Tóm tắt lý thuyết","Cây kiến thức có cơ sở pháp lý",["#6a3fa0","#9a73c9"],"tree"],["mindmap","Mind map","Sơ đồ tư duy từng chương",["#a5402d","#d36d52"],"map"],
+  ["luyentap","Câu hỏi lý thuyết","Theo chương, mức độ",["#1f527d","#5c8fbf"],"q"],["tinhhuong","Câu hỏi tình huống","Vận dụng giải quyết vụ việc",["#2f6f4f","#58a37a"],"case"],
+  ["thithu","Thi thử","Đề trộn ngẫu nhiên, chấm điểm",["#173f66","#3c6ea3"],"exam"],["vanban","Văn bản, án lệ","Văn bản hiện hành, án lệ",["#8a5a1e","#c08a45"],"law"]];
 const SH_ICON={exam:'<path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9 11l2 2 4-4M9 17h7" stroke="currentColor" stroke-width="1.7" fill="none"/>',
   q:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 9.5a2.5 2.5 0 115 .5c0 1.6-2.5 2-2.5 3.5M12 17h.01" stroke="currentColor" stroke-width="1.8" fill="none"/>',
   case:'<path d="M4 7h16v12H4zM9 7V5h6v2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 12h16" stroke="currentColor" stroke-width="1.7"/>',
@@ -83,16 +84,17 @@ function shCrumbs(parts){return `<div class="crumbs"><a class="home-link" data-h
 
 /* ================= Khung: thanh trên, danh mục, cột phải ================= */
 function shWho(){const w=document.getElementById("who"),act=document.getElementById("topAct");if(!w||!act)return;
-  const adm=shAdmin();
-  w.textContent=adm?"Quản trị · "+((fbAuth&&fbAuth.currentUser&&fbAuth.currentUser.email)||""):session?(session.label||session.code)+" · đến "+fmtDate(session.han):"";
+  const adm=shAdmin(),code=!adm&&session&&!session.admin;
+  w.textContent=adm?"Quản trị · "+((fbAuth&&fbAuth.currentUser&&fbAuth.currentUser.email)||""):code?"Mã "+(session.label||session.code)+" · đến "+fmtDate(session.han):"";
   act.querySelectorAll("[data-dyn]").forEach(x=>x.remove());
-  const add=h=>w.insertAdjacentHTML("afterend",h);
-  if(adm)add('<button type="button" class="tbtn" data-dyn data-glogout>Đăng xuất</button>');
-  else{add('<button type="button" class="tbtn" data-dyn data-glogin title="Giảng viên đăng nhập để quản trị">Đăng nhập Google</button>');
-    add(session?'<button type="button" class="tbtn" data-dyn data-chcode>Đổi mã</button>':'<button type="button" class="tbtn hl" data-dyn data-chcode>Nhập mã lớp</button>')}
-  act.querySelectorAll("[data-glogin]").forEach(b=>b.onclick=shLogin);
-  act.querySelectorAll("[data-glogout]").forEach(b=>b.onclick=shLogout);
-  act.querySelectorAll("[data-chcode]").forEach(b=>b.onclick=()=>{if(session&&!session.admin){store.del(KEY);session=null;$("#code-in").value=""}pending=null;showGate();shWho()})}
+  w.insertAdjacentHTML("afterend",adm||code?'<button type="button" class="tbtn" data-dyn data-out>Đăng xuất</button>':'<button type="button" class="tbtn hl" data-dyn data-in>Đăng nhập</button>');
+  act.querySelectorAll("[data-in]").forEach(b=>b.onclick=shLoginDlg);
+  act.querySelectorAll("[data-out]").forEach(b=>b.onclick=()=>{if(adm)return shLogout();store.del(KEY);session=null;$("#code-in").value="";shWho();route("home");shToast("Đã đăng xuất mã lớp trên máy này.")})}
+function shLoginDlg(){const d=shDlg("Đăng nhập",`<p class="note2">Chọn cách đăng nhập. Máy này sẽ nhớ đăng nhập cho tới khi bấm Đăng xuất.</p>
+    <div class="row2"><button type="button" class="b2 pri" data-code style="justify-content:center;padding:14px">🎓 Sinh viên: nhập mã lớp</button><button type="button" class="b2" data-google style="justify-content:center;padding:14px">🔑 Giảng viên: đăng nhập Google</button></div>
+    <p class="muted">Mã lớp do giảng viên cấp, mở các học phần của lớp. Đăng nhập Google chỉ dành cho tài khoản quản trị.</p>`,`<button type="button" class="b2" data-x>Đóng</button>`);
+  d.querySelector("[data-code]").onclick=()=>{d.close();pending=null;showGate()};
+  d.querySelector("[data-google]").onclick=()=>{d.close();shLogin()}}
 async function shLogin(){if(!fbAuth){shToast("Chưa kết nối máy chủ, tải lại trang rồi thử lại.");return}
   const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:FB_ADMIN_EMAILS[0]});
   try{const r=await fbAuth.signInWithPopup(p);UID=r.user.uid;isOwner=fbIsAdmin(r.user);
@@ -115,24 +117,24 @@ function shBindNav(){document.querySelectorAll(".side-nav [data-go]").forEach(b=
   document.querySelectorAll(".side-nav [data-home]").forEach(b=>b.onclick=()=>route("home"));
   document.querySelectorAll(".side-nav [data-newcourse]").forEach(b=>b.onclick=()=>shCourseDlg(null))}
 function shSide(){const s=document.getElementById("sideExtra");if(!s)return;
-  const vis=typeof stats!=="undefined"&&stats&&stats.users!=null?stats.users:(typeof visits!=="undefined"?visits:null);
   s.innerHTML=`<section class="sbox"><h3 class="sbox-title">Hướng dẫn sử dụng</h3><ol class="guide2">
-      <li><b>Nhập mã lớp</b> giảng viên cấp (nút trên cùng). Trình duyệt nhớ mã đến khi hết hạn.</li>
-      <li>Chọn <b>học phần</b> ở cột Danh mục học phần bên trái.</li>
-      <li>Đọc <b>Tóm tắt lý thuyết</b>, <b>Mind map</b> và tài liệu, giáo trình của học phần.</li>
-      <li>Luyện <b>Lý thuyết</b>, <b>Tình huống</b>, rồi làm <b>Thi thử</b>; xem lại đáp án và căn cứ sau khi nộp.</li>
-      <li><b>Đánh giá định kỳ</b>: nhập mã lớp và mã sinh viên ở khung trên trang chủ khi giảng viên mở bài.</li>
-      <li>Thấy lỗi? Bấm <b>Gửi góp ý</b> để giảng viên sửa.</li></ol>
-      <p class="muted" style="margin:8px 0 0">Thông tin cung cấp vì mục đích học thuật, không có yếu tố thương mại.</p></section>
-    <section class="sbox"><h3 class="sbox-title">Góp ý, báo lỗi</h3><dl class="stats2"><dt>Lượng truy cập</dt><dd>${vis!=null?Number(vis).toLocaleString("vi-VN"):"…"}</dd><dt>Học phần</dt><dd>${COURSES.filter(c=>!c.hidden).length}</dd><dt>Tài liệu</dt><dd>${SH.loaded?SH.docs.length:"…"}</dd></dl>
-      <button type="button" class="sbtn" data-go="gop-y">Gửi góp ý</button></section>`;
+      <li>Bấm <b>Đăng nhập</b> trên cùng, nhập <b>mã lớp</b> giảng viên cấp. Trình duyệt nhớ mã đến khi hết hạn.</li>
+      <li>Chọn <b>học phần</b> ở Danh mục học phần hoặc ô học phần ở trang chủ.</li>
+      <li>Học theo thứ tự: <b>Tóm tắt lý thuyết</b> → <b>Mind map</b> → <b>Câu hỏi lý thuyết</b> → <b>Câu hỏi tình huống</b> → <b>Thi thử</b>; tra <b>Văn bản, án lệ</b> khi cần.</li>
+      <li>Đọc thêm tài liệu, giáo trình trong từng học phần.</li>
+      <li><b>Đánh giá định kỳ</b>: nhập mã lớp và mã sinh viên ở khung trên trang chủ khi giảng viên mở bài.</li></ol>
+      <p class="muted" style="margin:8px 0 0">Thông tin cung cấp vì mục đích học thuật, không có yếu tố thương mại.</p>
+      <button type="button" class="sbtn ghost" data-go="gop-y">Gửi góp ý, báo lỗi</button></section>`;
   s.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go))}
 
 /* ================= Trang chủ ================= */
 function shHomeHTML(dgBox){const adm=shAdmin();
   const stars=SH.docs.filter(d=>d.star).sort((a,b)=>String(b.added||"").localeCompare(String(a.added||"")));
   const links=(SH.links.length?SH.links.slice().sort((a,b)=>(a.order||0)-(b.order||0)):SH_DEF_LINKS);
+  const tiles=COURSES.filter(c=>!c.hidden||adm).map(c=>{const d=DOCS.find(x=>x.id===c.id),img=(d&&d.img)||coverSVG(c.name,c.c||"#1d5677"),ready=c.src||shHasMaps(c.id)||c.dyn&&c.status==="mo";
+    return `<button type="button" class="htile${ready?"":" soon"}" data-go="${esc(c.id)}"><span class="im"><img src="${esc(img)}" alt="" loading="lazy">${c.hidden?'<span class="tg">Ẩn</span>':ready?"":'<span class="tg">Sắp có</span>'}</span><span class="nm"><i style="background:${esc(c.c||"#1d5677")}"></i>${esc(c.name)}</span></button>`}).join("");
   return `${dgBox}
+  <section class="box"><h2 class="box-title">Học phần<span class="sp"></span>${adm?'<button type="button" class="b2 sm" data-newcourse>＋ Thêm học phần</button>':""}</h2><div class="htiles">${tiles}</div></section>
   <section class="box"><h2 class="box-title">Tài liệu, giáo trình ★<span class="sp"></span>${adm?'<button type="button" class="b2 sm" data-adddoc="">⤒ Thêm tài liệu</button>':""}</h2>
     ${stars.length?`<div class="docs-grid">${stars.map(shDocCard).join("")}</div>`:`<p class="empty">${SH.loaded?"Tài liệu, giáo trình được đánh dấu ★ sẽ hiện ở đây."+(adm?" (Đánh dấu ★ khi thêm tài liệu hoặc ở bảng tài liệu của học phần.)":""):"Đang tải…"}</p>`}</section>
   <section class="box"><h2 class="box-title">Liên kết thông dụng${adm&&!SH.links.length?'<small>(liên kết mặc định — thêm liên kết để thay)</small>':""}</h2>
@@ -151,15 +153,25 @@ function shFmt(d){const u=String(d.url||""),m=String(d.mime||""),n=String(d.titl
 function shDocCard(d){const [f,c]=shFmt(d);const hp=course(d.course);return `<button type="button" class="dcard" data-open="${esc(d.id)}" title="${esc(d.title)}"><span class="bk" style="--c1:${c[0]};--c2:${c[1]}"><span class="fmt">${f}</span><span class="tt">${esc(d.title)}</span><span class="hp">${esc(hp?hp.name:"Phúc Nguyên Library")}</span></span><span class="t">${esc(d.title)}</span></button>`}
 
 /* ================= Trang học phần ================= */
+function shTaskHref(cid,k){return k==="mindmap"?"tl-"+cid:"on:"+cid+":"+k}
+/* Đầu trang học phần: tên, đường dẫn, thanh task theo thứ tự học — dùng cho trang học phần và các trang mind map */
+function shCourseHead(cid,active,sub){const c=course(cid)||{id:cid,name:(TL[cid]||{}).name||cid};const has=shHasMaps(cid);
+  if(sub===" "){const pp=typeof cur!=="undefined"&&tlParse(cur);sub=pp&&pp.ch?"Chương "+pp.ch:""}
+  const crumbs=[[c.name,active==="home"?"":cid]];if(active==="mindmap")crumbs.push(["Mind map",sub?"tl-"+cid:""]);if(sub)crumbs.push([sub,""]);
+  return `<section class="box chead"><h2 class="box-title">${esc(c.name)}</h2>${shCrumbs(crumbs)}<nav class="ctabs" aria-label="Nội dung học phần">${SH_TASKS.map(([k,t,,col,ic],i)=>{const off=k==="mindmap"&&!has;
+    return `<button type="button" class="${active===k?"on":""}${off?" off":""}" ${off?"disabled":`data-go="${shTaskHref(cid,k)}"`} style="--c1:${col[0]}"><b>${i+1}</b>${shSvg(ic)}${t}</button>`}).join("")}</nav></section>`}
 function shCourseHTML(c){const adm=shAdmin();const has=shHasMaps(c.id);
   const st=c.dyn?(c.hidden?"Ẩn":SH_STATUS[c.status||"mo"][0]):c.src||has?"":"Sắp có";
-  const tasks=SH_TASKS.map(([k,t,sub,col,ic])=>{const off=k==="mindmap"&&!has;
-    return `<button type="button" class="card${off?" off":""}" ${off?"":`data-go="on:${esc(c.id)}:${k}"`} style="--c1:${col[0]};--c2:${col[1]}"><span class="cv">${shSvg(ic)}</span><span class="nm">${t}<small>${off?"Đang biên soạn":sub}</small></span></button>`}).join("");
+  const tasks=SH_TASKS.map(([k,t,sub,col,ic],i)=>{const off=k==="mindmap"&&!has;
+    return `<button type="button" class="card${off?" off":""}" ${off?"":`data-go="${shTaskHref(c.id,k)}"`} style="--c1:${col[0]};--c2:${col[1]}"><span class="cv">${shSvg(ic)}</span><span class="badge">${i+1}</span><span class="nm">${t}<small>${off?"Đang biên soạn":sub}</small></span></button>`}).join("");
+  const T=TL[c.id],chs=T?T.chapters:[];
+  const mm=chs.length?`<div class="grp-title">Mind map theo chương</div><div class="chips2">${chs.map(x=>x.maps.length?`<button type="button" data-go="tl-${esc(c.id)}-${x.n}"><b>Chương ${x.n}</b>${esc(x.t)}<small>${x.maps.length} sơ đồ</small></button>`:`<span class="off"><b>Chương ${x.n}</b>${esc(x.t)}<small>Đang biên soạn</small></span>`).join("")}</div>`:"";
   const tools=adm?`<div class="page-tools"><button type="button" class="hl" data-adddoc="${esc(c.id)}">⤒ Thêm tài liệu</button><button type="button" data-newfolder="${esc(c.id)}|">＋ Thư mục mới</button>
       ${c.dyn?`<button type="button" data-editcourse="${esc(c.id)}">✎ Sửa học phần</button>`:""}<button type="button" data-chapters="${esc(c.id)}">🗺 Soạn tóm tắt & mind map</button>
       <button type="button" disabled title="Bước 2">❓ Ngân hàng câu hỏi (bước 2)</button></div>`:"";
   return `<section class="box"><h2 class="box-title">${esc(c.name)}${st?`<small>· ${esc(st)}</small>`:""}</h2>${shCrumbs([[c.name,""]])}${tools}
     <div class="grp-title" style="margin-top:0">Nội dung học tập</div><div class="cards">${tasks}</div>
+    ${mm}
     ${adm?shChapterAdminHTML(c):""}
     ${shDocsBlock(c.id,"")}</section>`}
 function shDocsBlock(cid,fid){const adm=shAdmin();
@@ -211,6 +223,7 @@ function shBindPage(m){
   m.querySelectorAll("[data-addch]").forEach(b=>b.onclick=()=>{const c=course(b.dataset.addch);const chs=shChaptersOf(c);const n=Math.max(0,...chs.map(x=>x.n))+1;
     shPrompt("Thêm chương bổ sung","Tên Chương "+n+" (theo đề cương chi tiết)","",t=>shEditor(c,{n,t,gh:false,has:false,draft:false}))});
   m.querySelectorAll("[data-addlink]").forEach(b=>b.onclick=()=>shLinkDlg());
+  m.querySelectorAll("[data-newcourse]").forEach(b=>b.onclick=()=>shCourseDlg(null));
   m.querySelectorAll("[data-dellink]").forEach(b=>shArm(b,"✓",async()=>{await SH.fs.doc("pnl_links/"+b.dataset.dellink).delete();SH.links=SH.links.filter(l=>l.id!==b.dataset.dellink);shRefresh()}));
   m.querySelectorAll("[data-dellink]").forEach(b=>b.addEventListener("click",e=>e.preventDefault()))}
 
