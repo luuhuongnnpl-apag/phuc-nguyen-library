@@ -2,5 +2,5 @@
 <html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Phúc Nguyên Library</title>
 <script>/* 14/11/2026: Quản trị đã gộp vào trang chủ — đăng nhập Google trên trang chủ để dùng chức năng quản trị */
 (function(){const h=(location.hash||"").slice(1).split("/")[0];const map={ma:"qt-ma","danh-gia":"qt-dg","sao-luu":"qt-sl","gop-y":"gop-y"};
-location.replace("../index.html"+(map[h]?"#"+map[h]:""))})();</script></head>
+if(h==="lop"||h==="sinh-vien")location.replace("../lop/");else location.replace("../index.html"+(map[h]?"#"+map[h]:""))})();</script></head>
 <body><p><a href="../index.html">Về Phúc Nguyên Library</a></p></body></html>

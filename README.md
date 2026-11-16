@@ -66,3 +66,11 @@ Trang chủ dựng lại theo bố cục Phúc Nguyên Digital (PND): thanh trê
 - **Tóm tắt & mind map**: soạn dàn ý từng chương trong trình soạn toàn màn hình; mind map dựng theo quy tắc `tools/xay_dung.py`.
 
 Firestore: `pnl_hp`, `pnl_hp_ch` (đọc khi `pub == true`), `pnl_docs`, `pnl_folders`, `pnl_links` (đọc công khai), `pnl_meta/drive` (thư mục Drive); ghi: chỉ quản trị. Quy tắc: `firebase/firestore-pnl.rules`.
+
+## Lớp học — Không gian quản trị theo khung Azota (16/11/2026)
+
+Trang `lop/index.html` (một file): màn đăng nhập chung (sinh viên ID + mật khẩu, giảng viên/quản trị Google) → trang chủ quản trị (ô chức năng theo nhóm), Danh sách lớp (thẻ lớp theo năm học), Học phần (thẻ), Chi tiết lớp (danh sách sinh viên: nhập Excel APAG, thêm/sửa/xóa, đặt lại mật khẩu, xuất CSV), Sinh viên & tài khoản, Trang chủ sinh viên (Học tập, Kiểm tra, Thi, Điểm danh).
+- Dữ liệu dùng chung với Đánh giá định kỳ: `pnl_dg_lop/{mã}` (+ `nhom`, `luuTru`, `diemKhoa`, `ghiChu`), `pnl_dg_ds/{mã}`, `pnl_dg_sv/{mã}__{mssv}`.
+- Tài khoản sinh viên: `pnl_dg_sv/sv__{mssv}` = {hoTen, lop:[mã…], pw (băm SHA-256), pwDefault}; mật khẩu lần đầu `123456`; chỉ quản trị ghi. Sinh viên đăng nhập xong được phiên mã lớp của trang chủ để mở học phần của các lớp mình.
+- Danh sách học phần tĩnh: `assets/pnl-courses.json` (sinh từ `COURSES` trong `index.html`; cập nhật lại khi đổi COURSES) + học phần thêm trên Firestore `pnl_hp`.
+- Chưa có (đợt sau, cần thêm quy tắc Firestore): điểm danh QR, bài tập, bảng tin, tài khoản giảng viên, sinh viên tự đổi mật khẩu.

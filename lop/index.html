@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Phúc Nguyên Library · Quản lý lớp</title>
+<link rel="icon" href="../assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* PHÚC NGUYÊN LIBRARY — Không gian quản trị theo khung Azota (bản vẽ 16/11/2026)
+   Một màn đăng nhập chung: sinh viên ID + mật khẩu; giảng viên/quản trị đăng nhập Google. */
+:root{--navy:#1d5677;--navy2:#143d54;--bg:#eef2f6;--paper:#fff;--ink:#1e293b;--muted:#5f6672;--line:#dfe6ec;--soft:#eaf1f6;--gold:#e9b949;
+  --ok:#1b7a3d;--ok-soft:#e6f4ea;--warn:#9a6200;--warn-soft:#fdf1dc;--bad:#991b1b;--bad-soft:#fde2e0;--red:#d93025}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font:14px/1.5 'Be Vietnam Pro',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+a{color:var(--navy);text-decoration:none}a:hover{color:var(--navy2)}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.serif{font-family:'Merriweather',Georgia,serif}
+.hidden{display:none!important}
+.sr{position:absolute;left:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+svg{display:block}
+
+/* ---- khung ---- */
+#app{display:flex;min-height:100vh}
+.rail{width:88px;flex:none;background:var(--navy);display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;position:sticky;top:0;height:100vh}
+.rail .logo{width:46px;height:46px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:18px;overflow:hidden}
+.rail .logo img{width:40px;height:40px;object-fit:contain}
+.rail a,.rail button{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;color:#cfe0ea;border:0;background:transparent;position:relative}
+.rail a:hover,.rail button:hover{background:rgba(255,255,255,.12);color:#fff}
+.rail a.on{background:#fff;color:var(--navy)}
+.rail svg{width:22px;height:22px}
+.rail .sp{flex:1}
+.rail .tip{position:absolute;left:62px;background:#0f2a3b;color:#fff;font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.rail a:hover .tip,.rail button:hover .tip{opacity:1}
+.rail.wide{width:232px;align-items:stretch;padding:18px 12px}
+.rail.wide a,.rail.wide button{width:auto;height:auto;justify-content:flex-start;gap:10px;padding:10px 12px;border-radius:12px;font-weight:500;font-size:14px}
+.rail.wide svg{width:20px;height:20px}
+.rail.wide .brand{display:flex;align-items:center;gap:10px;color:#fff;padding:4px 8px 18px}
+.rail.wide .brand b{display:block;font-family:'Merriweather',Georgia,serif;font-size:13px;letter-spacing:.04em}
+.rail.wide .brand span{font-size:11px;opacity:.8}
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 32px;background:var(--paper);border-bottom:1px solid var(--line);flex-wrap:wrap;min-height:68px}
+.crumb{display:flex;align-items:center;gap:10px;min-width:0}
+.crumb .pn{font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:17px;color:var(--navy);letter-spacing:.04em;white-space:nowrap}
+.crumb .sep{color:#9aa5b1}.crumb .sub{font-weight:600;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumb a.back{display:flex;align-items:center;gap:8px;font-weight:600}
+.crumb a.back svg{width:18px;height:18px}
+.who{display:flex;align-items:center;gap:10px}
+.who .av{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.who b{display:block;font-size:14px;line-height:1.2}.who span{font-size:12px;color:var(--muted)}
+.who .out{margin-left:6px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:12.5px;font-weight:600;color:var(--navy);display:inline-flex;align-items:center;gap:5px}
+.who .out svg{width:14px;height:14px}
+.page{padding:26px 32px 48px;display:flex;flex-direction:column;gap:24px;max-width:1240px;width:100%}
+h1.t{margin:0;font-family:'Merriweather',Georgia,serif;font-size:24px;color:var(--navy)}
+.t-sub{font-size:13px;color:var(--muted)}
+h2.sec{font-family:'Merriweather',Georgia,serif;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:0 0 14px}
+.bar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.tools{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:14px;color:var(--ink)}
+.btn:hover{border-color:var(--navy);color:var(--navy)}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}.btn.pri:hover{background:var(--navy2);color:#fff}
+.btn.sm{padding:7px 12px;font-size:13px}
+.btn.danger{color:var(--red)}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn svg{width:16px;height:16px}
+.search{flex:1 1 320px;position:relative}
+.search input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.empty{padding:28px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;background:#fff}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+
+/* ô chức năng */
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;height:150px;background:#fff;border:1px solid var(--line);border-radius:14px;color:var(--ink);font-weight:600;font-size:15px;box-shadow:0 1px 3px rgba(16,35,64,.06);position:relative;text-align:center;padding:0 10px}
+.tile:hover{border-color:var(--navy);box-shadow:0 8px 22px rgba(27,54,93,.14);color:var(--navy)}
+.tile .ic{width:60px;height:60px;border-radius:16px;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--navy)}
+.tile .ic svg{width:28px;height:28px}
+.tile.soon{opacity:.72}.tile.soon:hover{border-color:var(--line);box-shadow:none;color:var(--ink)}
+.badge{position:absolute;top:10px;right:10px;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:var(--gold);color:#3b2a00}
+.badge.new{background:var(--red);color:#fff}.badge.gray{background:#e2e8f0;color:#334155}
+.quick{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;color:var(--ink);text-align:left}
+.quick:hover{border-color:var(--navy)}
+.quick .ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.quick .ic svg{width:20px;height:20px}
+.quick b{display:block;font-size:14.5px}.quick span{font-size:12.5px;color:var(--muted)}
+.quick.hl{border-color:var(--navy);background:#f3f8fb}
+
+/* thẻ lớp */
+.grp{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;color:var(--navy);margin:0 0 12px;cursor:pointer;border:0;background:none;padding:0;width:100%;text-align:left}
+.grp svg{width:16px;height:16px;transition:transform .15s}
+.grp.closed svg{transform:rotate(-90deg)}
+.grp .n{font-weight:500;color:var(--muted);font-size:13.5px}
+.card{display:block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;color:var(--ink);box-shadow:0 1px 3px rgba(16,35,64,.06);position:relative;text-align:left}
+.card:hover{border-color:var(--navy);box-shadow:0 8px 22px rgba(27,54,93,.14)}
+.card b.nm{display:block;font-size:15.5px;margin-bottom:14px;padding-right:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .meta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);gap:6px;flex-wrap:wrap}
+.card .meta strong{color:var(--ink)}
+.card .dots{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:#9aa5b1;font-weight:700;letter-spacing:1px;font-size:16px}
+.card .dots:hover{background:var(--soft);color:var(--navy)}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok);margin-left:8px;vertical-align:middle}
+.chip.lock{background:#e2e8f0;color:#334155}
+.menu{position:absolute;z-index:30;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(16,35,64,.18);padding:6px;min-width:190px}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:8px;font-weight:500}
+.menu button:hover{background:var(--soft);color:var(--navy)}
+.menu button.danger{color:var(--red)}
+
+/* thẻ học phần */
+.hp{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,35,64,.06);display:flex;flex-direction:column;position:relative}
+.hp:hover{border-color:var(--navy);box-shadow:0 8px 22px rgba(27,54,93,.14)}
+.hp .cover{height:118px;display:flex;align-items:flex-end;padding:14px 16px;color:#fff;font-family:'Merriweather',Georgia,serif;font-weight:700;font-size:15px;line-height:1.25;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hp .body{padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;flex:1}
+.hp .meta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.hp .meta strong{color:var(--ink)}
+.hp .tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--navy)}
+.tag.off{background:#f1f5f9;color:#64748b}
+.rib{position:absolute;top:12px;right:-30px;transform:rotate(40deg);background:var(--gold);color:#3b2a00;font-size:10.5px;font-weight:700;padding:3px 36px;letter-spacing:.06em}
+.rib.draft{background:#cbd5e1;color:#334155}
+.hp .act{display:flex;gap:8px;margin-top:auto}
+.hp .act a,.hp .act button{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-weight:600;font-size:13px;border:1px solid var(--line);color:var(--navy);background:#fff}
+.hp .act .pri{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* chi tiết lớp */
+.split{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.subnav{flex:0 1 250px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.subnav a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:var(--ink);font-weight:500;font-size:14px}
+.subnav a:hover{background:var(--bg)}
+.subnav a.on{background:var(--soft);color:var(--navy);font-weight:600;box-shadow:inset 3px 0 0 var(--navy)}
+.subnav a svg{width:18px;height:18px;flex:none}
+.subnav .soon{margin-left:auto;font-size:10.5px;font-weight:700;color:#64748b;background:#f1f5f9;padding:1px 7px;border-radius:999px}
+.panel{flex:999 1 560px;min-width:0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:16px}
+.panel h1.t{font-size:22px}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--ok-soft);color:var(--ok);white-space:nowrap}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.gray{background:#f1f5f9;color:#475569}.pill.live{background:var(--red);color:#fff}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid #eef1f5;vertical-align:middle}
+tr:hover td{background:#f8fafc}
+.av{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.sv{display:flex;align-items:center;gap:12px}
+.sv b{display:block;font-size:14px}.sv span{display:block;font-size:12px;color:var(--muted)}
+.ico{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:var(--navy);vertical-align:middle}
+.ico:hover{border-color:var(--navy)}
+.ico.del{color:var(--red)}.ico.key{color:var(--warn);background:var(--warn-soft);border-color:#f3dfae}
+.ico svg{width:16px;height:16px}
+.acts{text-align:right;white-space:nowrap}
+
+/* sinh viên */
+.scard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(16,35,64,.06)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.row:last-child{border:0}
+.stile{display:flex;flex-direction:column;gap:10px;padding:20px;background:#fff;border:1px solid var(--line);border-radius:14px;color:var(--ink);box-shadow:0 1px 3px rgba(16,35,64,.06)}
+.stile:hover{border-color:var(--navy);box-shadow:0 8px 22px rgba(27,54,93,.14)}
+.stile .ic{width:48px;height:48px;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--navy)}
+.stile .ic svg{width:24px;height:24px}
+.stile b{font-size:16px}.stile span{font-size:13px;color:var(--muted)}
+.stile.soon{opacity:.75}
+
+/* đăng nhập */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(180deg,#1d5677 0 46%,var(--bg) 46%)}
+.login .box{width:100%;max-width:960px;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(16,35,64,.25);display:grid;grid-template-columns:1.05fr 1fr;overflow:hidden}
+.login .side{background:var(--navy);color:#fff;padding:40px 36px;display:flex;flex-direction:column;gap:18px}
+.login .side .logo{width:64px;height:64px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.login .side .logo img{width:56px;height:56px;object-fit:contain}
+.login .side h1{margin:0;font-family:'Merriweather',Georgia,serif;font-size:26px;letter-spacing:.03em}
+.login .side p{margin:0;opacity:.9;line-height:1.6}
+.login .side ul{margin:0;padding-left:18px;opacity:.95;line-height:1.7}
+.login .form{padding:40px 36px;display:flex;flex-direction:column;gap:16px}
+.login h2{margin:0;font-family:'Merriweather',Georgia,serif;font-size:20px;color:var(--navy)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{font-size:13px;font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid #9cc1d8;outline-offset:1px;border-color:var(--navy)}
+.fld .hint{font-size:12px;color:var(--muted)}
+.err{color:var(--red);font-size:13px;min-height:18px;margin:0}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12.5px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
+.gbtn:hover{border-color:var(--navy)}
+
+/* hộp thoại */
+dialog{border:0;border-radius:16px;padding:0;max-width:min(560px,94vw);width:100%;box-shadow:0 24px 60px rgba(16,35,64,.3);color:var(--ink)}
+dialog::backdrop{background:rgba(10,25,40,.45)}
+dialog .dh{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0}
+dialog h3{margin:0;font-family:'Merriweather',Georgia,serif;font-size:18px;color:var(--navy)}
+dialog .x{border:0;background:none;width:34px;height:34px;border-radius:8px;font-size:20px;color:var(--muted)}
+dialog .x:hover{background:var(--soft)}
+dialog form{display:flex;flex-direction:column;gap:14px;padding:16px 22px 22px}
+dialog .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+dialog .df{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+dialog.wide{max-width:min(860px,94vw)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#0f2a3b;color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:99;max-width:90vw}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);background:#f8fafc}
+.drop.on{border-color:var(--navy);background:var(--soft)}
+.prev{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.prev table td,.prev table th{padding:7px 10px;font-size:12.5px}
+.kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpi div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi b{display:block;font-size:24px;font-family:'Merriweather',Georgia,serif;color:var(--navy)}
+.kpi span{font-size:12.5px;color:var(--muted)}
+
+@media (max-width:1100px){.grid4{grid-template-columns:repeat(3,minmax(0,1fr))}.kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){
+  #app{flex-direction:column}
+  .rail,.rail.wide{width:100%;height:auto;position:sticky;top:0;z-index:20;flex-direction:row;padding:8px 10px;gap:4px;overflow-x:auto;align-items:center}
+  .rail .logo{width:36px;height:36px;margin:0 6px 0 0}.rail .logo img{width:30px;height:30px}
+  .rail a,.rail button{width:44px;height:44px;border-radius:10px}
+  .rail.wide a,.rail.wide button{padding:8px 10px;font-size:13px}
+  .rail .tip,.rail.wide .brand{display:none}
+  .rail .sp{display:none}
+  header.top,.page{padding-left:16px;padding-right:16px}
+  .grid4,.grid2,.kpi{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .login .box{grid-template-columns:1fr}.login .side{display:none}
+  .subnav{flex:1 1 100%;flex-direction:row;flex-wrap:wrap}
+  .subnav a{padding:8px 10px;font-size:13px}
+  .crumb .pn{font-size:14px}
+}
+@media (max-width:480px){.grid4,.grid2{grid-template-columns:1fr}.tile{height:120px}}
+</style>
+</head>
+<body>
+<div id="app" aria-live="polite"></div>
+<div id="toast" class="toast hidden" role="status"></div>
+<dialog id="dlg"></dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+"use strict";
+/* ============ cấu hình (giống index.html) ============ */
+const FB_CFG={apiKey:"AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",authDomain:"phuc-nguyen-library.firebaseapp.com",projectId:"phuc-nguyen-library",storageBucket:"phuc-nguyen-library.firebasestorage.app",messagingSenderId:"842652271567",appId:"1:842652271567:web:23b95b5c4d6061497988ba"};
+const FB_ADMIN_UID="smoIpuX7qseqTeu9nToc9RYigku1";
+const FB_ADMIN_EMAILS=["luuhuong.nnpl@gmail.com"];
+const ADMIN_NAME="Lưu Hương NNPL";
+const fbIsAdmin=u=>!!u&&!u.isAnonymous&&(u.uid===FB_ADMIN_UID||(!!u.email&&u.emailVerified!==false&&FB_ADMIN_EMAILS.includes(u.email.toLowerCase())));
+const SV_KEY="pnl-lop-sv";          /* phiên sinh viên trên máy này */
+const HOME_KEY="pnlib-ma-lop";      /* phiên mã lớp của trang chủ: cấp cho sinh viên đã đăng nhập để mở học phần */
+const DEF_PW="123456";
+const COURSES_URL="../assets/pnl-courses.json";
+const HOME="../index.html",DG="../danh-gia/";
+
+/* ============ tiện ích ============ */
+const $=(s,r)=>(r||document).querySelector(s),$$=(s,r)=>[...(r||document).querySelectorAll(s)];
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const strip=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
+const normId=s=>String(s||"").trim().toUpperCase().replace(/\s+/g,"");
+const normMa=s=>String(s||"").trim().toUpperCase().replace(/[^A-Z0-9._-]/g,"");
+const initials=n=>{const p=String(n||"").trim().split(/\s+/);return p.length>1?(p[p.length-2][0]+p[p.length-1][0]).toUpperCase():(p[0]||"?").slice(0,2).toUpperCase()};
+const AVC=["#1d5677","#6fa8d6","#6a3fa0","#c0392b","#2e7d6b","#e08a3c","#4a5d8a","#8e2c3f"];
+const avc=s=>AVC[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%AVC.length];
+async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+const pwHash=(mssv,pw)=>sha("PNL-SV|"+normId(mssv)+"|"+String(pw));
+function toast(t,ms){const el=$("#toast");el.textContent=t;el.classList.remove("hidden");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.add("hidden"),ms||3400)}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const errMsg=x=>x&&x.code==="permission-denied"?"tài khoản chưa có quyền ghi (cần đăng nhập Google quản trị).":(x&&x.message)||String(x);
+const fmtD=d=>{if(!d)return"";const t=d.toDate?d.toDate():new Date(d);return isNaN(t)?"":t.toLocaleDateString("vi-VN")};
+const P='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+const I={
+  home:P+'<path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg>',
+  lop:P+'<path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M2 13l10 5 10-5"/></svg>',
+  hp:P+'<path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4Z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7Z"/></svg>',
+  de:P+'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+  users:P+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15 20a5 5 0 0 1 6.5-4.8"/></svg>',
+  user:P+'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  cog:P+'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
+  qr:P+'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21h-3v-3"/></svg>',
+  task:P+'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  exam:P+'<path d="M9 3h6l1 3h3v15H5V6h3Z"/><path d="m9 13 2 2 4-4"/></svg>',
+  grade:P+'<path d="M4 5h16v14H4Z"/><path d="M4 10h16M9 10v9M14 10v9"/></svg>',
+  key:P+'<circle cx="8" cy="14" r="4"/><path d="M11 11 20 2M16 6l2 2M13 9l2 2"/></svg>',
+  code:P+'<path d="M4 4h16v6H4ZM4 14h16v6H4Z"/><path d="M8 7h.01M8 17h.01"/></svg>',
+  bank:P+'<path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>',
+  folder:P+'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>',
+  map:P+'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>',
+  plus:P+'<path d="M12 5v14M5 12h14"/></svg>',
+  search:P+'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+  go:P+'<path d="M3 12h18M13 6l6 6-6 6"/></svg>',
+  back:P+'<path d="m15 5-7 7 7 7"/></svg>',
+  down:P+'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>',
+  up:P+'<path d="M12 3v12M7 8l5-5 5 5M4 21h16"/></svg>',
+  chart:P+'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  edit:P+'<path d="M4 20h4l10-10-4-4L4 16Z"/></svg>',
+  del:P+'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  chev:P+'<path d="m6 9 6 6 6-6"/></svg>',
+  bell:P+'<path d="M6 8a6 6 0 0 1 12 0v5l2 3H4l2-3Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+  news:P+'<path d="M4 5h16v11H8l-4 4Z"/></svg>',
+  out:P+'<path d="M15 4h4v16h-4M10 17l5-5-5-5M15 12H3"/></svg>',
+  xls:P+'<path d="M4 4h16v16H4Z"/><path d="M8 12h8M12 8v8"/></svg>',
+  eye:P+'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
+};
+
+/* ============ trạng thái ============ */
+const S={fs:null,auth:null,user:null,admin:false,sv:null,courses:[],hp:{},lop:[],ds:{},acc:{},loaded:false,open:{},q:"",busy:false};
+const LIB={xlsx:["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"]};
+function lib(name){if(window.XLSX)return Promise.resolve(window.XLSX);return new Promise((ok,no)=>{let i=0;const next=()=>{if(i>=LIB[name].length)return no(new Error("Không tải được thư viện đọc Excel"));const s=document.createElement("script");s.src=LIB[name][i++];s.onload=()=>ok(window.XLSX);s.onerror=next;document.head.appendChild(s)};next()})}
+
+/* ============ dữ liệu ============ */
+async function loadCourses(){try{S.courses=await (await fetch(COURSES_URL,{cache:"no-store"})).json()}catch(e){S.courses=[]}}
+async function loadHp(){try{(await S.fs.collection("pnl_hp").get()).docs.forEach(d=>{S.hp[d.id]=Object.assign({id:d.id},d.data()||{})})}catch(e){}
+  /* học phần thêm trên trang chủ (Firestore) nối vào danh sách tĩnh */
+  Object.values(S.hp).forEach(h=>{if(!S.courses.some(c=>c.id===h.id))S.courses.push({id:h.id,name:h.name||h.id,c:h.c||"#1d5677",src:h.src||"",st:h.status||h.st||"",fb:true})})}
+async function loadLop(){try{S.lop=(await S.fs.collection("pnl_dg_lop").get()).docs.map(d=>Object.assign({id:d.id},d.data()||{}))}catch(e){S.lop=[];console.warn("pnl_dg_lop",e&&e.code)}
+  S.lop.sort((a,b)=>String(a.id).localeCompare(String(b.id),"vi"))}
+async function loadDs(ma){if(S.ds[ma])return S.ds[ma];try{const d=await S.fs.doc("pnl_dg_ds/"+ma).get();S.ds[ma]=(d.data()||{}).rows||[]}catch(e){S.ds[ma]=[]}return S.ds[ma]}
+async function loadAcc(mssvs){const need=[...new Set(mssvs.map(normId))].filter(x=>x&&!(x in S.acc));
+  for(let i=0;i<need.length;i+=10){await Promise.all(need.slice(i,i+10).map(async m=>{try{const d=await S.fs.doc("pnl_dg_sv/sv__"+m).get();S.acc[m]=d.exists?d.data():null}catch(e){S.acc[m]=null}}))}}
+async function loadAll(){await Promise.all([loadCourses().then(loadHp),loadLop()]);S.loaded=true}
+const courseOf=id=>S.courses.find(c=>c.id===id)||(id?{id,name:S.lop.find(l=>l.hocPhan===id)?.hocPhanTen||id,c:"#1d5677"}:null);
+const courseHref=c=>c&&c.src?(c.src.startsWith("hp/")?HOME+"#"+c.id:"../"+c.src):(c?HOME+"#"+c.id:HOME);
+const grpOf=l=>l.nhom||l.namHoc||"Khác";
+const lopName=l=>l.id+(l.ten?" — "+l.ten:"");
+
+/* ============ khung trang ============ */
+function rail(items,wide,brand){return `<nav class="rail${wide?" wide":""}" aria-label="Điều hướng">
+  ${wide?`<div class="brand"><div class="logo"><img src="../assets/logo.png" alt=""></div><div><b>PHÚC NGUYÊN</b><span>LIBRARY</span></div></div>`:`<a class="logo" href="${HOME}" aria-label="Về trang chủ Phúc Nguyên Library"><img src="../assets/logo.png" alt=""></a>`}
+  ${items.map(([h,ic,t,on,soon])=>`<a href="${h}" class="${on?"on":""}" aria-label="${esc(t)}"${soon?' title="Sắp có"':""}>${I[ic]}${wide?`<span>${esc(t)}</span>`:`<span class="tip">${esc(t)}</span>`}</a>`).join("")}
+  <span class="sp"></span>
+  <a href="${HOME}" aria-label="Về trang chủ thư viện">${I.home}${wide?"<span>Thư viện</span>":'<span class="tip">Về trang chủ thư viện</span>'}</a>
+</nav>`}
+function who(name,role,ab){return `<div class="who"><div class="av" style="background:${avc(name)}">${esc(ab||initials(name))}</div><div><b>${esc(name)}</b><span>${esc(role)}</span></div><button type="button" class="out" data-out>${I.out}Đăng xuất</button></div>`}
+function shell(cur,body,crumb){const items=[["#home","home","Trang chủ quản trị",cur==="home"],["#lop","lop","Lớp",cur==="lop"],["#hocphan","hp","Học phần",cur==="hocphan"],[DG+"#quan-tri","de","Đề thi, đánh giá định kỳ"],["#sinhvien","users","Sinh viên và tài khoản",cur==="sinhvien"]];
+  return `${rail(items,false)}<main><header class="top"><div class="crumb">${crumb||`<span class="pn">PHÚC NGUYÊN LIBRARY</span><span class="sep">/</span><span class="sub">Không gian quản trị</span>`}</div>${who(ADMIN_NAME,"Quản trị viên · Google","LH")}</header>${body}</main>`}
+function bindOut(){const b=$("[data-out]");if(b)b.onclick=logout}
+
+/* ============ đăng nhập ============ */
+function viewLogin(msg){$("#app").innerHTML=`<div class="login"><div class="box">
+  <section class="side"><div class="logo"><img src="../assets/logo.png" alt=""></div><h1>PHÚC NGUYÊN LIBRARY</h1><p><b>Lớp học</b> — một nơi cho việc học, kiểm tra, thi, điểm danh và kết quả của các lớp do giảng viên quản lý.</p>
+    <ul><li><b>Sinh viên</b>: đăng nhập bằng <b>mã sinh viên</b>; mật khẩu lần đầu là <b>${DEF_PW}</b>.</li><li><b>Giảng viên, quản trị</b>: đăng nhập Google bằng tài khoản được cấp quyền.</li><li>Chỉ cần ôn tập theo mã lớp? <a href="${HOME}" style="color:#ffd97a">Về trang thư viện</a>.</li></ul></section>
+  <section class="form"><h2>Đăng nhập</h2>
+    <form id="f-sv" autocomplete="on"><div class="fld"><label for="sv-id">ID (mã sinh viên)</label><input id="sv-id" name="username" autocomplete="username" placeholder="VD: 2405CCLT001" required></div>
+      <div class="fld"><label for="sv-pw">Mật khẩu</label><input id="sv-pw" name="password" type="password" autocomplete="current-password" placeholder="Mặc định ${DEF_PW}" required></div>
+      <p class="err" id="sv-err">${esc(msg||"")}</p><button type="submit" class="btn pri" style="justify-content:center;padding:12px">Vào lớp học</button></form>
+    <div class="or">hoặc</div>
+    <button type="button" class="gbtn" id="b-google"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4H24v8.1h12.7c-.3 2.1-1.7 5.3-4.8 7.4l7.4 5.7c4.4-4.1 7.2-10.1 7.2-17.2z"/><path fill="#FBBC05" d="M10.4 28.8A14.6 14.6 0 0 1 9.5 24c0-1.7.3-3.3.8-4.8l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.4-8.5 2.4-6.3 0-11.7-3.7-13.6-9.1l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>Giảng viên, quản trị: đăng nhập Google</button>
+    <p class="err" id="g-err"></p></section></div></div>`;
+  $("#f-sv").onsubmit=async e=>{e.preventDefault();const id=normId($("#sv-id").value),pw=$("#sv-pw").value;const err=$("#sv-err");err.textContent="";
+    const btn=$("#f-sv button");btn.disabled=true;btn.textContent="Đang kiểm tra…";
+    try{const d=await S.fs.doc("pnl_dg_sv/sv__"+id).get();if(!d.exists)throw new Error("Chưa có tài khoản cho ID này. Hãy báo giảng viên thêm bạn vào lớp.");
+      const a=d.data();const h=await pwHash(id,pw);if(a.pw!==h)throw new Error("Mật khẩu chưa đúng."+(a.pwDefault?" Mật khẩu lần đầu là "+DEF_PW+".":""));
+      S.sv={mssv:id,hoTen:a.hoTen||id,lop:a.lop||[],lopNienChe:a.lopNienChe||"",at:Date.now()};store.set(SV_KEY,S.sv);await grantHomeSession();location.hash="#sv";render()}
+    catch(x){err.textContent=x.message||String(x)}finally{btn.disabled=false;btn.textContent="Vào lớp học"}};
+  $("#b-google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:FB_ADMIN_EMAILS[0]});$("#g-err").textContent="";
+    try{const r=await S.auth.signInWithPopup(p);if(!fbIsAdmin(r.user)){const em=r.user.email;await S.auth.signOut();$("#g-err").textContent="Tài khoản "+em+" chưa được cấp quyền giảng viên/quản trị.";}}
+    catch(x){$("#g-err").textContent="Không đăng nhập được: "+(x.message||x)}}}
+/* Sinh viên đã đăng nhập được mở mọi học phần của các lớp mình (phiên mã lớp trang chủ) */
+async function grantHomeSession(){if(!S.sv)return;const hps=[];for(const ma of S.sv.lop){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists){l=Object.assign({id:ma},d.data());S.lop.push(l)}}catch(e){}}if(l&&l.hocPhan&&!hps.includes(l.hocPhan))hps.push(l.hocPhan)}
+  store.set(HOME_KEY,{code:"SV-"+S.sv.mssv,label:S.sv.hoTen,han:"2099-12-31",courses:hps.length?hps:["*"],sv:true})}
+async function logout(){if(S.admin){await S.auth.signOut()}S.sv=null;store.del(SV_KEY);const h=store.get(HOME_KEY);if(h&&h.sv)store.del(HOME_KEY);location.hash="";render()}
+
+/* ============ QUẢN TRỊ: trang chủ ============ */
+function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.reduce((a,l)=>a+(l.siSo||0),0),nHp=S.courses.length,nMo=S.lop.filter(l=>l.open).length;
+  const tile=(h,ic,t,o)=>`<a href="${h}" class="tile${o&&o.soon?" soon":""}"${o&&o.ext?' target="_blank" rel="noopener"':""}>${o&&o.badge?`<span class="badge ${o.badge[1]||""}">${o.badge[0]}</span>`:""}<span class="ic">${I[ic]}</span>${t}</a>`;
+  const soon={soon:true,badge:["SẮP CÓ","gray"]};
+  const body=`<div class="page">
+    <div class="kpi"><div><b>${nOpen}</b><span>lớp đang quản lý</span></div><div><b>${nSv}</b><span>sinh viên trong các lớp</span></div><div><b>${nMo}</b><span>lớp đang mở đánh giá định kỳ</span></div><div><b>${nHp}</b><span>học phần trong thư viện</span></div></div>
+    <section><h2 class="sec">Quản lý học tập</h2><div class="grid4">
+      ${tile("#lop","lop","Quản lý lớp")}
+      ${tile("#home","qr","Điểm danh QR",soon)}
+      ${tile("#home","task","Bài tập",soon)}
+      ${tile(DG+"#quan-tri","exam","Kiểm tra &amp; Thi")}
+      ${tile(DG+"#quan-tri","grade","Bảng điểm")}
+      ${tile("#home","key","Giảng viên &amp; phân quyền",soon)}
+      ${tile("#sinhvien","user","Sinh viên &amp; tài khoản")}
+      ${tile(HOME+"#qt-ma","code","Mã lớp ôn tập (khách)")}
+    </div></section>
+    <section><h2 class="sec">Nội dung &amp; công cụ</h2><div class="grid4">
+      ${tile("#hocphan","hp","Học phần ("+nHp+")")}
+      ${tile("#home","bank","Ngân hàng câu hỏi",soon)}
+      ${tile(HOME+"#home","folder","Tài liệu – giáo trình")}
+      ${tile(HOME+"#home","map","Mind map &amp; tóm tắt")}
+    </div></section>
+    <section><h2 class="sec">Truy cập nhanh</h2><div class="grid4">
+      <a href="#home" class="quick soon" title="Sắp có"><span class="ic" style="background:#e6f4ea;color:#1b7a3d">${I.qr}</span><div><b>Mở điểm danh hôm nay</b><span>Tạo mã buổi cho lớp đang dạy (sắp có)</span></div></a>
+      <button type="button" class="quick" data-import><span class="ic" style="background:#fdf1dc;color:#9a6200">${I.xls}</span><div><b>Nhập danh sách lớp</b><span>Từ Excel, tự tạo tài khoản SV</span></div></button>
+      <a href="#sinhvien" class="quick"><span class="ic" style="background:#eaf1f6;color:#1d5677">${I.search}</span><div><b>Tìm kiếm</b><span>Lớp, sinh viên, học phần</span></div></a>
+      <a href="#sv" class="quick hl"><span class="ic" style="background:#1d5677;color:#fff">${I.go}</span><div><b>Xem như sinh viên</b><span>Kiểm tra giao diện SV thấy gì</span></div></a>
+    </div></section></div>`;
+  $("#app").innerHTML=shell("home",body);bindOut();$("[data-import]").onclick=()=>dlgLop(null,true)}
+
+/* ============ QUẢN TRỊ: danh sách lớp ============ */
+function viewLop(){const q=strip(S.q);const arch=location.hash.includes("/luu-tru");
+  const list=S.lop.filter(l=>!!l.luuTru===arch).filter(l=>!q||strip(lopName(l)+" "+(l.hocPhanTen||"")+" "+grpOf(l)).includes(q));
+  const groups={};list.forEach(l=>{(groups[grpOf(l)]=groups[grpOf(l)]||[]).push(l)});
+  const gkeys=Object.keys(groups).sort((a,b)=>b.localeCompare(a,"vi"));
+  const card=l=>`<div class="card" data-lop="${esc(l.id)}" tabindex="0" role="link"><button type="button" class="dots" data-menu="${esc(l.id)}" aria-label="Thao tác với lớp">···</button><b class="nm" title="${esc(lopName(l))}">${esc(lopName(l))}</b>
+    <span class="meta"><span>Sĩ số: <strong>${l.siSo||0}</strong></span><span>Buổi: <strong>${l.buoi||0}</strong></span><span>Điểm: <strong>${l.diemKhoa?"đã khóa":(l.siSo?"đang mở":"—")}</strong></span></span>
+    <span class="meta" style="margin-top:8px"><span>${esc(l.hocPhanTen||courseOf(l.hocPhan)?.name||"")}</span>${l.open?'<span class="pill">ĐGĐK đang mở</span>':""}${l.thu?'<span class="pill gray">lớp thử</span>':""}</span></div>`;
+  const body=`<div class="page">
+    <div class="bar"><div><h1 class="t">${arch?"Lớp lưu trữ":"Danh sách lớp"}</h1><span class="t-sub">${S.lop.filter(l=>!l.luuTru).length} lớp đang mở · ${S.lop.filter(l=>l.luuTru).length} lớp lưu trữ</span></div>
+      <div class="tools"><button type="button" class="btn pri" data-add>${I.plus}Thêm lớp</button><button type="button" class="btn" data-import>${I.xls}Nhập danh sách từ Excel</button><a class="btn" href="${arch?"#lop":"#lop/luu-tru"}">${arch?"Lớp đang mở":"Lưu trữ ("+S.lop.filter(l=>l.luuTru).length+")"}</a></div></div>
+    <div class="tools"><label class="search"><span class="sr">Tìm lớp</span><input type="search" id="q" value="${esc(S.q)}" placeholder="Tìm theo tên lớp, mã lớp, học phần…"></label></div>
+    ${!S.lop.length?`<div class="empty">Chưa có lớp nào. Bấm <b>Thêm lớp</b> hoặc <b>Nhập danh sách từ Excel</b> để bắt đầu.</div>`:!list.length?`<div class="empty">Không có lớp nào khớp.</div>`:
+      gkeys.map(g=>`<section><button type="button" class="grp${S.open[g]===false?" closed":""}" data-grp="${esc(g)}">${I.chev}${esc(g)} <span class="n">(${groups[g].length} lớp)</span></button><div class="grid4"${S.open[g]===false?" hidden":""}>${groups[g].map(card).join("")}</div></section>`).join("")}
+    <p class="note">Nhóm lớp theo <b>năm học</b> (hoặc tên nhóm sếp đặt khi sửa lớp). Bấm vào thẻ lớp để xem danh sách sinh viên; dấu ··· để sửa, lưu trữ, xóa.</p></div>`;
+  $("#app").innerHTML=shell("lop",body);bindOut();
+  $("#q").oninput=e=>{S.q=e.target.value;viewLop();const i=$("#q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
+  $("[data-add]").onclick=()=>dlgLop(null);$("[data-import]").onclick=()=>dlgLop(null,true);
+  $$("[data-grp]").forEach(b=>b.onclick=()=>{const g=b.dataset.grp;S.open[g]=S.open[g]===false;viewLop()});
+  $$("[data-lop]").forEach(c=>{const go=()=>location.hash="#lop/"+encodeURIComponent(c.dataset.lop);c.onclick=e=>{if(e.target.closest("[data-menu]"))return;go()};c.onkeydown=e=>{if(e.key==="Enter")go()}});
+  $$("[data-menu]").forEach(b=>b.onclick=e=>{e.stopPropagation();const l=S.lop.find(x=>x.id===b.dataset.menu);openMenu(b,[["Xem danh sách sinh viên",()=>location.hash="#lop/"+encodeURIComponent(l.id)],["Sửa thông tin lớp",()=>dlgLop(l)],
+    [l.diemKhoa?"Mở lại điểm":"Khóa điểm",()=>saveLop(l.id,{diemKhoa:!l.diemKhoa})],[l.luuTru?"Đưa về lớp đang mở":"Chuyển vào lưu trữ",()=>saveLop(l.id,{luuTru:!l.luuTru})],["Xóa lớp…",()=>delLop(l),"danger"]])})}
+function openMenu(anchor,items){closeMenu();const m=document.createElement("div");m.className="menu";m.innerHTML=items.map(([t,,cls],i)=>`<button type="button" data-i="${i}" class="${cls||""}">${esc(t)}</button>`).join("");document.body.appendChild(m);
+  const r=anchor.getBoundingClientRect();m.style.top=(r.bottom+window.scrollY+4)+"px";m.style.left=Math.min(r.left+window.scrollX,window.innerWidth-210)+"px";
+  m.querySelectorAll("button").forEach(b=>b.onclick=()=>{closeMenu();items[+b.dataset.i][1]()});setTimeout(()=>document.addEventListener("click",closeMenu,{once:true}),0)}
+function closeMenu(){$$(".menu").forEach(m=>m.remove())}
+async function saveLop(ma,part){try{await S.fs.doc("pnl_dg_lop/"+ma).set(part,{merge:true});Object.assign(S.lop.find(l=>l.id===ma)||{},part);toast("Đã lưu.");render()}catch(x){toast("Chưa lưu được: "+errMsg(x))}}
+async function delLop(l){const ok=await confirmDlg("Xóa lớp "+lopName(l)+"?","Xóa toàn bộ danh sách sinh viên, bài làm đánh giá định kỳ và điểm của lớp này. Không khôi phục được.","Xóa lớp");if(!ok)return;
+  try{const db=S.fs;const refs=[];for(const c of ["pnl_dg_sv","pnl_dg_bai","pnl_dg_cham"]){(await db.collection(c).where("maLop","==",l.id).get()).docs.forEach(d=>refs.push(d.ref))}
+    /* gỡ lớp khỏi tài khoản sinh viên */
+    const rows=await loadDs(l.id);await loadAcc(rows.map(r=>r.mssv));
+    for(const r of rows){const a=S.acc[normId(r.mssv)];if(a&&Array.isArray(a.lop)&&a.lop.includes(l.id)){const lop=a.lop.filter(x=>x!==l.id);a.lop=lop;refs.push({_set:db.doc("pnl_dg_sv/sv__"+normId(r.mssv)),data:{lop}})}}
+    refs.push(db.doc("pnl_dg_ds/"+l.id),db.doc("pnl_dg_lop/"+l.id));
+    for(let i=0;i<refs.length;i+=400){const b=db.batch();refs.slice(i,i+400).forEach(r=>r._set?b.set(r._set,r.data,{merge:true}):b.delete(r));await b.commit()}
+    S.lop=S.lop.filter(x=>x.id!==l.id);delete S.ds[l.id];toast("Đã xóa lớp "+l.id);location.hash="#lop";render()}catch(x){toast("Chưa xóa được: "+errMsg(x))}}
+
+/* hộp thoại thêm / sửa lớp (kèm nhập Excel) */
+function dlgLop(l,withImport){const dlg=$("#dlg");const isNew=!l;const years=[...new Set(S.lop.map(grpOf))];const y=new Date();const yh=(y.getMonth()>=7?y.getFullYear():y.getFullYear()-1);const defYear="HK"+(y.getMonth()>=7||y.getMonth()<1?"1":"2")+" "+yh+"–"+(yh+1);
+  dlg.className=withImport?"wide":"";dlg.innerHTML=`<div class="dh"><h3>${isNew?(withImport?"Thêm lớp và nhập danh sách sinh viên":"Thêm lớp"):"Sửa thông tin lớp"}</h3><button type="button" class="x" data-x aria-label="Đóng">×</button></div>
+  <form id="f-lop"><div class="row2">
+    <div class="fld"><label for="l-ma">Mã lớp *</label><input id="l-ma" value="${esc(l?l.id:"")}" ${l?"readonly":""} placeholder="VD: CCCT.01" required><span class="hint">Chữ không dấu, số, dấu . _ -; dùng làm mã cho sinh viên nhập đánh giá định kỳ.</span></div>
+    <div class="fld"><label for="l-ten">Tên lớp</label><input id="l-ten" value="${esc(l?l.ten||"":"")}" placeholder="VD: Công chứng Liên thông"></div></div>
+    <div class="row2"><div class="fld"><label for="l-hp">Học phần *</label><select id="l-hp" required><option value="">— chọn học phần —</option>${S.courses.map(c=>`<option value="${esc(c.id)}"${l&&l.hocPhan===c.id?" selected":""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="fld"><label for="l-nam">Năm học / nhóm *</label><input id="l-nam" list="l-years" value="${esc(l?grpOf(l):defYear)}" required><datalist id="l-years">${years.map(v=>`<option value="${esc(v)}">`).join("")}</datalist><span class="hint">Lớp được xếp nhóm theo ô này ở Danh sách lớp.</span></div></div>
+    <div class="row2"><div class="fld"><label for="l-tg">Thời gian làm bài ĐGĐK (phút)</label><input id="l-tg" type="number" min="5" max="180" value="${esc(l&&l.thoiGian||40)}"></div>
+    <div class="fld"><label for="l-nc">Ghi chú</label><input id="l-nc" value="${esc(l?l.ghiChu||"":"")}" placeholder="VD: lớp liên thông, học tối"></div></div>
+    ${withImport?`<div class="fld"><label>Danh sách sinh viên (Excel/CSV: cột Mã SV, Họ tên, Ngày sinh, Lớp)</label><div class="drop" id="drop">Kéo thả file vào đây hoặc <label style="color:var(--navy);font-weight:600;cursor:pointer">chọn file<input type="file" id="l-file" accept=".xlsx,.xls,.csv,.txt" class="sr"></label><br><span class="hint">Nhận file bảng điểm / danh sách lớp tải từ APAG. Mỗi sinh viên được tạo tài khoản ID = mã SV, mật khẩu ${DEF_PW}.</span></div><div id="prev"></div></div>`:""}
+    <p class="err" id="l-err"></p><div class="df"><button type="button" class="btn" data-x>Hủy</button><button type="submit" class="btn pri">${isNew?"Tạo lớp":"Lưu"}</button></div></form>`;
+  dlg.showModal();$$("[data-x]",dlg).forEach(b=>b.onclick=()=>dlg.close());
+  let rows=[];
+  if(withImport){const onFile=async f=>{if(!f)return;try{rows=await readRoster(f);$("#prev").innerHTML=previewRows(rows);$("#l-err").textContent="";const inf=rows.info||{};
+      if(inf.tenLopTc&&!$("#l-ten").value)$("#l-ten").value=inf.tenLopTc;if(inf.hocKy)$("#l-nam").value=inf.hocKy;
+      if(inf.tenMon&&!$("#l-hp").value){const c=S.courses.find(c=>strip(c.name)===strip(inf.tenMon))||S.courses.find(c=>strip(inf.tenMon).includes(strip(c.name))||strip(c.name).includes(strip(inf.tenMon)));if(c)$("#l-hp").value=c.id}
+      if(!$("#l-ma").value&&inf.tenLopTc){$("#l-ma").value=normMa(inf.tenLopTc.replace(/[^A-Za-z0-9]+/g,".").slice(0,20))}}
+    catch(x){$("#l-err").textContent=x.message||String(x)}};
+    $("#l-file").onchange=e=>onFile(e.target.files[0]);const dz=$("#drop");dz.ondragover=e=>{e.preventDefault();dz.classList.add("on")};dz.ondragleave=()=>dz.classList.remove("on");dz.ondrop=e=>{e.preventDefault();dz.classList.remove("on");onFile(e.dataTransfer.files[0])}}
+  $("#f-lop").onsubmit=async e=>{e.preventDefault();const err=$("#l-err");err.textContent="";const ma=normMa($("#l-ma").value);if(ma.length<2){err.textContent="Mã lớp cần ít nhất 2 ký tự.";return}
+    const hp=courseOf($("#l-hp").value);if(!hp){err.textContent="Chọn học phần.";return}
+    const data={ten:$("#l-ten").value.trim(),hocPhan:hp.id,hocPhanTen:hp.name,namHoc:$("#l-nam").value.trim(),nhom:$("#l-nam").value.trim(),thoiGian:+$("#l-tg").value||40,ghiChu:$("#l-nc").value.trim()};
+    const btn=$("button[type=submit]",dlg);btn.disabled=true;
+    try{const ref=S.fs.doc("pnl_dg_lop/"+ma);if(isNew){if((await ref.get()).exists)throw new Error("Mã lớp này đã có.");data.created=firebase.firestore.FieldValue.serverTimestamp();data.siSo=0;data.open=false}
+      await ref.set(data,{merge:true});const cur=S.lop.find(x=>x.id===ma);if(cur)Object.assign(cur,data);else S.lop.push(Object.assign({id:ma},data));
+      if(withImport&&rows.length)await saveRoster(ma,rows,true);
+      dlg.close();toast(isNew?"Đã tạo lớp "+ma+(rows.length?" với "+rows.length+" sinh viên.":"."):"Đã lưu.");location.hash="#lop/"+encodeURIComponent(ma);render()}
+    catch(x){err.textContent="Chưa lưu được: "+errMsg(x)}finally{btn.disabled=false}}}
+
+/* đọc danh sách từ Excel/CSV (nhận file bảng điểm APAG) */
+async function readRoster(file){let grid=[];if(/\.(csv|txt)$/i.test(file.name)){const t=await file.text();grid=t.split(/\r?\n/).map(r=>r.split(/[;,\t]/).map(c=>c.replace(/^"|"$/g,"").trim()))}
+  else{const X=await lib("xlsx");const wb=X.read(await file.arrayBuffer(),{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];grid=X.utils.sheet_to_json(ws,{header:1,raw:false,defval:""}).map(r=>r.map(c=>String(c==null?"":c).trim()))}
+  /* nhận cột như trang Đánh giá định kỳ (file Export excel của APAG hoặc Excel/CSV thường) */
+  const nz=s=>strip(s).replace(/[^a-z0-9]/g,"");let hi=-1,cM=-1,cT=-1,cH=-1,cN=-1,cD=-1,cL=-1;const info={};
+  for(let i=0;i<Math.min(grid.length,25);i++){grid[i].forEach(c=>{const s=String(c||"").replace(/\s+/g," ").trim();let m;
+      if((m=s.match(/^Tên môn\s*:\s*(.+)$/i)))info.tenMon=m[1].trim();else if((m=s.match(/^Tên lớp tc\s*:\s*(.+)$/i)))info.tenLopTc=m[1].trim();else if((m=s.match(/^Học kỳ\s*\/\s*Năm học\s*:\s*(.+)$/i)))info.hocKy=m[1].trim()});
+    if(hi<0){const r=grid[i].map(nz);const m=r.findIndex(x=>/^(mssv|masv|masinhvien|msv|masosinhvien|id|ma)$/.test(x));
+      if(m>=0){hi=i;cM=m;r.forEach((x,j)=>{if(/^(hovaten|hoten|hotensinhvien|hovatensinhvien)$/.test(x))cT=j;else if(/^(ho|hodem|holot|hovatendem)$/.test(x))cH=j;else if(x==="ten")cN=j;else if(/ngaysinh|namsinh/.test(x))cD=j;else if(/^(lop|lopnienche|lophc|lophanhchinh|lopsinhhoat|lopsh)$/.test(x))cL=j})}}}
+  const OKMS=s=>/^[0-9A-Z]{4,16}$/.test(s)&&/\d/.test(s);const rows=[],seen=new Set();
+  grid.slice(hi+1).forEach(r=>{let mssv,ten,ns="",lop="";
+    if(hi>=0){mssv=r[cM];ten=cT>=0?r[cT]:[cH>=0?r[cH]:"",cN>=0?r[cN]:""].join(" ");ns=cD>=0?r[cD]:"";lop=cL>=0?r[cL]:""}
+    else{const c=r.map(x=>String(x||"").trim());const k=c.findIndex(x=>OKMS(normId(x)));if(k<0)return;mssv=c[k];ten=c.find((x,j)=>j!==k&&x&&!/\d/.test(x))||"";ns=c.find((x,j)=>j!==k&&/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(x))||""}
+    mssv=normId(mssv);ten=String(ten||"").replace(/\s+/g," ").trim();if(!OKMS(mssv)||!ten||seen.has(mssv))return;seen.add(mssv);
+    const row={mssv,hoTen:ten};if(ns)row.ngaySinh=String(ns).trim();if(lop)row.lopNienChe=String(lop).trim();rows.push(row)});
+  if(!rows.length)throw new Error("Không đọc được sinh viên nào. Hãy để dòng tiêu đề có cột 'Mã SV' (hoặc MSSV) và 'Họ và tên'.");rows.info=info;return rows}
+function previewRows(rows){return `<p class="note" style="margin:8px 0">Đọc được <b>${rows.length}</b> sinh viên:</p><div class="prev"><table><thead><tr><th>STT</th><th>Mã SV</th><th>Họ tên</th><th>Ngày sinh</th><th>Lớp</th></tr></thead><tbody>${rows.slice(0,200).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.mssv)}</td><td>${esc(r.hoTen)}</td><td>${esc(r.ngaySinh||"")}</td><td>${esc(r.lopNienChe||"")}</td></tr>`).join("")}</tbody></table></div>`}
+/* ghi danh sách lớp: pnl_dg_ds (bản đầy đủ), pnl_dg_sv/{ma__mssv} (cho ĐGĐK), pnl_dg_sv/sv__{mssv} (tài khoản), siSo */
+async function saveRoster(ma,rows,merge){const db=S.fs,FV=firebase.firestore.FieldValue;const old=merge?await loadDs(ma):[];const map=new Map(old.map(r=>[normId(r.mssv),r]));
+  rows.forEach(r=>{const k=normId(r.mssv);map.set(k,Object.assign({},map.get(k)||{},r,{mssv:k}))});const all=[...map.values()];
+  await loadAcc(all.map(r=>r.mssv));const defHash={};const ops=[];
+  for(const r of all){const k=normId(r.mssv);ops.push(b=>b.set(db.doc("pnl_dg_sv/"+ma+"__"+k),{maLop:ma,mssv:k,hoTen:r.hoTen},{merge:true}));
+    const a=S.acc[k];if(!a){defHash[k]=defHash[k]||await pwHash(k,DEF_PW);const acc={mssv:k,hoTen:r.hoTen,lop:[ma],pw:defHash[k],pwDefault:true,created:FV.serverTimestamp()};if(r.lopNienChe)acc.lopNienChe=r.lopNienChe;S.acc[k]=acc;ops.push(b=>b.set(db.doc("pnl_dg_sv/sv__"+k),acc))}
+    else{const lop=Array.isArray(a.lop)?a.lop.slice():[];const part={hoTen:r.hoTen};if(!lop.includes(ma)){lop.push(ma);part.lop=lop}if(r.lopNienChe&&!a.lopNienChe)part.lopNienChe=r.lopNienChe;Object.assign(a,part);ops.push(b=>b.set(db.doc("pnl_dg_sv/sv__"+k),part,{merge:true}))}}
+  /* sinh viên bị bỏ khỏi danh sách (khi không merge) */
+  if(!merge){const keep=new Set(all.map(r=>normId(r.mssv)));old.forEach(r=>{const k=normId(r.mssv);if(!keep.has(k))ops.push(b=>b.delete(db.doc("pnl_dg_sv/"+ma+"__"+k)))})}
+  ops.push(b=>b.set(db.doc("pnl_dg_ds/"+ma),{rows:all,updated:FV.serverTimestamp()}));ops.push(b=>b.set(db.doc("pnl_dg_lop/"+ma),{siSo:all.length},{merge:true}));
+  for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(f=>f(b));await b.commit()}
+  S.ds[ma]=all;const l=S.lop.find(x=>x.id===ma);if(l)l.siSo=all.length}
+
+/* ============ QUẢN TRỊ: chi tiết lớp ============ */
+async function viewLopDetail(ma,tab){const l=S.lop.find(x=>x.id===ma);if(!l){$("#app").innerHTML=shell("lop",`<div class="page"><div class="empty">Không tìm thấy lớp <b>${esc(ma)}</b>. <a href="#lop">Về danh sách lớp</a></div></div>`);bindOut();return}
+  tab=tab||"sv";const hp=courseOf(l.hocPhan);
+  $("#app").innerHTML=shell("lop",`<div class="page"><div class="empty">Đang tải danh sách lớp…</div></div>`,`<a class="back" href="#lop">${I.back}Quay lại</a><span class="sep">/</span><span class="sub">${esc(tab==="sv"?"Danh sách sinh viên":"Lớp")}: ${esc(lopName(l))}</span>`);bindOut();
+  const rows=await loadDs(ma);await loadAcc(rows.map(r=>r.mssv));
+  const q=strip(S.q);const list=rows.filter(r=>!q||strip(r.mssv+" "+r.hoTen+" "+(r.lopNienChe||"")).includes(q));
+  const sub=[["sv","user","Danh sách sinh viên"],["dd","qr","Điểm danh",1],["bt","task","Bài tập, kiểm tra, thi"],["bd","grade","Bảng điểm"],["hp","hp","Học phần &amp; tài liệu của lớp"],["bt2","news","Bảng tin",1]];
+  const subnav=`<aside class="subnav">${sub.map(([k,ic,t,soon])=>`<a href="#lop/${encodeURIComponent(ma)}/${k}" class="${tab===k?"on":""}">${I[ic]}${t}${soon?'<span class="soon">sắp có</span>':""}</a>`).join("")}</aside>`;
+  const head=`<div class="bar"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 class="t">${esc(l.ten||l.id)}</h1><span class="pill gray">${esc(grpOf(l))}</span><span class="pill ${l.diemKhoa?"gray":""}">${l.diemKhoa?"Điểm đã khóa":"Điểm đang mở"}</span>${l.open?'<span class="pill live">ĐGĐK đang mở</span>':""}</div>
+    <div class="tools"><button type="button" class="btn sm" data-export>${I.down}Xuất danh sách</button><a class="btn sm" href="${DG}#quan-tri">${I.chart}Xuất bảng điểm</a><button type="button" class="btn sm" data-import>${I.up}Nhập Excel</button><button type="button" class="btn sm pri" data-add>${I.plus}Thêm</button></div></div>`;
+  let content="";
+  if(tab==="sv"){content=`${head}
+    <div class="tools" style="align-items:center"><span class="t-sub">Học phần: <b style="color:var(--ink)">${esc(hp?hp.name:l.hocPhanTen||"")}</b> · Mã lớp ĐGĐK: <b style="color:var(--ink)">${esc(l.id)}</b> · Chia sẻ với: <b style="color:var(--ink)">chưa ai</b></span><button type="button" class="btn sm" disabled title="Sắp có (cần tài khoản giảng viên)">Chia sẻ cho giảng viên</button>
+      <label class="search" style="flex:1 1 260px"><span class="sr">Tìm sinh viên</span><input type="search" id="q" value="${esc(S.q)}" placeholder="Tìm theo mã SV, tên, lớp niên chế…"></label></div>
+    ${!rows.length?`<div class="empty">Lớp chưa có sinh viên. Bấm <b>Nhập Excel</b> (file danh sách / bảng điểm APAG) hoặc <b>Thêm</b> từng người.</div>`:`<div class="tbl"><table><thead><tr><th>STT</th><th>Họ và tên <span style="font-weight:500;text-transform:none;letter-spacing:0">· Sĩ số ${rows.length}</span></th><th>Ngày sinh</th><th>Có mặt</th><th>Kiểm tra / thi</th><th>Tài khoản</th><th class="acts">Hành động</th></tr></thead><tbody>
+      ${list.map((r,i)=>{const a=S.acc[normId(r.mssv)];return `<tr><td>${i+1}</td><td><div class="sv"><div class="av" style="background:${avc(r.hoTen)}">${esc(initials(r.hoTen))}</div><div><b>${esc(r.hoTen)}</b><span>ID: ${esc(r.mssv)}${r.lopNienChe?" · "+esc(r.lopNienChe):""}</span></div></div></td><td>${esc(r.ngaySinh||"—")}</td><td><span class="pill gray">—</span></td><td><a href="${DG}#quan-tri" class="pill gray" title="Xem ở Đánh giá định kỳ">xem ĐGĐK</a></td>
+        <td>${!a?'<span class="pill bad">chưa có</span>':a.pwDefault?'<span class="pill warn">MK mặc định</span>':'<span class="pill">đã đổi MK</span>'}</td>
+        <td class="acts"><button type="button" class="ico" data-edit="${esc(r.mssv)}" aria-label="Sửa">${I.edit}</button> <button type="button" class="ico key" data-reset="${esc(r.mssv)}" aria-label="Đặt lại mật khẩu ${DEF_PW}" title="Đặt lại mật khẩu ${DEF_PW}">${I.key}</button> <button type="button" class="ico del" data-del="${esc(r.mssv)}" aria-label="Xóa khỏi lớp" title="Xóa khỏi lớp">${I.del}</button></td></tr>`}).join("")}</tbody></table></div>`}
+    <p class="note">Mỗi sinh viên có tài khoản <b>ID = mã sinh viên</b>, mật khẩu lần đầu <b>${DEF_PW}</b> để vào <a href="./">Lớp học</a>. Cột <b>Có mặt</b> sẽ có số liệu khi mở Điểm danh.</p>`}
+  else if(tab==="bt"||tab==="bd"){content=`${head}<div class="empty"><p style="margin:0 0 10px">${tab==="bt"?"Bài kiểm tra, thi của lớp đang quản lý ở <b>Đánh giá định kỳ</b> (mở/đóng đợt, ma trận đề, bài làm, phúc khảo).":"Bảng điểm quá trình theo mẫu APAG và xuất Excel đang ở <b>Đánh giá định kỳ</b>."}</p><a class="btn pri" href="${DG}#quan-tri">${I.go}Mở Đánh giá định kỳ · lớp ${esc(l.id)}</a></div>`}
+  else if(tab==="hp"){const docs=[];content=`${head}<section><h2 class="sec">Học phần của lớp</h2>${hp?`<div class="grid4"><article class="hp"><div class="cover" style="background:${esc(hp.c||"#1d5677")}">${esc(hp.name)}</div><div class="body"><div class="tags">${["Tóm tắt","Mind map","Câu hỏi","Tình huống","Thi thử","Văn bản"].map(t=>`<span class="tag">${t}</span>`).join("")}</div><div class="act"><a href="${courseHref(hp)}" class="pri" target="_blank" rel="noopener">Mở nội dung</a></div></div></article></div>`:`<div class="empty">Lớp chưa gắn học phần — bấm ··· › Sửa thông tin lớp.</div>`}</section>
+    <section><h2 class="sec">Tài liệu riêng của lớp</h2><div class="empty">Tài liệu gắn theo lớp (đề cương, lịch học, bài đọc) — sắp có. Hiện tài liệu, giáo trình quản lý trong từng học phần trên <a href="${HOME}">trang thư viện</a>.</div></section>`}
+  else{content=`${head}<div class="empty">Mục này sắp có.</div>`}
+  $("#app").innerHTML=shell("lop",`<div class="page"><div class="split">${subnav}<section class="panel">${content}</section></div></div>`,`<a class="back" href="#lop">${I.back}Quay lại</a><span class="sep">/</span><span class="sub">${tab==="sv"?"Danh sách sinh viên":"Lớp"}: ${esc(lopName(l))}</span>`);bindOut();
+  const qi=$("#q");if(qi)qi.oninput=e=>{S.q=e.target.value;viewLopDetail(ma,tab).then(()=>{const i=$("#q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}})};
+  $("[data-add]").onclick=()=>dlgSv(l,null);$("[data-import]").onclick=()=>dlgImport(l);$("[data-export]").onclick=()=>exportCsv(l,rows);
+  $$("[data-edit]").forEach(b=>b.onclick=()=>dlgSv(l,rows.find(r=>r.mssv===b.dataset.edit)));
+  $$("[data-reset]").forEach(b=>b.onclick=async()=>{const r=rows.find(x=>x.mssv===b.dataset.reset);if(!await confirmDlg("Đặt lại mật khẩu cho "+r.hoTen+"?","Mật khẩu đăng nhập của ID "+r.mssv+" sẽ về "+DEF_PW+".","Đặt lại"))return;
+    try{const k=normId(r.mssv);const part={mssv:k,hoTen:r.hoTen,pw:await pwHash(k,DEF_PW),pwDefault:true,lop:firebase.firestore.FieldValue.arrayUnion(ma)};await S.fs.doc("pnl_dg_sv/sv__"+k).set(part,{merge:true});S.acc[k]=Object.assign(S.acc[k]||{},{pw:part.pw,pwDefault:true,lop:[...new Set([...(S.acc[k]?.lop||[]),ma])]});toast("Đã đặt lại mật khẩu "+DEF_PW+" cho "+r.hoTen);render()}catch(x){toast("Chưa làm được: "+errMsg(x))}});
+  $$("[data-del]").forEach(b=>b.onclick=async()=>{const r=rows.find(x=>x.mssv===b.dataset.del);if(!await confirmDlg("Xóa "+r.hoTen+" khỏi lớp "+l.id+"?","Tài khoản vẫn giữ nếu sinh viên còn ở lớp khác.","Xóa khỏi lớp"))return;
+    try{const k=normId(r.mssv);const all=rows.filter(x=>x.mssv!==r.mssv);const db=S.fs,FV=firebase.firestore.FieldValue;const b2=db.batch();b2.delete(db.doc("pnl_dg_sv/"+ma+"__"+k));b2.set(db.doc("pnl_dg_ds/"+ma),{rows:all,updated:FV.serverTimestamp()});b2.set(db.doc("pnl_dg_lop/"+ma),{siSo:all.length},{merge:true});
+      const a=S.acc[k];if(a){const lop=(a.lop||[]).filter(x=>x!==ma);a.lop=lop;b2.set(db.doc("pnl_dg_sv/sv__"+k),{lop},{merge:true})}await b2.commit();S.ds[ma]=all;l.siSo=all.length;toast("Đã xóa "+r.hoTen+" khỏi lớp.");render()}catch(x){toast("Chưa xóa được: "+errMsg(x))}})}
+function dlgSv(l,r){const dlg=$("#dlg");dlg.className="";dlg.innerHTML=`<div class="dh"><h3>${r?"Sửa sinh viên":"Thêm sinh viên vào lớp "+esc(l.id)}</h3><button type="button" class="x" data-x aria-label="Đóng">×</button></div>
+  <form id="f-sv2"><div class="row2"><div class="fld"><label for="s-ma">Mã sinh viên (ID) *</label><input id="s-ma" value="${esc(r?r.mssv:"")}" ${r?"readonly":""} required placeholder="VD: 2405CCLT001"></div><div class="fld"><label for="s-ten">Họ và tên *</label><input id="s-ten" value="${esc(r?r.hoTen:"")}" required></div></div>
+  <div class="row2"><div class="fld"><label for="s-ns">Ngày sinh</label><input id="s-ns" value="${esc(r?r.ngaySinh||"":"")}" placeholder="dd/mm/yyyy"></div><div class="fld"><label for="s-lop">Lớp niên chế</label><input id="s-lop" value="${esc(r?r.lopNienChe||"":"")}" placeholder="VD: K24 CC Liên thông"></div></div>
+  <p class="err" id="s-err"></p><div class="df"><button type="button" class="btn" data-x>Hủy</button><button type="submit" class="btn pri">${r?"Lưu":"Thêm"}</button></div></form>`;
+  dlg.showModal();$$("[data-x]",dlg).forEach(b=>b.onclick=()=>dlg.close());
+  $("#f-sv2").onsubmit=async e=>{e.preventDefault();const mssv=normId($("#s-ma").value),hoTen=$("#s-ten").value.trim();const err=$("#s-err");if(!/^[0-9A-Z]{4,16}$/.test(mssv)){err.textContent="Mã sinh viên gồm 4–16 chữ/số không dấu.";return}
+    const row={mssv,hoTen};const ns=$("#s-ns").value.trim(),lnc=$("#s-lop").value.trim();if(ns)row.ngaySinh=ns;if(lnc)row.lopNienChe=lnc;
+    const btn=$("button[type=submit]",dlg);btn.disabled=true;try{await saveRoster(l.id,[row],true);dlg.close();toast(r?"Đã lưu.":"Đã thêm "+hoTen+".");render()}catch(x){err.textContent="Chưa lưu được: "+errMsg(x)}finally{btn.disabled=false}}}
+function dlgImport(l){const dlg=$("#dlg");dlg.className="wide";dlg.innerHTML=`<div class="dh"><h3>Nhập danh sách sinh viên · ${esc(l.id)}</h3><button type="button" class="x" data-x aria-label="Đóng">×</button></div>
+  <form id="f-imp"><div class="fld"><div class="drop" id="drop">Kéo thả file Excel/CSV vào đây hoặc <label style="color:var(--navy);font-weight:600;cursor:pointer">chọn file<input type="file" id="i-file" accept=".xlsx,.xls,.csv,.txt" class="sr"></label><br><span class="hint">Nhận file danh sách lớp hoặc bảng điểm tải từ APAG (cột Mã SV, Họ tên, Ngày sinh, Lớp).</span></div><div id="prev"></div></div>
+  <div class="fld"><label><input type="radio" name="mode" value="merge" checked> Bổ sung vào danh sách hiện có (${(S.ds[l.id]||[]).length} SV)</label><label><input type="radio" name="mode" value="replace"> Thay toàn bộ danh sách bằng file này</label></div>
+  <p class="err" id="i-err"></p><div class="df"><button type="button" class="btn" data-x>Hủy</button><button type="submit" class="btn pri" disabled>Nhập</button></div></form>`;
+  dlg.showModal();$$("[data-x]",dlg).forEach(b=>b.onclick=()=>dlg.close());let rows=[];
+  const onFile=async f=>{if(!f)return;try{rows=await readRoster(f);$("#prev").innerHTML=previewRows(rows);$("#i-err").textContent="";$("button[type=submit]",dlg).disabled=false}catch(x){$("#i-err").textContent=x.message||String(x)}};
+  $("#i-file").onchange=e=>onFile(e.target.files[0]);const dz=$("#drop");dz.ondragover=e=>{e.preventDefault();dz.classList.add("on")};dz.ondragleave=()=>dz.classList.remove("on");dz.ondrop=e=>{e.preventDefault();dz.classList.remove("on");onFile(e.dataTransfer.files[0])};
+  $("#f-imp").onsubmit=async e=>{e.preventDefault();const merge=$("input[name=mode]:checked",dlg).value==="merge";const btn=$("button[type=submit]",dlg);btn.disabled=true;btn.textContent="Đang ghi…";
+    try{await saveRoster(l.id,rows,merge);dlg.close();toast("Đã nhập "+rows.length+" sinh viên vào lớp "+l.id+".");render()}catch(x){$("#i-err").textContent="Chưa nhập được: "+errMsg(x);btn.disabled=false;btn.textContent="Nhập"}}}
+function exportCsv(l,rows){const lines=[["STT","Mã SV","Họ và tên","Ngày sinh","Lớp niên chế","Mã lớp","Học phần"]].concat(rows.map((r,i)=>[i+1,r.mssv,r.hoTen,r.ngaySinh||"",r.lopNienChe||"",l.id,l.hocPhanTen||""]));
+  const csv="﻿"+lines.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(";")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="danh-sach-"+l.id+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function confirmDlg(title,text,okLabel){return new Promise(res=>{const dlg=$("#dlg");dlg.className="";dlg.innerHTML=`<div class="dh"><h3>${esc(title)}</h3><button type="button" class="x" data-x aria-label="Đóng">×</button></div><form method="dialog"><p style="margin:0;color:var(--muted)">${esc(text)}</p><div class="df"><button type="button" class="btn" data-x>Hủy</button><button type="button" class="btn pri" data-ok style="background:var(--red);border-color:var(--red)">${esc(okLabel||"Đồng ý")}</button></div></form>`;
+  const done=v=>{dlg.close();res(v)};$$("[data-x]",dlg).forEach(b=>b.onclick=()=>done(false));$("[data-ok]",dlg).onclick=()=>done(true);dlg.oncancel=()=>res(false);dlg.showModal()})}
+
+/* ============ QUẢN TRỊ: học phần ============ */
+function viewHocPhan(){const q=strip(S.q);const byHp={};S.lop.forEach(l=>{if(l.luuTru)return;(byHp[l.hocPhan]=byHp[l.hocPhan]||[]).push(l)});
+  const pub=S.courses.filter(c=>c.src),draft=S.courses.filter(c=>!c.src);const f=a=>a.filter(c=>!q||strip(c.name).includes(q));
+  const card=c=>{const ls=byHp[c.id]||[];const sv=ls.reduce((a,l)=>a+(l.siSo||0),0);const h=S.hp[c.id]||{};const ch=(h.chapters||[]).length;
+    return `<article class="hp"><span class="rib${c.src?"":" draft"}">${c.src?"XUẤT BẢN":"NHÁP"}</span><div class="cover" style="background:${esc(c.c||"#1d5677")}">${esc(c.name)}</div><div class="body">
+      <div class="meta"><span><strong>${sv}</strong> SV · ${ls.length} lớp</span><span>${ch?ch+" chương":(c.src?"web ôn tập":"chưa có đề")}</span></div>
+      <div class="tags">${c.src?["Thi thử","Tóm tắt","Mind map","Tài liệu"].map(t=>`<span class="tag">${t}</span>`).join(""):'<span class="tag off">Thi thử</span><span class="tag off">Tóm tắt</span>'}</div>
+      <div class="act">${c.src?`<a href="#lop" data-filter="${esc(c.name)}">${ls.length?"Lớp đang dùng":"Gắn vào lớp"}</a><a href="${courseHref(c)}" class="pri" target="_blank" rel="noopener">Mở nội dung</a>`:`<a href="${HOME}#home" class="pri">Biên soạn</a>`}</div></div></article>`};
+  const body=`<div class="page"><div class="bar"><div><h1 class="t">Học phần</h1><span class="t-sub">Mỗi học phần = web ôn tập + tài liệu + ngân hàng câu hỏi; gắn vào lớp để sinh viên thấy</span></div>
+    <div class="tools"><a class="btn pri" href="${HOME}#home">${I.plus}Thêm học phần</a><label class="search" style="flex:0 1 280px"><span class="sr">Tìm học phần</span><input type="search" id="q" value="${esc(S.q)}" placeholder="Tìm học phần…"></label></div></div>
+    <section><h2 class="grp" style="cursor:default">${I.chev}Đã xuất bản <span class="n">(${pub.length} học phần)</span></h2><div class="grid4">${f(pub).map(card).join("")||'<div class="empty">Không có học phần khớp.</div>'}</div></section>
+    <section><h2 class="grp" style="cursor:default">${I.chev}Đang biên soạn <span class="n">(${draft.length} học phần)</span></h2><div class="grid4">${f(draft).map(card).join("")||'<div class="empty">Không có.</div>'}</div></section>
+    <p class="note">Thêm, sửa học phần và chương thực hiện trên trang thư viện (đăng nhập Google) — nút <b>Thêm học phần</b> đưa về đó.</p></div>`;
+  $("#app").innerHTML=shell("hocphan",body);bindOut();$("#q").oninput=e=>{S.q=e.target.value;viewHocPhan();const i=$("#q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
+  $$("[data-filter]").forEach(a=>a.onclick=()=>{S.q=a.dataset.filter})}
+
+/* ============ QUẢN TRỊ: sinh viên & tài khoản (tìm toàn hệ) ============ */
+async function viewSinhVien(){$("#app").innerHTML=shell("sinhvien",`<div class="page"><div class="empty">Đang tải…</div></div>`);bindOut();
+  const act=S.lop.filter(l=>!l.luuTru);for(const l of act)await loadDs(l.id);
+  const all=[];act.forEach(l=>(S.ds[l.id]||[]).forEach(r=>all.push(Object.assign({lop:l},r))));
+  const q=strip(S.q);const list=q?all.filter(r=>strip(r.mssv+" "+r.hoTen+" "+r.lop.id+" "+(r.lop.ten||"")+" "+(r.lopNienChe||"")).includes(q)):all.slice(0,60);
+  await loadAcc(list.map(r=>r.mssv));
+  const body=`<div class="page"><div class="bar"><div><h1 class="t">Sinh viên &amp; tài khoản</h1><span class="t-sub">${all.length} lượt sinh viên trong ${act.length} lớp đang mở · ${new Set(all.map(r=>normId(r.mssv))).size} tài khoản</span></div>
+    <label class="search" style="flex:0 1 420px"><span class="sr">Tìm</span><input type="search" id="q" value="${esc(S.q)}" placeholder="Tìm theo mã SV, tên, lớp…"></label></div>
+    <div class="scard" style="padding:0"><div class="tbl"><table><thead><tr><th>Họ và tên</th><th>Lớp</th><th>Học phần</th><th>Tài khoản</th><th class="acts">Mở</th></tr></thead><tbody>
+    ${list.map(r=>{const a=S.acc[normId(r.mssv)];return `<tr><td><div class="sv"><div class="av" style="background:${avc(r.hoTen)}">${esc(initials(r.hoTen))}</div><div><b>${esc(r.hoTen)}</b><span>ID: ${esc(r.mssv)}${r.lopNienChe?" · "+esc(r.lopNienChe):""}</span></div></div></td><td>${esc(lopName(r.lop))}</td><td>${esc(r.lop.hocPhanTen||"")}</td><td>${!a?'<span class="pill bad">chưa có</span>':a.pwDefault?'<span class="pill warn">MK mặc định</span>':'<span class="pill">đã đổi MK</span>'}</td><td class="acts"><a class="ico" href="#lop/${encodeURIComponent(r.lop.id)}" aria-label="Mở lớp">${I.go}</a></td></tr>`}).join("")||`<tr><td colspan="5" class="empty" style="border:0">${all.length?"Không có kết quả.":"Chưa có sinh viên. Thêm lớp và nhập danh sách trước."}</td></tr>`}
+    </tbody></table></div></div>${!q&&all.length>60?'<p class="note">Đang hiện 60 dòng đầu — gõ vào ô tìm để lọc.</p>':""}
+    <p class="note">Giảng viên và phân quyền (ID = tên viết liền, mật khẩu do quản trị cấp) — sắp có; hiện chỉ tài khoản quản trị Google quản lý toàn hệ.</p></div>`;
+  $("#app").innerHTML=shell("sinhvien",body);bindOut();$("#q").oninput=e=>{S.q=e.target.value;clearTimeout(viewSinhVien._t);viewSinhVien._t=setTimeout(()=>viewSinhVien().then(()=>{const i=$("#q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}),250)}}
+
+/* ============ SINH VIÊN: trang chủ ============ */
+async function viewSvHome(){const sv=S.sv,preview=!sv&&S.admin;
+  const me=sv||{mssv:"XEM-THU",hoTen:ADMIN_NAME,lop:S.lop.filter(l=>!l.luuTru).slice(0,2).map(l=>l.id)};
+  const lops=[];for(const ma of me.lop||[]){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists)l=Object.assign({id:ma},d.data())}catch(e){}}if(l)lops.push(l)}
+  const items=[["#sv","home","Trang chủ",true],["#sv/hoctap","hp","Học tập"],[DG,"task","Kiểm tra"],["#sv","exam","Thi",false,1],["#sv","qr","Điểm danh",false,1],["#sv","grade","Kết quả học tập",false,1]];
+  const first=(me.hoTen||"").trim().split(/\s+/).pop();const mo=lops.filter(l=>l.open);
+  const body=`<main><header class="top"><div class="crumb"><span class="sub">Chào ${esc(first)}${mo.length?", có "+mo.length+" bài đánh giá định kỳ đang mở":", hôm nay chưa có buổi học đang điểm danh"}</span></div>${preview?`<div class="who"><span class="pill warn">Đang xem như sinh viên</span><a class="out" href="#home" style="text-decoration:none">Về quản trị</a></div>`:who(me.hoTen,me.mssv+" · Sinh viên")}</header>
+  <div class="page" style="max-width:1180px">
+    ${mo.length?mo.map(l=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">ĐANG MỞ</span><div><b style="display:block;font-size:15px">Đánh giá định kỳ — ${esc(l.hocPhanTen||l.ten||l.id)}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(l.id)}${l.closeAt?" · đóng "+fmtD(l.closeAt):""} · ${l.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}">Vào làm bài</a></div>`).join(""):
+      `<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:14px"><span class="pill gray">ĐIỂM DANH</span><div><b style="display:block;font-size:15px">Chưa có buổi học đang điểm danh</b><span style="font-size:13px;color:var(--muted)">Khi giảng viên mở điểm danh, nhập mã buổi hoặc quét QR tại đây.</span></div></div><form style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" onsubmit="return false"><input placeholder="Mã buổi (6 số)" inputmode="numeric" disabled style="width:150px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;letter-spacing:.2em;font-weight:700"><button type="button" class="btn pri" disabled>Điểm danh</button></form></div>`}
+    <section><h2 class="sec">Bốn mục của bạn</h2><div class="grid4">
+      <a href="#sv/hoctap" class="stile"><span class="ic">${I.hp}</span><b>Học tập</b><span>${lops.length} lớp học phần · ôn tập, tóm tắt, mind map, tài liệu</span></a>
+      <a href="${DG}" class="stile"><span class="ic">${I.task}</span><b>Kiểm tra</b><span>${mo.length?mo.length+" bài đang mở":"Chưa có bài kiểm tra mở"} · nhập mã lớp + mã SV</span></a>
+      <a href="#sv" class="stile soon"><span class="ic">${I.exam}</span><b>Thi</b><span>Chưa có kỳ thi mở · làm đề thi thử trong mỗi học phần</span></a>
+      <a href="#sv" class="stile soon"><span class="ic">${I.qr}</span><b>Điểm danh</b><span>Sắp có · tự điểm danh bằng mã buổi / QR</span></a>
+    </div></section>
+    <div class="grid2"><section class="scard"><h2 class="sec">Lớp học phần của bạn</h2>${lops.length?lops.map(l=>{const c=courseOf(l.hocPhan);return `<div class="row"><div><b>${esc(l.hocPhanTen||c?.name||l.id)}</b><br><span style="font-size:12px;color:var(--muted)">${esc(l.id)}${l.ten?" · "+esc(l.ten):""} · ${esc(grpOf(l))}</span></div><div style="text-align:right">${c?`<a class="btn sm" href="${courseHref(c)}">Vào học</a>`:""}<br><span style="font-size:12px;color:var(--muted)">${l.open?"ĐGĐK đang mở":"chưa thi"}</span></div></div>`}).join(""):'<p class="note">Bạn chưa được xếp vào lớp nào. Hãy báo giảng viên.</p>'}</section>
+    <section class="scard"><h2 class="sec">Việc sắp tới</h2>${mo.length?mo.map(l=>`<div class="row"><span>Đánh giá định kỳ ${esc(l.hocPhanTen||l.id)} (${l.thoiGian||40} phút)</span><span class="pill">${l.closeAt?"đến "+fmtD(l.closeAt):"đang mở"}</span></div>`).join(""):'<div class="row"><span>Chưa có việc nào được giao.</span><span class="pill gray">—</span></div>'}<div class="row"><span>Ôn tập: làm đề thi thử trong học phần của lớp</span><span class="pill gray">tự học</span></div></section></div>
+    <p class="note">Mật khẩu lần đầu là ${DEF_PW}. Chức năng tự đổi mật khẩu, điểm danh và xem điểm sẽ mở ở đợt sau.</p></div></main>`;
+  $("#app").innerHTML=rail(items,true)+body;bindOut()}
+async function viewSvHocTap(){const me=S.sv||{lop:S.lop.filter(l=>!l.luuTru).slice(0,2).map(l=>l.id),hoTen:ADMIN_NAME,mssv:"XEM-THU"};const lops=[];for(const ma of me.lop||[]){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists)l=Object.assign({id:ma},d.data())}catch(e){}}if(l)lops.push(l)}
+  const items=[["#sv","home","Trang chủ"],["#sv/hoctap","hp","Học tập",true],[DG,"task","Kiểm tra"],["#sv","exam","Thi",false,1],["#sv","qr","Điểm danh",false,1],["#sv","grade","Kết quả học tập",false,1]];
+  const TASKS=[["Tóm tắt lý thuyết","map"],["Mind map","map"],["Câu hỏi lý thuyết","de"],["Câu hỏi tình huống","task"],["Thi thử","exam"],["Văn bản, án lệ","bank"]];
+  const body=`<main><header class="top"><div class="crumb"><a class="back" href="#sv">${I.back}Trang chủ</a><span class="sep">/</span><span class="sub">Học tập</span></div>${S.sv?who(me.hoTen,me.mssv+" · Sinh viên"):`<div class="who"><span class="pill warn">Đang xem như sinh viên</span><a class="out" href="#home">Về quản trị</a></div>`}</header>
+  <div class="page"><h1 class="t">Học tập</h1>${lops.length?`<div class="grid4">${lops.map(l=>{const c=courseOf(l.hocPhan)||{name:l.hocPhanTen||l.id,c:"#1d5677"};return `<article class="hp"><div class="cover" style="background:${esc(c.c||"#1d5677")}">${esc(c.name)}</div><div class="body"><div class="meta"><span>Lớp ${esc(l.id)}</span><span>${esc(grpOf(l))}</span></div><div class="tags">${TASKS.map(t=>`<span class="tag">${t[0]}</span>`).join("")}</div><div class="act"><a href="${courseHref(c)}" class="pri">Vào học</a></div></div></article>`}).join("")}</div>`:'<div class="empty">Bạn chưa được xếp vào lớp nào.</div>'}
+  <p class="note">Vào học mở web ôn tập của học phần trên trang thư viện; tài khoản lớp đã được cấp quyền, không cần nhập mã lớp.</p></div></main>`;
+  $("#app").innerHTML=rail(items,true)+body;bindOut()}
+
+/* ============ điều hướng ============ */
+function render(){closeMenu();const h=decodeURIComponent((location.hash||"").slice(1));const parts=h.split("/");
+  if(S.admin){if(!S.loaded)return;if(parts[0]==="sv")return parts[1]==="hoctap"?viewSvHocTap():viewSvHome();
+    if(parts[0]==="lop"&&parts[1]&&parts[1]!=="luu-tru")return viewLopDetail(parts[1],parts[2]);
+    if(parts[0]==="lop")return viewLop();if(parts[0]==="hocphan")return viewHocPhan();if(parts[0]==="sinhvien")return viewSinhVien();return viewHome()}
+  if(S.sv){return parts[1]==="hoctap"&&parts[0]==="sv"?viewSvHocTap():viewSvHome()}
+  viewLogin()}
+window.addEventListener("hashchange",()=>{if(!location.hash.includes("#lop/")||!S.q)S.q="";render()});
+
+/* ============ khởi động ============ */
+(async function init(){$("#app").innerHTML=`<div class="login"><div class="box" style="grid-template-columns:1fr;max-width:420px"><div class="form" style="text-align:center"><p class="note">Đang kết nối…</p></div></div></div>`;
+  try{firebase.initializeApp(FB_CFG);S.fs=firebase.firestore();S.auth=firebase.auth()}catch(e){$("#app").innerHTML=`<div class="login"><div class="box" style="grid-template-columns:1fr;max-width:480px"><div class="form"><h2>Không kết nối được máy chủ dữ liệu</h2><p class="note">${esc(e.message||e)}</p><a class="btn" href="${HOME}">Về trang chủ</a></div></div></div>`;return}
+  S.sv=store.get(SV_KEY,null);await loadCourses();
+  let first=true;
+  S.auth.onAuthStateChanged(async u=>{S.user=u;const adm=fbIsAdmin(u);
+    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();return}
+    if(!adm&&S.admin){S.admin=false;S.loaded=false}
+    S.admin=adm;if(first){first=false;if(!adm&&!u){try{await S.auth.signInAnonymously()}catch(e){}}}
+    render()})})();
+</script>
+</body>
+</html>

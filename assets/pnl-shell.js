@@ -128,7 +128,8 @@ function shWho(){const w=document.getElementById("who"),act=document.getElementB
   act.querySelectorAll("[data-out]").forEach(b=>b.onclick=()=>{if(adm)return shLogout();store.del(KEY);session=null;$("#code-in").value="";shWho();route("home");shToast("Đã đăng xuất mã lớp trên máy này.")})}
 function shLoginDlg(){const d=shDlg("Đăng nhập",`<p class="note2">Chọn cách đăng nhập. Máy này sẽ nhớ đăng nhập cho tới khi bấm Đăng xuất.</p>
     <div class="row2"><button type="button" class="b2 pri" data-code style="justify-content:center;padding:14px">🎓 Sinh viên: nhập mã lớp</button><button type="button" class="b2" data-google style="justify-content:center;padding:14px">🔑 Giảng viên: đăng nhập Google</button></div>
-    <p class="muted">Mã lớp do giảng viên cấp, mở các học phần của lớp. Đăng nhập Google chỉ dành cho tài khoản quản trị.</p>`,`<button type="button" class="b2" data-x>Đóng</button>`);
+    <p class="muted">Mã lớp do giảng viên cấp, mở các học phần của lớp. Đăng nhập Google chỉ dành cho tài khoản quản trị.</p>
+    <p class="muted">Sinh viên có tài khoản lớp (ID = mã sinh viên): <a href="lop/">vào Lớp học</a>.</p>`,`<button type="button" class="b2" data-x>Đóng</button>`);
   d.querySelector("[data-code]").onclick=()=>{d.close();pending=null;showGate()};
   d.querySelector("[data-google]").onclick=()=>{d.close();shLogin()}}
 async function shLogin(){if(!fbAuth){shToast("Chưa kết nối máy chủ, tải lại trang rồi thử lại.");return}
@@ -147,7 +148,7 @@ function shNav(){const nav=document.getElementById("catNav");if(!nav||typeof COU
   if(adm){h+=`<button type="button" class="cat add" data-newcourse><span class="nm">＋ Thêm học phần</span></button>`}
   nav.innerHTML=h;
   const adminNav=document.getElementById("adminNav");
-  if(adminNav){adminNav.hidden=!adm;if(adm)adminNav.querySelector(".catnav").innerHTML='<div class="nav-h">Quản trị</div>'+[["qt-ma","🔑","Mã lớp"],["qt-dg","📝","Đánh giá định kỳ"],["gop-y","💬","Góp ý, báo lỗi"],["qt-sl","💾","Sao lưu dữ liệu"]].map(([k,ic,t])=>`<button type="button" class="cat${cur===k?" on":""}" data-go="${k}"><span style="width:18px;text-align:center">${ic}</span><span class="nm">${t}</span></button>`).join("")}
+  if(adminNav){adminNav.hidden=!adm;if(adm)adminNav.querySelector(".catnav").innerHTML='<div class="nav-h">Quản trị</div>'+'<a class="cat" href="lop/" style="text-decoration:none"><span style="width:18px;text-align:center">🏫</span><span class="nm">Quản lý lớp, sinh viên</span></a>'+[["qt-ma","🔑","Mã lớp"],["qt-dg","📝","Đánh giá định kỳ"],["gop-y","💬","Góp ý, báo lỗi"],["qt-sl","💾","Sao lưu dữ liệu"]].map(([k,ic,t])=>`<button type="button" class="cat${cur===k?" on":""}" data-go="${k}"><span style="width:18px;text-align:center">${ic}</span><span class="nm">${t}</span></button>`).join("")}
   shBindNav();
   shSortable([nav],".cat[data-go]",()=>shSaveCourseOrder([...nav.querySelectorAll(".cat[data-go]")].map(b=>b.dataset.go)),{axis:"y"})}
 function shSaveCourseOrder(ids){const rest=COURSES.map(c=>c.id).filter(id=>!ids.includes(id));ids=ids.concat(rest);
