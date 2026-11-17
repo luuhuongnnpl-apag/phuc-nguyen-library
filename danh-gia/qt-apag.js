@@ -31,6 +31,10 @@ const ICON={
   file:P+'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 14l2 2 4-4"/></svg>'
 };
 const CSS=`
+body.qta-embed .qta-top,body.qta-embed .qta-side{display:none!important}
+body.qta-embed .qta{grid-template-columns:1fr;grid-template-rows:1fr;min-height:0}
+body.qta-embed .qta-main{padding-bottom:16px}
+body.qta-embed .qta-bar{top:0}
 body.qta-on{background:var(--qa-bg)!important}
 body.qta-on>header,body.qta-on>footer{display:none!important}
 body.qta-on #app{max-width:none!important;margin:0!important;padding:0!important}
@@ -138,6 +142,11 @@ body.qta-on{--qa-bg:#f4f6fa}
   .qta-tw{max-height:none}
 }
 `;
+const EMBED=/(^|[?&])embed=1/.test(location.search);
+function embedPing(){if(!EMBED||!window.parent||window.parent===window)return;const h=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight);try{window.parent.postMessage({pnlEmbed:1,h,hash:location.hash},"*")}catch(e){}}
+if(EMBED){document.addEventListener("DOMContentLoaded",()=>{document.body.classList.add("qta-embed");const st=document.createElement("style");st.textContent="body.qta-embed>header,body.qta-embed>footer{display:none!important}body.qta-embed{background:#fff}body.qta-embed>main{padding-top:8px}";document.head.appendChild(st);embedPing();new ResizeObserver(()=>embedPing()).observe(document.body);new MutationObserver(()=>embedPing()).observe(document.body,{childList:true,subtree:true});window.addEventListener("hashchange",embedPing)});
+  /* giữ ?embed=1 khi trang tự chuyển sang trang Luật Dân sự (đề 12+1) hoặc ngược lại */
+  document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(!a)return;const h=a.getAttribute("href");if(/^(\.\/)?(index|tu-luan-luat-dan-su)\.html#/.test(h)){e.preventDefault();location.href=h.replace(".html#",".html?embed=1#")}})}
 function ensureCss(){if(document.getElementById("qta-css"))return;const s=document.createElement("style");s.id="qta-css";s.textContent=CSS;document.head.appendChild(s);
   if(!document.getElementById("qta-modal")){const m=document.createElement("div");m.id="qta-modal";m.hidden=true;m.className="qta";m.style.display="";document.body.appendChild(m)}}
 

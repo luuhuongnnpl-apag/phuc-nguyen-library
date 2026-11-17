@@ -663,7 +663,7 @@ async function loadClass(ma){
   const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists)return null;
   const l={id:ma,...ls.data()};
   const deCu=l.hocPhan==="luat-dan-su-tu-luan"&&!!AD.cuReq;
-  if(l.hocPhan==="luat-dan-su-tu-luan"&&!deCu){location.href="tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma);return "redirect"}
+  if(l.hocPhan==="luat-dan-su-tu-luan"&&!deCu){location.href="tu-luan-luat-dan-su.html"+(/embed=1/.test(location.search)?"?embed=1":"")+"#quan-tri/"+encodeURIComponent(ma);return "redirect"}
   const [d1,d2,d3]=await Promise.all([db.doc("pnl_dg_ds/"+ma).get(),db.collection("pnl_dg_bai").where("maLop","==",ma).get(),db.collection("pnl_dg_cham").where("maLop","==",ma).get()]);
   let ds=d1.exists?(d1.data().rows||[]):[];const bai={};d2.docs.forEach(d=>bai[d.data().mssv]={id:d.id,...d.data()});const cham={};d3.docs.forEach(d=>cham[d.data().mssv]={id:d.id,...d.data()});
   if(deCu)ds=ds.filter(s=>laDeCu(bai[s.mssv]));
