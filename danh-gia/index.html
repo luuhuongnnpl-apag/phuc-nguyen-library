@@ -636,7 +636,7 @@ function adminLogin(){
 }
 /* ==== QUẢN TRỊ – giao diện kiểu APAG (qt-apag.js, 08/11/2026) ==== */
 function sideItems(ma,view){
-  const it=[{label:"Trang chủ thư viện",icon:"home",href:"../index.html"},{grp:"Quản lý lớp học"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
+  const it=[{grp:"Không gian quản trị"},{label:"Trang chủ quản trị",icon:"home",href:"../lop/#home"},{label:"Lớp",icon:"users",href:"../lop/#lop"},{label:"Học phần",icon:"book",href:"../lop/#hocphan"},{label:"Mã lớp ôn tập",icon:"lock",href:"../lop/#malop"},{label:"Sinh viên & tài khoản",icon:"user",href:"../lop/#sinhvien"},{grp:"Đánh giá định kỳ"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
     {id:"new",label:"Tạo lớp mới",icon:"plus",href:"#quan-tri",onClick:()=>classForm()}];
   if(ma&&AD.cu)it.push({grp:"Lớp "+ma},{label:"Bài đề cũ 30+10+1",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma)+"/de-cu",on:true,sub:true},{label:"Về lớp (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma),sub:true});
   else if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},

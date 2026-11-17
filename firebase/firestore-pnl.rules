@@ -1,5 +1,5 @@
     // ===== PNL - Phúc Nguyên Library (viết lại 11/11/2026 — khớp mã đang chạy, bỏ toàn bộ quy tắc PNL cũ) =====
-    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026 (bản cũ: firestore-pnl-cu-0511.rules).
+    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026 (CẦN XUẤT BẢN LẠI) (bản cũ: firestore-pnl-cu-0511.rules).
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
 
 
@@ -90,5 +90,38 @@
         && (request.resource.data.status == 'dang-lam' || request.resource.data.submittedAt == request.time)
         && request.resource.data.get('essay', '').size() <= 20000
         && request.time <= pnlLop(resource.data.maLop).get('closeAt', request.time) + duration.value(15, 'm'));
+    }
+
+    // --- Lớp học / tài khoản sinh viên (17/11/2026, trang lop/) ---
+    // Tài khoản: chỉ quản trị đọc/ghi; sinh viên đã đăng nhập (có phiên) đọc được tài khoản của mình
+    // và chỉ đổi được mật khẩu của mình (pw, pwDefault, doiLuc).
+    function pnlPhien() {
+      return get(/databases/$(database)/documents/pnl_phien/$(request.auth.uid)).data;
+    }
+    function pnlLaChinhMinh(mssv) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/pnl_phien/$(request.auth.uid))
+        && pnlPhien().mssv == mssv
+        && pnlPhien().h == resource.data.pw;
+    }
+    match /pnl_tk/{mssv} {
+      allow get: if isAdmin() || pnlLaChinhMinh(mssv);
+      allow list, create, delete: if isAdmin();
+      allow update: if isAdmin() || (pnlLaChinhMinh(mssv)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pw', 'pwDefault', 'doiLuc'])
+        && request.resource.data.pw is string && request.resource.data.pw.size() == 64
+        && request.resource.data.pwDefault == false);
+    }
+    // Phiên đăng nhập sinh viên: mỗi người một tài liệu theo uid; chỉ ghi được khi băm mật khẩu khớp tài khoản
+    // (máy chủ đối chiếu, trình duyệt không bao giờ đọc được băm của người khác).
+    match /pnl_phien/{uid} {
+      allow get, delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['mssv', 'h', 'at'])
+        && request.resource.data.mssv is string && request.resource.data.h is string
+        && request.resource.data.at == request.time
+        && exists(/databases/$(database)/documents/pnl_tk/$(request.resource.data.mssv))
+        && get(/databases/$(database)/documents/pnl_tk/$(request.resource.data.mssv)).data.pw == request.resource.data.h;
     }
     // Hết khối PNL

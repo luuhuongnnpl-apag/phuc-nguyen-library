@@ -34,7 +34,7 @@ const CSS=`
 body.qta-on{background:var(--qa-bg)!important}
 body.qta-on>header,body.qta-on>footer{display:none!important}
 body.qta-on #app{max-width:none!important;margin:0!important;padding:0!important}
-.qta{--qa-bg:#f4f6fa;--qa-paper:#fff;--qa-ink:#1f2937;--qa-muted:#6b7280;--qa-line:#e5e7eb;--qa-head:#f8fafc;--qa-blue:#1677ff;--qa-blue-soft:#e6f0ff;--qa-navy:#1d5677;
+.qta{--qa-bg:#f4f6fa;--qa-paper:#fff;--qa-ink:#1f2937;--qa-muted:#6b7280;--qa-line:#e5e7eb;--qa-head:#f8fafc;--qa-blue:#1d5677;--qa-blue-soft:#eaf1f6;--qa-navy:#1d5677;
   --qa-green:#28a745;--qa-green2:#1e6f3a;--qa-red:#f05252;--qa-amber:#b7791f;--qa-amber-soft:#fff6e0;--qa-ok-soft:#e7f6ec;--qa-bad-soft:#fdecec;
   font:14px/1.5 "Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--qa-ink);background:var(--qa-bg);min-height:100vh;display:grid;grid-template-columns:232px 1fr;grid-template-rows:56px 1fr}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .qta{--qa-bg:#0f1520;--qa-paper:#161e2c;--qa-ink:#e5e9f0;--qa-muted:#9aa6b8;--qa-line:#2a3548;--qa-head:#1b2536;--qa-blue:#5b9dff;--qa-blue-soft:#1b2c48;--qa-ok-soft:#163323;--qa-bad-soft:#3a1d1d;--qa-amber-soft:#33290f;--qa-amber:#e8c06a}}
@@ -150,7 +150,7 @@ function mount(o){
   const crumbs=(o.crumbs||[]).map((c,i,a)=>i===a.length-1?`<b>${esc(c.t)}</b>`:(c.href?`<a href="${esc(c.href)}">${esc(c.t)}</a>`:esc(c.t))).join("<i>/</i>");
   const acts=(o.actions||[]).filter(Boolean).map(a=>`<button type="button" class="qb ${a.kind||"blue"}" data-qact="${esc(a.id)}" ${a.disabled?"disabled":""} title="${esc(a.title||"")}">${ICON[a.icon]||""}${esc(a.label)}</button>`).join("");
   app.innerHTML=`<div class="qta" id="qta"><header class="qta-top"><button class="qta-burger" type="button" aria-label="Menu" id="qta-burger">${ICON.menu}</button>
-      <a class="qta-brand" href="${esc(o.homeHref||"../index.html")}"><img src="${esc(o.logo||"../assets/logo.png")}" alt=""><span><b>Phúc Nguyên</b><small>Quản trị đánh giá định kỳ</small></span></a>
+      <a class="qta-brand" href="${esc(o.homeHref||"../lop/#home")}"><img src="${esc(o.logo||"../assets/logo.png")}" alt=""><span><b>Phúc Nguyên</b><small>Không gian quản trị · Đánh giá định kỳ</small></span></a>
       <div class="qta-user"><span class="av">${ICON.user}</span><span class="em">${esc(o.user||"")}</span>${o.onLogout?`<button type="button" id="qta-out">${ICON.out}<span>Đăng xuất</span></button>`:""}</div></header>
     <nav class="qta-side" aria-label="Menu quản trị">${side}</nav>
     <main class="qta-main"><div class="qta-bar"><div class="qta-crumb">${crumbs}</div><div class="qta-acts">${acts}</div></div><div class="qta-body" id="qta-body">${o.body||""}</div></main></div>`;

@@ -67,10 +67,15 @@ Trang chủ dựng lại theo bố cục Phúc Nguyên Digital (PND): thanh trê
 
 Firestore: `pnl_hp`, `pnl_hp_ch` (đọc khi `pub == true`), `pnl_docs`, `pnl_folders`, `pnl_links` (đọc công khai), `pnl_meta/drive` (thư mục Drive); ghi: chỉ quản trị. Quy tắc: `firebase/firestore-pnl.rules`.
 
-## Lớp học — Không gian quản trị theo khung Azota (16/11/2026)
+## Không gian quản trị thống nhất — `lop/` (16–17/11/2026, khung Azota)
 
-Trang `lop/index.html` (một file): màn đăng nhập chung (sinh viên ID + mật khẩu, giảng viên/quản trị Google) → trang chủ quản trị (ô chức năng theo nhóm), Danh sách lớp (thẻ lớp theo năm học), Học phần (thẻ), Chi tiết lớp (danh sách sinh viên: nhập Excel APAG, thêm/sửa/xóa, đặt lại mật khẩu, xuất CSV), Sinh viên & tài khoản, Trang chủ sinh viên (Học tập, Kiểm tra, Thi, Điểm danh).
-- Dữ liệu dùng chung với Đánh giá định kỳ: `pnl_dg_lop/{mã}` (+ `nhom`, `luuTru`, `diemKhoa`, `ghiChu`), `pnl_dg_ds/{mã}`, `pnl_dg_sv/{mã}__{mssv}`.
-- Tài khoản sinh viên: `pnl_dg_sv/sv__{mssv}` = {hoTen, lop:[mã…], pw (băm SHA-256), pwDefault}; mật khẩu lần đầu `123456`; chỉ quản trị ghi. Sinh viên đăng nhập xong được phiên mã lớp của trang chủ để mở học phần của các lớp mình.
+Một nơi cho mọi việc quản trị: `lop/index.html` + `lop/app.js`. Vào từ nút **Quản trị** trên thanh đầu trang chủ (khi đã đăng nhập Google) hoặc mục Quản trị ở cột trái.
+- Thanh trái: Trang chủ quản trị · Lớp · Học phần · Mã lớp ôn tập · Đề thi, đánh giá định kỳ · Sinh viên & tài khoản · Góp ý. Trang quản trị Đánh giá định kỳ (`danh-gia/#quan-tri`) dùng cùng màu, menu trái có nhóm "Không gian quản trị" dẫn về các mục trên; chi tiết lớp mở thẳng `danh-gia/#quan-tri/<mã>`.
+- **Đăng nhập chung** ở `lop/`: sinh viên ID = mã SV + mật khẩu; giảng viên/quản trị Google.
+- **Lớp**: thẻ lớp theo năm học; tạo lớp đặt **mật khẩu chung của lớp** (lưu `pnl_dg_ds/{mã}.matKhau`, chỉ quản trị đọc); nhập danh sách từ Excel APAG → tự tạo tài khoản `pnl_tk/{mssv}` với băm SHA-256 của (mssv | mật khẩu chung). Sinh viên tự đổi mật khẩu riêng; **Đặt lại** đưa về mật khẩu chung; đổi mật khẩu chung thì tài khoản còn dùng mật khẩu chung được cập nhật theo.
+- **Phiên sinh viên**: trình duyệt đăng nhập ẩn danh, ghi `pnl_phien/{uid}` = {mssv, h}; quy tắc Firestore chỉ cho ghi khi `h` khớp `pnl_tk/{mssv}.pw` (băm không bao giờ đọc được từ trình duyệt khác). Sinh viên đã đăng nhập được phiên mã lớp của trang chủ để mở học phần của lớp mình.
+- **Học phần**: thẻ học phần → trang quản trị theo học phần (lớp, ĐGĐK từng lớp, mã ôn tập mở học phần, nội dung); Thêm lớp / Cấp mã từ đây.
+- **Mã lớp ôn tập (khách)** `pnl_ma` chuyển từ trang chủ sang đây (cùng dữ liệu). **Góp ý** đọc `pnl_gopy`.
 - Danh sách học phần tĩnh: `assets/pnl-courses.json` (sinh từ `COURSES` trong `index.html`; cập nhật lại khi đổi COURSES) + học phần thêm trên Firestore `pnl_hp`.
-- Chưa có (đợt sau, cần thêm quy tắc Firestore): điểm danh QR, bài tập, bảng tin, tài khoản giảng viên, sinh viên tự đổi mật khẩu.
+- Quy tắc Firestore: `firebase/firestore-pnl.rules` (khối pnl_tk, pnl_phien 17/11/2026 — phải xuất bản lại trong Firebase Console).
+- Đợt sau: điểm danh QR, bài tập, bảng tin, tài khoản giảng viên khác (ID = tên viết liền, chỉ thấy lớp được chia sẻ), ngân hàng câu hỏi.
