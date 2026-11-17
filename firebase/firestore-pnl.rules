@@ -124,4 +124,58 @@
         && exists(/databases/$(database)/documents/pnl_tk/$(request.resource.data.mssv))
         && get(/databases/$(database)/documents/pnl_tk/$(request.resource.data.mssv)).data.pw == request.resource.data.h;
     }
+    // --- Điểm danh QR, chuyên cần, bảng tin, bài tập (17/11/2026) ---
+    function pnlTk() {
+      return get(/databases/$(database)/documents/pnl_tk/$(pnlPhien().mssv)).data;
+    }
+    function pnlSvHopLe() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/pnl_phien/$(request.auth.uid))
+        && pnlPhien().h == pnlTk().pw;
+    }
+    function pnlSvTrongLop(maLop) {
+      return pnlSvHopLe() && maLop in pnlTk().lop;
+    }
+    function pnlBuoi(id) {
+      return get(/databases/$(database)/documents/pnl_dd/$(id)).data;
+    }
+    match /pnl_dd/{id} {
+      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop);
+      allow write: if isAdmin();
+    }
+    match /pnl_dd_sv/{id} {
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
+      allow write: if isAdmin();
+      allow create: if pnlSvHopLe()
+        && request.resource.data.mssv == pnlPhien().mssv
+        && id == request.resource.data.buoi + '__' + request.resource.data.mssv
+        && request.resource.data.keys().hasOnly(['buoi', 'maLop', 'mssv', 'maBuoi', 'luc'])
+        && request.resource.data.luc == request.time
+        && pnlBuoi(request.resource.data.buoi).maLop == request.resource.data.maLop
+        && pnlSvTrongLop(request.resource.data.maLop)
+        && pnlBuoi(request.resource.data.buoi).trangThai == 'open'
+        && pnlBuoi(request.resource.data.buoi).dongLuc > request.time
+        && pnlBuoi(request.resource.data.buoi).maBuoi == request.resource.data.maBuoi;
+    }
+    match /pnl_cc/{maLop} {
+      allow read, write: if isAdmin();
+    }
+    match /pnl_tin/{id} {
+      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop);
+      allow write: if isAdmin();
+    }
+    match /pnl_bt/{id} {
+      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop);
+      allow write: if isAdmin();
+    }
+    match /pnl_bt_nop/{id} {
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
+      allow delete: if isAdmin();
+      allow create, update: if pnlSvHopLe()
+        && request.resource.data.mssv == pnlPhien().mssv
+        && id == request.resource.data.bt + '__' + request.resource.data.mssv
+        && exists(/databases/$(database)/documents/pnl_bt/$(request.resource.data.bt))
+        && get(/databases/$(database)/documents/pnl_bt/$(request.resource.data.bt)).data.maLop == request.resource.data.maLop
+        && pnlSvTrongLop(request.resource.data.maLop);
+    }
     // Hết khối PNL

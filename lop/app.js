@@ -125,7 +125,7 @@ function viewLogin(msg){$("#app").innerHTML=`<div class="login"><div class="box"
     <p class="err" id="g-err"></p></section></div></div>`;
   $("#f-sv").onsubmit=async e=>{e.preventDefault();const id=normId($("#sv-id").value),pw=$("#sv-pw").value;const err=$("#sv-err");err.textContent="";
     const btn=$("#f-sv button");btn.disabled=true;btn.textContent="Đang kiểm tra…";
-    S.busy=true;try{await svLogin(id,pw);location.hash="#sv";S.busy=false;render()}
+    S.busy=true;try{await svLogin(id,pw);const cho=sessionStorage.getItem("pnl-dd-cho");sessionStorage.removeItem("pnl-dd-cho");if(cho){const c=JSON.parse(cho);location.hash="#dd/"+encodeURIComponent(c.buoiId)+"/"+c.code}else location.hash="#sv";S.busy=false;render()}
     catch(x){err.textContent=x.message||String(x)}finally{S.busy=false;btn.disabled=false;btn.textContent="Vào lớp học"}};
   $("#b-google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:FB_ADMIN_EMAILS[0]});$("#g-err").textContent="";
     try{const r=await S.auth.signInWithPopup(p);if(!fbIsAdmin(r.user)){const em=r.user.email;await S.auth.signOut();$("#g-err").textContent="Tài khoản "+em+" chưa được cấp quyền giảng viên/quản trị.";}}
@@ -155,8 +155,8 @@ function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.redu
     <div class="kpi"><div><b>${nOpen}</b><span>lớp đang quản lý</span></div><div><b>${nSv}</b><span>sinh viên trong các lớp</span></div><div><b>${nMo}</b><span>lớp đang mở đánh giá định kỳ</span></div><div><b>${nHp}</b><span>học phần trong thư viện</span></div></div>
     <section><h2 class="sec">Quản lý học tập</h2><div class="grid4">
       ${tile("#lop","lop","Quản lý lớp")}
-      ${tile("#home","qr","Điểm danh QR",soon)}
-      ${tile("#home","task","Bài tập",soon)}
+      ${tile("#lop","qr","Điểm danh QR")}
+      ${tile("#lop","task","Bài tập")}
       ${tile("#dg","exam","Kiểm tra &amp; Thi")}
       ${tile("#dg","grade","Bảng điểm")}
       ${tile("#home","key","Giảng viên &amp; phân quyền",soon)}
@@ -172,7 +172,7 @@ function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.redu
       ${tile(HOME+"#qt-sl","save","Sao lưu dữ liệu")}
     </div></section>
     <section><h2 class="sec">Truy cập nhanh</h2><div class="grid4">
-      <a href="#home" class="quick soon" title="Sắp có"><span class="ic" style="background:#e6f4ea;color:#1b7a3d">${I.qr}</span><div><b>Mở điểm danh hôm nay</b><span>Tạo mã buổi cho lớp đang dạy (sắp có)</span></div></a>
+      <a href="#lop" class="quick"><span class="ic" style="background:#e6f4ea;color:#1b7a3d">${I.qr}</span><div><b>Mở điểm danh hôm nay</b><span>Chọn lớp → tab Điểm danh → Mở buổi</span></div></a>
       <button type="button" class="quick" data-import><span class="ic" style="background:#fdf1dc;color:#9a6200">${I.xls}</span><div><b>Nhập danh sách lớp</b><span>Từ Excel, tự tạo tài khoản SV</span></div></button>
       <a href="#sinhvien" class="quick"><span class="ic" style="background:#eaf1f6;color:#1d5677">${I.search}</span><div><b>Tìm kiếm</b><span>Lớp, sinh viên, học phần</span></div></a>
       <a href="#sv" class="quick hl"><span class="ic" style="background:#1d5677;color:#fff">${I.go}</span><div><b>Xem như sinh viên</b><span>Kiểm tra giao diện SV thấy gì</span></div></a>
@@ -285,7 +285,7 @@ async function viewLopDetail(ma,tab){const l=S.lop.find(x=>x.id===ma);if(!l){$("
   $("#app").innerHTML=shell("lop",`<div class="page"><div class="empty">Đang tải danh sách lớp…</div></div>`,crumb);bindOut();
   const rows=await loadDs(ma);await loadAcc(rows.map(r=>r.mssv));const pw=S.pwLop[ma]||"";
   const q=strip(S.q);const list=rows.filter(r=>!q||strip(r.mssv+" "+r.hoTen+" "+(r.lopNienChe||"")).includes(q));
-  const sub=[["sv","user","Danh sách sinh viên"],["dd","qr","Điểm danh",1],["bt","task","Bài tập, kiểm tra, thi"],["bd","grade","Bảng điểm"],["tk","chart","Thống kê"],["hp","hp","Học phần &amp; tài liệu của lớp"],["bt2","news","Bảng tin",1]];
+  const sub=[["sv","user","Danh sách sinh viên"],["dd","qr","Điểm danh &amp; chuyên cần"],["btap","task","Bài tập"],["bt","exam","Kiểm tra, thi (ĐGĐK)"],["bd","grade","Bảng điểm"],["tk","chart","Thống kê"],["hp","hp","Học phần &amp; tài liệu của lớp"],["bt2","news","Bảng tin"]];
   const subnav=`<aside class="subnav">${sub.map(([k,ic,t,soon])=>`<a href="#lop/${encodeURIComponent(ma)}/${k}" class="${tab===k?"on":""}">${I[ic]}${t}${soon?'<span class="soon">sắp có</span>':""}</a>`).join("")}</aside>`;
   const head=`<div class="bar"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 class="t">${esc(l.ten||l.id)}</h1><span class="pill gray">${esc(grpOf(l))}</span><span class="pill ${l.diemKhoa?"gray":""}">${l.diemKhoa?"Điểm đã khóa":"Điểm đang mở"}</span>${l.open?'<span class="pill live">ĐGĐK đang mở</span>':""}</div>
     <div class="tools"><button type="button" class="btn sm" data-export>${I.down}Xuất danh sách</button><a class="btn sm" href="#lop/${encodeURIComponent(ma)}/bd">${I.chart}Bảng điểm</a><button type="button" class="btn sm" data-import>${I.up}Nhập Excel</button><button type="button" class="btn sm pri" data-add>${I.plus}Thêm</button></div></div>`;
@@ -302,9 +302,11 @@ async function viewLopDetail(ma,tab){const l=S.lop.find(x=>x.id===ma);if(!l){$("
   else if(tab==="bt"||tab==="bd"||tab==="tk"){content=`${head}<p class="note">${tab==="bt"?"Mở/đóng đợt đánh giá định kỳ, thời gian, đề và bài làm của lớp — quản trị ngay tại đây.":tab==="bd"?"Danh sách và điểm theo mẫu APAG, xuất Excel — quản trị ngay tại đây.":"Phổ điểm và thống kê câu hỏi của lớp."}</p>${dgEmbed(ma,tab==="bt"?"cai-dat":tab==="tk"?"thong-ke":"")}`}
   else if(tab==="hp"){content=`${head}<section><h2 class="sec">Học phần của lớp</h2>${hp?`<div class="grid4"><article class="hp"><div class="cover" style="background:${esc(hp.c||"#1d5677")}">${esc(hp.name)}</div><div class="body"><div class="tags">${["Tóm tắt","Mind map","Câu hỏi","Tình huống","Thi thử","Văn bản"].map(t=>`<span class="tag">${t}</span>`).join("")}</div><div class="act"><a href="#hocphan/${encodeURIComponent(hp.id)}">Quản trị học phần</a><a href="${courseHref(hp)}" class="pri" target="_blank" rel="noopener">Mở nội dung</a></div></div></article></div>`:`<div class="empty">Lớp chưa gắn học phần — bấm ··· › Sửa thông tin lớp.</div>`}</section>
     <section><h2 class="sec">Tài liệu riêng của lớp</h2><div class="empty">Tài liệu gắn theo lớp (đề cương, lịch học, bài đọc) — sắp có. Hiện tài liệu, giáo trình quản lý trong từng học phần trên <a href="${HOME}">trang thư viện</a>.</div></section>`}
+  else if(tab==="dd"){content=await tabDiemDanh(l,rows,head,ma)}else if(tab==="bt2"){content=await tabBangTin(l,rows,head,ma)}else if(tab==="btap"){content=await tabBaiTap(l,rows,head,ma)}
   else{content=`${head}<div class="empty">Mục này sắp có.</div>`}
   $("#app").innerHTML=shell("lop",`<div class="page"><div class="split">${subnav}<section class="panel">${content}</section></div></div>`,crumb);bindOut();
-  const qi=$("#q");if(qi)qi.oninput=e=>{S.q=e.target.value;viewLopDetail(ma,tab).then(()=>keepFocus("#q"))};
+  if(tab==="dd")bindDiemDanh(l,rows,ma);if(tab==="bt2")bindBangTin(l,ma);if(tab==="btap")bindBaiTap(l,rows,ma);
+  const qi=$("#q");if(qi&&tab==="sv")qi.oninput=e=>{S.q=e.target.value;viewLopDetail(ma,tab).then(()=>keepFocus("#q"))};
   $("[data-add]").onclick=()=>dlgSv(l,null);$("[data-import]").onclick=()=>dlgImport(l);$("[data-export]").onclick=()=>exportCsv(l,rows);
   const el=$("[data-editlop]");if(el)el.onclick=()=>dlgLop(l);const sp=$("[data-showpw]");if(sp)sp.onclick=()=>{const b=$("[data-pw]");const on=b.textContent!=="••••••";b.textContent=on?"••••••":pw;sp.innerHTML=I.eye+(on?"Hiện":"Ẩn")};
   const mk=$("[data-mkacc]");if(mk)mk.onclick=async()=>{mk.disabled=true;try{await saveRoster(ma,rows,true);toast("Đã tạo tài khoản còn thiếu.");render()}catch(x){toast("Chưa tạo được: "+errMsg(x));mk.disabled=false}};
@@ -430,25 +432,25 @@ async function viewSinhVien(){$("#app").innerHTML=shell("sinhvien",`<div class="
   $("#app").innerHTML=shell("sinhvien",body);bindOut();$("#q").oninput=e=>{S.q=e.target.value;clearTimeout(viewSinhVien._t);viewSinhVien._t=setTimeout(()=>viewSinhVien().then(()=>keepFocus("#q")),250)}}
 
 /* ============ SINH VIÊN ============ */
-const SV_RAIL=cur=>[["#sv","home","Trang chủ","home"],["#sv/hoctap","hp","Học tập","hoctap"],[DG,"task","Kiểm tra"],["#sv","exam","Thi",null,1],["#sv","qr","Điểm danh",null,1],["#sv","grade","Kết quả học tập",null,1],["#sv/taikhoan","user","Tài khoản","taikhoan"]];
+const SV_RAIL=cur=>[["#sv","home","Trang chủ","home"],["#sv/hoctap","hp","Học tập","hoctap"],["#sv/baitap","task","Bài tập & bảng tin","baitap"],[DG,"exam","Kiểm tra, thi"],["#sv/diemdanh","qr","Điểm danh","diemdanh"],["#sv","grade","Kết quả học tập",null,1],["#sv/taikhoan","user","Tài khoản","taikhoan"]];
 async function svLops(me){const lops=[];for(const ma of me.lop||[]){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists)l=Object.assign({id:ma},d.data())}catch(e){}}if(l)lops.push(l)}return lops}
 const svMe=()=>S.sv||{mssv:"XEM-THU",hoTen:ADMIN_NAME,lop:S.lop.filter(l=>!l.luuTru).slice(0,2).map(l=>l.id),pwDefault:false};
 const svHead=(me,text)=>`<header class="top"><div class="crumb">${text}</div>${S.sv?who(me.hoTen,me.mssv+" · Sinh viên"):`<div class="who"><span class="pill warn">Đang xem như sinh viên</span><a class="out" href="#home">Về quản trị</a></div>`}</header>`;
-async function viewSvHome(){const me=svMe();const lops=await svLops(me);const first=(me.hoTen||"").trim().split(/\s+/).pop();const mo=lops.filter(l=>l.open);
-  const body=`<main>${svHead(me,`<span class="sub">Chào ${esc(first)}${mo.length?", có "+mo.length+" bài đánh giá định kỳ đang mở":", hôm nay chưa có buổi học đang điểm danh"}</span>`)}
+async function viewSvHome(){const me=svMe();const lops=await svLops(me);const first=(me.hoTen||"").trim().split(/\s+/).pop();const mo=lops.filter(l=>l.open);const dd=S.sv?await svDdData(me,lops):{buoi:[],co:[]};const ddMo=dd.buoi.filter(ddOpen);
+  const body=`<main>${svHead(me,`<span class="sub">Chào ${esc(first)}${ddMo.length?", có "+ddMo.length+" buổi học đang điểm danh":mo.length?", có "+mo.length+" bài đánh giá định kỳ đang mở":", hôm nay chưa có buổi học đang điểm danh"}</span>`)}
   <div class="page" style="max-width:1180px">
     ${S.sv&&S.sv.pwDefault?`<div class="scard" style="border-color:var(--warn);background:var(--warn-soft);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><span>Bạn đang dùng <b>mật khẩu chung của lớp</b>. Hãy đổi mật khẩu riêng để bảo vệ tài khoản.</span><a class="btn sm pri" href="#sv/taikhoan">Đổi mật khẩu</a></div>`:""}
-    ${mo.length?mo.map(l=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">ĐANG MỞ</span><div><b style="display:block;font-size:15px">Đánh giá định kỳ — ${esc(l.hocPhanTen||l.ten||l.id)}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(l.id)}${l.closeAt?" · đóng "+fmtD(l.closeAt):""} · ${l.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}">Vào làm bài</a></div>`).join(""):
-      `<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:14px"><span class="pill gray">ĐIỂM DANH</span><div><b style="display:block;font-size:15px">Chưa có buổi học đang điểm danh</b><span style="font-size:13px;color:var(--muted)">Khi giảng viên mở điểm danh, nhập mã buổi hoặc quét QR tại đây.</span></div></div><form style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" onsubmit="return false"><input placeholder="Mã buổi (6 số)" inputmode="numeric" disabled style="width:150px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;letter-spacing:.2em;font-weight:700"><button type="button" class="btn pri" disabled>Điểm danh</button></form></div>`}
+    ${svDdBox(dd.buoi,dd.co)}
+    ${mo.map(l=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">ĐANG MỞ</span><div><b style="display:block;font-size:15px">Đánh giá định kỳ — ${esc(l.hocPhanTen||l.ten||l.id)}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(l.id)}${l.closeAt?" · đóng "+fmtD(l.closeAt):""} · ${l.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}">Vào làm bài</a></div>`).join("")}
     <section><h2 class="sec">Bốn mục của bạn</h2><div class="grid4">
       <a href="#sv/hoctap" class="stile"><span class="ic">${I.hp}</span><b>Học tập</b><span>${lops.length} lớp học phần · ôn tập, tóm tắt, mind map, tài liệu</span></a>
       <a href="${DG}" class="stile"><span class="ic">${I.task}</span><b>Kiểm tra</b><span>${mo.length?mo.length+" bài đang mở":"Chưa có bài kiểm tra mở"} · nhập mã lớp + mã SV</span></a>
-      <a href="#sv" class="stile soon"><span class="ic">${I.exam}</span><b>Thi</b><span>Chưa có kỳ thi mở · làm đề thi thử trong mỗi học phần</span></a>
-      <a href="#sv" class="stile soon"><span class="ic">${I.qr}</span><b>Điểm danh</b><span>Sắp có · tự điểm danh bằng mã buổi / QR</span></a>
+      <a href="#sv/baitap" class="stile"><span class="ic">${I.task}</span><b>Bài tập &amp; bảng tin</b><span>Bài được giao, hạn nộp, thông báo của lớp</span></a>
+      <a href="#sv/diemdanh" class="stile"><span class="ic">${I.qr}</span><b>Điểm danh</b><span>Có mặt ${dd.co.length}/${dd.buoi.filter(b=>b.trangThai!=="huy").length} buổi · quét QR hoặc nhập mã buổi</span></a>
     </div></section>
     <div class="grid2"><section class="scard"><h2 class="sec">Lớp học phần của bạn</h2>${lops.length?lops.map(l=>{const c=courseOf(l.hocPhan);return `<div class="row"><div><b>${esc(l.hocPhanTen||c?.name||l.id)}</b><br><span style="font-size:12px;color:var(--muted)">${esc(l.id)}${l.ten?" · "+esc(l.ten):""} · ${esc(grpOf(l))}</span></div><div style="text-align:right">${c?`<a class="btn sm" href="${courseHref(c)}">Vào học</a>`:""}<br><span style="font-size:12px;color:var(--muted)">${l.open?"ĐGĐK đang mở":"chưa thi"}</span></div></div>`}).join(""):'<p class="note">Bạn chưa được xếp vào lớp nào. Hãy báo giảng viên.</p>'}</section>
     <section class="scard"><h2 class="sec">Việc sắp tới</h2>${mo.length?mo.map(l=>`<div class="row"><span>Đánh giá định kỳ ${esc(l.hocPhanTen||l.id)} (${l.thoiGian||40} phút)</span><span class="pill">${l.closeAt?"đến "+fmtD(l.closeAt):"đang mở"}</span></div>`).join(""):'<div class="row"><span>Chưa có việc nào được giao.</span><span class="pill gray">—</span></div>'}<div class="row"><span>Ôn tập: làm đề thi thử trong học phần của lớp</span><span class="pill gray">tự học</span></div></section></div></div></main>`;
-  $("#app").innerHTML=rail(SV_RAIL(),true,"home")+body;bindOut()}
+  $("#app").innerHTML=rail(SV_RAIL(),true,"home")+body;bindOut();bindSvDd(me,lops,()=>viewSvHome())}
 async function viewSvHocTap(){const me=svMe();const lops=await svLops(me);
   const TASKS=[["Tóm tắt lý thuyết","map"],["Mind map","map"],["Câu hỏi lý thuyết","de"],["Câu hỏi tình huống","task"],["Thi thử","exam"],["Văn bản, án lệ","bank"]];
   const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Trang chủ</a><span class="sep">/</span><span class="sub">Học tập</span>`)}
@@ -471,11 +473,13 @@ async function viewSvTaiKhoan(){const me=svMe();const lops=await svLops(me);
 
 /* ============ điều hướng ============ */
 function render(){closeMenu();const h=decodeURIComponent((location.hash||"").slice(1));const p=h.split("/");
-  if(S.admin){if(!S.loaded)return;if(p[0]==="sv")return p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():viewSvHome();
+  if(S.admin){if(!S.loaded)return;if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);if(p[0]==="sv")return svRoute(p);
     if(p[0]==="lop"&&p[1]&&p[1]!=="luu-tru")return viewLopDetail(p[1],p[2]);if(p[0]==="lop")return viewLop();
     if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
-  if(S.sv){return p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():viewSvHome()}
+  if(S.sv){if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
+  if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);
   viewLogin()}
+function svRoute(p){return p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():p[1]==="diemdanh"?viewSvDiemDanh():p[1]==="baitap"?viewSvBaiTap():viewSvHome()}
 window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.includes("#lop/")||h.startsWith("#hocphan")||h.startsWith("#malop")||h.startsWith("#gopy")||h.startsWith("#sinhvien");if(!keep)S.q="";render()});
 
 /* ============ khởi động ============ */

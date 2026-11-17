@@ -78,4 +78,5 @@ Một nơi cho mọi việc quản trị: `lop/index.html` + `lop/app.js`. Vào 
 - **Mã lớp ôn tập (khách)** `pnl_ma` chuyển từ trang chủ sang đây (cùng dữ liệu). **Góp ý** đọc `pnl_gopy`.
 - Danh sách học phần tĩnh: `assets/pnl-courses.json` (sinh từ `COURSES` trong `index.html`; cập nhật lại khi đổi COURSES) + học phần thêm trên Firestore `pnl_hp`.
 - Quy tắc Firestore: `firebase/firestore-pnl.rules` (khối pnl_tk, pnl_phien 17/11/2026 — phải xuất bản lại trong Firebase Console).
-- Đợt sau: điểm danh QR, bài tập, bảng tin, tài khoản giảng viên khác (ID = tên viết liền, chỉ thấy lớp được chia sẻ), ngân hàng câu hỏi.
+- `lop/lop-hoc.js` (17/11): **Điểm danh QR** (`pnl_dd` buổi với mã 6 số + hạn mở, `pnl_dd_sv` lượt có mặt — sinh viên quét QR `#dd/<buổi>/<mã>` hoặc nhập mã; GV đánh dấu tay), **Điểm chuyên cần** = 10 × có mặt / tổng buổi, sửa tay ở `pnl_cc`, xuất CSV; **Bảng tin** `pnl_tin`; **Bài tập** `pnl_bt` + bài nộp `pnl_bt_nop` (link hoặc nội dung). Quản trị ĐGĐK nhúng trong tab Kiểm tra, thi / Bảng điểm / Thống kê (iframe `danh-gia/index.html?embed=1`).
+- Đợt sau: tài khoản giảng viên khác (ID = tên viết liền, chỉ thấy lớp được chia sẻ), ngân hàng câu hỏi, Kết quả học tập cho sinh viên (gộp chuyên cần + ĐGĐK).
