@@ -1,5 +1,7 @@
 # Thư mục nội dung — nguồn duy nhất của Tóm tắt lý thuyết và mind map
 
+> **Câu hỏi, tình huống:** soạn theo [MAU-CAU-HOI.md](MAU-CAU-HOI.md), đặt trong `noi-dung/<mã-học-phần>/cau-hoi/` — tự vào Ngân hàng câu hỏi (Nháp).
+
 Mỗi chương của mỗi học phần là một file: `noi-dung/<mã-học-phần>/chuong-NN.md` (NN có hai chữ số: `chuong-01.md`, `chuong-12.md`).
 Đẩy file lên nhánh `main`, GitHub tự làm tiếp, không cần làm gì thêm:
 

@@ -97,6 +97,9 @@ jobs:
             echo "Bản sắp đăng có ký hiệu xung đột — dừng, web giữ bản cũ."; exit 1
           fi
 
+      - name: Cổng nhập câu hỏi (noi-dung/*/cau-hoi → data/nh-cho.json)
+        run: python3 tools/cong_nhap.py
+
       - name: Chuẩn bị đăng
         uses: actions/configure-pages@v5
       - name: Đóng gói trang web
