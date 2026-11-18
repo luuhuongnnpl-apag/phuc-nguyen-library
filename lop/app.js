@@ -265,9 +265,11 @@ async function dlgLop(l,withImport,preset){const dlg=$("#dlg");const isNew=!l;if
     const btn=$("button[type=submit]",dlg);btn.disabled=true;
     try{const ref=S.fs.doc("pnl_dg_lop/"+ma);if(isNew){if((await ref.get()).exists)throw new Error("Mã lớp này đã có.");data.created=FV().serverTimestamp();data.siSo=0;data.open=false;data.hocPhan="nh";data.hocPhanTen=hp.name}
       await ref.set(data,{merge:true});const cur=S.lop.find(x=>x.id===ma);if(cur)Object.assign(cur,data);else S.lop.push(Object.assign({id:ma},data));
-      if(pw&&pw!==curPw){await S.fs.doc("pnl_dg_ds/"+ma).set({matKhau:pw},{merge:true});S.pwLop[ma]=pw;if(!isNew)await rehashDefault(ma,pw)}
+      let taoTk=0;if(pw&&pw!==curPw){await S.fs.doc("pnl_dg_ds/"+ma).set({matKhau:pw},{merge:true});S.pwLop[ma]=pw;
+        /* có mật khẩu chung → đổi băm cho tài khoản đang dùng mật khẩu chung, đồng thời tạo ngay tài khoản cho SV đã có trong danh sách mà chưa có tài khoản */
+        if(!isNew){await rehashDefault(ma,pw);const rs=await loadDs(ma);if(rs.length){await loadAcc(rs.map(r=>r.mssv));taoTk=rs.filter(r=>!S.acc[normId(r.mssv)]).length;await saveRoster(ma,rs,true)}}}
       if(withImport&&rows.length)await saveRoster(ma,rows,true);
-      dlg.close();toast(isNew?"Đã tạo lớp "+ma+(rows.length?" với "+rows.length+" sinh viên.":"."):"Đã lưu.");location.hash="#lop/"+encodeURIComponent(ma);render()}
+      dlg.close();toast(isNew?"Đã tạo lớp "+ma+(rows.length?" với "+rows.length+" sinh viên.":"."):"Đã lưu."+(taoTk?" Đã tạo "+taoTk+" tài khoản sinh viên theo mật khẩu chung.":""),5000);location.hash="#lop/"+encodeURIComponent(ma);render()}
     catch(x){err.textContent="Chưa lưu được: "+errMsg(x)}finally{btn.disabled=false}}}
 /* đổi mật khẩu chung → cập nhật băm cho tài khoản còn dùng mật khẩu chung (pwDefault) của lớp */
 async function rehashDefault(ma,pw){const rows=await loadDs(ma);await loadAcc(rows.map(r=>r.mssv));const db=S.fs;let b=db.batch(),n=0;
