@@ -141,7 +141,7 @@ html.nhung .band{display:none}
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
 <script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
-<script src="qt-apag.js?v=20261118h"></script>
+<script src="qt-apag.js?v=20261118i"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -630,7 +630,7 @@ function renderExam(){
    $("#app").addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","v"].includes(e.key.toLowerCase()))blockClip(e)},true);
   pf.addEventListener("drop",e=>e.preventDefault());
   $("#x-submit").onclick=async()=>{const sum=questionsOf(E.de).length,done=questionsOf(E.de).filter(id=>E.answers[K(id)]!=null).length;
-    const ok=await ask("Nộp bài?",(E.B.tl?(E.essay.trim()?"Phiếu tư vấn của bạn có "+soTu()+" từ.":"Bạn <b>chưa điền phiếu tư vấn</b>."):"Bạn đã trả lời "+done+"/"+sum+" câu trắc nghiệm"+(E.essay.trim()?"":" và <b>chưa làm câu tự luận</b>")+".")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
+    const ok=await ask("Nộp bài?",(E.B.tl?(E.essay.trim()?"Phiếu tư vấn của bạn có "+soTu()+" từ.":"Bạn <b>chưa điền phiếu tư vấn</b>."):"Bạn đã trả lời "+done+"/"+sum+" câu trắc nghiệm"+(E.de.tl&&!E.essay.trim()?" và <b>chưa làm câu tự luận</b>":"")+".")+" Sau khi nộp sẽ không sửa được.","Nộp bài");if(ok)submit(false)};
   setupOneQuestion();tick();E.timer=setInterval(tick,1000);E.saver=setInterval(()=>save(false),20000);
 }
 function touch(){const E=EXAM;E.dirty=true;store.set("pndg-"+E.id,JSON.stringify({stamp:E.stamp,answers:E.answers,essay:E.essay}));if(Date.now()-E.lastSave>15000)save(false)}
@@ -648,7 +648,7 @@ async function submit(auto,why){const E=EXAM;if(!E||!E.active)return;E.active=fa
 }
 function doneView(lop,svd,bai,why){EXAM=null;if(!why&&(bai.roiTrang|0)>MAX_ROI)why="roi";
   $("#app").innerHTML=`<section class="card narrow"><h1>Đã nộp bài</h1><p class="ok">Bài làm của ${esc(svd.hoTen)} (${esc(bai.mssv)}) đã được ghi nhận${bai.submittedAt?" lúc "+esc(fmtDT(toDate(bai.submittedAt))):""}.</p>
-  ${why==="roi"?`<p class="err">Bài bị khóa và tự động nộp vì rời khỏi trang làm bài quá ${MAX_ROI} lần.</p>`:""}<p class="msg">Kết quả sẽ do giảng viên thông báo. Bạn có thể đóng trang này.</p><a class="btn" href="../index.html" style="display:inline-block;text-decoration:none">Về trang chủ</a></section>`}
+  ${why==="roi"?`<p class="err">Bài bị khóa và tự động nộp vì rời khỏi trang làm bài quá ${MAX_ROI} lần.</p>`:""}<p class="msg">Kết quả sẽ do giảng viên thông báo. Bạn có thể đóng trang này.</p><div class="row"><a class="btn primary" href="../lop/#sv/kiemtra" style="display:inline-block;text-decoration:none">Về Kiểm tra, thi của tôi</a><a class="btn" href="../index.html" style="display:inline-block;text-decoration:none">Về trang chủ</a></div></section>`}
 document.addEventListener("visibilitychange",()=>{if(!EXAM||!EXAM.active)return;
   if(document.hidden){EXAM.roi++;EXAM.dirty=true;store.set("pndg-"+EXAM.id,JSON.stringify({stamp:EXAM.stamp,answers:EXAM.answers,essay:EXAM.essay}));
     if(EXAM.roi>MAX_ROI)submit(true,"roi");else save(true)}
@@ -795,7 +795,7 @@ function viewCai(){
   const l=AD.l;
   const body=shell({side:sideItems(AD.ma,"cai"),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Danh sách lớp",href:"#quan-tri"},{t:"Lớp "+AD.ma,href:"#quan-tri/"+encodeURIComponent(AD.ma)},{t:"Cài đặt lớp"}],
     actions:[{id:"edit",label:"Sửa thông tin, giờ mở/đóng",icon:"cog",kind:"blue",onClick:()=>classForm(l)},{id:"lock",label:l.open?"Khóa":"Mở lớp",icon:l.open?"lock":"unlock",kind:l.open?"lock":"unlock",onClick:toggleOpen}],
-    body:classHead()+`<div class="qta-card"><h3>Cấu trúc đề</h3><p style="margin:0">${l.hocPhan==="nh"?`Đề từ Ngân hàng câu hỏi (${esc((l.deNh&&l.deNh.hpTen)||"")}): ${(l.deNh&&l.deNh.mota)||""} Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Sửa ma trận đề ở trang Lớp học › Ra đề từ ngân hàng (khi lớp chưa có bài làm).`:isTN(l.hocPhan)?`Đề mỗi sinh viên: ${hpOf(l.hocPhan).tnCases||3} tình huống tư vấn khác chương, rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống của ngân hàng ôn tập (Chương 2–6); lấy đủ các câu ABCD của mỗi tình huống theo 5 bước tư vấn (khoảng ${(hpOf(l.hocPhan).tnCases||3)*8} câu), đảo thứ tự phương án. Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Bài tự luận đã nộp theo đề cũ vẫn giữ cách chấm cũ.`:isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống; sinh viên điền phiếu tư vấn 5 bước. Chấm: làm đủ 5 bước = 5 điểm; nội dung theo 5 ý chính = 5 điểm; máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
+    body:classHead()+`<div class="qta-card"><h3>Cấu trúc đề</h3><p style="margin:0">${l.hocPhan==="nh"?`Đề từ Ngân hàng câu hỏi (${esc((l.deNh&&l.deNh.hpTen)||"")}): ${(l.deNh&&l.deNh.mota)||""} Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Đề tạo và sửa ở Quản trị › Ngân hàng câu hỏi › Đề kiểm tra; sửa đề thì đợt chưa có bài làm nhận bản mới.`:isTN(l.hocPhan)?`Đề mỗi sinh viên: ${hpOf(l.hocPhan).tnCases||3} tình huống tư vấn khác chương, rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống của ngân hàng ôn tập (Chương 2–6); lấy đủ các câu ABCD của mỗi tình huống theo 5 bước tư vấn (khoảng ${(hpOf(l.hocPhan).tnCases||3)*8} câu), đảo thứ tự phương án. Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay. Bài tự luận đã nộp theo đề cũ vẫn giữ cách chấm cũ.`:isTL(l.hocPhan)?`Đề mỗi sinh viên: 01 tình huống tư vấn rút ngẫu nhiên trong ${Object.keys(AD.B.cases).length} tình huống; sinh viên điền phiếu tư vấn 5 bước. Chấm: làm đủ 5 bước = 5 điểm; nội dung theo 5 ý chính = 5 điểm; máy gợi ý, giảng viên xác nhận.`:`Đề mỗi sinh viên: 30 câu lý thuyết (Nhận biết ${CT.lv.NB}, Thông hiểu ${CT.lv.TH}, Vận dụng ${CT.lv.VD}), 10 câu tình huống từ 3 tình huống (4 + 3 + 3) — mỗi câu ${fz(CT.dLT)} điểm, tổng 90 — và 1 tình huống tự luận khác chương (10 điểm), rút ngẫu nhiên từ ngân hàng ôn tập ${esc(l.hocPhanTen||"")}. Thứ tự phương án được đảo.`}</p></div>
     <div class="qta-card"><h3>Thông tin lớp tín chỉ APAG (tiêu đề bảng điểm)</h3><p class="qta-msg" style="margin-top:0">Tự điền khi Import excel bằng file Export excel của APAG. Có thể sửa tay.</p>
       <div class="qta-filters"><div><label for="ap-mon">Tên môn</label><input type="text" id="ap-mon" value="${esc((l.apag||{}).tenMon||"")}"></div><div><label for="ap-lop">Tên lớp tín chỉ</label><input type="text" id="ap-lop" value="${esc((l.apag||{}).tenLopTc||"")}"></div>
       <div><label for="ap-hk">Học kỳ/Năm học</label><input type="text" id="ap-hk" value="${esc((l.apag||{}).hocKy||"")}" placeholder="1_2026-2027"></div><div><label for="ap-tc">Số tín chỉ</label><input type="text" id="ap-tc" value="${esc((l.apag||{}).soTc||"")}"></div></div>
@@ -815,7 +815,8 @@ function classForm(l){
   const m=modal(`<h2>${l?"Sửa lớp "+esc(l.id):"Tạo lớp mới"}</h2><form id="cf" novalidate>
     <div class="row"><div><label class="lab" for="cf-ma">Mã lớp (sinh viên nhập mã này)</label><input type="text" id="cf-ma" maxlength="24" style="text-transform:uppercase" value="${esc(l?l.id:"")}" ${l?"disabled":""} placeholder="DS-K25A"></div>
       <div><label class="lab" for="cf-ten">Tên lớp</label><input type="text" id="cf-ten" maxlength="80" value="${esc(l?l.ten:"")}" placeholder="K25 Luật A"></div></div>
-    <div class="row"><div><label class="lab" for="cf-hp">Học phần</label><select id="cf-hp">${HOCPHAN.filter(h=>(!h.legacy||(l&&l.hocPhan===h.id))&&(!h.nh||(l&&l.deNh))).map(h=>`<option value="${h.id}"${l&&l.hocPhan===h.id?" selected":""}>${esc(h.name)}</option>`).join("")}</select></div>
+    <div class="row"><div><label class="lab" for="${l?"cf-hp-t":"cf-hp"}">${l?"Học phần · đề":"Học phần"}</label>${l?`<input type="text" id="cf-hp-t" value="${esc((l.deNh&&(l.deNh.hpTen+(l.deNh.ten?" — "+l.deNh.ten:"")))||l.hocPhanTen||hpOf(l.hocPhan).name||l.hocPhan)}" readonly title="Kết cấu đề do đề quyết định — đổi đề ở Ngân hàng câu hỏi › Đề kiểm tra"><input type="hidden" id="cf-hp" value="${esc(l.hocPhan||"")}">`
+      :`<select id="cf-hp">${HOCPHAN.filter(h=>!h.legacy&&!h.nh).map(h=>`<option value="${h.id}">${esc(h.name)}</option>`).join("")}</select>`}</div>
       <div><label class="lab" for="cf-nh">Năm học</label><input type="text" id="cf-nh" maxlength="20" value="${esc(l?l.namHoc:"2026–2027")}"></div>
       <div><label class="lab" for="cf-tg">Thời gian làm bài (phút)</label><input type="number" id="cf-tg" min="5" max="180" value="${tgOf(l)}" ${l&&l.hocPhan==="nh"?"":"readonly"}></div></div>
     <div class="row"><div><label class="lab" for="cf-a">Mở từ</label><input type="datetime-local" id="cf-a" value="${dtLocal(a)}"></div><div><label class="lab" for="cf-b">Đóng lúc</label><input type="datetime-local" id="cf-b" value="${dtLocal(b)}"></div></div>
@@ -830,7 +831,7 @@ function classForm(l){
     if(isNaN(A)||isNaN(Bd)||Bd<=A){err.textContent="Giờ đóng phải sau giờ mở.";return}
     const hp=m.querySelector("#cf-hp").value;
      if(!l&&!HOCPHAN.some(h=>h.id===hp&&!h.legacy)){err.textContent="Học phần chưa được cấu hình kiểm tra.";return}
-    const data={ten:m.querySelector("#cf-ten").value.trim(),hocPhan:hp,hocPhanTen:hp==="nh"&&l&&l.deNh?(l.deNh.hpTen||l.hocPhanTen):(HOCPHAN.find(h=>h.id===hp)||{}).name||hp,namHoc:m.querySelector("#cf-nh").value.trim(),
+    const data={ten:m.querySelector("#cf-ten").value.trim(),hocPhan:hp,hocPhanTen:l?(l.hocPhanTen||(l.deNh&&l.deNh.hpTen)||hpOf(hp).name||hp):(HOCPHAN.find(h=>h.id===hp)||{}).name||hp,namHoc:m.querySelector("#cf-nh").value.trim(),
       thoiGian:hp==="nh"?Math.max(5,Math.min(180,+m.querySelector("#cf-tg").value||40)):THOI_GIAN_CHUNG,openAt:TS.fromDate(A),closeAt:TS.fromDate(Bd),open:m.querySelector("#cf-open").checked};
     try{const ref=db.doc("pnl_dg_lop/"+ma);if(!l){if((await ref.get()).exists){err.textContent="Mã lớp này đã có.";return}data.created=FV.serverTimestamp();data.siSo=0}
       await ref.set(data,{merge:true});closeModal();AD.loaded=0;location.hash="#quan-tri/"+encodeURIComponent(ma);route()}catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+")."}};

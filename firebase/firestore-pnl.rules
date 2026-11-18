@@ -3,7 +3,7 @@
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
     // Phiên bản khối quy tắc PNL: trang quản trị đọc thử pnl_rules_v/<phiên bản>; bị chặn = quy tắc trên máy chủ cũ hơn kho GitHub,
     // trang hiện nút "Cập nhật quy tắc" tự thay khối PNL (từ dòng tiêu đề đầu khối đến dòng kết thúc khối) qua Firebase Rules API. Đổi quy tắc thì tăng số này.
-    match /pnl_rules_v/{v} { allow get: if v == '20261118h'; }
+    match /pnl_rules_v/{v} { allow get: if v == '20261118i'; }
 
 
     // --- Mã lớp ôn tập (trang chủ) ---
@@ -190,5 +190,7 @@
     }
     // --- Ngân hàng câu hỏi (18/11/2026): kho kín chỉ quản trị; bản xuất bản cho web ôn tập ai cũng đọc ---
     match /pnl_nh/{id} { allow read, write: if isAdmin(); }
+    // Đề kiểm tra gốc trong Ngân hàng câu hỏi (kèm đáp án) — chỉ quản trị; bản phát hành cho từng đợt ở pnl_dg_de / pnl_dg_dap
+    match /pnl_nh_de/{id} { allow read, write: if isAdmin(); }
     match /pnl_nh_pub/{hp} { allow read: if true; allow write: if isAdmin(); }
     // Hết khối PNL

@@ -20,4 +20,16 @@
       - lop/index.html
       - lop/lop-hoc.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44272386254 · commit 00e9071
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44268852740 · commit 1b7c6bb
+
+## Bước 2/2 — Chạy thử hiển thị: ĐẠT, web đã được cập nhật
+
+- Đã mở thử 11 trang học phần, trang chủ và 172 tờ mind map.
+
+## Bước 2/2 — Chạy thử hiển thị: ĐẠT, web đã được cập nhật
+
+- Đã mở thử 11 trang học phần, trang chủ và 172 tờ mind map.
+
+## Bước 2/2 — Chạy thử hiển thị: ĐẠT, web đã được cập nhật
+
+- Đã mở thử 11 trang học phần, trang chủ và 172 tờ mind map.
