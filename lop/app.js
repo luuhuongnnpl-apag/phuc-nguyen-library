@@ -106,7 +106,7 @@ const dgEmbed=(ma,view)=>`<iframe class="dgf" id="dgf" title="Đánh giá địn
 window.addEventListener("message",e=>{const d=e.data;if(!d||!d.pnlEmbed)return;const f=$("#dgf");if(f&&d.h)f.style.height=Math.max(520,d.h+24)+"px"});
 
 /* ============ khung trang ============ */
-const RAIL=[["#home","home","Trang chủ quản trị","home"],["#lop","lop","Lớp","lop"],["#hocphan","hp","Học phần","hocphan"],["#malop","code","Mã lớp ôn tập","malop"],["#dg","de","Đề thi, đánh giá định kỳ","dg"],["#nganhang","bank","Ngân hàng câu hỏi","nganhang"],["#sinhvien","users","Sinh viên và tài khoản","sinhvien"],["#gopy","chat","Góp ý, báo lỗi","gopy"]];
+const RAIL=[["#home","home","Trang chủ quản trị","home"],["#lop","lop","Lớp","lop"],["#hocphan","hp","Học phần","hocphan"],["#malop","code","Mã lớp ôn tập","malop"],["#dg","de","Đề thi, đánh giá định kỳ","dg"],["#nganhang","bank","Ngân hàng câu hỏi","nganhang"],["#hethong","cog","Đồng bộ & quy tắc dữ liệu","hethong"],["#sinhvien","users","Sinh viên và tài khoản","sinhvien"],["#gopy","chat","Góp ý, báo lỗi","gopy"]];
 function rail(items,wide,cur){return `<nav class="rail${wide?" wide":""}" aria-label="Điều hướng">
   ${wide?`<div class="brand"><div class="logo"><img src="../assets/logo.png" alt=""></div><div><b>PHÚC NGUYÊN</b><span>LIBRARY</span></div></div>`:`<a class="logo" href="${HOME}" aria-label="Về trang chủ Phúc Nguyên Library"><img src="../assets/logo.png" alt=""></a>`}
   ${items.map(([h,ic,t,k,soon])=>`<a href="${h}" class="${k&&k===cur?"on":""}" aria-label="${esc(t)}"${soon?' title="Sắp có"':""}>${I[ic]}${wide?`<span>${esc(t)}</span>`:`<span class="tip">${esc(t)}</span>`}</a>`).join("")}
@@ -171,7 +171,7 @@ function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.redu
     </div></section>
     <section><h2 class="sec">Nội dung &amp; công cụ</h2><div class="grid4">
       ${tile("#hocphan","hp","Học phần ("+nHp+")")}
-      ${tile("#nganhang","bank","Ngân hàng câu hỏi")}
+      ${tile("#nganhang","bank","Ngân hàng câu hỏi")}${tile("#hethong","cog","Đồng bộ & quy tắc dữ liệu",typeof RS!=="undefined"&&RS.ok===false?{badge:["cần cập nhật","bad"]}:null)}
       ${tile(HOME+"#home","folder","Tài liệu – giáo trình")}
       ${tile(HOME+"#home","map","Mind map &amp; tóm tắt")}
       ${tile("#gopy","chat","Góp ý, báo lỗi")}
@@ -484,7 +484,7 @@ async function viewSvTaiKhoan(){const me=svMe();const lops=await svLops(me);
 function render(){closeMenu();const h=decodeURIComponent((location.hash||"").slice(1));const p=h.split("/");
   if(S.admin){if(!S.loaded)return;if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);if(p[0]==="sv")return svRoute(p);
     if(p[0]==="lop"&&p[1]&&p[1]!=="luu-tru")return viewLopDetail(p[1],p[2]);if(p[0]==="lop")return viewLop();
-    if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="nganhang")return viewNganHang(p[1]);if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
+    if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="nganhang")return viewNganHang(p[1]);if(p[0]==="hethong")return viewHeThong();if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
   if(S.sv){if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
   if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);
   viewLogin()}
@@ -497,7 +497,7 @@ window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.inc
   S.sv=store.get(SV_KEY,null);await loadCourses();
   let first=true;
   S.auth.onAuthStateChanged(async u=>{S.user=u;const adm=fbIsAdmin(u);
-    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck();return}
+    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync()});return}
     if(!adm&&S.admin){S.admin=false;S.loaded=false;if(typeof rsBar==="function")rsBar()}
     S.admin=adm;
     if(first){first=false;if(!adm&&!u){try{await S.auth.signInAnonymously()}catch(e){}return}}

@@ -45,7 +45,7 @@ function dtMota(st,E){const n=dtTong(st),[a,b]=dtCauTH(st,E);const lv=DT_LV.map(
 async function tabDeThi(l,head,ma){const st=dtState(l);const hps=lopHps(l);
   if(!hps.length)return `${head}<div class="empty">Lớp chưa gán học phần — bấm <b>Sửa lớp</b> để chọn học phần trước khi ra đề.</div>`;
   if(!hps.includes(st.hp))st.hp=hps[0];
-  try{await nhChapters(st.hp);await nhLoad(st.hp);if(!NH.synced[st.hp]){await nhSync(st.hp);NH.synced[st.hp]=true}}catch(x){if(nhDenied(x))return `${head}${nhRulesBox()}`;return `${head}<div class="empty">Chưa tải được ngân hàng: ${esc(errMsg(x))}</div>`}
+  try{await nhChapters(st.hp);await nhLoad(st.hp);if(!NH.synced[st.hp])await nhSyncOnce(st.hp)}catch(x){if(nhDenied(x))return `${head}${nhRulesBox()}`;return `${head}<div class="empty">Chưa tải được ngân hàng: ${esc(errMsg(x))}</div>`}
   try{const q=await S.fs.collection("pnl_dg_bai").where("maLop","==",ma).get();DT.bai[ma]=q.size}catch(e){DT.bai[ma]=0}
   const nb=DT.bai[ma],khoa=nb>0;const E=dtElig(st.hp,st.nguon);const chs=dtChs(st,E);const tong=dtTong(st),[a,b]=dtCauTH(st,E);
   const cur=l.hocPhan==="nh"&&l.deNh?`<div class="scard" style="border-color:#bfe3cb;background:var(--ok-soft)"><b>Đề đang dùng:</b> ${esc(l.deNh.hpTen||"")} — ${esc(l.deNh.mota||"")}${khoa?` <span class="pill">${nb} bài đã làm</span>`:""}</div>`

@@ -12,8 +12,11 @@ function rsMerge(live,repo){const block=t=>{const L=t.split("\n");const a=L.find
   const r=block(repo),l=block(live);if(!r)throw new Error("Kho GitHub thiếu khối quy tắc PNL.");
   if(!l)throw new Error("Quy tắc đang chạy không có dấu mốc khối PNL (dòng \"===== PNL\" và \"Hết khối PNL\") — báo Claude xử lý.");
   return l.L.slice(0,l.a).concat(r.L.slice(r.a,r.b+1),l.L.slice(l.b+1)).join("\n")}
-async function rsProbe(v){try{await S.fs.doc("pnl_rules_v/"+v).get();return true}catch(e){return e&&e.code!=="permission-denied"}}
-async function rsCheck(){if(!S.admin)return;try{const r=await rsRepo();RS.v=r.v;RS.ok=await rsProbe(r.v)}catch(e){RS.ok=null}rsBar()}
+/* Đọc thử bằng REST KHÔNG đăng nhập (như sinh viên/khách): quản trị có quyền đọc mọi thứ nên không dùng phiên quản trị để thử.
+   404 = được phép, chưa có tài liệu → quy tắc đã cập nhật; 403 = bị chặn → quy tắc cũ; lỗi mạng → không rõ (null). */
+async function rsProbe(v){try{const r=await fetch("https://firestore.googleapis.com/v1/projects/"+FB_CFG.projectId+"/databases/(default)/documents/pnl_rules_v/"+encodeURIComponent(v)+"?key="+FB_CFG.apiKey,{cache:"no-store"});
+    if(r.status===403)return false;if(r.status===404||r.ok)return true;return null}catch(e){return null}}
+async function rsCheck(){if(!S.admin)return RS.ok;try{const r=await rsRepo();RS.v=r.v;RS.ok=await rsProbe(r.v)}catch(e){RS.ok=null}rsBar();return RS.ok}
 function rsBar(){let b=document.getElementById("rs-bar");if(RS.ok!==false||!S.admin){if(b)b.remove();return}
   if(!b){b=document.createElement("div");b.id="rs-bar";b.setAttribute("role","status");document.body.appendChild(b)}
   b.innerHTML=`<div><b>Máy chủ dữ liệu cần cập nhật quy tắc</b> để chạy tính năng mới (Ngân hàng câu hỏi…).<br><span>Bấm <b>Cập nhật ngay</b> → chọn tài khoản Google đã tạo dự án Firebase. Nếu Google báo "chưa xác minh", bấm <b>Nâng cao</b> → <b>Đi tới…</b>.</span><span id="rs-msg"></span></div><button type="button" class="btn sm pri" id="rs-go">Cập nhật ngay</button>`;
@@ -39,8 +42,8 @@ async function rsRun(){if(RS.busy)return;RS.busy=true;const msg=t=>{const m=docu
       const nr=await call(RS_API+proj+"/rulesets",{method:"POST",body:JSON.stringify({source:{files:files.map(x=>x===f?{name:x.name,content:merged}:{name:x.name,content:x.content})}})});
       await call(RS_API+proj+"/releases/cloud.firestore",{method:"PATCH",body:JSON.stringify({release:{name:proj+"/releases/cloud.firestore",rulesetName:nr.name}})})}
     msg("Đã xuất bản. Đang chờ máy chủ áp dụng (tối đa khoảng 1 phút)…");
-    let ok=false;for(let i=0;i<18&&!ok;i++){ok=await rsProbe(repo.v);if(!ok)await new Promise(z=>setTimeout(z,5000))}
-    RS.ok=ok;if(ok){toast("Đã cập nhật quy tắc dữ liệu. Tính năng mới dùng được ngay.",5000);if(typeof NH!=="undefined"){NH.denied=false;NH.all=null;NH.byHp={};NH.tomb={};NH.syncRes=null;NH.synced={}}rsBar();render()}
+    let ok=false;for(let i=0;i<18&&!ok;i++){ok=(await rsProbe(repo.v))===true;if(!ok)await new Promise(z=>setTimeout(z,5000))}
+    RS.ok=ok;if(ok){toast("Đã cập nhật quy tắc dữ liệu. Tính năng mới dùng được ngay.",5000);if(typeof nhAutoSync==="function"){NH_AUTO.done=false;nhAutoSync()}if(typeof NH!=="undefined"){NH.denied=false;NH.all=null;NH.byHp={};NH.tomb={};NH.syncRes=null;NH.synced={}}rsBar();render()}
     else msg("Đã xuất bản nhưng máy chủ chưa áp dụng. Chờ 1–2 phút rồi tải lại trang.")}
   catch(x){msg(rsErr(x))}
   finally{RS.busy=false;btns.forEach(b=>b.disabled=false);try{if(auth2)await auth2.signOut()}catch(e){}}}

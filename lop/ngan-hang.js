@@ -9,7 +9,7 @@
    Chỉ câu "Đã duyệt", không "kín", đủ 4 phương án + đáp án và đã xếp chương mới được xuất bản.
    Web ôn tập (assets/pnlib-course.js) tự ghép bản xuất bản vào sau câu sẵn có của học phần — không sửa nội dung cũ. */
 
-const NH={byHp:{},tomb:{},vb:{},ly:{},nhap:new Set(),cho:null,choRes:null,raw:{},pub:{},chs:{},web:{},synced:{},all:null,sel:new Set(),f:{ch:"",lv:"",st:"",loai:"",q:""},lim:60,open:{},denied:false};
+const NH={syncP:{},byHp:{},tomb:{},vb:{},ly:{},nhap:new Set(),cho:null,choRes:null,raw:{},pub:{},chs:{},web:{},synced:{},all:null,sel:new Set(),f:{ch:"",lv:"",st:"",loai:"",q:""},lim:60,open:{},denied:false};
 const LVN={NB:"Nhận biết",TH:"Thông hiểu",VD:"Vận dụng"},LVK=["NB","TH","VD"],ABCD="ABCD";
 const NH_RULES=`    // --- Ngân hàng câu hỏi (18/11/2026): kho kín chỉ quản trị; bản xuất bản cho web ôn tập ai cũng đọc ---
     match /pnl_nh/{id} { allow read, write: if isAdmin(); }
@@ -188,8 +188,7 @@ async function viewNganHang(hp){if(hp)return viewNganHangHp(hp);const tok=locati
   $("#app").innerHTML=shell("nganhang",`<div class="page"><div class="empty">Đang tải ngân hàng câu hỏi…</div></div>`);bindOut();
   let err="";try{if(!NH.all)await nhLoadAll()}catch(x){if(!nhDenied(x))err=errMsg(x)}
   /* lần đầu mở trong phiên: tự trích câu sẵn có của các trang học phần vào ngân hàng (chỉ ghi phần còn thiếu / GitHub mới đổi) */
-  if(!err&&!NH.denied&&!NH.syncRes){const el=$(".page .empty");NH.syncRes=await nhSyncAll(c=>{if(el)el.textContent="Đang đồng bộ câu sẵn có của học phần "+c.name+" vào ngân hàng…"});
-    if(!NH.denied){if(el)el.textContent="Đang nhận câu hỏi mới từ cổng GitHub…";await nhNhanCho()}}
+  if(!err&&!NH.denied&&!NH.syncRes){const el=$(".page .empty");NH_AUTO.step=c=>{if(el)el.textContent="Đang đồng bộ câu sẵn có của học phần "+c.name+" vào ngân hàng…"};await nhAutoSync()}
   if(location.hash!==tok)return; /* đã chuyển trang trong lúc tải */
   const q=strip(S.q);const cs=S.courses.filter(c=>!q||strip(c.name).includes(q));
   const card=c=>{const st=nhStats(NH.byHp[c.id]);const ps=nhPubState(c.id);return `<a class="card" href="#nganhang/${encodeURIComponent(c.id)}"><b class="nm" title="${esc(c.name)}">${esc(c.name)}</b>
@@ -225,7 +224,7 @@ async function viewNganHangHp(hp){const c=courseOf(hp);if(!c){location.hash="#ng
   const crumb=`<a class="back" href="#nganhang">${I.back}Ngân hàng câu hỏi</a><span class="sep">/</span><span class="sub">${esc(c.name)}</span>`;
   if(!NH.byHp[hp]||NH.cur!==hp)$("#app").innerHTML=shell("nganhang",`<div class="page"><div class="empty">Đang tải ngân hàng ${esc(c.name)}…</div></div>`,crumb),bindOut();
   if(NH.cur!==hp){NH.cur=hp;NH.sel.clear();NH.f={ch:"",lv:"",st:"",loai:"",q:"",ng:""};NH.lim=60}
-  let err="";await nhChapters(hp);try{await nhLoad(hp);if(!NH.synced[hp]){await nhSync(hp);NH.synced[hp]=true;await nhNhanCho(hp)}}catch(x){if(!nhDenied(x))err=errMsg(x);NH.byHp[hp]=NH.byHp[hp]||[]}
+  let err="";await nhChapters(hp);try{await nhLoad(hp);if(!NH.synced[hp]){await nhSyncOnce(hp);await nhNhanCho(hp)}}catch(x){if(!nhDenied(x))err=errMsg(x);NH.byHp[hp]=NH.byHp[hp]||[]}
   if(location.hash!==tok)return;
   const all=NH.byHp[hp],st=nhStats(all),ps=nhPubState(hp),f=NH.f,chs=NH.chs[hp]||[];const thT={};all.filter(x=>x.kieu==="th").forEach(x=>thT[x.id]=x);
   const list=nhFilter(hp);const ths=all.filter(x=>x.kieu==="th").filter(x=>!f.ch||String(x.ch|0)===f.ch).sort(nhByOrd);
@@ -602,7 +601,9 @@ async function nhSync(hp){await nhChapters(hp);const d=NH.raw[hp];if(!d||!((d.q|
   (d.q||[]).forEach((x,i)=>{const {id,g,lv,q,o,a,b,e,cid,...ext}=x;const w=String(id);
     put("Q:"+w,nhWid("q",hp,w),{kieu:"cau",hp,ch:+g||0,gRaw:Number.isFinite(+g)&&g!==""&&g!=null?null:(g==null?null:g),lv:lv||"",q:q||"",o:o||[],a:a==null?null:a,b:b||"",e:e||"",th:cid?(cidDoc[cid]||""):"",cidRaw:cid||"",ext,ord:i,webId:w},nhH(JSON.stringify(x)))});
   if(ops.length)await nhCommit(ops);if(!NH.vb[hp]&&(d.vb||[]).length)await nhVbSave(hp,nhVbSeed(d));return {add,upd}}
-async function nhSyncAll(onStep){const out=[];for(const c of S.courses){if(!c.src||c.fb)continue;onStep&&onStep(c);try{const r=await nhSync(c.id);NH.synced[c.id]=true;out.push(Object.assign({c},r))}catch(x){out.push({c,err:errMsg(x)});if(nhDenied(x))break}}return out}
+/* một lần đồng bộ cho mỗi học phần trong phiên (trang tổng, trang học phần, ra đề, đồng bộ nền dùng chung — không ghi trùng) */
+function nhSyncOnce(hp,force){if(force)delete NH.syncP[hp];return NH.syncP[hp]||(NH.syncP[hp]=nhSync(hp).then(r=>{NH.synced[hp]=true;return r},e=>{delete NH.syncP[hp];throw e}))}
+async function nhSyncAll(onStep,force){const out=[];for(const c of S.courses){if(!c.src||c.fb)continue;onStep&&onStep(c);try{const r=await nhSyncOnce(c.id,force);out.push(Object.assign({c},r))}catch(x){out.push({c,err:errMsg(x)});if(nhDenied(x))break}}return out}
 
 /* ---------- xuất bản: bản ghi chênh lệch so với trang học phần ----------
    {v:2, del[], delc[], chg[], chgc[], q[], th[{n,items}]}: xóa / thay câu, tình huống sẵn có; thêm câu, tình huống mới.
@@ -658,3 +659,32 @@ async function nhExport(hp){try{const X=await lib("xlsx");const all=(NH.byHp[hp]
   const wb=X.utils.book_new();const w1=X.utils.aoa_to_sheet(qs);w1["!cols"]=[6,11,60,28,28,28,28,7,24,40,9,10,5,7].map(w=>({wch:w}));X.utils.book_append_sheet(wb,w1,"Cau hoi");
   if(ths.length){const w2=X.utils.aoa_to_sheet(ts);w2["!cols"]=[6,7,30,70,40,50,10,5].map(w=>({wch:w}));X.utils.book_append_sheet(wb,w2,"Tinh huong")}
   X.writeFile(wb,"ngan-hang-"+hp+"-"+todayISO()+".xlsx");toast("Đã xuất "+(qs.length-1)+" câu"+(ths.length?", "+ths.length+" tình huống":"")+".")}catch(x){toast("Chưa xuất được: "+(x.message||x))}}
+
+/* ---------- đồng bộ nền khi quản trị đăng nhập: mọi câu sẵn có + cổng GitHub luôn nằm trong ngân hàng (để ra đề, xuất bản) ---------- */
+const NH_AUTO={done:false,p:null,at:null,add:0,upd:0,cho:0,err:"",step:null};
+function nhAutoSync(){if(NH_AUTO.p)return NH_AUTO.p;if(NH_AUTO.done)return Promise.resolve(NH_AUTO);
+  NH_AUTO.p=(async()=>{try{if(!NH.all)await nhLoadAll();NH.syncRes=await nhSyncAll(c=>NH_AUTO.step&&NH_AUTO.step(c));const cho=NH.denied?[]:await nhNhanCho();
+      NH_AUTO.add=NH.syncRes.reduce((a,r)=>a+(r.add||0),0);NH_AUTO.upd=NH.syncRes.reduce((a,r)=>a+(r.upd||0),0);NH_AUTO.cho=cho.reduce((a,r)=>a+((r.n&&r.n.q)||0),0);
+      NH_AUTO.err=NH.denied?"Máy chủ chưa cho ghi ngân hàng — cập nhật quy tắc dữ liệu.":(NH.syncRes.filter(r=>r.err).map(r=>r.c.name+": "+r.err).join("; "));
+      if(NH_AUTO.add||NH_AUTO.cho)toast("Đã đồng bộ ngân hàng câu hỏi: thêm "+(NH_AUTO.add+NH_AUTO.cho)+" câu/tình huống"+(NH_AUTO.upd?", cập nhật "+NH_AUTO.upd:"")+".",5000)}
+    catch(x){NH_AUTO.err=nhDenied(x)?"Máy chủ chưa cho đọc/ghi ngân hàng — cập nhật quy tắc dữ liệu.":errMsg(x);NH.syncRes=NH.syncRes||[]}
+    NH_AUTO.done=true;NH_AUTO.at=new Date();NH_AUTO.p=null;if(location.hash==="#hethong")render();return NH_AUTO})();return NH_AUTO.p}
+
+/* ---------- trang Đồng bộ & quy tắc dữ liệu ---------- */
+async function viewHeThong(){const tok=location.hash;$("#app").innerHTML=shell("hethong",`<div class="page"><div class="empty">Đang kiểm tra hệ thống dữ liệu…</div></div>`);bindOut();
+  const ok=typeof rsCheck==="function"?await rsCheck():null;if(location.hash!==tok)return;
+  const st=ok===true?['đã cập nhật',""]:ok===false?['cần cập nhật',"bad"]:['chưa kiểm tra được (mạng)',"gray"];
+  const rows=S.courses.filter(c=>c.src&&!c.fb).map(c=>{const raw=NH.raw[c.id];const web=raw?(raw.q||[]).length:null;const a=NH.byHp[c.id]||[];
+    const tu=a.filter(x=>nhIsQ(x)&&x.nguon==="web").length,moi=a.filter(x=>nhIsQ(x)&&x.nguon!=="web").length,duyet=a.filter(x=>nhIsQ(x)&&x.st==="duyet").length;
+    return `<tr><td>${esc(c.name)}</td><td>${web==null?"—":web}</td><td>${tu}${web!=null&&tu<web?` <span class="pill warn">thiếu ${web-tu}</span>`:web!=null?' <span class="pill">đủ</span>':""}</td><td>${moi}</td><td>${duyet}</td></tr>`}).join("");
+  const A=NH_AUTO;const body=`<div class="page" style="max-width:1100px"><div class="bar"><div><h1 class="t">Đồng bộ & quy tắc dữ liệu</h1><span class="t-sub">Một luồng dữ liệu: web học phần + cổng GitHub → Ngân hàng câu hỏi → web ôn tập (Xuất bản) và đề kiểm tra định kỳ của từng lớp (Ra đề từ ngân hàng).</span></div></div>
+  <section class="scard"><h2 class="sec" style="margin-top:0">1. Quy tắc dữ liệu trên máy chủ (Firestore) <span class="pill ${st[1]}">${st[0]}</span></h2>
+    <p style="margin:0 0 10px">Quy tắc quyết định ai đọc/ghi được gì: sinh viên điểm danh, làm bài kiểm tra từ ngân hàng, đọc câu đã xuất bản. Phiên bản trong kho: <b>${esc(RS.v||"?")}</b>.${ok===false?" <b>Máy chủ đang dùng bản cũ</b> — bấm nút dưới, chọn tài khoản Google đã tạo dự án Firebase.":""}</p>
+    <button type="button" class="btn pri" data-rsgo>${ok===false?"Cập nhật ngay":"Cập nhật lại quy tắc"}</button> <button type="button" class="btn" data-rschk>Kiểm tra lại</button> <span id="nh-rsmsg" style="font-weight:600;color:var(--navy)"></span></section>
+  <section class="scard"><h2 class="sec" style="margin-top:0">2. Ngân hàng câu hỏi — câu sẵn có của các học phần</h2>
+    <p style="margin:0 0 10px">${A.p?"Đang đồng bộ…":A.done?`Lần đồng bộ gần nhất ${A.at?A.at.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}):""}: thêm ${A.add+A.cho}, cập nhật ${A.upd}.${A.err?` <span style="color:var(--bad)">${esc(A.err)}</span>`:""}`:"Chưa đồng bộ trong phiên này."} Tự chạy mỗi khi sếp đăng nhập quản trị.</p>
+    <div class="tbl"><table class="nht"><thead><tr><th>Học phần</th><th>Câu trên web</th><th>Đã vào ngân hàng</th><th>Câu mới thêm</th><th>Đã duyệt (dùng ra đề được)</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div style="margin-top:10px"><button type="button" class="btn pri" data-syncall ${A.p?"disabled":""}>Đồng bộ toàn bộ ngay</button></div></section></div>`;
+  $("#app").innerHTML=shell("hethong",body);bindOut();nhBindRules();
+  const ck=$("[data-rschk]");if(ck)ck.onclick=()=>viewHeThong();
+  const sa=$("[data-syncall]");if(sa)sa.onclick=async()=>{sa.disabled=true;sa.textContent="Đang đồng bộ…";NH.syncP={};NH.synced={};NH.all=null;NH.syncRes=null;NH_AUTO.done=false;NH_AUTO.step=null;await nhAutoSync();viewHeThong()}}
