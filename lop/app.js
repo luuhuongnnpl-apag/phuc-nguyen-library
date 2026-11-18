@@ -72,7 +72,7 @@ const I={
 };
 
 /* ============ trạng thái ============ */
-const S={fs:null,auth:null,user:null,admin:false,sv:null,courses:[],hp:{},lop:[],ds:{},pwLop:{},acc:{},ma:null,loaded:false,open:{},q:"",pre:{}};
+const S={dg:[],fs:null,auth:null,user:null,admin:false,sv:null,courses:[],hp:{},lop:[],ds:{},pwLop:{},acc:{},ma:null,loaded:false,open:{},q:"",pre:{}};
 const LIB={xlsx:["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"]};
 function lib(name){if(window.XLSX)return Promise.resolve(window.XLSX);return new Promise((ok,no)=>{let i=0;const next=()=>{if(i>=LIB[name].length)return no(new Error("Không tải được thư viện đọc Excel"));const s=document.createElement("script");s.src=LIB[name][i++];s.onload=()=>ok(window.XLSX);s.onerror=next;document.head.appendChild(s)};next()})}
 const FV=()=>firebase.firestore.FieldValue;
@@ -81,8 +81,17 @@ const FV=()=>firebase.firestore.FieldValue;
 async function loadCourses(){try{S.courses=await (await fetch(COURSES_URL,{cache:"no-store"})).json()}catch(e){S.courses=[]}}
 async function loadHp(){try{(await S.fs.collection("pnl_hp").get()).docs.forEach(d=>{S.hp[d.id]=Object.assign({id:d.id},d.data()||{})})}catch(e){}
   Object.values(S.hp).forEach(h=>{if(!S.courses.some(c=>c.id===h.id))S.courses.push({id:h.id,name:h.name||h.id,c:h.c||"#1d5677",src:h.src||"",st:h.status||h.st||"",fb:true})})}
-async function loadLop(){try{S.lop=(await S.fs.collection("pnl_dg_lop").get()).docs.map(d=>Object.assign({id:d.id},d.data()||{}))}catch(e){S.lop=[];console.warn("pnl_dg_lop",e&&e.code)}
+async function loadLop(){try{const all=(await S.fs.collection("pnl_dg_lop").get()).docs.map(d=>Object.assign({id:d.id},d.data()||{}));S.lop=all.filter(l=>!l.cha);S.dg=all.filter(l=>l.cha)}catch(e){S.lop=[];S.dg=[];console.warn("pnl_dg_lop",e&&e.code)}
   S.lop.sort((a,b)=>String(a.id).localeCompare(String(b.id),"vi"))}
+/* ĐỢT KIỂM TRA ĐỊNH KỲ của lớp (18/11/2026): mỗi đề ra từ ngân hàng là một đợt riêng pnl_dg_lop/{lớp-HP} (cha = mã lớp, dùng danh sách SV của lớp),
+   lớp cha ghi dgs:[mã đợt]. Lớp cũ có đề gắn thẳng vào lớp (đề Luật Dân sự, Kỹ năng tư vấn, đề NH cũ) vẫn là một đợt. */
+const dgLaDe=l=>!!l&&!!l.hocPhan&&(l.hocPhan!=="nh"||!!l.deNh);
+const dgHp=e=>(e.deNh&&e.deNh.hp)||lopHps(e)[0]||e.hocPhan||"";
+const dgTen=e=>(e.deNh&&e.deNh.hpTen)||e.hocPhanTen||lopHpTen(e)||e.id;
+const dgMs=t=>{if(!t)return null;const d=t.toDate?t.toDate():new Date(t);return isNaN(d)?null:d.getTime()};
+function dgMo(e){if(!e||!e.open)return false;const n=Date.now(),a=dgMs(e.openAt),b=dgMs(e.closeAt);return !(a&&n<a)&&!(b&&n>b)}
+async function dgGet(id){S.dg=S.dg||[];let e=S.dg.find(x=>x.id===id);if(e)return e;try{const d=await S.fs.doc("pnl_dg_lop/"+id).get();if(d.exists){e=Object.assign({id},d.data());S.dg.push(e)}}catch(x){}return e||null}
+async function lopDgs(l){const xs=[];if(dgLaDe(l))xs.push(l);for(const id of (l.dgs||[])){const e=await dgGet(id);if(e)xs.push(e)}return xs}
 async function loadDs(ma){if(S.ds[ma])return S.ds[ma];try{const d=(await S.fs.doc("pnl_dg_ds/"+ma).get()).data()||{};S.ds[ma]=d.rows||[];S.pwLop[ma]=d.matKhau||""}catch(e){S.ds[ma]=[];S.pwLop[ma]=""}return S.ds[ma]}
 async function loadAcc(mssvs){const need=[...new Set(mssvs.map(normId))].filter(x=>x&&!(x in S.acc));
   for(let i=0;i<need.length;i+=10){await Promise.all(need.slice(i,i+10).map(async m=>{try{const d=await S.fs.doc("pnl_tk/"+m).get();S.acc[m]=d.exists?d.data():null}catch(e){S.acc[m]=null}}))}}
@@ -132,7 +141,7 @@ function viewLogin(msg){$("#app").innerHTML=`<div class="login"><div class="box"
   $("#f-sv").onsubmit=async e=>{e.preventDefault();const id=normId($("#sv-id").value),pw=$("#sv-pw").value;const err=$("#sv-err");err.textContent="";
     const btn=$("#f-sv button");btn.disabled=true;btn.textContent="Đang kiểm tra…";
     S.busy=true;try{await svLogin(id,pw);const cho=sessionStorage.getItem("pnl-dd-cho");sessionStorage.removeItem("pnl-dd-cho");if(cho){const c=JSON.parse(cho);location.hash="#dd/"+encodeURIComponent(c.buoiId)+"/"+c.code}
-      else if(new URLSearchParams(location.search).get("ve")==="dg"){location.href=DG;return}else location.hash="#sv";S.busy=false;render()}
+      else if(new URLSearchParams(location.search).get("ve")==="dg"){location.href=DG;return}else{location.href=HOME;return}S.busy=false;render()}
     catch(x){err.textContent=x.message||String(x)}finally{S.busy=false;btn.disabled=false;btn.textContent="Vào lớp học"}};
   /* đăng nhập chuyển từ ô trên trang chủ (mã SV + mật khẩu lớp): dùng một lần rồi xóa */
   try{const dn=sessionStorage.getItem("pnl-dn");if(dn){sessionStorage.removeItem("pnl-dn");const d=JSON.parse(dn);$("#sv-id").value=d.id||"";$("#sv-pw").value=d.pw||"";
@@ -158,7 +167,7 @@ async function logout(){if(S.admin){await S.auth.signOut()}else if(S.sv){try{awa
   S.sv=null;store.del(SV_KEY);const h=store.get(HOME_KEY);if(h&&h.sv)store.del(HOME_KEY);location.hash="";render()}
 
 /* ============ QUẢN TRỊ: trang chủ ============ */
-function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.reduce((a,l)=>a+(l.siSo||0),0),nHp=S.courses.length,nMo=S.lop.filter(l=>l.open).length;
+function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.reduce((a,l)=>a+(l.siSo||0),0),nHp=S.courses.length,nMo=S.lop.filter(dgMo).length+(S.dg||[]).filter(dgMo).length;
   const tile=(h,ic,t,o)=>`<a href="${h}" class="tile${o&&o.soon?" soon":""}">${o&&o.badge?`<span class="badge ${o.badge[1]||""}">${o.badge[0]}</span>`:""}<span class="ic">${I[ic]}</span>${t}</a>`;
   const soon={soon:true,badge:["SẮP CÓ","gray"]};
   const body=`<div class="page">
@@ -216,13 +225,14 @@ function openMenu(anchor,items){closeMenu();const m=document.createElement("div"
   m.querySelectorAll("button").forEach(b=>b.onclick=()=>{closeMenu();items[+b.dataset.i][1]()});setTimeout(()=>document.addEventListener("click",closeMenu,{once:true}),0)}
 function closeMenu(){$$(".menu").forEach(m=>m.remove())}
 async function saveLop(ma,part){try{await S.fs.doc("pnl_dg_lop/"+ma).set(part,{merge:true});Object.assign(S.lop.find(l=>l.id===ma)||{},part);toast("Đã lưu.");render()}catch(x){toast("Chưa lưu được: "+errMsg(x))}}
-async function delLop(l){const ok=await confirmDlg("Xóa lớp "+lopName(l)+"?","Xóa toàn bộ danh sách sinh viên, bài làm đánh giá định kỳ và điểm của lớp này. Tài khoản sinh viên chỉ bị gỡ khỏi lớp. Không khôi phục được.","Xóa lớp");if(!ok)return;
+async function delLop(l){const ok=await confirmDlg("Xóa lớp "+lopName(l)+"?","Xóa toàn bộ danh sách sinh viên, các đợt kiểm tra định kỳ (đề, bài làm, điểm) của lớp này. Tài khoản sinh viên chỉ bị gỡ khỏi lớp. Không khôi phục được.","Xóa lớp");if(!ok)return;
   try{const db=S.fs;const refs=[];for(const c of ["pnl_dg_sv","pnl_dg_bai","pnl_dg_cham"]){(await db.collection(c).where("maLop","==",l.id).get()).docs.forEach(d=>refs.push(d.ref))}
     const rows=await loadDs(l.id);await loadAcc(rows.map(r=>r.mssv));
     for(const r of rows){const a=S.acc[normId(r.mssv)];if(a&&Array.isArray(a.lop)&&a.lop.includes(l.id)){const lop=a.lop.filter(x=>x!==l.id);a.lop=lop;refs.push({_set:db.doc("pnl_tk/"+normId(r.mssv)),data:{lop}})}}
     refs.push(db.doc("pnl_dg_ds/"+l.id),db.doc("pnl_dg_lop/"+l.id));
+    for(const id of (l.dgs||[])){for(const c of ["pnl_dg_bai","pnl_dg_cham"]){(await db.collection(c).where("maLop","==",id).get()).docs.forEach(d=>refs.push(d.ref))}refs.push(db.doc("pnl_dg_de/"+id),db.doc("pnl_dg_dap/"+id),db.doc("pnl_dg_lop/"+id))}
     for(let i=0;i<refs.length;i+=400){const b=db.batch();refs.slice(i,i+400).forEach(r=>r._set?b.set(r._set,r.data,{merge:true}):b.delete(r));await b.commit()}
-    S.lop=S.lop.filter(x=>x.id!==l.id);delete S.ds[l.id];toast("Đã xóa lớp "+l.id);location.hash="#lop";render()}catch(x){toast("Chưa xóa được: "+errMsg(x))}}
+    S.lop=S.lop.filter(x=>x.id!==l.id);S.dg=(S.dg||[]).filter(x=>x.cha!==l.id);delete S.ds[l.id];toast("Đã xóa lớp "+l.id);location.hash="#lop";render()}catch(x){toast("Chưa xóa được: "+errMsg(x))}}
 
 /* hộp thoại thêm / sửa lớp (kèm nhập Excel). Mật khẩu chung của lớp lưu ở pnl_dg_ds (chỉ quản trị đọc) */
 async function dlgLop(l,withImport,preset){const dlg=$("#dlg");const isNew=!l;if(l)await loadDs(l.id);const years=[...new Set(S.lop.map(grpOf))];const y=new Date();const yh=(y.getMonth()>=7?y.getFullYear():y.getFullYear()-1);const defYear="HK"+(y.getMonth()>=7||y.getMonth()<1?"1":"2")+" "+yh+"–"+(yh+1);
@@ -290,14 +300,14 @@ async function saveRoster(ma,rows,merge){const db=S.fs;const old=merge?await loa
   S.ds[ma]=all;const l=S.lop.find(x=>x.id===ma);if(l)l.siSo=all.length}
 
 /* ============ QUẢN TRỊ: chi tiết lớp ============ */
-async function viewLopDetail(ma,tab){const l=S.lop.find(x=>x.id===ma);if(!l){$("#app").innerHTML=shell("lop",`<div class="page"><div class="empty">Không tìm thấy lớp <b>${esc(ma)}</b>. <a href="#lop">Về danh sách lớp</a></div></div>`);bindOut();return}
+async function viewLopDetail(ma,tab,dgId){const l=S.lop.find(x=>x.id===ma);if(!l){$("#app").innerHTML=shell("lop",`<div class="page"><div class="empty">Không tìm thấy lớp <b>${esc(ma)}</b>. <a href="#lop">Về danh sách lớp</a></div></div>`);bindOut();return}
   tab=tab||"sv";const hp=courseOf(lopHps(l)[0]);const crumb=`<a class="back" href="#lop">${I.back}Quay lại</a><span class="sep">/</span><span class="sub">${tab==="sv"?"Danh sách sinh viên":"Lớp"}: ${esc(lopName(l))}</span>`;
   $("#app").innerHTML=shell("lop",`<div class="page"><div class="empty">Đang tải danh sách lớp…</div></div>`,crumb);bindOut();
   const rows=await loadDs(ma);await loadAcc(rows.map(r=>r.mssv));const pw=S.pwLop[ma]||"";
   const q=strip(S.q);const list=rows.filter(r=>!q||strip(r.mssv+" "+r.hoTen+" "+(r.lopNienChe||"")).includes(q));
   const sub=[["sv","user","Danh sách sinh viên"],["dd","qr","Điểm danh &amp; chuyên cần"],["btap","task","Bài tập"],["de","de","Ra đề từ ngân hàng"],["bt","exam","Kiểm tra, thi (ĐGĐK)"],["bd","grade","Bảng điểm"],["tk","chart","Thống kê"],["hp","hp","Học phần &amp; tài liệu của lớp"],["bt2","news","Bảng tin"]];
   const subnav=`<aside class="subnav">${sub.map(([k,ic,t,soon])=>`<a href="#lop/${encodeURIComponent(ma)}/${k}" class="${tab===k?"on":""}">${I[ic]}${t}${soon?'<span class="soon">sắp có</span>':""}</a>`).join("")}</aside>`;
-  const head=`<div class="bar"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 class="t">${esc(l.ten||l.id)}</h1><span class="pill gray">${esc(grpOf(l))}</span><span class="pill ${l.diemKhoa?"gray":""}">${l.diemKhoa?"Điểm đã khóa":"Điểm đang mở"}</span>${l.open?'<span class="pill live">ĐGĐK đang mở</span>':""}</div>
+  const head=`<div class="bar"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 class="t">${esc(l.ten||l.id)}</h1><span class="pill gray">${esc(grpOf(l))}</span><span class="pill ${l.diemKhoa?"gray":""}">${l.diemKhoa?"Điểm đã khóa":"Điểm đang mở"}</span>${(l.dgs||[]).some(id=>dgMo((S.dg||[]).find(x=>x.id===id)))||dgMo(l)?'<span class="pill live">ĐGĐK đang mở</span>':""}</div>
     <div class="tools"><button type="button" class="btn sm" data-export>${I.down}Xuất danh sách</button><a class="btn sm" href="#lop/${encodeURIComponent(ma)}/bd">${I.chart}Bảng điểm</a><button type="button" class="btn sm" data-import>${I.up}Nhập Excel</button><button type="button" class="btn sm pri" data-add>${I.plus}Thêm</button></div></div>`;
   let content="";
   if(tab==="sv"){const nAcc=rows.filter(r=>S.acc[normId(r.mssv)]).length;content=`${head}
@@ -310,7 +320,10 @@ async function viewLopDetail(ma,tab){const l=S.lop.find(x=>x.id===ma);if(!l){$("
         <td class="acts"><button type="button" class="ico" data-edit="${esc(r.mssv)}" aria-label="Sửa" title="Sửa">${I.edit}</button> <button type="button" class="ico key" data-reset="${esc(r.mssv)}" aria-label="Đặt lại mật khẩu về mật khẩu chung" title="Đặt lại về mật khẩu chung của lớp">${I.key}</button> <button type="button" class="ico del" data-del="${esc(r.mssv)}" aria-label="Xóa khỏi lớp" title="Xóa khỏi lớp">${I.del}</button></td></tr>`}).join("")}</tbody></table></div>`}
     <p class="note">Sinh viên đăng nhập <a href="./">Lớp học</a> bằng <b>ID = mã sinh viên</b> và mật khẩu chung của lớp, sau đó tự đổi mật khẩu riêng; <b>Đặt lại</b> đưa về mật khẩu chung. Cột <b>Có mặt</b> sẽ có số liệu khi mở Điểm danh.</p>`}
   else if(tab==="de"){content=await tabDeThi(l,head,ma)}
-  else if(tab==="bt"||tab==="bd"||tab==="tk"){content=`${head}<p class="note">${tab==="bt"?`Mở/đóng đợt đánh giá định kỳ, thời gian và bài làm của lớp — quản trị ngay tại đây. Đề: <b>${esc(l.hocPhan==="nh"?(l.deNh?l.deNh.hpTen+" — "+l.deNh.mota:"chưa ra đề"):(l.hocPhanTen||l.hocPhan||"chưa có"))}</b> · <a href="#lop/${encodeURIComponent(ma)}/de">Ra đề từ ngân hàng</a>`:tab==="bd"?"Danh sách và điểm theo mẫu APAG, xuất Excel — quản trị ngay tại đây.":"Phổ điểm và thống kê câu hỏi của lớp."}</p>${dgEmbed(ma,tab==="bt"?"cai-dat":tab==="tk"?"thong-ke":"")}`}
+  else if(tab==="bt"||tab==="bd"||tab==="tk"){const dgs=await lopDgs(l);const cur=dgs.find(e=>e.id===dgId)||dgs[0]||null;
+    const chips=dgs.length>1||(dgs.length&&tab!=="bt")?`<div class="tools" style="align-items:center"><span class="t-sub">Đợt kiểm tra:</span>${dgs.map(e=>`<a class="btn sm${cur&&e.id===cur.id?" pri":""}" href="#lop/${encodeURIComponent(ma)}/${tab}/${encodeURIComponent(e.id)}">${esc(dgTen(e))} · ${esc(e.id)}${dgMo(e)?" ●":""}</a>`).join("")}</div>`:"";
+    content=`${head}${chips}<p class="note">${tab==="bt"?(cur?`Mở/đóng đợt <b>${esc(cur.id)}</b> (${esc(dgTen(cur))}), thời gian và bài làm — quản trị ngay tại đây. Đề: <b>${esc(cur.deNh?cur.deNh.mota:(cur.hocPhanTen||cur.hocPhan))}</b> · <a href="#lop/${encodeURIComponent(ma)}/de">Ra thêm đề từ ngân hàng</a>`:`Lớp chưa có đợt kiểm tra định kỳ nào. <a href="#lop/${encodeURIComponent(ma)}/de">Ra đề từ ngân hàng</a> — mỗi đề lưu là một đợt, gán thẳng cho lớp.`)
+      :tab==="bd"?`Danh sách và điểm theo mẫu APAG, xuất Excel${cur?" — điểm kiểm tra định kỳ lấy từ đợt <b>"+esc(cur.id)+"</b>":""}; điểm kiểm tra thường xuyên tính từ điểm danh của lớp.`:"Phổ điểm và thống kê câu hỏi của đợt kiểm tra."}</p>${tab==="bt"&&!cur?"":dgEmbed(cur?cur.id:ma,tab==="bt"?"cai-dat":tab==="tk"?"thong-ke":"")}`}
   else if(tab==="hp"){const cs=lopHps(l).map(courseOf).filter(Boolean);content=`${head}<section><h2 class="sec">Học phần của lớp <button type="button" class="btn sm" data-editlop style="margin-left:8px">${I.edit}Gán học phần</button></h2>${cs.length?`<div class="grid4">${cs.map(hp=>`<article class="hp"><div class="cover" style="background:${esc(hp.c||"#1d5677")}">${esc(hp.name)}</div><div class="body"><div class="tags">${["Tóm tắt","Mind map","Câu hỏi","Tình huống","Thi thử","Văn bản"].map(t=>`<span class="tag">${t}</span>`).join("")}</div><div class="act"><a href="#hocphan/${encodeURIComponent(hp.id)}">Quản trị học phần</a><a href="${courseHref(hp)}" class="pri" target="_blank" rel="noopener">Mở nội dung</a></div></div></article>`).join("")}</div><p class="note">Sinh viên của lớp đăng nhập là vào học được các học phần này, không cần mã lớp ôn tập.</p>`:`<div class="empty">Lớp chưa gắn học phần — bấm <b>Gán học phần</b>.</div>`}</section>
     <section><h2 class="sec">Tài liệu riêng của lớp</h2><div class="empty">Tài liệu gắn theo lớp (đề cương, lịch học, bài đọc) — sắp có. Hiện tài liệu, giáo trình quản lý trong từng học phần trên <a href="${HOME}">trang thư viện</a>.</div></section>`}
   else if(tab==="dd"){content=await tabDiemDanh(l,rows,head,ma)}else if(tab==="bt2"){content=await tabBangTin(l,rows,head,ma)}else if(tab==="btap"){content=await tabBaiTap(l,rows,head,ma)}
@@ -443,35 +456,55 @@ async function viewSinhVien(){$("#app").innerHTML=shell("sinhvien",`<div class="
   $("#app").innerHTML=shell("sinhvien",body);bindOut();$("#q").oninput=e=>{S.q=e.target.value;clearTimeout(viewSinhVien._t);viewSinhVien._t=setTimeout(()=>viewSinhVien().then(()=>keepFocus("#q")),250)}}
 
 /* ============ SINH VIÊN ============ */
-const SV_RAIL=cur=>[["#sv","home","Trang chủ","home"],["#sv/hoctap","hp","Học tập","hoctap"],["#sv/baitap","task","Bài tập & bảng tin","baitap"],[DG,"exam","Kiểm tra, thi"],["#sv/diemdanh","qr","Điểm danh","diemdanh"],["#sv","grade","Kết quả học tập",null,1],["#sv/taikhoan","user","Tài khoản","taikhoan"]];
-async function svLops(me){const lops=[];for(const ma of me.lop||[]){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists)l=Object.assign({id:ma},d.data())}catch(e){}}if(l)lops.push(l)}return lops}
+/* Khung quản trị của sinh viên (18/11/2026): Trang chủ (về màn hình chính thư viện) · Bảng điều khiển · Học tập · Kiểm tra, thi · Bài tập · Điểm danh · Tài khoản */
+const SV_RAIL=cur=>[[HOME,"home","Trang chủ thư viện"],["#sv","grade","Bảng điều khiển","home"],["#sv/hoctap","hp","Học tập","hoctap"],["#sv/kiemtra","exam","Kiểm tra, thi","kiemtra"],["#sv/baitap","task","Bài tập & bảng tin","baitap"],["#sv/diemdanh","qr","Điểm danh","diemdanh"],["#sv/taikhoan","user","Tài khoản","taikhoan"]];
+async function svLops(me){const lops=[];for(const ma of me.lop||[]){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists){l=Object.assign({id:ma},d.data());if(!l.cha)S.lop.push(l)}}catch(e){}}if(l&&!l.cha)lops.push(l)}return lops}
 const svMe=()=>S.sv||{mssv:"XEM-THU",hoTen:ADMIN_NAME,lop:S.lop.filter(l=>!l.luuTru).slice(0,2).map(l=>l.id),pwDefault:false};
-const svHead=(me,text)=>`<header class="top"><div class="crumb">${text}</div>${S.sv?who(me.hoTen,me.mssv+" · Sinh viên"):`<div class="who"><span class="pill warn">Đang xem như sinh viên</span><a class="out" href="#home">Về quản trị</a></div>`}</header>`;
-async function viewSvHome(){const me=svMe();const lops=await svLops(me);const first=(me.hoTen||"").trim().split(/\s+/).pop();const mo=lops.filter(l=>l.open);const dd=S.sv?await svDdData(me,lops):{buoi:[],co:[]};const ddMo=dd.buoi.filter(ddOpen);
-  const body=`<main>${svHead(me,`<span class="sub">Chào ${esc(first)}${ddMo.length?", có "+ddMo.length+" buổi học đang điểm danh":mo.length?", có "+mo.length+" bài đánh giá định kỳ đang mở":", hôm nay chưa có buổi học đang điểm danh"}</span>`)}
+const svHead=(me,text)=>`<header class="top"><div class="crumb">${text}</div><div style="display:flex;align-items:center;gap:10px"><a class="btn sm" href="${HOME}">${I.home}Trang chủ</a>${S.sv?who(me.hoTen,me.mssv+" · Sinh viên"):`<div class="who"><span class="pill warn">Đang xem như sinh viên</span><a class="out" href="#home">Về quản trị</a></div>`}</div></header>`;
+/* mọi đợt kiểm tra định kỳ của các lớp sinh viên học, kèm trạng thái bài làm của chính sinh viên */
+async function svDgs(me,lops){const out=[];for(const l of lops){for(const e of await lopDgs(l)){let bai=null,khac=false;
+    if(S.sv){try{const d=await S.fs.doc("pnl_dg_bai/"+e.id+"__"+me.mssv).get();bai=d.exists?d.data():null}catch(x){khac=x&&x.code==="permission-denied"}}
+    const mo=dgMo(e),sap=!!e.open&&!mo&&dgMs(e.openAt)>Date.now();
+    const act=bai&&bai.status==="da-nop"?"xong":khac?"khac":bai&&bai.status==="dang-lam"?(mo?"tiep":"dong"):mo?"lam":sap?"sap":"dong";
+    out.push({e,l,bai,act,hp:dgHp(e)})}}return out}
+const SV_ACT={xong:["đã nộp bài","pill"],khac:["đã làm trên máy khác","pill gray"],tiep:["đang làm dở","pill live"],lam:["đang mở","pill live"],sap:["sắp mở","pill warn"],dong:["chưa mở / đã đóng","pill gray"]};
+function svDgRow(x){const e=x.e,t=SV_ACT[x.act];const go=x.act==="lam"||x.act==="tiep";
+  return `<div class="row" style="align-items:center;gap:12px"><div><b>${esc(dgTen(e))}</b> <span class="${t[1]}">${t[0]}</span><br><span style="font-size:12px;color:var(--muted)">Lớp ${esc(x.l.id)} · đợt ${esc(e.id)} · ${+e.thoiGian||40} phút${dgMs(e.openAt)?" · mở "+fmtD(e.openAt):""}${dgMs(e.closeAt)?" · đóng "+fmtD(e.closeAt):""}</span></div>${go?`<a class="btn sm pri" href="${DG}?ma=${encodeURIComponent(e.id)}">${x.act==="tiep"?"Tiếp tục làm bài":"Làm bài"}</a>`:x.act==="xong"?`<a class="btn sm" href="${DG}?ma=${encodeURIComponent(e.id)}">Xem</a>`:""}</div>`}
+async function viewSvHome(){const me=svMe();const lops=await svLops(me);const first=(me.hoTen||"").trim().split(/\s+/).pop();
+  const [dgs,dd]=await Promise.all([svDgs(me,lops),S.sv?svDdData(me,lops):Promise.resolve({buoi:[],co:[]})]);const ddMo=dd.buoi.filter(ddOpen);
+  const can=dgs.filter(x=>x.act==="lam"||x.act==="tiep"),sap=dgs.filter(x=>x.act==="sap");
+  const hpCards=[];lops.forEach(l=>lopHps(l).forEach(h=>{const c=courseOf(h)||{id:h,name:h,c:"#1d5677"};hpCards.push(`<div class="row" style="align-items:center"><div><b>${esc(c.name)}</b><br><span style="font-size:12px;color:var(--muted)">Lớp ${esc(l.id)}${l.ten&&l.ten!==l.id?" · "+esc(l.ten):""} · ${esc(grpOf(l))} · ${dgs.filter(x=>x.l===l&&x.hp===h).length} đợt kiểm tra</span></div><a class="btn sm" href="${courseHref(c)}">Vào học</a></div>`)}));
+  const body=`<main>${svHead(me,`<span class="sub">Chào ${esc(first)}${ddMo.length?", có "+ddMo.length+" buổi học đang điểm danh":can.length?", có "+can.length+" bài kiểm tra cần làm":", hôm nay chưa có việc gấp"}</span>`)}
   <div class="page" style="max-width:1180px">
     ${S.sv&&S.sv.pwDefault?`<div class="scard" style="border-color:var(--warn);background:var(--warn-soft);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><span>Bạn đang dùng <b>mật khẩu chung của lớp</b>. Hãy đổi mật khẩu riêng để bảo vệ tài khoản.</span><a class="btn sm pri" href="#sv/taikhoan">Đổi mật khẩu</a></div>`:""}
     ${svDdBox(dd.buoi,dd.co,dd.err)}
-    ${mo.map(l=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">ĐANG MỞ</span><div><b style="display:block;font-size:15px">Đánh giá định kỳ — ${esc(l.hocPhanTen||l.ten||l.id)}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(l.id)}${l.closeAt?" · đóng "+fmtD(l.closeAt):""} · ${l.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}?ma=${encodeURIComponent(l.id)}">Vào làm bài</a></div>`).join("")}
-    <section><h2 class="sec">Bốn mục của bạn</h2><div class="grid4">
-      <a href="#sv/hoctap" class="stile"><span class="ic">${I.hp}</span><b>Học tập</b><span>${lops.length} lớp học phần · ôn tập, tóm tắt, mind map, tài liệu</span></a>
-      <a href="${DG}" class="stile"><span class="ic">${I.task}</span><b>Kiểm tra</b><span>${mo.length?mo.length+" bài đang mở":"Chưa có bài kiểm tra mở"} · làm bằng tài khoản này</span></a>
+    ${can.map(x=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">${x.act==="tiep"?"ĐANG LÀM":"ĐANG MỞ"}</span><div><b style="display:block;font-size:15px">Kiểm tra định kỳ — ${esc(dgTen(x.e))}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(x.l.id)} · đợt ${esc(x.e.id)}${dgMs(x.e.closeAt)?" · đóng "+fmtD(x.e.closeAt):""} · ${+x.e.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}?ma=${encodeURIComponent(x.e.id)}">${x.act==="tiep"?"Tiếp tục làm bài":"Vào làm bài"}</a></div>`).join("")}
+    <section><h2 class="sec">Các mục của bạn</h2><div class="grid4">
+      <a href="#sv/hoctap" class="stile"><span class="ic">${I.hp}</span><b>Học tập</b><span>${hpCards.length} học phần · ôn tập, tóm tắt, mind map, tài liệu</span></a>
+      <a href="#sv/kiemtra" class="stile"><span class="ic">${I.exam}</span><b>Kiểm tra, thi</b><span>${can.length?can.length+" bài cần làm":"Chưa có bài đang mở"} · ${dgs.length} đợt của các lớp</span></a>
       <a href="#sv/baitap" class="stile"><span class="ic">${I.task}</span><b>Bài tập &amp; bảng tin</b><span>Bài được giao, hạn nộp, thông báo của lớp</span></a>
       <a href="#sv/diemdanh" class="stile"><span class="ic">${I.qr}</span><b>Điểm danh</b><span>Có mặt ${dd.co.length}/${dd.buoi.filter(b=>b.trangThai!=="huy").length} buổi · quét QR hoặc nhập mã buổi</span></a>
     </div></section>
-    <div class="grid2"><section class="scard"><h2 class="sec">Lớp học phần của bạn</h2>${lops.length?lops.map(l=>{return `<div class="row"><div><b>${esc(lopHpTen(l)||l.id)}</b><br><span style="font-size:12px;color:var(--muted)">${esc(l.id)}${l.ten?" · "+esc(l.ten):""} · ${esc(grpOf(l))}</span></div><div style="text-align:right">${c?`<a class="btn sm" href="${courseHref(c)}">Vào học</a>`:""}<br><span style="font-size:12px;color:var(--muted)">${l.open?"ĐGĐK đang mở":"chưa thi"}</span></div></div>`}).join(""):'<p class="note">Bạn chưa được xếp vào lớp nào. Hãy báo giảng viên.</p>'}</section>
-    <section class="scard"><h2 class="sec">Việc sắp tới</h2>${mo.length?mo.map(l=>`<div class="row"><span>Đánh giá định kỳ ${esc(l.hocPhanTen||l.id)} (${l.thoiGian||40} phút)</span><span class="pill">${l.closeAt?"đến "+fmtD(l.closeAt):"đang mở"}</span></div>`).join(""):'<div class="row"><span>Chưa có việc nào được giao.</span><span class="pill gray">—</span></div>'}<div class="row"><span>Ôn tập: làm đề thi thử trong học phần của lớp</span><span class="pill gray">tự học</span></div></section></div></div></main>`;
-  $("#app").innerHTML=rail(SV_RAIL(),true,"home")+body;bindOut();bindSvDd(me,lops,()=>viewSvHome())}
+    <div class="grid2"><section class="scard"><h2 class="sec">Lớp và học phần đang học</h2>${hpCards.join("")||(lops.length?'<p class="note">Lớp của bạn chưa được gán học phần.</p>':'<p class="note">Bạn chưa được xếp vào lớp nào. Hãy báo giảng viên.</p>')}</section>
+    <section class="scard"><h2 class="sec">Bài kiểm tra cần làm</h2>${can.concat(sap).map(svDgRow).join("")||'<div class="row"><span>Chưa có bài kiểm tra nào đang mở.</span><a class="btn sm" href="#sv/kiemtra">Xem tất cả</a></div>'}</section></div></div></main>`;
+  $("#app").innerHTML=rail(SV_RAIL(),true,"home")+body;bindOut();bindSvDd(me,lops,()=>viewSvHome());grantHomeSession().catch(()=>{})}
+async function viewSvKiemTra(){const me=svMe();const lops=await svLops(me);const dgs=await svDgs(me,lops);const by={};dgs.forEach(x=>(by[x.hp]=by[x.hp]||[]).push(x));
+  const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Bảng điều khiển</a><span class="sep">/</span><span class="sub">Kiểm tra, thi</span>`)}
+  <div class="page" style="max-width:1000px"><h1 class="t">Kiểm tra, thi</h1>
+    ${Object.keys(by).length?Object.entries(by).map(([h,xs])=>{const c=courseOf(h)||{name:dgTen(xs[0].e)};return `<section class="scard"><h2 class="sec" style="margin-top:0">${esc(c.name)}</h2>${xs.map(svDgRow).join("")}</section>`}).join("")
+      :`<div class="empty">${lops.length?"Các lớp của bạn chưa có đợt kiểm tra định kỳ nào.":"Bạn chưa được xếp vào lớp nào."}</div>`}
+    <p class="note">Mỗi bài làm một lần bằng tài khoản này. Đợt chỉ làm được khi giảng viên mở và trong khung giờ; điểm kiểm tra định kỳ từ 9 trở lên và nộp sớm (30 bạn đầu) được cộng vào điểm kiểm tra thường xuyên.</p></div></main>`;
+  $("#app").innerHTML=rail(SV_RAIL(),true,"kiemtra")+body;bindOut()}
 async function viewSvHocTap(){const me=svMe();const lops=await svLops(me);
   const TASKS=[["Tóm tắt lý thuyết","map"],["Mind map","map"],["Câu hỏi lý thuyết","de"],["Câu hỏi tình huống","task"],["Thi thử","exam"],["Văn bản, án lệ","bank"]];
-  const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Trang chủ</a><span class="sep">/</span><span class="sub">Học tập</span>`)}
+  const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Bảng điều khiển</a><span class="sep">/</span><span class="sub">Học tập</span>`)}
   <div class="page"><h1 class="t">Học tập</h1>${(()=>{const hp={};lops.forEach(l=>lopHps(l).forEach(h=>(hp[h]=hp[h]||[]).push(l.id)));const ids=Object.keys(hp);
     return ids.length?`<div class="grid4">${ids.map(id=>{const c=courseOf(id)||{id,name:id,c:"#1d5677"};return `<article class="hp"><div class="cover" style="background:${esc(c.c||"#1d5677")}">${esc(c.name)}</div><div class="body"><div class="meta"><span>Lớp ${esc(hp[id].join(", "))}</span></div><div class="tags">${TASKS.map(t=>`<span class="tag">${t[0]}</span>`).join("")}</div><div class="act"><a href="${courseHref(c)}" class="pri" data-vao>Vào học</a></div></div></article>`}).join("")}</div>`
     :lops.length?'<div class="empty">Lớp của bạn chưa được gán học phần nào. Báo giảng viên.</div>':'<div class="empty">Bạn chưa được xếp vào lớp nào.</div>'})()}
   <p class="note">Vào học mở web ôn tập của học phần trên trang thư viện; tài khoản lớp đã được cấp quyền, không cần nhập mã lớp.</p></div></main>`;
   $("#app").innerHTML=rail(SV_RAIL(),true,"hoctap")+body;bindOut();await grantHomeSession()}
 async function viewSvTaiKhoan(){const me=svMe();const lops=await svLops(me);
-  const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Trang chủ</a><span class="sep">/</span><span class="sub">Tài khoản</span>`)}
+  const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Bảng điều khiển</a><span class="sep">/</span><span class="sub">Tài khoản</span>`)}
   <div class="page" style="max-width:900px"><h1 class="t">Tài khoản</h1>
     <div class="grid2"><section class="scard"><h2 class="sec">Thông tin</h2><div class="row"><span>Họ và tên</span><b>${esc(me.hoTen)}</b></div><div class="row"><span>ID (mã sinh viên)</span><b>${esc(me.mssv)}</b></div>${me.lopNienChe?`<div class="row"><span>Lớp niên chế</span><b>${esc(me.lopNienChe)}</b></div>`:""}<div class="row"><span>Lớp học phần</span><b style="text-align:right">${lops.map(l=>esc(l.id)).join("<br>")||"—"}</b></div><div class="row"><span>Mật khẩu</span>${me.pwDefault?'<span class="pill warn">đang dùng mật khẩu chung của lớp</span>':'<span class="pill">đã đổi riêng</span>'}</div></section>
     <section class="scard"><h2 class="sec">Đổi mật khẩu</h2>${S.sv?`<form id="f-pw" style="display:flex;flex-direction:column;gap:12px"><div class="fld"><label for="p-old">Mật khẩu hiện tại</label><input id="p-old" type="password" autocomplete="current-password" required></div><div class="fld"><label for="p-new">Mật khẩu mới (từ 6 ký tự)</label><input id="p-new" type="password" autocomplete="new-password" minlength="6" required></div><div class="fld"><label for="p-new2">Nhập lại mật khẩu mới</label><input id="p-new2" type="password" autocomplete="new-password" minlength="6" required></div><p class="err" id="p-err"></p><button type="submit" class="btn pri" style="justify-content:center">Đổi mật khẩu</button></form><p class="note" style="margin-top:10px">Quên mật khẩu riêng: báo giảng viên bấm <b>Đặt lại</b>, mật khẩu sẽ về mật khẩu chung của lớp.</p>`:'<p class="note">Đang xem thử với tư cách quản trị — không đổi được mật khẩu ở đây.</p>'}</section></div></div></main>`;
@@ -487,12 +520,13 @@ async function viewSvTaiKhoan(){const me=svMe();const lops=await svLops(me);
 /* ============ điều hướng ============ */
 function render(){closeMenu();const h=decodeURIComponent((location.hash||"").slice(1));const p=h.split("/");
   if(S.admin){if(!S.loaded)return;if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);if(p[0]==="sv")return svRoute(p);
-    if(p[0]==="lop"&&p[1]&&p[1]!=="luu-tru")return viewLopDetail(p[1],p[2]);if(p[0]==="lop")return viewLop();
+    if(p[0]==="lop"&&p[1]&&p[1]!=="luu-tru")return viewLopDetail(p[1],p[2],p[3]);if(p[0]==="lop")return viewLop();
     if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="nganhang")return viewNganHang(p[1]);if(p[0]==="hethong")return viewHeThong();if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
+  if(!S.admin&&new URLSearchParams(location.search).get("out")==="1"){(S.sv?logout():Promise.resolve()).catch(()=>{}).then(()=>{store.del(SV_KEY);const h=store.get(HOME_KEY);if(h&&h.sv)store.del(HOME_KEY);location.href=HOME});return}
   if(S.sv){try{sessionStorage.removeItem("pnl-dn")}catch(e){}if(new URLSearchParams(location.search).get("ve")==="dg"){location.href=DG;return}if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
   if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);
   viewLogin()}
-function svRoute(p){return p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():p[1]==="diemdanh"?viewSvDiemDanh():p[1]==="baitap"?viewSvBaiTap():viewSvHome()}
+function svRoute(p){return p[1]==="kiemtra"?viewSvKiemTra():p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():p[1]==="diemdanh"?viewSvDiemDanh():p[1]==="baitap"?viewSvBaiTap():viewSvHome()}
 window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.includes("#lop/")||h.startsWith("#hocphan")||h.startsWith("#malop")||h.startsWith("#gopy")||h.startsWith("#sinhvien");if(!keep)S.q="";render()});
 
 /* ============ khởi động ============ */

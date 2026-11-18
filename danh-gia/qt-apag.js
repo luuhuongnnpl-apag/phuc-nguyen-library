@@ -234,7 +234,9 @@ function grid(el,rows,opts){
    Lớp chưa có buổi điểm danh nào → điểm điểm danh mặc định 8 (sếp chốt 18/11/2026). Sửa tay lưu pnl_cc/{lớp}.kttx[mssv] (xóa trống = tính lại). */
 const KT={},KT_SOM=30;
 async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]&&!force)return KT[ma];const fs=firebase.firestore();
-  const [b,c,cc,bl]=await Promise.all([fs.collection("pnl_dd").where("maLop","==",ma).get(),fs.collection("pnl_dd_sv").where("maLop","==",ma).get(),fs.doc("pnl_cc/"+ma).get(),fs.collection("pnl_dg_bai").where("maLop","==",ma).get()]);
+  /* đợt kiểm tra con (cha = mã lớp): điểm danh lấy của lớp cha, thưởng ĐGĐK / nộp sớm lấy theo bài của đợt */
+  let cha=ma;try{const l=await fs.doc("pnl_dg_lop/"+ma).get();if(l.exists&&l.data().cha)cha=l.data().cha}catch(e){}
+  const [b,c,cc,bl]=await Promise.all([fs.collection("pnl_dd").where("maLop","==",cha).get(),fs.collection("pnl_dd_sv").where("maLop","==",cha).get(),fs.doc("pnl_cc/"+ma).get(),fs.collection("pnl_dg_bai").where("maLop","==",ma).get()]);
   const ms=t=>t&&t.toMillis?t.toMillis():t&&t.seconds?t.seconds*1000:Infinity;
   const nop=bl.docs.map(d=>d.data()).filter(x=>x.status==="da-nop"&&x.mssv).sort((x,y)=>ms(x.submittedAt)-ms(y.submittedAt));const som={};nop.slice(0,KT_SOM).forEach((x,i)=>som[String(x.mssv).toUpperCase()]=i+1);
   const buoi=new Set(b.docs.filter(d=>d.data().trangThai!=="huy").map(d=>d.id));const co={};

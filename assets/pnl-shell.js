@@ -121,8 +121,11 @@ function shCrumbs(parts){return `<div class="crumbs"><a class="home-link" data-h
 /* ================= Khung: thanh trên, danh mục, cột phải ================= */
 function shWho(){const w=document.getElementById("who"),act=document.getElementById("topAct");if(!w||!act)return;
   const adm=shAdmin(),code=!adm&&session&&!session.admin;
-  w.textContent=adm?"Quản trị · "+((fbAuth&&fbAuth.currentUser&&fbAuth.currentUser.email)||""):code?"Mã "+(session.label||session.code)+" · đến "+fmtDate(session.han):"";
+  const sv=code&&session.sv;
+  w.textContent=adm?"Quản trị · "+((fbAuth&&fbAuth.currentUser&&fbAuth.currentUser.email)||""):sv?"Sinh viên · "+(session.label||""):code?"Mã "+(session.label||session.code)+" · đến "+fmtDate(session.han):"";
   act.querySelectorAll("[data-dyn]").forEach(x=>x.remove());
+  /* sinh viên đăng nhập tài khoản lớp: nút Quản trị mở khung quản trị của sinh viên (lop/#sv); Đăng xuất hủy phiên ở trang Lớp học rồi quay về */
+  if(sv){w.insertAdjacentHTML("afterend",'<a class="tbtn hl" data-dyn href="lop/#sv" style="text-decoration:none">Quản trị</a><a class="tbtn" data-dyn href="lop/?out=1" style="text-decoration:none">Đăng xuất</a>');return}
   w.insertAdjacentHTML("afterend",(adm?'<a class="tbtn hl" data-dyn href="lop/#home" style="text-decoration:none">Quản trị</a>':"")+(adm||code?'<button type="button" class="tbtn" data-dyn data-out>Đăng xuất</button>':'<button type="button" class="tbtn hl" data-dyn data-in>Đăng nhập</button>'));
   act.querySelectorAll("[data-in]").forEach(b=>b.onclick=shLoginDlg);
   act.querySelectorAll("[data-out]").forEach(b=>b.onclick=()=>{if(adm)return shLogout();store.del(KEY);session=null;$("#code-in").value="";shWho();route("home");shToast("Đã đăng xuất mã lớp trên máy này.")})}

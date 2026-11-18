@@ -5,10 +5,15 @@
      pnl_dg_de/{mã lớp}   đề nguồn KHÔNG kèm đáp án {hp, hpTen, kieu, tronCau, tronDA, mt[], thSo, thCau, q{qid:{q,o,g,lv,c?}}, cs{tid:{t,x,g,m[]}}, fixed?}
    pnl_dg_dap/{mã lớp}  đáp án, căn cứ, giải thích, mã câu gốc trong ngân hàng (chỉ quản trị — dùng khi chấm, xem bài)
      pnl_dg_lop/{mã lớp}  hocPhan:"nh", hocPhanTen, thoiGian, deNh (mô tả)
-   Sinh viên làm bài ở trang danh-gia/ như cũ (mã lớp + mã SV); trang đó rút đề theo ma trận khi bắt đầu. */
+   Từ 18/11/2026 mỗi lần lưu là một đợt pnl_dg_lop/{lớp-HP} (cha = lớp); sinh viên làm bài bằng tài khoản lớp ở danh-gia/, trang đó rút đề theo ma trận khi bắt đầu. */
 const DT={st:{},bai:{}};
 const DT_LV=["NB","TH","VD"];
-function dtState(l){const ma=l.id;if(DT.st[ma])return DT.st[ma];const c=(l.deNh&&l.deNh.cfg)||{};const hps=lopHps(l);
+async function dtDem(dgs,force){await Promise.all(dgs.map(async e=>{if(DT.bai[e.id]!=null&&!force)return;try{DT.bai[e.id]=(await S.fs.collection("pnl_dg_bai").where("maLop","==",e.id).get()).size}catch(x){DT.bai[e.id]=0}}))}
+function dtAbbr(hp){const n=String(courseOf(hp)?.name||hp).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[đĐ]/g,"D");return n.split(/[^A-Za-z0-9]+/).filter(Boolean).map(w=>w[0]).join("").toUpperCase().slice(0,6)||"HP"}
+/* đợt nhận đề khi bấm Lưu: đợt gần nhất cùng học phần còn chưa có bài làm thì ghi đè; nếu không, tạo đợt mới {lớp}-{viết tắt HP}[-n] */
+function dtTarget(l,dgs,hp){const mine=dgs.filter(e=>e.cha===l.id&&dgHp(e)===hp);const last=mine[mine.length-1];if(last&&!(DT.bai[last.id]>0))return {id:last.id,e:last};
+  const base=l.id+"-"+dtAbbr(hp);const used=new Set([...(S.dg||[]).map(x=>x.id),...S.lop.map(x=>x.id)]);let id=base,k=1;while(used.has(id))id=base+"-"+(++k);return {id,e:null}}
+function dtState(l){const ma=l.id;if(DT.st[ma])return DT.st[ma];const kids=(l.dgs||[]).map(id=>(S.dg||[]).find(x=>x.id===id)).filter(e=>e&&e.deNh);const c=(kids.length?kids[kids.length-1].deNh.cfg:(l.deNh&&l.deNh.cfg))||{};const hps=lopHps(l);
   return DT.st[ma]=Object.assign({hp:hps[0]||"",nguon:"all",kieu:"rieng",tronCau:true,tronDA:true,tg:+l.thoiGian||40,mt:{},thSo:0,thCau:0,thChs:[],tong:30,tl:[30,40,30]},c)}
 /* câu, tình huống dùng được: đã duyệt, đủ 4 phương án + đáp án, đã xếp chương; lọc theo nguồn (kín / ôn tập) */
 function dtElig(hp,nguon){const all=NH.byHp[hp]||[];const ok=x=>nguon==="kin"?!!x.kin:nguon==="on"?!x.kin:true;
@@ -46,10 +51,10 @@ async function tabDeThi(l,head,ma){const st=dtState(l);const hps=lopHps(l);
   if(!hps.length)return `${head}<div class="empty">Lớp chưa gán học phần — bấm <b>Sửa lớp</b> để chọn học phần trước khi ra đề.</div>`;
   if(!hps.includes(st.hp))st.hp=hps[0];
   try{await nhChapters(st.hp);await nhLoad(st.hp);if(!NH.synced[st.hp])await nhSyncOnce(st.hp)}catch(x){if(nhDenied(x))return `${head}${nhRulesBox()}`;return `${head}<div class="empty">Chưa tải được ngân hàng: ${esc(errMsg(x))}</div>`}
-  try{const q=await S.fs.collection("pnl_dg_bai").where("maLop","==",ma).get();DT.bai[ma]=q.size}catch(e){DT.bai[ma]=0}
-  const nb=DT.bai[ma],khoa=nb>0;const E=dtElig(st.hp,st.nguon);const chs=dtChs(st,E);const tong=dtTong(st),[a,b]=dtCauTH(st,E);
-  const cur=l.hocPhan==="nh"&&l.deNh?`<div class="scard" style="border-color:#bfe3cb;background:var(--ok-soft)"><b>Đề đang dùng:</b> ${esc(l.deNh.hpTen||"")} — ${esc(l.deNh.mota||"")}${khoa?` <span class="pill">${nb} bài đã làm</span>`:""}</div>`
-    :l.hocPhan&&l.hocPhan!=="nh"?`<div class="scard" style="border-color:var(--warn);background:var(--warn-soft)"><b>Lớp đang dùng đề cũ của trang Đánh giá định kỳ</b> (${esc(l.hocPhanTen||l.hocPhan)}).${khoa?` Đã có ${nb} bài làm theo đề này nên <b>không đổi được</b> — muốn dùng đề từ ngân hàng, tạo lớp mới (hoặc đợt mới) cho lớp này.`:" Lưu đề dưới đây thì lớp chuyển sang đề rút từ ngân hàng câu hỏi."}</div>`:"";
+  const dgs=await lopDgs(l);await dtDem(dgs);const khoa=false;const E=dtElig(st.hp,st.nguon);const chs=dtChs(st,E);const tong=dtTong(st),[a,b]=dtCauTH(st,E);const T=dtTarget(l,dgs,st.hp);
+  const cur=`<div class="scard"><h2 class="sec" style="margin-top:0">Đề đã giao cho lớp <span class="t-sub" style="font-weight:400">(mỗi đề là một đợt kiểm tra định kỳ, sinh viên của lớp thấy ngay trong tài khoản)</span></h2>
+    ${dgs.length?dgs.map(e=>`<div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)"><div><b>${esc(dgTen(e))}</b> <span class="pill gray">${esc(e.id)}</span> ${dgMo(e)?'<span class="pill live">đang mở</span>':'<span class="pill gray">chưa mở</span>'}<br><span class="t-sub">${esc(e.deNh?e.deNh.mota:"Đề của trang Đánh giá định kỳ ("+(e.hocPhanTen||e.hocPhan)+")")} · ${DT.bai[e.id]||0} bài đã làm</span></div><a class="btn sm" href="#lop/${encodeURIComponent(ma)}/bt/${encodeURIComponent(e.id)}">${I.exam}Mở / đóng, xem bài</a></div>`).join("")
+      :'<p class="t-sub" style="margin:0">Lớp chưa có đề nào. Chọn học phần, lập ma trận rồi bấm <b>Lưu đề cho lớp</b>.</p>'}</div>`;
   const lock=khoa?" disabled":"";const opt=(v,t,c)=>`<option value="${esc(v)}"${String(c)===String(v)?" selected":""}>${esc(t)}</option>`;
   const cell=(ch,lv)=>{const n=dtCnt(E,ch,lv),v=(st.mt[ch]||{})[lv]||0;return `<td><input type="number" min="0" max="${n}" value="${v||""}" placeholder="0" data-mt="${ch}|${lv}" class="dtn${v>n?" bad":""}"${lock}${n?"":" disabled"}><small>/ ${n}</small></td>`};
   const csCh=[...new Set(E.cs.map(v=>v.c.ch|0))].sort((x,y)=>x-y);
@@ -72,6 +77,7 @@ async function tabDeThi(l,head,ma){const st=dtState(l);const hps=lopHps(l);
       <div class="fld"><label>Lấy từ chương <span class="hint" style="font-weight:400">(không chọn = mọi chương; các tình huống trong một đề khác chương nhau nếu đủ)</span></label><div class="hpchk" style="max-height:110px">${csCh.map(c=>`<label><input type="checkbox" data-thch="${c}"${st.thChs.includes(c)?" checked":""}${lock}> Chương ${c} (${E.cs.filter(v=>(v.c.ch|0)===c).length})</label>`).join("")||'<span class="t-sub">Chưa có tình huống.</span>'}</div></div></div></section>
   <div class="scard dtsum"><div><b>Mỗi bài: ${tong+a}${a!==b?"–"+(tong+b):""} câu</b> · ${esc(dtMota(st,E))}<br><span class="t-sub">Điểm thang 10 = số câu đúng / tổng số câu × 10, máy chấm ngay khi sinh viên nộp. Mở/đóng đợt kiểm tra ở mục <a href="#lop/${encodeURIComponent(ma)}/bt">Kiểm tra, thi (ĐGĐK)</a>.</span></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-xem>${I.eye}Xem thử một đề</button><button type="button" class="btn pri" data-luu${lock}>Lưu đề cho lớp</button></div></div>
+  <p class="t-sub">${T.e?`Lưu sẽ <b>thay</b> đề đợt <b>${esc(T.id)}</b> (chưa có bài làm).`:`Lưu sẽ tạo <b>đợt kiểm tra mới mã ${esc(T.id)}</b> cho học phần này và gán thẳng cho lớp.`}</p>
   <p class="err" id="dt-err">${esc(st.thieu||"")}</p>`}
 function bindDeThi(l,ma){const st=DT.st[ma];if(!st)return;const re=()=>viewLopDetail(ma,"de");const E=()=>dtElig(st.hp,st.nguon);
   const on=(sel,f)=>{const el=$(sel);if(el)el.onchange=f};
@@ -90,7 +96,7 @@ function dlgDtXem(st,d){const dlg=$("#dlg");let n=0;const qh=x=>{n++;return `<di
   <p class="note" style="margin:0">${st.kieu==="chung"?"Bấm Lưu đề để chốt một đề chung — đề chốt là một lần rút mới, có thể khác đề xem thử này.":"Mỗi sinh viên nhận một đề rút ngẫu nhiên theo cùng ma trận; đây là một ví dụ."} Đáp án tô xanh chỉ hiện với giảng viên.</p>
   <div class="df"><button type="button" class="btn" data-x>Đóng</button></div>`;dlg.showModal();$$("[data-x]",dlg).forEach(b=>b.onclick=()=>dlg.close())}
 async function dtSave(l,ma,st){const err=m=>{const e=$("#dt-err");if(e)e.textContent=m};const E=dtElig(st.hp,st.nguon);
-  if(DT.bai[ma]>0)return err("Lớp đã có bài làm — không sửa đề được nữa.");
+  const dgs=await lopDgs(l);await dtDem(dgs,true);const T=dtTarget(l,dgs,st.hp),MA=T.id;
   const tong=dtTong(st);if(!tong&&!st.thSo)return err("Ma trận đang trống: nhập số câu hoặc bấm Chia theo ngân hàng.");
   for(const [ch,r] of Object.entries(st.mt))for(const lv of DT_LV){if((+r[lv]||0)>dtCnt(E,+ch,lv))return err("Chương "+ch+", "+LVN[lv]+": vượt số câu sẵn có.")}
   if(st.thSo>dtCsPool(st,E).length)return err("Số tình huống vượt số tình huống sẵn có.");
@@ -104,9 +110,13 @@ async function dtSave(l,ma,st){const err=m=>{const e=$("#dt-err");if(e)e.textCon
   if(fixedDraw)P.fixed={lt:fixedDraw.lt.map(x=>qid[x.id]),th:fixedDraw.th.map((t,i)=>({cid:tids[i],q:P.cs[tids[i]].m.slice()}))};
   const js=JSON.stringify(P);if(js.length>900000)return err("Đề nguồn quá lớn ("+Math.round(js.length/1024)+" KB) — giảm số chương hoặc chọn đề chung.");
   const [a,b]=dtCauTH(st,E);const mota=dtMota(st,E);
-  if(!await confirmDlg("Lưu đề cho lớp "+ma+"?",`${mota} Đề nguồn gồm ${qi} câu${ti?", "+ti+" tình huống":""} từ ngân hàng ${P.hpTen}. Đáp án lưu riêng, sinh viên không đọc được.${l.hocPhan&&l.hocPhan!=="nh"?" Lớp chuyển từ đề cũ ("+(l.hocPhanTen||l.hocPhan)+") sang đề rút từ ngân hàng.":""}`,"Lưu đề"))return;
-  try{await S.fs.doc("pnl_dg_de/"+ma).set(P);await S.fs.doc("pnl_dg_dap/"+ma).set(Object.assign(K,{at:FV().serverTimestamp()}));
+  if(!await confirmDlg("Lưu đề cho lớp "+ma+"?",`${T.e?"Thay đề của đợt <b>"+esc(MA)+"</b> (chưa có bài làm).":"Tạo <b>đợt kiểm tra mới mã "+esc(MA)+"</b>, gán thẳng cho lớp "+esc(ma)+"; sinh viên của lớp thấy bài trong tài khoản khi đợt được mở."} ${mota} Đề nguồn gồm ${qi} câu${ti?", "+ti+" tình huống":""} từ ngân hàng ${P.hpTen}. Đáp án lưu riêng, sinh viên không đọc được.`,"Lưu đề"))return;
+  try{await S.fs.doc("pnl_dg_de/"+MA).set(P);await S.fs.doc("pnl_dg_dap/"+MA).set(Object.assign(K,{at:FV().serverTimestamp()}));
     const cfg=JSON.parse(JSON.stringify({hp:st.hp,nguon:st.nguon,kieu:st.kieu,tronCau:st.tronCau,tronDA:st.tronDA,tg:st.tg,mt:st.mt,thSo:st.thSo,thCau:st.thCau,thChs:st.thChs,tong:st.tong,tl:st.tl}));
     const deNh={hp:st.hp,hpTen:P.hpTen,n:dtTong(st)+a,thSo:+st.thSo||0,kieu:st.kieu,mota,cfg,at:new Date().toISOString()};
-    await S.fs.doc("pnl_dg_lop/"+ma).set({hocPhan:"nh",hocPhanTen:P.hpTen,thoiGian:st.tg,deNh},{merge:true});Object.assign(l,{hocPhan:"nh",hocPhanTen:P.hpTen,thoiGian:st.tg,deNh});
-    toast("Đã lưu đề cho lớp "+ma+". Mở đợt kiểm tra ở mục Kiểm tra, thi.",5000);viewLopDetail(ma,"de")}catch(x){nhDenied(x);err("Chưa lưu được: "+errMsg(x)+(x&&x.code==="permission-denied"?" — cần cập nhật quy tắc dữ liệu (thanh Cập nhật ngay).":""))}}
+    const part={cha:l.id,ten:l.ten||l.id,namHoc:l.namHoc||"",hps:[st.hp],hocPhan:"nh",hocPhanTen:P.hpTen,thoiGian:st.tg,deNh};if(!T.e)Object.assign(part,{open:false,created:FV().serverTimestamp()});
+    await S.fs.doc("pnl_dg_lop/"+MA).set(part,{merge:true});
+    const lp={dgs:FV().arrayUnion(MA)};const bo=l.hocPhan==="nh"&&l.deNh&&dgHp(l)===st.hp&&!(DT.bai[l.id]>0);if(bo)lp.deNh=FV().delete();
+    await S.fs.doc("pnl_dg_lop/"+l.id).set(lp,{merge:true});
+    l.dgs=[...new Set([...(l.dgs||[]),MA])];if(bo)delete l.deNh;const ex=(S.dg||[]).find(x=>x.id===MA);if(ex)Object.assign(ex,part,{created:ex.created});else S.dg.push(Object.assign({id:MA,open:false},part,{created:new Date()}));DT.bai[MA]=0;
+    toast("Đã lưu đề, đợt "+MA+". Bấm Mở / đóng để mở đợt cho sinh viên làm bài.",5000);viewLopDetail(ma,"de")}catch(x){nhDenied(x);err("Chưa lưu được: "+errMsg(x)+(x&&x.code==="permission-denied"?" — cần cập nhật quy tắc dữ liệu (thanh Cập nhật ngay).":""))}}
