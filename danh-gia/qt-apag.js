@@ -99,7 +99,7 @@ body.qta-on{--qa-bg:#f4f6fa}
 .qta .qg td.l{text-align:left}.qta .qg td.nw{white-space:nowrap}
 .qta .qg td.sep,.qta .qg th.sep{border-left:1px solid var(--qa-line)}
 .qta .qcell{display:inline-block;min-width:70px;border:1px solid var(--qa-line);border-radius:4px;padding:6px 8px;background:var(--qa-paper);font-weight:700;font-size:15px}
-.qta .qcell.tam{border-color:var(--qa-amber);background:var(--qa-amber-soft)}
+.qta .qcell.tam{border-color:var(--qa-amber);background:var(--qa-amber-soft)}button.qcell.ktc{cursor:pointer;font-family:inherit;color:inherit}button.qcell.ktc:hover{border-color:var(--qa-navy,#1d5677)}
 .qta .qcell small{display:block;font-weight:500;font-size:11px;color:var(--qa-amber)}
 .qta .tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;white-space:nowrap}
 .qta .tag.nop{background:var(--qa-ok-soft);color:#1e7a45}.qta .tag.dang{background:var(--qa-amber-soft);color:var(--qa-amber)}.qta .tag.chua{background:var(--qa-head);color:var(--qa-muted)}.qta .tag.lock{background:var(--qa-bad-soft);color:#c0392b}
@@ -203,12 +203,12 @@ function grid(el,rows,opts){
       ${opts.note?`<p class="qta-msg">${opts.note}</p>`:""}</div>
     <div class="qta-tw"><table class="qg"><thead><tr>
       <th rowspan="2" style="width:52px">STT</th><th rowspan="2" class="sort" data-s="mssv">Mã sinh viên<span></span></th><th rowspan="2" class="sort" data-s="ten" style="min-width:190px">Họ tên<span></span></th><th rowspan="2">Ngày sinh</th>
-      <th colspan="1" class="sep">Điểm quá trình</th><th rowspan="2" class="sep">Bài làm</th><th rowspan="2">Rời trang</th><th rowspan="2" class="sep" style="min-width:200px">Ghi chú</th></tr>
-      <tr><th class="sort sep" data-s="diem">${esc(opts.scoreTitle||"Kiểm tra định kỳ")}<span></span></th></tr></thead><tbody id="qg-tb"></tbody></table></div>`;
+      <th colspan="2" class="sep">Điểm quá trình</th><th rowspan="2" class="sep">Bài làm</th><th rowspan="2">Rời trang</th><th rowspan="2" class="sep" style="min-width:200px">Ghi chú</th></tr>
+      <tr><th class="sep" title="Điểm danh (đủ = 8, vắng −0,5/buổi) + thưởng ĐGĐK (trên 9: +0,5; trên 9,5: +1) + 30 bạn nộp ĐGĐK sớm nhất +0,5; tối đa 10">Kiểm tra thường xuyên</th><th class="sort" data-s="diem">${esc(opts.scoreTitle||"Kiểm tra định kỳ")}<span></span></th></tr></thead><tbody id="qg-tb"></tbody></table></div>`;
   ["sv","st","hd"].forEach(k=>{const s=el.querySelector("#qg-"+k);s.value=S[k];s.onchange=()=>{S[k]=s.value;draw()}});
   const q=el.querySelector("#qg-q");q.oninput=()=>{S.q=q.value;draw()};
   el.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{if(S.sort===th.dataset.s)S.dir=-S.dir;else{S.sort=th.dataset.s;S.dir=1}draw()});
-  el.querySelector("#qg-tb").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b&&opts.onAction)opts.onAction(b.dataset.a,b.closest("tr").dataset.m,b)});
+  el.querySelector("#qg-tb").addEventListener("click",e=>{const k=e.target.closest("[data-kt]");if(k&&opts.ma){const r=rows.find(x=>x.mssv===k.dataset.kt);if(r&&KT[opts.ma])kttxDialog(opts.ma,r,draw);return}const b=e.target.closest("[data-a]");if(b&&opts.onAction)opts.onAction(b.dataset.a,b.closest("tr").dataset.m,b)});
   function draw(){
     const qq=strip(S.q).trim();
     let xs=rows.filter(r=>(!S.sv||r.mssv===S.sv)&&(!S.st||(S.st==="dang"?(r.st==="dang"||r.st==="khoa"):r.st===S.st))&&
@@ -218,13 +218,41 @@ function grid(el,rows,opts){
     const btn=x=>`<button type="button" class="qb sm ${x.kind||"link"}" data-a="${esc(x.a)}">${esc(x.t)}</button>`;
     const tag={nop:'<span class="tag nop">Đã nộp</span>',dang:'<span class="tag dang">Đang làm</span>',khoa:'<span class="tag lock">Bị khóa</span>',chua:'<span class="tag chua">Chưa làm</span>'};
     el.querySelector("#qg-tb").innerHTML=xs.length?xs.map((r,i)=>`<tr data-m="${esc(r.mssv)}"><td>${i+1}</td><td class="nw">${esc(r.mssv)}</td><td class="l">${esc(r.hoTen)}</td><td class="nw">${esc(r.ngaySinh||"")}</td>
-      <td class="sep">${r.diem==null?'<span class="qcell" style="color:var(--qa-muted);font-weight:400">&nbsp;</span>':`<span class="qcell${r.tam?" tam":""}">${fnum(r.diem)}${r.tam?"<small>tạm</small>":""}</span>`}</td>
+      <td class="sep">${(()=>{const x=opts.ma?kttxOf(opts.ma,r.mssv,r.diem):null;r.kttx=x&&x.v!=null?x.v:null;return opts.ma?`<button type="button" class="qcell ktc${x&&x.sua?" tam":""}" data-kt="${esc(r.mssv)}" title="${esc(KT[opts.ma]?ktTip(x)+" — bấm để nhập/sửa":"Đang tải điểm danh…")}">${!KT[opts.ma]?"…":x&&x.v!=null?fnum(x.v):"&nbsp;"}${x&&x.sua?"<small>sửa tay</small>":""}</button>`:""})()}</td>
+      <td>${r.diem==null?'<span class="qcell" style="color:var(--qa-muted);font-weight:400">&nbsp;</span>':`<span class="qcell${r.tam?" tam":""}">${fnum(r.diem)}${r.tam?"<small>tạm</small>":""}</span>`}</td>
       <td class="sep">${tag[r.st]||""}<div class="acts">${(r.bai||[]).map(btn).join("")}</div></td>
       <td>${r.roi==null?"":`<span class="roi ${r.roi>(opts.maxRoi||10)?"bad":""}">${r.roi}</span>`}</td>
-      <td class="sep">${r.ghiChu?`<span class="note">${esc(r.ghiChu)}</span>`:""}<div class="acts">${(r.ghi||[]).map(btn).join("")}</div></td></tr>`).join(""):`<tr><td colspan="8" style="padding:24px;color:var(--qa-muted)">${rows.length?"Không có sinh viên phù hợp bộ lọc.":"Lớp chưa có sinh viên. Bấm “Import excel” hoặc “Thêm sinh viên”."}</td></tr>`;
+      <td class="sep">${r.ghiChu?`<span class="note">${esc(r.ghiChu)}</span>`:""}<div class="acts">${(r.ghi||[]).map(btn).join("")}</div></td></tr>`).join(""):`<tr><td colspan="9" style="padding:24px;color:var(--qa-muted)">${rows.length?"Không có sinh viên phù hợp bộ lọc.":"Lớp chưa có sinh viên. Bấm “Import excel” hoặc “Thêm sinh viên”."}</td></tr>`;
   }
-  draw();return {draw,byM};
+  draw();if(opts.ma&&!KT[opts.ma])kttxLoad(opts.ma).then(draw).catch(e=>console.warn("KTTX",e));return {draw,byM};
 }
+
+/* ---------- Kiểm tra thường xuyên (18/11/2026, mọi học phần) ----------
+   Điểm điểm danh: có mặt đủ các buổi đã điểm danh (pnl_dd, pnl_dd_sv của lớp) = 8, mỗi buổi vắng −0,5, không âm.
+   KTTX = điểm điểm danh + thưởng theo điểm Kiểm tra định kỳ (trên 9 → +0,5; trên 9,5 → +1)
+          + thưởng nộp sớm: 30 sinh viên nộp bài Kiểm tra định kỳ sớm nhất của lớp → +0,5; tối đa 10.
+   Lớp chưa có buổi điểm danh nào → để trống (không tự cho điểm). Sửa tay lưu pnl_cc/{lớp}.kttx[mssv] (xóa trống = tính lại). */
+const KT={},KT_SOM=30;
+async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]&&!force)return KT[ma];const fs=firebase.firestore();
+  const [b,c,cc,bl]=await Promise.all([fs.collection("pnl_dd").where("maLop","==",ma).get(),fs.collection("pnl_dd_sv").where("maLop","==",ma).get(),fs.doc("pnl_cc/"+ma).get(),fs.collection("pnl_dg_bai").where("maLop","==",ma).get()]);
+  const ms=t=>t&&t.toMillis?t.toMillis():t&&t.seconds?t.seconds*1000:Infinity;
+  const nop=bl.docs.map(d=>d.data()).filter(x=>x.status==="da-nop"&&x.mssv).sort((x,y)=>ms(x.submittedAt)-ms(y.submittedAt));const som={};nop.slice(0,KT_SOM).forEach((x,i)=>som[String(x.mssv).toUpperCase()]=i+1);
+  const buoi=new Set(b.docs.filter(d=>d.data().trangThai!=="huy").map(d=>d.id));const co={};
+  c.docs.forEach(d=>{const x=d.data();if(!buoi.has(x.buoi))return;const k=String(x.mssv).toUpperCase();(co[k]=co[k]||new Set()).add(x.buoi)});
+  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som}}
+const ktThuong=dk=>dk==null||dk===""?0:+dk>9.5?1:+dk>9?0.5:0;
+function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vang=Math.max(0,K.tong-co);
+  const base=K.tong?Math.max(0,8-0.5*vang):null,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0;const auto=base==null?null:Math.min(10,base+bonus+som);
+  const o={auto,base,vang,bonus,som,thuTu,tong:K.tong};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
+const ktTip=x=>!x?"":x.base==null?"Lớp chưa có buổi điểm danh":`Điểm danh ${fnum(x.base)} (vắng ${x.vang}/${x.tong} buổi)${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
+function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,r.diem)||{};const d=modal(`<h2>Kiểm tra thường xuyên — ${esc(r.hoTen)}</h2>
+  <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${x.base==null?"Lớp chưa có buổi điểm danh nên chưa tự tính.":`Tự tính: điểm danh <b>${fnum(x.base)}</b> (vắng ${x.vang}/${x.tong} buổi) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} = <b>${fnum(x.auto)}</b>.`}</p>
+  <div class="fr"><div><label for="kt-v">Điểm Kiểm tra thường xuyên (để trống = dùng điểm tự tính)</label><input type="text" inputmode="decimal" id="kt-v" value="${x.sua?fnum(x.v):""}" placeholder="${x.auto==null?"":fnum(x.auto)}"></div></div>
+  <div class="qta-err" id="kt-err"></div><div class="foot"><button class="qb ghost" id="kt-x">Hủy</button><button class="qb exp" id="kt-ok">Lưu</button></div>`);
+  d.querySelector("#kt-x").onclick=close;d.querySelector("#kt-ok").onclick=async()=>{const v=d.querySelector("#kt-v").value.trim().replace(",",".");const K=KT[ma];const k=String(r.mssv).toUpperCase();
+    if(v!==""&&!(+v>=0&&+v<=10)){d.querySelector("#kt-err").textContent="Điểm từ 0 đến 10.";return}const sua=Object.assign({},K.sua);if(v==="")delete sua[k];else sua[k]=Math.round(+v*100)/100;
+    try{await firebase.firestore().doc("pnl_cc/"+ma).set({kttx:sua,updated:firebase.firestore.FieldValue.serverTimestamp()},{mergeFields:["kttx","updated"]});K.sua=sua;close();after&&after()}
+    catch(e){d.querySelector("#kt-err").textContent="Chưa lưu được: "+(e.code||e.message)}}}
 
 /* ---------- bảng danh sách lớp ---------- */
 function classTable(el,list,opts){
@@ -363,7 +391,7 @@ async function buildAPAG(l,rows,m){
   ws.getRow(11).height=36;
   for(let r=10;r<=11;r++)for(let c=1;c<=9;c++)ws.getRow(r).getCell(c).border=BOX;
   let n=12;
-  rows.forEach((s,i)=>{const row=ws.getRow(n++);row.values=[i+1,s.mssv,s.hoTen,s.ngaySinh||"",null,rnd(s.diem,m),null,null,s.ghiChuXuat||null];
+  rows.forEach((s,i)=>{const row=ws.getRow(n++);row.values=[i+1,s.mssv,s.hoTen,s.ngaySinh||"",s.kttx==null?null:rnd(s.kttx,m),s.diem==null?null:rnd(s.diem,m),null,null,null];
     for(let c=1;c<=9;c++){const cell=row.getCell(c);cell.font=F;cell.border=BOX;cell.alignment={vertical:"middle",horizontal:c===3||c===9?"left":"center",wrapText:c===9}}});
   n++;const now=new Date();
   mg("D"+n,"I"+n,`Hà Nội, ngày ${now.getDate()} tháng ${now.getMonth()+1} năm ${now.getFullYear()}`,{italic:true});n++;
@@ -389,29 +417,31 @@ async function fillAPAG(file,rows,m,colKey){
   const val=(attrs,inner)=>{inner=inner||"";const t=(attrs.match(/\bt="([^"]*)"/)||[])[1];const v=(inner.match(/<v>([\s\S]*?)<\/v>/)||[])[1];
     if(t==="s")return sst[+v]||"";if(t==="inlineStr")return xmlDec([...inner.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(y=>y[1]).join(""));return v==null?"":xmlDec(v)};
   const rowsX=[...xml.matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)].map(x=>({r:+x[1],cells:[...x[2].matchAll(cellRe)].map(c=>({ref:(c[1].match(/\br="([A-Z]+)\d+"/)||[])[1],v:val(c[1],c[2])}))}));
-  const nk=v=>strip(v).replace(/[^a-z0-9]/g,"");let cM="",cD="",start=0;
+  const nk=v=>strip(v).replace(/[^a-z0-9]/g,"");let cM="",cD="",cT="",start=0;
   for(const R of rowsX.filter(x=>x.r<=20)){for(const c of R.cells){const k=nk(c.v);
     if(k==="masv"&&!cM)cM=c.ref;if(k===(colKey||"tp2"))cD=c.ref;
-    if(/^(masinhvien|mssv|masosinhvien)$/.test(k)){cM=cM||c.ref;start=Math.max(start,R.r+1)}if(/kiemtradinhky/.test(k)){cD=cD||c.ref;start=Math.max(start,R.r+1)}}}
+    if(/^(masinhvien|mssv|masosinhvien)$/.test(k)){cM=cM||c.ref;start=Math.max(start,R.r+1)}if(/kiemtradinhky/.test(k)){cD=cD||c.ref;start=Math.max(start,R.r+1)}
+    if(k==="tp1"||/kiemtrathuongxuyen/.test(k)){cT=cT||c.ref;start=Math.max(start,R.r+1)}}}
   if(!cM)throw new Error("Không tìm thấy cột Mã sinh viên trong file. Hãy dùng đúng file Export excel tải từ APAG.");
   if(!cD)throw new Error("Không tìm thấy cột “Kiểm tra định kỳ” trong file APAG.");
   const by=new Map(rows.map(r=>[String(r.mssv).toUpperCase(),r]));const used=new Set(),thieu=[],ghiMap=new Map();
   for(const R of rowsX){if(R.r<start)continue;const ms=String((R.cells.find(c=>c.ref===cM)||{}).v||"").trim().toUpperCase();if(!OKMS(ms)||!/\d/.test(ms))continue;
     const ten=(R.cells.find(c=>colNum(c.ref)===colNum(cM)+1)||{}).v||"";const s=by.get(ms);
     if(!s){thieu.push({mssv:ms,hoTen:ten,ly:"không có trong lớp trên web"});continue}used.add(ms);
-    if(s.diem==null){thieu.push({mssv:ms,hoTen:s.hoTen,ly:s.st==="dang"?"đang làm, chưa nộp":"chưa làm bài"});continue}
-    ghiMap.set(R.r,rnd(s.diem,m))}
+    const g={};if(cT&&s.kttx!=null)g[cT]=rnd(s.kttx,m);if(s.diem!=null)g[cD]=rnd(s.diem,m);else thieu.push({mssv:ms,hoTen:s.hoTen,ly:s.st==="dang"?"đang làm, chưa nộp":"chưa làm bài"});
+    if(Object.keys(g).length)ghiMap.set(R.r,g)}
   /* thay từng ô điểm, giữ kiểu ô (s="…") */
-  xml=xml.replace(/<row\b[^>]*\br="(\d+)"[^>]*>([\s\S]*?)<\/row>/g,(whole,rn,inner)=>{rn=+rn;if(!ghiMap.has(rn))return whole;const ref=cD+rn,num=String(ghiMap.get(rn));
-    const re=new RegExp('<c\\b([^>]*?)\\br="'+ref+'"([^>]*?)(?:/>|>[\\s\\S]*?</c>)');
-    const st=(a,b)=>((a+b).match(/\bs="(\d+)"/)||[])[0]||"";
-    let out;if(re.test(inner))out=inner.replace(re,(c,a,b)=>'<c r="'+ref+'" '+st(a,b)+'><v>'+num+'</v></c>');
-    else{const cells=[...inner.matchAll(/<c\b[^>]*\br="([A-Z]+)\d+"/g)];const after=cells.find(c=>colNum(c[1])>colNum(cD));const nc='<c r="'+ref+'"><v>'+num+'</v></c>';
-      out=after?inner.slice(0,after.index)+nc+inner.slice(after.index):inner+nc}
+  xml=xml.replace(/<row\b[^>]*\br="(\d+)"[^>]*>([\s\S]*?)<\/row>/g,(whole,rn,inner)=>{rn=+rn;if(!ghiMap.has(rn))return whole;let out=inner;
+    for(const [col,v] of Object.entries(ghiMap.get(rn))){const ref=col+rn,num=String(v);
+      const re=new RegExp('<c\\b([^>]*?)\\br="'+ref+'"([^>]*?)(?:/>|>[\\s\\S]*?</c>)');
+      const st=(a,b)=>((a+b).match(/\bs="(\d+)"/)||[])[0]||"";
+      if(re.test(out))out=out.replace(re,(c,a,b)=>'<c r="'+ref+'" '+st(a,b)+'><v>'+num+'</v></c>');
+      else{const cells=[...out.matchAll(/<c\b[^>]*\br="([A-Z]+)\d+"/g)];const after=cells.find(c=>colNum(c[1])>colNum(col));const nc='<c r="'+ref+'"><v>'+num+'</v></c>';
+        out=after?out.slice(0,after.index)+nc+out.slice(after.index):out+nc}}
     return whole.replace(inner,out)});
   zip.file(path,xml,{createFolders:false});
   const ngoai=rows.filter(r=>!used.has(String(r.mssv).toUpperCase())&&r.diem!=null);
-  return {buf:await zip.generateAsync({type:"uint8array",compression:"DEFLATE",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),ghi:ghiMap.size,thieu,ngoai};
+  return {buf:await zip.generateAsync({type:"uint8array",compression:"DEFLATE",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),ghi:[...ghiMap.values()].filter(g=>g[cD]!=null).length,ghiTX:cT?[...ghiMap.values()].filter(g=>g[cT]!=null).length:null,thieu,ngoai};
 }
 /* hộp xuất: o = {lop, rows:[{mssv,hoTen,ngaySinh,diem,tam,st}], tamNote} */
 function exportDialog(o){
@@ -420,7 +450,7 @@ function exportDialog(o){
     <p class="qta-msg" style="margin-top:0">Lớp <b>${esc(l.id)}</b> · ${esc(tenMonOf(l))} · ${co}/${o.rows.length} sinh viên có điểm (thang 10).</p>
     ${cho?`<p class="qta-err" style="font-weight:500">Còn ${cho} bài có điểm tạm (chưa xác nhận). ${esc(o.tamNote||"")}</p>`:""}
     <label class="opt"><input type="radio" name="qx-k" value="mau"><b>Bảng điểm theo mẫu APAG</b><span>File Excel đúng bố cục “Bảng điểm quá trình”: TT · Mã sinh viên · Họ và tên · Ngày sinh · Điểm quá trình (Kiểm tra thường xuyên | Kiểm tra định kỳ) · Số tiết nghỉ · TBCBP · Ghi chú; mỗi sinh viên một dòng, mỗi điểm một ô. Dùng để lưu, in, ký — <b>không dùng để Import lên APAG</b> (thiếu mã định danh ẩn của APAG).</span></label>
-    <label class="opt"><input type="radio" name="qx-k" value="apag" checked><b>Điền điểm vào file Export excel của APAG</b><span>Dùng để nhập điểm lên APAG. Ngay trước khi nhập, trên APAG bấm Export excel ở lớp này (file mới nhất), chọn file đó ở dưới. Web ghi điểm vào cột “Kiểm tra định kỳ” theo mã sinh viên, giữ nguyên các cột khác → tải về rồi Import excel lên APAG.</span></label>
+    <label class="opt"><input type="radio" name="qx-k" value="apag" checked><b>Điền điểm vào file Export excel của APAG</b><span>Dùng để nhập điểm lên APAG. Ngay trước khi nhập, trên APAG bấm Export excel ở lớp này (file mới nhất), chọn file đó ở dưới. Web ghi điểm vào cột “Kiểm tra thường xuyên” và “Kiểm tra định kỳ” theo mã sinh viên, giữ nguyên các cột khác → tải về rồi Import excel lên APAG.</span></label>
     <div id="qx-fwrap" class="fr"><div><label for="qx-f">File Export excel của APAG</label><input type="file" id="qx-f" accept=".xlsx" style="border:0;padding:4px 0"></div></div>
     <div class="fr"><div><label for="qx-r">Làm tròn điểm</label><select id="qx-r"><option value="2">Giữ nguyên (tối đa 2 chữ số thập phân)</option><option value="1">1 chữ số thập phân</option><option value="05">Đến 0,5</option></select></div></div>
     <div id="qx-res"></div><div class="qta-err" id="qx-err"></div>
@@ -430,16 +460,17 @@ function exportDialog(o){
   d.querySelector("#qx-x").onclick=close;
   d.querySelector("#qx-ok").onclick=async()=>{const err=d.querySelector("#qx-err"),res=d.querySelector("#qx-res"),b=d.querySelector("#qx-ok");err.textContent="";res.innerHTML="";const m=d.querySelector("#qx-r").value;
     b.disabled=true;try{
+      try{await kttxLoad(l.id,true);o.rows.forEach(r=>{const x=kttxOf(l.id,r.mssv,r.diem);r.kttx=x&&x.v!=null?x.v:null})}catch(e){console.warn("KTTX",e)}
       const base="Bang-diem-KTDK-"+safeName(l.id);
-      if(kind()==="mau"){const rows=o.rows.slice().sort(cmpTen).map(r=>({...r,ghiChuXuat:r.diem==null?(r.st==="dang"?"Chưa nộp bài":"Không dự kiểm tra"):r.tam?"Điểm tạm":""}));
+      if(kind()==="mau"){const rows=o.rows.slice().sort(cmpTen);
         download(await buildAPAG(l,rows,m),base+".xlsx");res.innerHTML=`<p class="qta-ok">Đã tải ${esc(base)}.xlsx (${rows.length} sinh viên).</p>`}
       else{const f=d.querySelector("#qx-f").files[0];if(!f)throw new Error("Chọn file Export excel tải từ APAG.");
         const r=await fillAPAG(f,o.rows,m);download(r.buf,f.name.replace(/\.xlsx$/i,"")+"_DIEN-DIEM.xlsx");
-        res.innerHTML=`<p class="qta-ok">Đã ghi ${r.ghi} điểm vào cột Kiểm tra định kỳ. File tải về: ${esc(f.name.replace(/\.xlsx$/i,""))}_DIEN-DIEM.xlsx — Import excel lên APAG rồi bấm Lưu.</p>
+        res.innerHTML=`<p class="qta-ok">Đã ghi ${r.ghi} điểm Kiểm tra định kỳ${r.ghiTX==null?" (file không có cột Kiểm tra thường xuyên)":` và ${r.ghiTX} điểm Kiểm tra thường xuyên`}. File tải về: ${esc(f.name.replace(/\.xlsx$/i,""))}_DIEN-DIEM.xlsx — Import excel lên APAG rồi bấm Lưu.</p>
           ${r.thieu.length?`<p class="qta-msg" style="margin:6px 0 2px">${r.thieu.length} sinh viên trong file APAG chưa có điểm (ô để trống):</p><table><tbody>${r.thieu.map(x=>`<tr><td>${esc(x.mssv)}</td><td>${esc(x.hoTen)}</td><td>${esc(x.ly)}</td></tr>`).join("")}</tbody></table>`:""}
           ${r.ngoai.length?`<p class="qta-err" style="font-weight:500">${r.ngoai.length} sinh viên có điểm trên web nhưng không có trong file APAG: ${esc(r.ngoai.map(x=>x.mssv+" "+x.hoTen).join("; "))}.</p>`:""}`}
     }catch(x){console.error(x);err.textContent=x.message||String(x)}b.disabled=false};
 }
 
-window.QTA={mount,unmount,modal,close,ask,info,grid,classTable,rosterDialog,studentDialog,mergeRows,exportDialog,buildAPAG,fillAPAG,parseAOA,parseText,readRosterFile,cmpTen,ICON,esc,lib};
+window.QTA={kttxLoad,kttxOf,mount,unmount,modal,close,ask,info,grid,classTable,rosterDialog,studentDialog,mergeRows,exportDialog,buildAPAG,fillAPAG,parseAOA,parseText,readRosterFile,cmpTen,ICON,esc,lib};
 })();

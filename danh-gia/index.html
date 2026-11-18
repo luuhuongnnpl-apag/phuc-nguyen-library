@@ -141,7 +141,7 @@ html.nhung .band{display:none}
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
 <script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
-<script src="qt-apag.js?v=20261109a"></script>
+<script src="qt-apag.js?v=20261118a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -739,7 +739,7 @@ function viewDS(){
       nop.some(x=>x.tam)?{id:"xn",label:"Xác nhận điểm máy ("+nop.filter(x=>x.tam).length+")",kind:"save",onClick:()=>xacNhanTatCa(rows)}:null,
       coTLcu&&!AD.cu?{id:"cl",label:"Chấm lại tự luận",kind:"ghost",onClick:()=>chamLai(nop)}:null,{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>classView(AD.ma)}],
     body:(AD.cu?`<div class="qta-card" style="border-color:#e0b252"><b>Bài làm theo đề cũ 30+10+1</b> — các sinh viên dưới đây làm bài trước khi lớp chuyển sang đề 12 trắc nghiệm + 1 tự luận. Chấm ở đây (máy gợi ý tự luận rộng tay, giảng viên xác nhận); điểm thang 10 hiện sang bảng điểm lớp ở <a href="tu-luan-luat-dan-su.html#quan-tri/${encodeURIComponent(AD.ma)}">trang Luật Dân sự</a>.</div>`:"")+classHead(`<span>Sĩ số: <b>${AD.ds.length}</b> · đã nộp <b>${nop.length}</b></span>`)+'<div id="qg"></div>'});
-  QTA.grid(body.querySelector("#qg"),rows,{state:AD.gs||(AD.gs={}),maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
+  QTA.grid(body.querySelector("#qg"),rows,{ma:AD.ma,state:AD.gs||(AD.gs={}),maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
     note:(AD.B.tn?"Điểm = số câu đúng / tổng số câu × 10, máy chấm ngay khi sinh viên nộp.":"Điểm thang 10 của bài đã nộp.")+" Ô viền vàng “tạm” là bài tự luận chưa xác nhận. Sửa, xóa sinh viên ở cột Ghi chú.",
     onAction:(a,ms)=>{if(a==="xem")paperView(ms);else if(a==="cham")gradeView(ms);else if(a==="sua")editSV(ms);else if(a==="xoa")delSV(ms);else if(a==="mo")resetSV(ms)}});
 }

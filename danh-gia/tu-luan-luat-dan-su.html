@@ -20,7 +20,7 @@ html.nhung .band{display:none}
 </style>
 </head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
 <main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
-<script src="./qt-apag.js?v=20261109a"></script>
+<script src="./qt-apag.js?v=20261118a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -514,7 +514,7 @@ async function manageClass(ma,view){CURRENT=ma;view=view||"ds";
    {id:"exp",label:"Export excel",icon:"down",kind:"exp",onClick:()=>QTA.exportDialog({lop:l,rows})},
    {id:"lock",label:l.open?"Khóa":"Mở lớp",icon:l.open?"lock":"unlock",kind:l.open?"lock":"unlock",onClick:tlToggle},{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>manageClass(ma,"ds")}],
   body:tlHead()+`<p id="msg" class="qta-err" style="margin:0 0 8px">${auto.errors.length?E("Lỗi tự chấm: "+auto.errors.join("; ")):""}</p><div id="qg"></div>`});
- QTA.grid(body.querySelector("#qg"),rows,{state:TLC.gs,maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
+ QTA.grid(body.querySelector("#qg"),rows,{ma:l.id,state:TLC.gs,maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
   note:`Sĩ số ${students.length} · đã nộp ${nop}${auto.done?` · vừa tự chấm thêm ${auto.done} bài`:""}. Điểm = trắc nghiệm (6) + tự luận (4), máy chấm khi mở lớp; bấm “Xem / chấm bài” để xem bài và sửa điểm. Sửa, xóa sinh viên ở cột Ghi chú.`,
   onAction:(a,sv)=>{if(a==="cu")location.href="./index.html#quan-tri/"+encodeURIComponent(ma)+"/de-cu";else if(a==="cham")grade(ma,sv,papers[sv],grades[sv]);else if(a==="sua")tlEditSV(sv);else if(a==="xoa")tlDelSV(sv);else if(a==="mo")tlReset(sv)}});
 }
