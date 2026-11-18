@@ -252,7 +252,7 @@ function shCourseHTML(c){const adm=shAdmin();const has=shHasMaps(c.id);
   const L=(SH.layout&&SH.layout.course)||[];const order=L.filter(k=>SH_CBLK.includes(k)).concat(SH_CBLK.filter(k=>!L.includes(k)));
   const tools=adm?`<div class="page-tools"><button type="button" class="hl" data-adddoc="${esc(c.id)}">⤒ Thêm tài liệu</button><button type="button" data-newfolder="${esc(c.id)}|">＋ Thư mục mới</button>
       ${c.dyn?`<button type="button" data-editcourse="${esc(c.id)}">✎ Sửa học phần</button>`:""}<button type="button" data-chapters="${esc(c.id)}">🗺 Soạn tóm tắt & mind map</button>
-      <button type="button" disabled title="Bước 2">❓ Ngân hàng câu hỏi (bước 2)</button></div><p class="muted" style="margin:-6px 0 12px">Quản trị: giữ nút ⠿ để chuyển khung; kéo ô, thư mục, dòng tài liệu để đổi thứ tự; kéo tệp từ máy thả vào khung Tài liệu để tải lên.</p>`:"";
+      <a href="lop/#nganhang/${encodeURIComponent(c.id)}">❓ Ngân hàng câu hỏi</a></div><p class="muted" style="margin:-6px 0 12px">Quản trị: giữ nút ⠿ để chuyển khung; kéo ô, thư mục, dòng tài liệu để đổi thứ tự; kéo tệp từ máy thả vào khung Tài liệu để tải lên.</p>`:"";
   return `<section class="box"><h2 class="box-title">${esc(c.name)}${st?`<small>· ${esc(st)}</small>`:""}</h2>${shCrumbs([[c.name,""]])}${tools}
     <div class="cblks" data-cblks>${order.filter(k=>parts[k]).map(k=>`<div class="cblk" data-cblk="${k}">${adm?'<button type="button" class="dh" title="Giữ và kéo để đổi vị trí khung">⠿</button>':""}${parts[k]}</div>`).join("")}</div></section>`}
 function shDocsBlock(cid,fid){const adm=shAdmin();

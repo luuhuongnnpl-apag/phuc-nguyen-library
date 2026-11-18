@@ -100,7 +100,7 @@ const dgEmbed=(ma,view)=>`<iframe class="dgf" id="dgf" title="Đánh giá địn
 window.addEventListener("message",e=>{const d=e.data;if(!d||!d.pnlEmbed)return;const f=$("#dgf");if(f&&d.h)f.style.height=Math.max(520,d.h+24)+"px"});
 
 /* ============ khung trang ============ */
-const RAIL=[["#home","home","Trang chủ quản trị","home"],["#lop","lop","Lớp","lop"],["#hocphan","hp","Học phần","hocphan"],["#malop","code","Mã lớp ôn tập","malop"],["#dg","de","Đề thi, đánh giá định kỳ","dg"],["#sinhvien","users","Sinh viên và tài khoản","sinhvien"],["#gopy","chat","Góp ý, báo lỗi","gopy"]];
+const RAIL=[["#home","home","Trang chủ quản trị","home"],["#lop","lop","Lớp","lop"],["#hocphan","hp","Học phần","hocphan"],["#malop","code","Mã lớp ôn tập","malop"],["#dg","de","Đề thi, đánh giá định kỳ","dg"],["#nganhang","bank","Ngân hàng câu hỏi","nganhang"],["#sinhvien","users","Sinh viên và tài khoản","sinhvien"],["#gopy","chat","Góp ý, báo lỗi","gopy"]];
 function rail(items,wide,cur){return `<nav class="rail${wide?" wide":""}" aria-label="Điều hướng">
   ${wide?`<div class="brand"><div class="logo"><img src="../assets/logo.png" alt=""></div><div><b>PHÚC NGUYÊN</b><span>LIBRARY</span></div></div>`:`<a class="logo" href="${HOME}" aria-label="Về trang chủ Phúc Nguyên Library"><img src="../assets/logo.png" alt=""></a>`}
   ${items.map(([h,ic,t,k,soon])=>`<a href="${h}" class="${k&&k===cur?"on":""}" aria-label="${esc(t)}"${soon?' title="Sắp có"':""}>${I[ic]}${wide?`<span>${esc(t)}</span>`:`<span class="tip">${esc(t)}</span>`}</a>`).join("")}
@@ -165,7 +165,7 @@ function viewHome(){const nOpen=S.lop.filter(l=>!l.luuTru).length,nSv=S.lop.redu
     </div></section>
     <section><h2 class="sec">Nội dung &amp; công cụ</h2><div class="grid4">
       ${tile("#hocphan","hp","Học phần ("+nHp+")")}
-      ${tile("#home","bank","Ngân hàng câu hỏi",soon)}
+      ${tile("#nganhang","bank","Ngân hàng câu hỏi")}
       ${tile(HOME+"#home","folder","Tài liệu – giáo trình")}
       ${tile(HOME+"#home","map","Mind map &amp; tóm tắt")}
       ${tile("#gopy","chat","Góp ý, báo lỗi")}
@@ -364,7 +364,7 @@ async function viewHocPhanDetail(id){const c=courseOf(id);if(!c){location.hash="
     <section><h2 class="sec">Lớp của học phần</h2>${act.length?`<div class="grid4">${act.map(l=>`<a class="card" href="#lop/${encodeURIComponent(l.id)}"><b class="nm">${esc(lopName(l))}</b><span class="meta"><span>Sĩ số: <strong>${l.siSo||0}</strong></span><span>${esc(grpOf(l))}</span><span>${l.open?'<span class="pill">ĐGĐK mở</span>':(l.diemKhoa?'<span class="pill gray">đã khóa điểm</span>':"")}</span></span></a>`).join("")}</div>`:`<div class="empty">Chưa có lớp nào dùng học phần này. Bấm <b>Thêm lớp</b>.</div>`}${arch.length?`<p class="note" style="margin-top:8px">Lưu trữ: ${arch.map(l=>esc(l.id)).join(", ")}</p>`:""}</section>
     <section><h2 class="sec">Đánh giá định kỳ</h2><div class="scard" style="padding:0"><div class="tbl"><table><thead><tr><th>Lớp</th><th>Trạng thái</th><th>Thời gian</th><th class="acts"></th></tr></thead><tbody>${act.length?act.map(l=>`<tr><td><b>${esc(lopName(l))}</b></td><td>${l.open?'<span class="pill live">đang mở</span>':'<span class="pill gray">đóng</span>'}</td><td>${l.thoiGian||40} phút${l.closeAt?" · đến "+fmtD(l.closeAt):""}</td><td class="acts"><a class="btn sm" href="#lop/${encodeURIComponent(l.id)}/bt">Quản trị đợt</a></td></tr>`).join(""):'<tr><td colspan="4" class="empty" style="border:0">Chưa có lớp.</td></tr>'}</tbody></table></div></div></section>
     <section><h2 class="sec">Mã lớp ôn tập (khách) mở học phần này</h2><div class="scard" style="padding:0"><div class="tbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Hạn</th><th>Đã dùng</th></tr></thead><tbody>${ms.length?ms.map(x=>`<tr><td><b>${esc(x.code)}</b>${x.courses.includes("*")?' <span class="pill gray">mọi học phần</span>':""}</td><td>${esc(x.note)}</td><td>${fmtISO(x.han)}${t>x.han?' <span class="pill bad">hết hạn</span>':""}</td><td>${x.used==null?"?":x.used} / ${x.max||"—"}</td></tr>`).join(""):'<tr><td colspan="4" class="empty" style="border:0">Chưa có mã nào.</td></tr>'}</tbody></table></div></div></section>
-    <section><h2 class="sec">Nội dung &amp; học liệu</h2><div class="grid4">${[["Tóm tắt lý thuyết","map"],["Mind map","map"],["Câu hỏi lý thuyết","de"],["Câu hỏi tình huống","task"],["Thi thử","exam"],["Văn bản, án lệ","bank"],["Tài liệu, giáo trình","folder"],["Ngân hàng câu hỏi (sắp có)","bank"]].map(([t2,ic])=>`<a class="quick${/sắp có/.test(t2)?" soon":""}" href="${/sắp có/.test(t2)?"#hocphan/"+encodeURIComponent(id):courseHref(c)}"><span class="ic" style="background:var(--soft);color:var(--navy)">${I[ic]}</span><div><b>${t2}</b><span>${/sắp có/.test(t2)?"đợt sau":"mở trên web học phần"}</span></div></a>`).join("")}</div></section></div>`;
+    <section><h2 class="sec">Nội dung &amp; học liệu</h2><div class="grid4">${[["Tóm tắt lý thuyết","map"],["Mind map","map"],["Câu hỏi lý thuyết","de"],["Câu hỏi tình huống","task"],["Thi thử","exam"],["Văn bản, án lệ","bank"],["Tài liệu, giáo trình","folder"],["Ngân hàng câu hỏi","bank"]].map(([t2,ic])=>{const nh=t2==="Ngân hàng câu hỏi";return `<a class="quick" href="${nh?"#nganhang/"+encodeURIComponent(id):courseHref(c)}"><span class="ic" style="background:var(--soft);color:var(--navy)">${I[ic]}</span><div><b>${t2}</b><span>${nh?"nhập, duyệt, xuất bản câu hỏi":"mở trên web học phần"}</span></div></a>`}).join("")}</div></section></div>`;
   $("#app").innerHTML=shell("hocphan",body,crumb);bindOut();$("[data-addlop]").onclick=()=>dlgLop(null,false,{hocPhan:id})}
 
 /* ============ QUẢN TRỊ: đề thi, đánh giá định kỳ (nhúng) ============ */
@@ -475,7 +475,7 @@ async function viewSvTaiKhoan(){const me=svMe();const lops=await svLops(me);
 function render(){closeMenu();const h=decodeURIComponent((location.hash||"").slice(1));const p=h.split("/");
   if(S.admin){if(!S.loaded)return;if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);if(p[0]==="sv")return svRoute(p);
     if(p[0]==="lop"&&p[1]&&p[1]!=="luu-tru")return viewLopDetail(p[1],p[2]);if(p[0]==="lop")return viewLop();
-    if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
+    if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="nganhang")return viewNganHang(p[1]);if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
   if(S.sv){if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
   if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);
   viewLogin()}

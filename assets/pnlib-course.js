@@ -3,6 +3,31 @@
    Mẫu chuẩn: Luật Dân sự. Các học phần khác dùng chung file này để thống nhất giao diện và cách làm bài. */
 (function(){
 "use strict";
+/* Ngân hàng câu hỏi (18/11/2026): trước khi dựng, ghép câu và tình huống giảng viên đã xuất bản từ Quản trị
+   (Firestore pnl_nh_pub/{id}, đọc công khai qua REST) vào sau dữ liệu sẵn có; quá 4 giây hoặc lỗi thì dựng như cũ. */
+const PN_EL=document.getElementById("pn-data");
+if(PN_EL&&!PN_EL.dataset.nh&&document.currentScript&&document.currentScript.src&&window.fetch){
+  const src=document.currentScript.src;PN_EL.dataset.nh="1";
+  pnNhMerge(PN_EL).catch(()=>{}).then(()=>{const s=document.createElement("script");s.src=src;document.body.appendChild(s)});
+  return}
+async function pnNhMerge(el){const D0=JSON.parse(el.textContent);const id=D0.meta&&D0.meta.id;if(!id)return;
+  const ctl=window.AbortController?new AbortController():null;const tm=setTimeout(()=>ctl&&ctl.abort(),4000);
+  try{const r=await fetch("https://firestore.googleapis.com/v1/projects/phuc-nguyen-library/databases/(default)/documents/pnl_nh_pub/"+encodeURIComponent(id)+"?key=AIzaSyCIYY-dzhJ4rUYsXvBQivIxcziUC3hR1-U",{cache:"no-store",signal:ctl?ctl.signal:undefined});
+    if(!r.ok)return;const j=await r.json();const s=j&&j.fields&&j.fields.data&&j.fields.data.stringValue;if(!s)return;
+    if(pnNhApply(D0,JSON.parse(s)))el.textContent=JSON.stringify(D0)}finally{clearTimeout(tm)}}
+/* Đặt mã theo kiểu sẵn có: câu lý thuyết "chương.số tiếp theo"; tình huống "THchương.NN", câu của tình huống "THchương.NN.k" */
+function pnNhApply(D,P){if(!P||!Array.isArray(P.q)||!P.q.length)return false;D.q=D.q||[];D.th=D.th||[];
+  const ids=new Set(D.q.map(x=>String(x.id)));const uniq=id=>{let v=id,k=1;while(ids.has(v))v=id+"-"+(++k);ids.add(v);return v};
+  const nextIn={};const next=g=>{if(nextIn[g]==null){let m=0;D.q.forEach(x=>{if(x.cid)return;const p=String(x.id).split(".");if(p.length===2&&+p[0]===g&&+p[1]>m)m=+p[1]});nextIn[g]=m}return ++nextIn[g]};
+  const thGroup=n=>{let gi=D.th.findIndex(t=>{const m=String(t.name||"").match(/^Chương\s+(\d+)\b/i);return m&&+m[1]===n});
+    if(gi<0&&D.th.length&&D.th.length===(D.chapters||[]).length&&!D.th.some(t=>/^Chương\s+\d+/i.test(t.name||""))&&n>=1&&n<=D.th.length)gi=n-1;
+    if(gi<0){const c=(D.chapters||[]).find(x=>+x.n===n);D.th.push({name:"Chương "+n+(c?". "+c.name:""),items:[]});gi=D.th.length-1}return gi};
+  const rename={},cidNew={};
+  (P.th||[]).forEach(grp=>{const gi=thGroup(+grp.n);const it=D.th[gi].items=D.th[gi].items||[];
+    grp.items.forEach(c=>{const cid=uniq("TH"+grp.n+"."+String(it.length+1).padStart(2,"0"));cidNew[c.cid]=cid;(c.mcq||[]).forEach((old,k)=>rename[old]=uniq(cid+"."+(k+1)));
+      it.push(Object.assign({},c,{cid,mcq:(c.mcq||[]).map(o=>rename[o])}))})});
+  P.q.forEach(x=>{const q=Object.assign({},x);if(q.cid){q.id=rename[x.id];q.cid=cidNew[x.cid];if(!q.id||!q.cid)return}else q.id=uniq(q.g+"."+next(+q.g));D.q.push(q)});
+  return true}
 /* Nơi nhận báo lỗi, góp ý: email giảng viên qua dịch vụ FormSubmit (lần đầu cần bấm xác nhận trong thư). */
 const REPORT_TO="luuhuong.nnpl@gmail.com";
 const REPORT_URL="https://formsubmit.co/ajax/"+REPORT_TO;

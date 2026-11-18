@@ -8,7 +8,7 @@
 </head><body>
 <!-- Trang ôn tập dùng chung cho mọi học phần chưa có trang riêng (14/11/2026).
      Dữ liệu đọc từ Firestore: pnl_hp/{id} (danh sách chương), pnl_hp_ch (tóm tắt từng chương).
-     Ngân hàng câu hỏi, tình huống, văn bản sẽ nạp từ Quản trị ở bước 2; khi chưa có, các mục hiện trống. -->
+     Câu hỏi, tình huống đã xuất bản từ Ngân hàng câu hỏi (pnl_nh_pub/{id}) do assets/pnlib-course.js tự ghép vào khi dựng. -->
 <script>
 (function(){
   const qs=new URLSearchParams(location.search),courseId=qs.get("id")||"";
