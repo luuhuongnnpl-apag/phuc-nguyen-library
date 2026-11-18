@@ -671,7 +671,7 @@ function adminLogin(){
 /* ==== QUẢN TRỊ – giao diện kiểu APAG (qt-apag.js, 08/11/2026) ==== */
 function sideItems(ma,view){
   const it=[{grp:"Không gian quản trị"},{label:"Trang chủ quản trị",icon:"home",href:"../lop/#home"},{label:"Lớp",icon:"users",href:"../lop/#lop"},{label:"Học phần",icon:"book",href:"../lop/#hocphan"},{label:"Mã lớp ôn tập",icon:"lock",href:"../lop/#malop"},{label:"Sinh viên & tài khoản",icon:"user",href:"../lop/#sinhvien"},{grp:"Đánh giá định kỳ"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
-    {id:"new",label:"Tạo lớp mới",icon:"plus",href:"#quan-tri",onClick:()=>classForm()}];
+    {label:"Đề kiểm tra (Ngân hàng câu hỏi)",icon:"plus",href:"../lop/#nganhang"}];
   if(ma&&AD.cu)it.push({grp:"Lớp "+ma},{label:"Bài đề cũ 30+10+1",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma)+"/de-cu",on:true,sub:true},{label:"Về lớp (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma),sub:true});
   else if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},
     {label:"Thống kê",icon:"chart",href:"#quan-tri/"+encodeURIComponent(ma)+"/thong-ke",on:view==="tk",sub:true},
@@ -685,8 +685,8 @@ async function adminView(){
   const parts=location.hash.split("/");
   if(parts[1]){const ma=decodeURIComponent(parts[1]),v=parts[2]==="thong-ke"?"tk":parts[2]==="cai-dat"?"cai":"ds";const cu=parts[2]==="de-cu";if(cu!==!!AD.cuReq){AD.cuReq=cu;AD.loaded=0}return showClass(ma,v)}
   const body=shell({side:sideItems(null),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Đánh giá định kỳ"},{t:"Danh sách lớp"}],
-    actions:[{id:"new",label:"Tạo lớp mới",icon:"plus",kind:"blue",onClick:()=>classForm()},...HOCPHAN.filter(h=>h.mode==="tn").map(h=>({id:"demo-"+h.id,label:"Lớp thử "+h.name,kind:"ghost",onClick:()=>makeDemo(h.id)}))],
-    body:'<p class="qta-msg">Đang tải danh sách lớp…</p>'});
+    actions:[{id:"nh",label:"Tạo / giao đề ở Ngân hàng câu hỏi",icon:"plus",kind:"blue",onClick:()=>{(window.top||window).location.href=new URL("../lop/#nganhang",location.href).href}}],
+    body:'<p class="qta-msg">Các đợt kiểm tra định kỳ của mọi lớp. Đề mới tạo ở <b>Ngân hàng câu hỏi › Đề kiểm tra</b> rồi giao cho lớp; đề Luật Dân sự, Kỹ năng tư vấn cũ chỉ còn để xem, chấm bài đã làm.</p><p class="qta-msg">Đang tải danh sách lớp…</p>'});
   try{const qs=await db.collection("pnl_dg_lop").get();
     const xs=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0)).map(l=>({...l,st:lopTrangThai(l).k,khung:fmtDT(toDate(l.openAt))+" → "+fmtDT(toDate(l.closeAt))}));
     QTA.classTable(body,xs,{onOpen:id=>location.hash="#quan-tri/"+encodeURIComponent(id)});
@@ -812,7 +812,7 @@ function viewCai(){
 }
 function classForm(l){
   const now=new Date(),a=l?toDate(l.openAt):now,b=l?toDate(l.closeAt):new Date(now.getTime()+7*864e5);
-  const m=modal(`<h2>${l?"Sửa lớp "+esc(l.id):"Tạo lớp mới"}</h2><form id="cf" novalidate>
+  const m=modal(`<h2>${l?(l.cha?"Sửa đợt kiểm tra ":"Sửa ")+esc(l.id):"Tạo lớp mới"}</h2><form id="cf" novalidate>
     <div class="row"><div><label class="lab" for="cf-ma">Mã lớp (sinh viên nhập mã này)</label><input type="text" id="cf-ma" maxlength="24" style="text-transform:uppercase" value="${esc(l?l.id:"")}" ${l?"disabled":""} placeholder="DS-K25A"></div>
       <div><label class="lab" for="cf-ten">Tên lớp</label><input type="text" id="cf-ten" maxlength="80" value="${esc(l?l.ten:"")}" placeholder="K25 Luật A"></div></div>
     <div class="row"><div><label class="lab" for="${l?"cf-hp-t":"cf-hp"}">${l?"Học phần · đề":"Học phần"}</label>${l?`<input type="text" id="cf-hp-t" value="${esc((l.deNh&&(l.deNh.hpTen+(l.deNh.ten?" — "+l.deNh.ten:"")))||l.hocPhanTen||hpOf(l.hocPhan).name||l.hocPhan)}" readonly title="Kết cấu đề do đề quyết định — đổi đề ở Ngân hàng câu hỏi › Đề kiểm tra"><input type="hidden" id="cf-hp" value="${esc(l.hocPhan||"")}">`

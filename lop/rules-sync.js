@@ -43,7 +43,7 @@ async function rsRun(){if(RS.busy)return;RS.busy=true;const msg=t=>{const m=docu
       await call(RS_API+proj+"/releases/cloud.firestore",{method:"PATCH",body:JSON.stringify({release:{name:proj+"/releases/cloud.firestore",rulesetName:nr.name}})})}
     msg("Đã xuất bản. Đang chờ máy chủ áp dụng (tối đa khoảng 1 phút)…");
     let ok=false;for(let i=0;i<18&&!ok;i++){ok=(await rsProbe(repo.v))===true;if(!ok)await new Promise(z=>setTimeout(z,5000))}
-    RS.ok=ok;if(ok){toast("Đã cập nhật quy tắc dữ liệu. Tính năng mới dùng được ngay.",5000);if(typeof nhAutoSync==="function"){NH_AUTO.done=false;nhAutoSync()}if(typeof NH!=="undefined"){NH.denied=false;NH.all=null;NH.byHp={};NH.tomb={};NH.syncRes=null;NH.synced={}}rsBar();render()}
+    RS.ok=ok;if(ok){toast("Đã cập nhật quy tắc dữ liệu. Tính năng mới dùng được ngay.",5000);if(typeof nhAutoSync==="function"){NH_AUTO.done=false;nhAutoSync()}if(typeof dtCongNhan==="function"){DT.cn=false;dtCongNhan().catch(()=>{})}if(typeof NH!=="undefined"){NH.denied=false;NH.all=null;NH.byHp={};NH.tomb={};NH.syncRes=null;NH.synced={}}rsBar();render()}
     else msg("Đã xuất bản nhưng máy chủ chưa áp dụng. Chờ 1–2 phút rồi tải lại trang.")}
   catch(x){msg(rsErr(x))}
   finally{RS.busy=false;btns.forEach(b=>b.disabled=false);try{if(auth2)await auth2.signOut()}catch(e){}}}

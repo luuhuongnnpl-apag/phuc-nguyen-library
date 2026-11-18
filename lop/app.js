@@ -112,6 +112,9 @@ const lopName=l=>l.id+(l.ten?" — "+l.ten:"");
 const dgHref=ma=>DG+"#quan-tri"+(ma?"/"+encodeURIComponent(ma):"");
 /* nhúng quản trị Đánh giá định kỳ ngay trong khung (iframe cùng nguồn, tự giãn chiều cao) */
 const dgEmbed=(ma,view)=>`<iframe class="dgf" id="dgf" title="Đánh giá định kỳ" src="${DG}index.html?embed=1#quan-tri${ma?"/"+encodeURIComponent(ma)+(view?"/"+view:""):""}"></iframe>`;
+/* Chọn tất cả / Bỏ chọn cho mọi nhóm ô đánh dấu: nút [data-chkall="bộ chọn"] / [data-chknone="bộ chọn"] trong cùng hộp thoại, ô nhập hoặc mục (bỏ qua ô bị khóa, ô đang ẩn do lọc) */
+document.addEventListener("click",e=>{const a=e.target.closest("[data-chkall],[data-chknone]");if(!a)return;e.preventDefault();const on=a.hasAttribute("data-chkall");const sel=on?a.dataset.chkall:a.dataset.chknone;
+  const box=a.closest("dialog,.fld,section,form,.scard")||document;$$(sel,box).filter(x=>!x.disabled&&x.offsetParent!==null).forEach(x=>{if(x.checked!==on){x.checked=on;x.dispatchEvent(new Event("change",{bubbles:true}))}})});
 window.addEventListener("message",e=>{const d=e.data;if(!d||!d.pnlEmbed)return;const f=$("#dgf");if(f&&d.h)f.style.height=Math.max(520,d.h+24)+"px"});
 
 /* ============ khung trang ============ */
@@ -241,7 +244,7 @@ async function dlgLop(l,withImport,preset){const dlg=$("#dlg");const isNew=!l;if
   <form id="f-lop"><div class="row2">
     <div class="fld"><label for="l-ma">Mã lớp *</label><input id="l-ma" value="${esc(l?l.id:"")}" ${l?"readonly":""} placeholder="VD: CCCT.01" required><span class="hint">Chữ không dấu, số, dấu . _ -; sinh viên dùng mã này ở Đánh giá định kỳ.</span></div>
     <div class="fld"><label for="l-ten">Tên lớp</label><input id="l-ten" value="${esc(l?l.ten||"":"")}" placeholder="VD: Công chứng Liên thông"></div></div>
-    <div class="row2"><div class="fld"><label>Học phần của lớp * <span class="hint" style="font-weight:400">(chọn một hoặc nhiều — sinh viên đăng nhập là vào học được)</span></label><div class="hpchk" id="l-hp">${S.courses.map(c=>`<label><input type="checkbox" value="${esc(c.id)}"${(l?lopHps(l):[preset.hocPhan]).includes(c.id)?" checked":""}> ${esc(c.name)}</label>`).join("")}</div></div>
+    <div class="row2"><div class="fld"><label>Học phần của lớp * <span class="hint" style="font-weight:400">(chọn một hoặc nhiều — sinh viên đăng nhập là vào học được)</span> <button type="button" class="lnk" data-chkall="#l-hp input">Chọn tất cả</button> · <button type="button" class="lnk" data-chknone="#l-hp input">Bỏ chọn</button></label><div class="hpchk" id="l-hp">${S.courses.map(c=>`<label><input type="checkbox" value="${esc(c.id)}"${(l?lopHps(l):[preset.hocPhan]).includes(c.id)?" checked":""}> ${esc(c.name)}</label>`).join("")}</div></div>
     <div class="fld"><label for="l-nam">Năm học / nhóm *</label><input id="l-nam" list="l-years" value="${esc(l?grpOf(l):defYear)}" required><datalist id="l-years">${years.map(v=>`<option value="${esc(v)}">`).join("")}</datalist><span class="hint">Lớp được xếp nhóm theo ô này ở Danh sách lớp.</span></div></div>
     <div class="row2"><div class="fld"><label for="l-pw">Mật khẩu chung của lớp ${isNew?"*":""}</label><input id="l-pw" value="${esc(curPw)}" ${isNew?"required":""} minlength="4" maxlength="32" autocomplete="off" placeholder="VD: ccct2026"><span class="hint">${isNew?"Sinh viên đăng nhập lần đầu bằng ID = mã SV và mật khẩu này.":"Đổi ở đây thì sinh viên <b>chưa tự đổi mật khẩu</b> sẽ dùng mật khẩu mới; ai đã đổi riêng không bị ảnh hưởng."}</span></div>
     <div class="fld"><label for="l-tg">Thời gian làm bài ĐGĐK (phút)</label><input id="l-tg" type="number" min="5" max="180" value="${esc(l&&l.thoiGian||40)}"></div></div>
@@ -535,7 +538,7 @@ window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.inc
   S.sv=store.get(SV_KEY,null);await loadCourses();
   let first=true;
   S.auth.onAuthStateChanged(async u=>{S.user=u;const adm=fbIsAdmin(u);
-    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync()});return}
+    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{})});return}
     if(!adm&&S.admin){S.admin=false;S.loaded=false;if(typeof rsBar==="function")rsBar()}
     S.admin=adm;
     if(first){first=false;if(!adm&&!u){try{await S.auth.signInAnonymously()}catch(e){}return}}

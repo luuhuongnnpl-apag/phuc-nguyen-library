@@ -248,7 +248,7 @@ const dtIn=d=>{d=d?until(d):new Date();const p=n=>String(n).padStart(2,"0");retu
 function stOf(l){const t=Date.now();if(!l.open)return "closed";if(l.openAt&&until(l.openAt).getTime()>t)return "wait";if(l.closeAt&&until(l.closeAt).getTime()<t)return "closed";return "open"}
 const ST_T={open:"Đang mở",wait:"Chưa đến giờ",closed:"Đang khóa / hết giờ"};
 function tlSide(ma,view){const it=[{label:"Trang chủ thư viện",icon:"home",href:"../index.html"},{grp:"Quản lý lớp học"},{label:"Tất cả lớp (mọi học phần)",icon:"list",href:"./index.html#quan-tri"},
-  {label:"Lớp Luật Dân sự",icon:"book",href:"#quan-tri",on:!ma},{id:"new",label:"Tạo lớp mới",icon:"plus",href:"#quan-tri",onClick:createClass}];
+  {label:"Lớp Luật Dân sự",icon:"book",href:"#quan-tri",on:!ma}];
   if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},{label:"Cài đặt lớp",icon:"cog",href:"#quan-tri/"+encodeURIComponent(ma)+"/cai-dat",on:view==="cai",sub:true});
   it.push({grp:"Khác"},{label:"Giao diện sinh viên",icon:"users",href:"#"});return it}
 function tlShell(o){return QTA.mount({user:auth.currentUser&&auth.currentUser.email,onLogout:async()=>{await auth.signOut();QTA.unmount();location.hash="";navigate()},...o})}
@@ -259,7 +259,7 @@ $("#google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.
 
 async function adminHome(){
  const body=tlShell({side:tlSide(null),crumbs:[{t:"Quản trị",href:"./index.html#quan-tri"},{t:"Đánh giá định kỳ"},{t:"Luật Dân sự"}],
-  actions:[{id:"new",label:"Tạo lớp mới",icon:"plus",kind:"blue",onClick:createClass},{id:"reset",label:"Reset toàn bộ lớp (làm lại từ đầu)",icon:"unlock",kind:"lock",onClick:resetAllClasses},{id:"mig",label:"Chuyển lớp Luật Dân sự cũ sang đề hỗn hợp",kind:"ghost",onClick:migrateLegacyClasses}],
+  actions:[],/* 18/11/2026: đề Luật Dân sự cũ ngừng tạo lớp mới — chỉ xem, chấm bài đã làm; đề mới ra ở Ngân hàng câu hỏi */
   body:'<div class="qta-card"><p style="margin:0">Đề: 12 câu trắc nghiệm (6 điểm) + 1 tình huống tự luận 4 yêu cầu (4 điểm), 40 phút, thang 10. Bài đã nộp được máy tự chấm khi mở lớp; giảng viên xem và sửa điểm ở cột Bài làm.</p><p id="msg" class="qta-err"></p></div><div id="classes"><p class="qta-msg">Đang tải…</p></div>'});
  try{
   loadAutoKey().catch(x=>note(x.message));
