@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 17:56 18/11/2026
+# Kết quả dựng nội dung — 18:07 18/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -12,4 +12,4 @@
       - lop/app.js
       - lop/index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44290005076 · commit 4166ce6
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44291698162 · commit 7a86502
