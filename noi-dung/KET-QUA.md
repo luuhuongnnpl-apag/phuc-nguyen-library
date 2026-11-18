@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 14:46 18/11/2026
+# Kết quả dựng nội dung — 15:06 18/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,12 +9,13 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/index.html
-      - firebase/firestore-pnl.rules
+      - assets/pnl-shell.js
       - index.html
       - lop/app.js
       - lop/de-thi.js
       - lop/index.html
       - lop/lop-hoc.js
+      - lop/ngan-hang.js
+      - lop/rules-sync.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44261447283 · commit 7319cf7
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44264134349 · commit e946379
