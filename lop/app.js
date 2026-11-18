@@ -131,8 +131,12 @@ function viewLogin(msg){$("#app").innerHTML=`<div class="login"><div class="box"
     <p class="err" id="g-err"></p></section></div></div>`;
   $("#f-sv").onsubmit=async e=>{e.preventDefault();const id=normId($("#sv-id").value),pw=$("#sv-pw").value;const err=$("#sv-err");err.textContent="";
     const btn=$("#f-sv button");btn.disabled=true;btn.textContent="Đang kiểm tra…";
-    S.busy=true;try{await svLogin(id,pw);const cho=sessionStorage.getItem("pnl-dd-cho");sessionStorage.removeItem("pnl-dd-cho");if(cho){const c=JSON.parse(cho);location.hash="#dd/"+encodeURIComponent(c.buoiId)+"/"+c.code}else location.hash="#sv";S.busy=false;render()}
+    S.busy=true;try{await svLogin(id,pw);const cho=sessionStorage.getItem("pnl-dd-cho");sessionStorage.removeItem("pnl-dd-cho");if(cho){const c=JSON.parse(cho);location.hash="#dd/"+encodeURIComponent(c.buoiId)+"/"+c.code}
+      else if(new URLSearchParams(location.search).get("ve")==="dg"){location.href=DG;return}else location.hash="#sv";S.busy=false;render()}
     catch(x){err.textContent=x.message||String(x)}finally{S.busy=false;btn.disabled=false;btn.textContent="Vào lớp học"}};
+  /* đăng nhập chuyển từ ô trên trang chủ (mã SV + mật khẩu lớp): dùng một lần rồi xóa */
+  try{const dn=sessionStorage.getItem("pnl-dn");if(dn){sessionStorage.removeItem("pnl-dn");const d=JSON.parse(dn);$("#sv-id").value=d.id||"";$("#sv-pw").value=d.pw||"";
+    const f=$("#f-sv");if(f.requestSubmit)f.requestSubmit();else f.dispatchEvent(new Event("submit",{cancelable:true}))}}catch(e){}
   $("#b-google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:FB_ADMIN_EMAILS[0]});$("#g-err").textContent="";
     try{const r=await S.auth.signInWithPopup(p);if(!fbIsAdmin(r.user)){const em=r.user.email;await S.auth.signOut();$("#g-err").textContent="Tài khoản "+em+" chưa được cấp quyền giảng viên/quản trị.";}}
     catch(x){$("#g-err").textContent="Không đăng nhập được: "+(x.message||x)}}}
@@ -448,10 +452,10 @@ async function viewSvHome(){const me=svMe();const lops=await svLops(me);const fi
   <div class="page" style="max-width:1180px">
     ${S.sv&&S.sv.pwDefault?`<div class="scard" style="border-color:var(--warn);background:var(--warn-soft);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><span>Bạn đang dùng <b>mật khẩu chung của lớp</b>. Hãy đổi mật khẩu riêng để bảo vệ tài khoản.</span><a class="btn sm pri" href="#sv/taikhoan">Đổi mật khẩu</a></div>`:""}
     ${svDdBox(dd.buoi,dd.co,dd.err)}
-    ${mo.map(l=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">ĐANG MỞ</span><div><b style="display:block;font-size:15px">Đánh giá định kỳ — ${esc(l.hocPhanTen||l.ten||l.id)}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(l.id)}${l.closeAt?" · đóng "+fmtD(l.closeAt):""} · ${l.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}">Vào làm bài</a></div>`).join("")}
+    ${mo.map(l=>`<div class="scard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-color:var(--navy);background:#f3f8fb"><div style="display:flex;align-items:center;gap:14px"><span class="pill live">ĐANG MỞ</span><div><b style="display:block;font-size:15px">Đánh giá định kỳ — ${esc(l.hocPhanTen||l.ten||l.id)}</b><span style="font-size:13px;color:var(--muted)">Lớp ${esc(l.id)}${l.closeAt?" · đóng "+fmtD(l.closeAt):""} · ${l.thoiGian||40} phút</span></div></div><a class="btn pri" href="${DG}?ma=${encodeURIComponent(l.id)}">Vào làm bài</a></div>`).join("")}
     <section><h2 class="sec">Bốn mục của bạn</h2><div class="grid4">
       <a href="#sv/hoctap" class="stile"><span class="ic">${I.hp}</span><b>Học tập</b><span>${lops.length} lớp học phần · ôn tập, tóm tắt, mind map, tài liệu</span></a>
-      <a href="${DG}" class="stile"><span class="ic">${I.task}</span><b>Kiểm tra</b><span>${mo.length?mo.length+" bài đang mở":"Chưa có bài kiểm tra mở"} · nhập mã lớp + mã SV</span></a>
+      <a href="${DG}" class="stile"><span class="ic">${I.task}</span><b>Kiểm tra</b><span>${mo.length?mo.length+" bài đang mở":"Chưa có bài kiểm tra mở"} · làm bằng tài khoản này</span></a>
       <a href="#sv/baitap" class="stile"><span class="ic">${I.task}</span><b>Bài tập &amp; bảng tin</b><span>Bài được giao, hạn nộp, thông báo của lớp</span></a>
       <a href="#sv/diemdanh" class="stile"><span class="ic">${I.qr}</span><b>Điểm danh</b><span>Có mặt ${dd.co.length}/${dd.buoi.filter(b=>b.trangThai!=="huy").length} buổi · quét QR hoặc nhập mã buổi</span></a>
     </div></section>
@@ -485,7 +489,7 @@ function render(){closeMenu();const h=decodeURIComponent((location.hash||"").sli
   if(S.admin){if(!S.loaded)return;if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);if(p[0]==="sv")return svRoute(p);
     if(p[0]==="lop"&&p[1]&&p[1]!=="luu-tru")return viewLopDetail(p[1],p[2]);if(p[0]==="lop")return viewLop();
     if(p[0]==="hocphan")return viewHocPhan(p[1]);if(p[0]==="nganhang")return viewNganHang(p[1]);if(p[0]==="hethong")return viewHeThong();if(p[0]==="dg")return viewDg();if(p[0]==="malop")return viewMaLop(p[1],p[2]);if(p[0]==="sinhvien")return viewSinhVien();if(p[0]==="gopy")return viewGopY();return viewHome()}
-  if(S.sv){if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
+  if(S.sv){try{sessionStorage.removeItem("pnl-dn")}catch(e){}if(new URLSearchParams(location.search).get("ve")==="dg"){location.href=DG;return}if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
   if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);
   viewLogin()}
 function svRoute(p){return p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():p[1]==="diemdanh"?viewSvDiemDanh():p[1]==="baitap"?viewSvBaiTap():viewSvHome()}

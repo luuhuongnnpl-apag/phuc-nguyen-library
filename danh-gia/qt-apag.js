@@ -204,7 +204,7 @@ function grid(el,rows,opts){
     <div class="qta-tw"><table class="qg"><thead><tr>
       <th rowspan="2" style="width:52px">STT</th><th rowspan="2" class="sort" data-s="mssv">Mã sinh viên<span></span></th><th rowspan="2" class="sort" data-s="ten" style="min-width:190px">Họ tên<span></span></th><th rowspan="2">Ngày sinh</th>
       <th colspan="2" class="sep">Điểm quá trình</th><th rowspan="2" class="sep">Bài làm</th><th rowspan="2">Rời trang</th><th rowspan="2" class="sep" style="min-width:200px">Ghi chú</th></tr>
-      <tr><th class="sep" title="Điểm danh (đủ = 8, vắng −0,5/buổi) + thưởng ĐGĐK (trên 9: +0,5; trên 9,5: +1) + 30 bạn nộp ĐGĐK sớm nhất +0,5; tối đa 10">Kiểm tra thường xuyên</th><th class="sort" data-s="diem">${esc(opts.scoreTitle||"Kiểm tra định kỳ")}<span></span></th></tr></thead><tbody id="qg-tb"></tbody></table></div>`;
+      <tr><th class="sep" title="Điểm danh (đủ = 8, vắng −0,5/buổi) + thưởng ĐGĐK (từ 9: +0,5; từ 9,5: +1) + 30 bạn nộp ĐGĐK sớm nhất +0,5; tối đa 10">Kiểm tra thường xuyên</th><th class="sort" data-s="diem">${esc(opts.scoreTitle||"Kiểm tra định kỳ")}<span></span></th></tr></thead><tbody id="qg-tb"></tbody></table></div>`;
   ["sv","st","hd"].forEach(k=>{const s=el.querySelector("#qg-"+k);s.value=S[k];s.onchange=()=>{S[k]=s.value;draw()}});
   const q=el.querySelector("#qg-q");q.oninput=()=>{S.q=q.value;draw()};
   el.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{if(S.sort===th.dataset.s)S.dir=-S.dir;else{S.sort=th.dataset.s;S.dir=1}draw()});
@@ -229,9 +229,9 @@ function grid(el,rows,opts){
 
 /* ---------- Kiểm tra thường xuyên (18/11/2026, mọi học phần) ----------
    Điểm điểm danh: có mặt đủ các buổi đã điểm danh (pnl_dd, pnl_dd_sv của lớp) = 8, mỗi buổi vắng −0,5, không âm.
-   KTTX = điểm điểm danh + thưởng theo điểm Kiểm tra định kỳ (trên 9 → +0,5; trên 9,5 → +1)
+   KTTX = điểm điểm danh + thưởng theo điểm Kiểm tra định kỳ (từ 9 → +0,5; từ 9,5 → +1)
           + thưởng nộp sớm: 30 sinh viên nộp bài Kiểm tra định kỳ sớm nhất của lớp → +0,5; tối đa 10.
-   Lớp chưa có buổi điểm danh nào → để trống (không tự cho điểm). Sửa tay lưu pnl_cc/{lớp}.kttx[mssv] (xóa trống = tính lại). */
+   Lớp chưa có buổi điểm danh nào → điểm điểm danh mặc định 8 (sếp chốt 18/11/2026). Sửa tay lưu pnl_cc/{lớp}.kttx[mssv] (xóa trống = tính lại). */
 const KT={},KT_SOM=30;
 async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]&&!force)return KT[ma];const fs=firebase.firestore();
   const [b,c,cc,bl]=await Promise.all([fs.collection("pnl_dd").where("maLop","==",ma).get(),fs.collection("pnl_dd_sv").where("maLop","==",ma).get(),fs.doc("pnl_cc/"+ma).get(),fs.collection("pnl_dg_bai").where("maLop","==",ma).get()]);
@@ -240,13 +240,13 @@ async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]
   const buoi=new Set(b.docs.filter(d=>d.data().trangThai!=="huy").map(d=>d.id));const co={};
   c.docs.forEach(d=>{const x=d.data();if(!buoi.has(x.buoi))return;const k=String(x.mssv).toUpperCase();(co[k]=co[k]||new Set()).add(x.buoi)});
   const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som}}
-const ktThuong=dk=>dk==null||dk===""?0:+dk>9.5?1:+dk>9?0.5:0;
+const ktThuong=dk=>dk==null||dk===""?0:+dk>=9.5?1:+dk>=9?0.5:0;
 function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vang=Math.max(0,K.tong-co);
-  const base=K.tong?Math.max(0,8-0.5*vang):null,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0;const auto=base==null?null:Math.min(10,base+bonus+som);
+  const base=K.tong?Math.max(0,8-0.5*vang):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0;const auto=base==null?null:Math.min(10,base+bonus+som);
   const o={auto,base,vang,bonus,som,thuTu,tong:K.tong};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
-const ktTip=x=>!x?"":x.base==null?"Lớp chưa có buổi điểm danh":`Điểm danh ${fnum(x.base)} (vắng ${x.vang}/${x.tong} buổi)${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
+const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
 function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,r.diem)||{};const d=modal(`<h2>Kiểm tra thường xuyên — ${esc(r.hoTen)}</h2>
-  <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${x.base==null?"Lớp chưa có buổi điểm danh nên chưa tự tính.":`Tự tính: điểm danh <b>${fnum(x.base)}</b> (vắng ${x.vang}/${x.tong} buổi) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} = <b>${fnum(x.auto)}</b>.`}</p>
+  <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${`Tự tính: điểm danh <b>${fnum(x.base)}</b> (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"}) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} = <b>${fnum(x.auto)}</b>.`}</p>
   <div class="fr"><div><label for="kt-v">Điểm Kiểm tra thường xuyên (để trống = dùng điểm tự tính)</label><input type="text" inputmode="decimal" id="kt-v" value="${x.sua?fnum(x.v):""}" placeholder="${x.auto==null?"":fnum(x.auto)}"></div></div>
   <div class="qta-err" id="kt-err"></div><div class="foot"><button class="qb ghost" id="kt-x">Hủy</button><button class="qb exp" id="kt-ok">Lưu</button></div>`);
   d.querySelector("#kt-x").onclick=close;d.querySelector("#kt-ok").onclick=async()=>{const v=d.querySelector("#kt-v").value.trim().replace(",",".");const K=KT[ma];const k=String(r.mssv).toUpperCase();

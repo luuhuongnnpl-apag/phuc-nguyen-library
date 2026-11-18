@@ -3,7 +3,7 @@
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
     // Phiên bản khối quy tắc PNL: trang quản trị đọc thử pnl_rules_v/<phiên bản>; bị chặn = quy tắc trên máy chủ cũ hơn kho GitHub,
     // trang hiện nút "Cập nhật quy tắc" tự thay khối PNL (từ dòng tiêu đề đầu khối đến dòng kết thúc khối) qua Firebase Rules API. Đổi quy tắc thì tăng số này.
-    match /pnl_rules_v/{v} { allow get: if v == '20261118d'; }
+    match /pnl_rules_v/{v} { allow get: if v == '20261118g'; }
 
 
     // --- Mã lớp ôn tập (trang chủ) ---
@@ -87,7 +87,10 @@
         && exists(/databases/$(database)/documents/pnl_dg_sv/$(baiId))
         && request.resource.data.hoTen == get(/databases/$(database)/documents/pnl_dg_sv/$(baiId)).data.hoTen
         && request.resource.data.hocPhan == pnlLop(request.resource.data.maLop).hocPhan
-        && pnlMo(pnlLop(request.resource.data.maLop)));
+        && pnlMo(pnlLop(request.resource.data.maLop))
+        // 18/11/2026: chỉ tài khoản lớp đã đăng nhập, đúng mã SV của phiên, mới tạo được bài
+        && exists(/databases/$(database)/documents/pnl_phien/$(request.auth.uid))
+        && get(/databases/$(database)/documents/pnl_phien/$(request.auth.uid)).data.mssv == request.resource.data.mssv);
       allow update: if isAdmin() || (signedIn()
         && resource.data.uid == request.auth.uid
         && resource.data.status == 'dang-lam'

@@ -175,7 +175,7 @@ function shSide(){const s=document.getElementById("sideExtra");if(!s)return;
   if(typeof cur!=="undefined"&&cur!=="home"){s.innerHTML="";return}
   s.innerHTML=shBlocks().side.map(shBlockHTML).join("");
   s.querySelectorAll("[data-go]").forEach(b=>b.onclick=e=>{e.preventDefault();route(b.dataset.go)});
-  shBindPage(s);if(s.querySelector("#dg-form")&&typeof bindDg==="function")bindDg();
+  shBindPage(s);if(s.querySelector(".dg-box")&&typeof bindDg==="function")bindDg();
   const m=document.getElementById("main");
   shSortable([m,s],".blk",()=>shSaveLayout({home:{main:[...m.querySelectorAll(":scope>.blk")].map(x=>x.dataset.blk),side:[...s.querySelectorAll(":scope>.blk")].map(x=>x.dataset.blk)}}),{axis:"y",handle:".dh"});
   if(m.querySelector(".htiles"))shSortable([m.querySelector(".htiles")],".htile",()=>shSaveCourseOrder([...m.querySelectorAll(".htile")].map(b=>b.dataset.go)),{axis:"x"});

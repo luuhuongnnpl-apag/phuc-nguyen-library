@@ -321,7 +321,7 @@ ol.mm-d li{margin:1px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
-<script src="assets/pnl-shell.js?v=20261118pnd"></script>
+<script src="assets/pnl-shell.js?v=20261118g"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -780,20 +780,23 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   if(id==="home"){$("#layout").classList.remove("no-tools");shBindPage(m)}else if(id==="gop-y")$("#layout").classList.add("no-tools");
   shNav();shSide();window.scrollTo(0,0)}
 
-function bindDg(){const f=$("#dg-form");if(!f)return;
-  try{const last=JSON.parse(store.get("pndg-last")||"{}");if(last.ma)$("#dg-ma").value=last.ma;if(last.sv)$("#dg-sv").value=last.sv}catch(e){}
-  ["dg-ma","dg-sv"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#dg-err").textContent=""));
-  f.onsubmit=e=>{e.preventDefault();const ma=$("#dg-ma").value.trim().toUpperCase(),sv=$("#dg-sv").value.trim().toUpperCase().replace(/\s+/g,"");
-    if(!/^[A-Z0-9_-]{2,24}$/.test(ma)){$("#dg-err").textContent="Nhập mã lớp (chỉ gồm chữ, số, dấu gạch).";$("#dg-ma").focus();return}
-    if(!/^[A-Z0-9_-]{2,20}$/.test(sv)){$("#dg-err").textContent="Nhập mã sinh viên.";$("#dg-sv").focus();return}
-    store.set("pndg-last",JSON.stringify({ma,sv}));store.set("pndg-go","1");location.href="danh-gia/"}}
-function homeHTML(){return shHomeHTML(`<section class="dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Đánh giá định kỳ</div>
-      <p class="dg-lead">Hệ thống đánh giá định kỳ dùng chung cho tất cả học phần. Sinh viên nhập <b>mã lớp</b> và <b>mã sinh viên</b>; hệ thống tự xác định học phần, hiển thị cấu trúc đề, thời gian làm bài và yêu cầu xác nhận họ tên trước khi bắt đầu.</p>
+/* Ô trên trang chủ (18/11/2026): đăng nhập tài khoản lớp (mã SV + mật khẩu lớp) thay cho cách cũ gõ mã lớp + mã SV.
+   Sinh viên đã đăng nhập: vào thẳng kiểm tra định kỳ / lớp học. Khách: dùng mã lớp ôn tập (nút Đăng nhập ở đầu trang) chỉ để xem tài liệu. */
+function bindDg(){const f=$("#dg-form");const go=$("[data-dg-go]");if(go)go.onclick=()=>{try{localStorage.setItem("pndg-go","1")}catch(e){}location.href="danh-gia/"};
+  if(!f)return;["dg-id","dg-pw"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#dg-err").textContent=""));
+  f.onsubmit=e=>{e.preventDefault();const id=$("#dg-id").value.trim().toUpperCase().replace(/\s+/g,""),pw=$("#dg-pw").value;
+    if(!/^[0-9A-Z]{4,16}$/.test(id)){$("#dg-err").textContent="Nhập mã sinh viên (4–16 chữ, số không dấu).";$("#dg-id").focus();return}
+    if(pw.length<4){$("#dg-err").textContent="Nhập mật khẩu (mật khẩu chung của lớp hoặc mật khẩu bạn đã đổi).";$("#dg-pw").focus();return}
+    try{sessionStorage.setItem("pnl-dn",JSON.stringify({id,pw}))}catch(x){}location.href="lop/?dn=1"}}
+function homeHTML(){const sv=session&&session.sv;return shHomeHTML(`<section class="dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Lớp học và kiểm tra định kỳ</div>
+      ${sv?`<p class="dg-lead">Xin chào <b>${esc(session.label||"")}</b>. Bạn đã đăng nhập tài khoản lớp: các học phần của lớp mở được ngay, không cần mã; bài kiểm tra định kỳ làm bằng tài khoản này.</p>
+      <div class="dg-form" style="grid-template-columns:auto auto 1fr"><button class="dg-go" type="button" data-dg-go>Vào kiểm tra định kỳ</button><a class="dg-go" style="background:var(--paper);color:var(--band);border:2px solid var(--band);text-decoration:none;text-align:center" href="lop/#sv">Lớp học của tôi</a></div>`
+      :`<p class="dg-lead">Sinh viên có tài khoản lớp đăng nhập bằng <b>mã sinh viên</b> và <b>mật khẩu lớp</b> để học các học phần của lớp và làm bài kiểm tra định kỳ. Khách chưa có tài khoản dùng <b>mã lớp ôn tập</b> (nút Đăng nhập ở đầu trang) để xem tài liệu.</p>
       <form id="dg-form" class="dg-form" novalidate>
-        <div><label class="dg-lab" for="dg-ma">Mã lớp</label><input type="text" id="dg-ma" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Ví dụ: DS-K25A"></div>
-        <div><label class="dg-lab" for="dg-sv">Mã sinh viên</label><input type="text" id="dg-sv" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Mã sinh viên của bạn"></div>
-        <button class="dg-go" type="submit">Vào kiểm tra định kỳ</button>
-      </form>
+        <div><label class="dg-lab" for="dg-id">Mã sinh viên</label><input type="text" id="dg-id" maxlength="16" autocomplete="username" spellcheck="false" placeholder="Mã sinh viên"></div>
+        <div><label class="dg-lab" for="dg-pw">Mật khẩu</label><input type="password" id="dg-pw" maxlength="32" autocomplete="current-password" placeholder="Mật khẩu lớp" style="text-transform:none;letter-spacing:0"></div>
+        <button class="dg-go" type="submit">Đăng nhập</button>
+      </form>`}
       <p class="dg-err" id="dg-err" role="alert"></p>
     </section>`)}
 function sendLink(){if(BE()||!onClaude)return `<button type="button" class="sendfb" data-go="gop-y">Gửi góp ý</button>`;return (cmt||!CONFIG.formUrl)?`<button type="button" class="sendfb" data-send>Gửi góp ý</button>`:`<a class="sendfb" href="${esc(CONFIG.formUrl)}" target="_blank" rel="noopener">Gửi góp ý</a>`}

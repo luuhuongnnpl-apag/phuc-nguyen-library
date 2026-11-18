@@ -460,27 +460,35 @@ window.addEventListener("hashchange",route);
 let EXAM=null;
 function lopTrangThai(l){const now=new Date(),a=toDate(l.openAt),b=toDate(l.closeAt);if(!l.open)return {k:"closed",t:"Đang khóa"};if(a&&now<a)return {k:"wait",t:"Chưa đến giờ (mở lúc "+fmtDT(a)+")"};if(b&&now>b)return {k:"closed",t:"Đã hết giờ (đóng lúc "+fmtDT(b)+")"};return {k:"open",t:"Đang mở"}}
 
-function studentEntry(msg){
-  const last=JSON.parse(store.get("pndg-last")||"{}");
-  $("#app").innerHTML=`<section class="card narrow">
-    <h1>Đánh giá định kỳ</h1>
-    <p class="lead">Hệ thống xác định học phần theo mã lớp. Đề, thời gian và hình thức đánh giá được hiển thị theo từng lớp; sinh viên xác nhận họ tên trước khi bắt đầu.</p>
-    <form id="f-in" novalidate>
-      <div class="row"><div><label class="lab" for="in-ma">Mã lớp</label><input type="text" id="in-ma" maxlength="24" autocomplete="off" spellcheck="false" style="text-transform:uppercase" value="${esc(last.ma||"")}" placeholder="Ví dụ: DS-K25A"></div></div>
-      <div class="row"><div><label class="lab" for="in-sv">Mã sinh viên</label><input type="text" id="in-sv" maxlength="20" autocomplete="off" spellcheck="false" style="text-transform:uppercase" value="${esc(last.sv||"")}"></div></div>
-      <div class="err" id="in-err" role="alert">${esc(msg||"")}</div>
-      <button class="btn primary" type="submit" id="in-go">Vào bài kiểm tra</button>
-    </form></section>`;
-  $("#f-in").onsubmit=async e=>{e.preventDefault();
-    const ma=$("#in-ma").value.trim().toUpperCase(),sv=$("#in-sv").value.trim().toUpperCase().replace(/\s+/g,"");
-    const err=$("#in-err");err.textContent="";
-    if(!/^[A-Z0-9_-]{2,24}$/.test(ma)){err.textContent="Mã lớp chỉ gồm chữ, số, dấu gạch.";return}
-    if(!/^[A-Z0-9_-]{2,20}$/.test(sv)){err.textContent="Mã sinh viên chưa hợp lệ.";return}
-    $("#in-go").disabled=true;$("#in-go").textContent="Đang kiểm tra…";
-    try{await checkIn(ma,sv)}catch(x){console.error(x);err.textContent=x.userMsg||"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.";$("#in-go").disabled=false;$("#in-go").textContent="Tiếp tục"}
-  };
-  /* đến từ ô Đánh giá định kỳ ở trang chủ: tự kiểm tra luôn */
-  if(!msg&&store.get("pndg-go")==="1"&&last.ma&&last.sv){store.del("pndg-go");const f=$("#f-in");if(f.requestSubmit)f.requestSubmit();else f.dispatchEvent(new Event("submit",{cancelable:true}))}
+/* 18/11/2026: chỉ làm bài bằng TÀI KHOẢN LỚP (mã SV + mật khẩu, đăng nhập ở trang Lớp học / ô trên trang chủ).
+   Bỏ cách cũ gõ mã lớp + mã SV. Phiên lấy từ localStorage "pnl-lop-sv" (cùng tài khoản ẩn danh Firebase của trang Lớp học);
+   quy tắc máy chủ kiểm tra lại: chỉ tạo bài cho đúng mã SV của phiên đăng nhập. */
+function svAcc(){try{const x=JSON.parse(localStorage.getItem("pnl-lop-sv")||"null");return x&&x.mssv&&x.uid&&Array.isArray(x.lop)?x:null}catch(e){return null}}
+async function studentEntry(msg){
+  $("#app").innerHTML=`<section class="card narrow"><h1>Đánh giá định kỳ</h1><p class="lead">Đang kiểm tra tài khoản…</p></section>`;
+  /* chờ Firebase khôi phục phiên đăng nhập trên máy (dùng chung với trang Lớp học) trước khi tạo phiên ẩn danh mới */
+  try{await new Promise(r=>{const off=auth.onAuthStateChanged(u=>{off();r(u)})});await ensureUser()}catch(e){}
+  const acc=svAcc();const back="../lop/?ve=dg";
+  if(!acc||!USER||acc.uid!==USER.uid){$("#app").innerHTML=`<section class="card narrow"><h1>Đánh giá định kỳ</h1>
+    <p class="lead">Bài kiểm tra định kỳ chỉ làm bằng <b>tài khoản lớp</b>: ID = mã sinh viên, mật khẩu = mật khẩu chung của lớp (hoặc mật khẩu bạn đã đổi).</p>
+    ${msg?`<div class="err" role="alert">${esc(msg)}</div>`:""}<div class="row"><a class="btn primary" href="${back}">Đăng nhập tài khoản lớp</a><a class="btn" href="../index.html">Về trang chủ</a></div>
+    <p class="msg" style="margin-top:14px">Khách chưa có tài khoản lớp chỉ xem tài liệu bằng mã lớp ôn tập ở trang chủ.</p></section>`;return}
+  const rows=[];for(const ma of acc.lop){try{const d=await db.doc("pnl_dg_lop/"+ma).get();if(!d.exists)continue;const l=d.data();let bai=null;
+      try{const b=await db.doc("pnl_dg_bai/"+ma+"__"+acc.mssv).get();bai=b.exists?b.data():null}catch(e){}
+      rows.push({ma,l,bai,st:lopTrangThai(l)})}catch(e){}}
+  const act=r=>r.bai&&r.bai.status==="dang-lam"?"tiep":r.bai&&r.bai.status==="da-nop"?"xong":r.st.k==="open"?"lam":"";
+  const want=(new URLSearchParams(location.search).get("ma")||"").toUpperCase();const auto=store.get("pndg-go")==="1";store.del("pndg-go");
+  const doable=rows.filter(r=>act(r)==="lam"||act(r)==="tiep");const pick=want?rows.find(r=>r.ma===want&&act(r)):(auto&&doable.length===1?doable[0]:null);
+  if(pick&&!msg)return go(pick.ma);
+  $("#app").innerHTML=`<section class="card narrow"><h1>Đánh giá định kỳ</h1>
+    <p class="lead">Xin chào <b>${esc(acc.hoTen||acc.mssv)}</b> (${esc(acc.mssv)}). Chọn bài kiểm tra của lớp bạn.</p>${msg?`<div class="err" role="alert">${esc(msg)}</div>`:""}
+    ${rows.length?rows.map(r=>{const a=act(r);return `<div class="row" style="align-items:center;justify-content:space-between;border:1px solid var(--line,#dfe6ee);border-radius:12px;padding:12px 14px;margin:0 0 10px">
+      <div><b>${esc(r.l.hocPhanTen||r.l.ten||r.ma)}</b><br><span class="msg">Lớp ${esc(r.ma)} · ${a==="xong"?"đã nộp bài":a==="tiep"?"đang làm dở":esc(r.st.t)}</span></div>
+      ${a==="lam"||a==="tiep"?`<button class="btn primary" data-ma="${esc(r.ma)}">${a==="tiep"?"Tiếp tục làm bài":"Làm bài"}</button>`:""}</div>`}).join(""):`<p class="msg">Tài khoản của bạn chưa thuộc lớp nào.</p>`}
+    ${rows.length&&!doable.length?`<p class="msg">Hiện chưa có bài kiểm tra định kỳ nào đang mở cho lớp của bạn.</p>`:""}
+    <div class="err" id="in-err" role="alert"></div><div class="row"><a class="btn" href="../lop/#sv">Về Lớp học của tôi</a></div></section>`;
+  document.querySelectorAll("[data-ma]").forEach(b=>b.onclick=()=>go(b.dataset.ma));
+  async function go(ma){try{await checkIn(ma,acc.mssv)}catch(x){console.error(x);studentEntry(x.userMsg||"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.")}}
 }
 function uerr(m){const e=new Error(m);e.userMsg=m;return e}
 async function ensureUser(){if(auth.currentUser){USER=auth.currentUser;return USER}USER=(await auth.signInAnonymously()).user;return USER}
