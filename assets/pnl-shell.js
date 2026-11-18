@@ -436,11 +436,27 @@ function shResizeImg(f,W,H){W=W||640;H=H||400;return new Promise((res,rej)=>{con
   const s=Math.max(W/im.width,H/im.height),w=im.width*s,h=im.height*s;g.drawImage(im,(W-w)/2,(H-h)/2,w,h);res(cv.toDataURL("image/jpeg",.82))};im.src=rd.result};rd.readAsDataURL(f)})}
 
 /* ---- Tài liệu ---- */
+async function shPndFiles() {
+  const snap=await SH.fs.collection("pnd_items").where("access","==","cong-khai").get();
+  return snap.docs.flatMap(entry=>{
+    const item=entry.data(), mime=item.fmime||item.mime||"";
+    const link=String(item.link||"");
+    const id=item.driveId||link.match(/^https:\/\/(?:drive|docs)\.google\.com\/.*?\/d\/([\w-]+)/)?.[1]
+      ||link.match(/^https:\/\/drive\.google\.com\/open\?id=([\w-]+)/)?.[1];
+    if(item.shared!==true||item.isNote||item.locked||!id||!item.name||!/^[\w-]+$/.test(id))return [];
+    return [{pndId:entry.id,title:item.name,driveId:id,mime,url:"https://drive.google.com/file/d/"+id+"/view"}];
+  }).sort((a,b)=>a.title.localeCompare(b.title,"vi"));
+}
 function shDocDlg(doc,cid,fid,preFile){if(!shAdmin())return;const isNew=!doc;doc=doc||{title:"",url:"",course:cid||"",folder:fid||"",star:false,note:""};
   const folderOpts=c=>`<option value="">— Thư mục gốc của học phần —</option>`+SH.folders.filter(f=>f.course===c).map(f=>`<option value="${esc(f.id)}"${doc.folder===f.id?" selected":""}>${esc(f.name)}</option>`).join("");
   const d=shDlg(isNew?"Thêm tài liệu":"Sửa tài liệu",`
-    ${isNew?`<div class="seg2" data-src><button type="button" data-v="file" class="on">⤒ Tải tệp lên Google Drive</button><button type="button" data-v="link">🔗 Dán liên kết</button></div>`:""}
+    ${isNew?`<div class="seg2" data-src><button type="button" data-v="file" class="on">⤒ Tải tệp lên Google Drive</button><button type="button" data-v="link">🔗 Dán liên kết</button><button type="button" data-v="pnd">Chọn tệp từ PND</button></div>`:""}
     ${isNew?`<div class="drop2" data-file tabindex="0"><b>Kéo thả tệp vào đây hoặc bấm để chọn</b>PDF, Word, PowerPoint, Excel, ảnh… Tệp lưu vào Google Drive của sếp (thư mục "PNL - Phúc Nguyên Library"), mở chế độ ai có link được xem.<input type="file" hidden data-filein></div><p class="muted" data-fname></p>`:""}
+    ${isNew?`<div data-pndrow hidden>
+      <label class="fld2"><span>Tìm theo tên tệp PND</span><input type="search" data-pndsearch></label>
+      <label class="fld2"><span>Tệp được chọn</span><select data-pndselect></select></label>
+      <p class="muted" data-pndmsg role="status"></p>
+    </div>`:""}
     <label class="fld2" data-linkrow ${isNew?"hidden":""}><span>Liên kết (Google Drive, Google Docs, trang web…)</span><input data-f="url" value="${esc(doc.url)}" placeholder="https://drive.google.com/…"></label>
     <label class="fld2"><span>Tên tài liệu</span><input data-f="title" maxlength="200" value="${esc(doc.title)}" placeholder="Ví dụ: Giáo trình Luật Dân sự tập 1"></label>
     <div class="row2"><label class="fld2"><span>Học phần</span><select data-f="course"><option value="">— Chung (chỉ hiện ở trang chủ khi có ★) —</option>${COURSES.map(c=>`<option value="${esc(c.id)}"${doc.course===c.id?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
@@ -449,9 +465,31 @@ function shDocDlg(doc,cid,fid,preFile){if(!shAdmin())return;const isNew=!doc;doc
     <label class="chk2"><input type="checkbox" data-f="star" ${doc.star?"checked":""}> ★ Tài liệu, giáo trình thông dụng — hiện ở trang chủ</label>
     <p class="err2" data-err role="alert"></p>`,
     `<span class="sp"></span><span class="muted" data-msg></span><button type="button" class="b2" data-x>Hủy</button><button type="button" class="b2 pri" data-save>${isNew?"Thêm tài liệu":"Lưu"}</button>`);
-  const q=s=>d.querySelector(s);let mode="file",file=null;
+  const q=s=>d.querySelector(s);let mode="file",file=null,pndFiles=null,pndLoading=false;
+  const renderPnd=()=>{
+    const select=q("[data-pndselect]"), previous=select.value;
+    const term=q("[data-pndsearch]").value.trim().toLocaleLowerCase("vi");
+    const matches=pndFiles.filter(item=>item.title.toLocaleLowerCase("vi").includes(term));
+    select.innerHTML='<option value="">— Chọn tệp —</option>'+matches.map(item=>
+      `<option value="${esc(item.pndId)}">${esc(item.title)}</option>`).join("");
+    if(matches.some(item=>item.pndId===previous))select.value=previous;
+    q("[data-pndmsg]").textContent=matches.length?matches.length+" tệp công khai có thể chọn.":"Không tìm thấy tệp PND đã mở chia sẻ.";
+  };
+  async function loadPnd(){
+    if(pndLoading||pndFiles)return;
+    pndLoading=true;
+    q("[data-pndmsg]").textContent="Đang đọc thư viện PND…";
+    try{pndFiles=await shPndFiles();renderPnd()}
+    catch(ex){q("[data-pndmsg]").textContent="Chưa đọc được PND: "+shErrMsg(ex)+" Bấm Chọn tệp từ PND để thử lại."}
+    finally{pndLoading=false}
+  }
   q("[data-f=course]").onchange=e=>{doc.folder="";q("[data-f=folder]").innerHTML=folderOpts(e.target.value)};
-  if(isNew){q("[data-src]").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.v;d.querySelectorAll("[data-src] button").forEach(x=>x.classList.toggle("on",x===b));q("[data-file]").hidden=mode!=="file";q("[data-fname]").hidden=mode!=="file";q("[data-linkrow]").hidden=mode!=="link"};
+  if(isNew){q("[data-src]").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.v;d.querySelectorAll("[data-src] button").forEach(x=>x.classList.toggle("on",x===b));q("[data-file]").hidden=mode!=="file";q("[data-fname]").hidden=mode!=="file";q("[data-linkrow]").hidden=mode!=="link";q("[data-pndrow]").hidden=mode!=="pnd";if(mode==="pnd")void loadPnd()};
+    q("[data-pndsearch]").oninput=()=>{if(pndFiles)renderPnd()};
+    q("[data-pndselect]").onchange=e=>{
+      const item=pndFiles?.find(x=>x.pndId===e.target.value);
+      if(item)q("[data-f=title]").value=item.title.slice(0,200);
+    };
     const takeF=f=>{file=f;q("[data-fname]").textContent="Đã chọn: "+f.name+" ("+Math.round(f.size/1024)+" KB)";if(!q("[data-f=title]").value.trim())q("[data-f=title]").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ")};
     if(preFile)setTimeout(()=>takeF(preFile),0);
     shPicker(q("[data-file]"),q("[data-filein]"),f=>{file=f;q("[data-fname]").textContent="Đã chọn: "+f.name+" ("+Math.round(f.size/1024)+" KB)";if(!q("[data-f=title]").value.trim())q("[data-f=title]").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ")},true)}
@@ -462,6 +500,15 @@ function shDocDlg(doc,cid,fid,preFile){if(!shAdmin())return;const isNew=!doc;doc
     try{if(isNew&&mode==="file"){if(!file)throw new Error("Chọn tệp cần tải lên.");q("[data-msg]").textContent="Đang kết nối Google Drive…";
         const parent=await shDriveFolder(data.course);q("[data-msg]").textContent="Đang tải lên "+file.name+"…";
         const up=await shDriveUpload(file,parent);await shDriveShare(up.id);Object.assign(data,{url:up.webViewLink||("https://drive.google.com/file/d/"+up.id+"/view"),driveId:up.id,mime:up.mimeType||file.type||"",size:file.size|0})}
+      else if(isNew&&mode==="pnd"){
+        const item=pndFiles?.find(x=>x.pndId===q("[data-pndselect]").value);
+        if(!item)throw new Error("Chọn một tệp từ PND.");
+        const source=await SH.fs.doc("pnd_items/"+item.pndId).get();
+        const current=source.data();
+        if(current?.access!=="cong-khai"||current.shared!==true||current.locked||current.isNote)
+          throw new Error("Tệp PND hiện không còn được mở chia sẻ.");
+        Object.assign(data,{pndId:item.pndId,url:item.url,driveId:item.driveId,mime:item.mime});
+      }
       else{const url=q("[data-f=url]").value.trim();if(!/^https?:\/\//i.test(url))throw new Error("Dán liên kết bắt đầu bằng https://");data.url=url;const m=url.match(/\/d\/([A-Za-z0-9_-]{20,})/)||url.match(/[?&]id=([A-Za-z0-9_-]{20,})/);data.driveId=/drive\.google\.com/.test(url)&&m?m[1]:""}
       q("[data-msg]").textContent="Đang lưu…";
       if(isNew){data.added=shNow();const r=await SH.fs.collection("pnl_docs").add(data);SH.docs.push(Object.assign({id:r.id},data))}
