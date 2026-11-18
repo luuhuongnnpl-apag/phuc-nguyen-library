@@ -1024,7 +1024,8 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
   catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
   if(isOwner){grantAdmin();renderWho()}
   dbReadyRes();
-  if(session&&!session.admin){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(async r=>{if(FBW&&!MIGRATED&&r&&!r.ok&&r.why==="notfound"){try{r=await staticCheck(session.code,"")}catch(e){}}if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
+  /* phiên tài khoản sinh viên (sv:true, cấp từ trang lop/) không phải mã lớp: không kiểm tra với danh sách mã */
+  if(session&&!session.admin&&!session.sv){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(async r=>{if(FBW&&!MIGRATED&&r&&!r.ok&&r.why==="notfound"){try{r=await staticCheck(session.code,"")}catch(e){}}if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
       store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
       if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
   await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
