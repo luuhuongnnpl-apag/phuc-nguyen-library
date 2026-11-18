@@ -1,6 +1,9 @@
     // ===== PNL - Phúc Nguyên Library (viết lại 11/11/2026 — khớp mã đang chạy, bỏ toàn bộ quy tắc PNL cũ) =====
-    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026; thêm pnl_nh, pnl_nh_pub 18/11/2026 (CẦN XUẤT BẢN LẠI) (bản cũ: firestore-pnl-cu-0511.rules).
+    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026; thêm pnl_nh, pnl_nh_pub 18/11/2026; từ 18/11 trang quản trị tự xuất bản khối này (lop/rules-sync.js) (bản cũ: firestore-pnl-cu-0511.rules).
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
+    // Phiên bản khối quy tắc PNL: trang quản trị đọc thử pnl_rules_v/<phiên bản>; bị chặn = quy tắc trên máy chủ cũ hơn kho GitHub,
+    // trang hiện nút "Cập nhật quy tắc" tự thay khối PNL (từ dòng tiêu đề đầu khối đến dòng kết thúc khối) qua Firebase Rules API. Đổi quy tắc thì tăng số này.
+    match /pnl_rules_v/{v} { allow get: if v == '20261118b'; }
 
 
     // --- Mã lớp ôn tập (trang chủ) ---

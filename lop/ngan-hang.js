@@ -9,7 +9,7 @@
    Chỉ câu "Đã duyệt", không "kín", đủ 4 phương án + đáp án và đã xếp chương mới được xuất bản.
    Web ôn tập (assets/pnlib-course.js) tự ghép bản xuất bản vào sau câu sẵn có của học phần — không sửa nội dung cũ. */
 
-const NH={byHp:{},pub:{},chs:{},web:{},all:null,sel:new Set(),f:{ch:"",lv:"",st:"",loai:"",q:""},lim:60,open:{},denied:false};
+const NH={byHp:{},tomb:{},raw:{},pub:{},chs:{},web:{},synced:{},all:null,sel:new Set(),f:{ch:"",lv:"",st:"",loai:"",q:""},lim:60,open:{},denied:false};
 const LVN={NB:"Nhận biết",TH:"Thông hiểu",VD:"Vận dụng"},LVK=["NB","TH","VD"],ABCD="ABCD";
 const NH_RULES=`    // --- Ngân hàng câu hỏi (18/11/2026): kho kín chỉ quản trị; bản xuất bản cho web ôn tập ai cũng đọc ---
     match /pnl_nh/{id} { allow read, write: if isAdmin(); }
@@ -29,29 +29,27 @@ function nhValid(x){return !!(String(x.q||"").trim()&&Array.isArray(x.o)&&x.o.le
 function nhDenied(x){if(x&&x.code==="permission-denied"){NH.denied=true;return true}return false}
 
 /* ---------- dữ liệu ---------- */
-async function nhLoad(hp,force){if(NH.byHp[hp]&&!force)return NH.byHp[hp];
+async function nhLoad(hp,force){if((NH.byHp[hp]||NH.all)&&!force){NH.byHp[hp]=NH.byHp[hp]||[];return NH.byHp[hp]}
   const snap=await S.fs.collection("pnl_nh").where("hp","==",hp).get();NH.denied=false;
-  NH.byHp[hp]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+  const docs=snap.docs.map(d=>Object.assign({id:d.id},d.data()));NH.byHp[hp]=docs.filter(x=>!x.xoa);NH.tomb[hp]=docs.filter(x=>x.xoa);
   try{const p=await S.fs.doc("pnl_nh_pub/"+hp).get();NH.pub[hp]=p.exists?p.data():null}catch(e){NH.pub[hp]=null}
   return NH.byHp[hp]}
 async function nhLoadAll(){const snap=await S.fs.collection("pnl_nh").get();NH.denied=false;const by={};
   snap.docs.forEach(d=>{const x=Object.assign({id:d.id},d.data());(by[x.hp]=by[x.hp]||[]).push(x)});
-  Object.keys(by).forEach(hp=>NH.byHp[hp]=by[hp]);
+  Object.keys(by).forEach(hp=>{NH.byHp[hp]=by[hp].filter(x=>!x.xoa);NH.tomb[hp]=by[hp].filter(x=>x.xoa)});
   try{(await S.fs.collection("pnl_nh_pub").get()).docs.forEach(d=>NH.pub[d.id]=d.data())}catch(e){}
   NH.all=true;return by}
 /* Chương và câu sẵn có trên web học phần: đọc khối pn-data của trang học phần (để chọn chương, soát trùng) */
 async function nhChapters(hp){if(NH.chs[hp])return NH.chs[hp];const c=courseOf(hp)||{};let chs=[],web=[];
   const src=c.src&&!c.fb?String(c.src).split("#")[0]:"";
   if(src){try{const t=await (await fetch("../"+src,{cache:"no-store"})).text();const m=t.match(/<script id="pn-data" type="application\/json">([\s\S]*?)<\/script>/);
-    if(m){const d=JSON.parse(m[1]);chs=(d.chapters||[]).map(x=>({n:+x.n,t:x.name||x.t||""}));web=(d.q||[]).map(x=>({k:nhKey(x.q),id:x.id}))}}catch(e){}}
+    if(m){const d=JSON.parse(m[1]);NH.raw[hp]=d;chs=(d.chapters||[]).map(x=>({n:+x.n,t:x.name||x.t||""}));web=(d.q||[]).map(x=>({k:nhKey(x.q),id:x.id}))}}catch(e){}}
   const h=S.hp[hp];if(!chs.length&&h&&(h.chapters||[]).length)chs=h.chapters.map(x=>({n:+x.n,t:x.t||x.name||""}));
   NH.chs[hp]=chs.filter(x=>x.n>0).sort((a,b)=>a.n-b.n);NH.web[hp]=web;return NH.chs[hp]}
 const nhChName=(hp,n)=>{const c=(NH.chs[hp]||[]).find(x=>x.n===+n);return c?"Chương "+n+". "+c.t:(n?"Chương "+n:"Chưa xếp chương")};
 function nhStats(list){const qs=(list||[]).filter(nhIsQ),ths=(list||[]).filter(x=>x.kieu==="th");
   return {tong:qs.length,duyet:qs.filter(x=>x.st==="duyet").length,nhap:qs.filter(x=>x.st!=="duyet").length,kin:qs.filter(x=>x.kin).length,th:ths.length,
     sua:Math.max(0,...(list||[]).map(x=>nhTs(x.updated)))}}
-function nhPubState(hp){const p=NH.pub[hp];const st=nhStats(NH.byHp[hp]);if(!p)return {txt:"Chưa xuất bản",cls:"gray",p};
-  const at=nhTs(p.at);const doi=st.sua>at;return {txt:(doi?"Có thay đổi chưa xuất bản":"Đã xuất bản")+" · "+(p.soCau|0)+" câu, "+(p.soTH|0)+" tình huống"+(at?" · "+new Date(at).toLocaleString("vi-VN",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):""),cls:doi?"warn":"",p}}
 
 /* ---------- bộ đọc nội dung dán (mẫu Azota mở rộng) ---------- */
 const RX={
@@ -178,23 +176,28 @@ function nhCheck(hp,res){const bank=(NH.byHp[hp]||[]).filter(nhIsQ);const bk={};
   return res}
 
 /* ---------- giao diện: trang tổng ---------- */
-function nhRulesBox(){return `<div class="scard" style="border-color:var(--warn);background:var(--warn-soft)"><h2 class="sec" style="margin-top:0">Cần thêm quy tắc Firestore cho Ngân hàng câu hỏi (làm một lần)</h2>
-  <ol style="margin:0 0 10px 18px;padding:0;line-height:1.7"><li>Mở <a href="https://console.firebase.google.com/project/phuc-nguyen-library/firestore/rules" target="_blank" rel="noopener"><b>Firebase Console › Firestore › Rules</b></a> (tài khoản Google sở hữu dự án).</li><li>Bấm vào ô mã, <b>Ctrl + F</b> tìm <code>Hết khối PNL</code>, đặt con trỏ ở đầu dòng đó, nhấn <b>Enter</b> để có một dòng trống phía trên.</li><li>Bấm <b>Sao chép 3 dòng</b> dưới đây, dán vào dòng trống, bấm <b>Publish</b>. Quay lại đây tải lại trang.</li></ol>
-  <pre id="nh-rules" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;overflow:auto;margin:0 0 10px">${esc(NH_RULES)}</pre><button type="button" class="btn sm pri" data-copyrules>Sao chép 3 dòng</button></div>`}
-function nhBindRules(){const b=$("[data-copyrules]");if(b)b.onclick=async()=>{try{await navigator.clipboard.writeText(NH_RULES+"\n");toast("Đã chép. Dán vào Firebase Console rồi bấm Publish.")}catch(e){const r=document.createRange();r.selectNodeContents($("#nh-rules"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Đã bôi đen — nhấn Ctrl + C để chép.")}}}
+function nhRulesBox(){return `<div class="scard" style="border-color:var(--warn);background:var(--warn-soft)"><h2 class="sec" style="margin-top:0">Máy chủ dữ liệu chưa có quy tắc cho Ngân hàng câu hỏi</h2>
+  <p style="margin:0 0 10px">Bấm <b>Cập nhật ngay</b>, chọn tài khoản Google đã tạo dự án Firebase — web tự cập nhật quy tắc, giữ nguyên phần của PNW, PND. Nếu Google báo "chưa xác minh", bấm <b>Nâng cao</b> → <b>Đi tới…</b>.</p>
+  <button type="button" class="btn sm pri" data-rsgo>Cập nhật ngay</button> <span id="nh-rsmsg" style="font-weight:600;color:var(--navy)"></span>
+  <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted)">Cách làm tay (chỉ khi nút trên báo lỗi)</summary><pre id="nh-rules" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;overflow:auto;margin:8px 0">${esc(NH_RULES)}</pre><button type="button" class="btn sm" data-copyrules>Sao chép</button> Dán lên trên dòng <code>Hết khối PNL</code> trong <a href="https://console.firebase.google.com/project/phuc-nguyen-library/firestore/rules" target="_blank" rel="noopener">Firebase Console › Rules</a>, bấm Publish.</details></div>`}
+function nhBindRules(){const g=$("[data-rsgo]");if(g)g.onclick=()=>typeof rsRun==="function"&&rsRun();const b=$("[data-copyrules]");if(b)b.onclick=async()=>{try{await navigator.clipboard.writeText(NH_RULES+"\n");toast("Đã chép. Dán vào Firebase Console rồi bấm Publish.")}catch(e){const r=document.createRange();r.selectNodeContents($("#nh-rules"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Đã bôi đen — nhấn Ctrl + C để chép.")}}}
 async function viewNganHang(hp){if(hp)return viewNganHangHp(hp);
   $("#app").innerHTML=shell("nganhang",`<div class="page"><div class="empty">Đang tải ngân hàng câu hỏi…</div></div>`);bindOut();
-  let err="";try{await nhLoadAll()}catch(x){if(!nhDenied(x))err=errMsg(x)}
+  let err="";try{if(!NH.all)await nhLoadAll()}catch(x){if(!nhDenied(x))err=errMsg(x)}
+  /* lần đầu mở trong phiên: tự trích câu sẵn có của các trang học phần vào ngân hàng (chỉ ghi phần còn thiếu / GitHub mới đổi) */
+  if(!err&&!NH.denied&&!NH.syncRes){const el=$(".page .empty");NH.syncRes=await nhSyncAll(c=>{if(el)el.textContent="Đang đồng bộ câu sẵn có của học phần "+c.name+" vào ngân hàng…"})}
   const q=strip(S.q);const cs=S.courses.filter(c=>!q||strip(c.name).includes(q));
   const card=c=>{const st=nhStats(NH.byHp[c.id]);const ps=nhPubState(c.id);return `<a class="card" href="#nganhang/${encodeURIComponent(c.id)}"><b class="nm" title="${esc(c.name)}">${esc(c.name)}</b>
     <span class="meta"><span>Câu hỏi: <strong>${st.tong}</strong></span><span>Đã duyệt: <strong>${st.duyet}</strong></span><span>Tình huống: <strong>${st.th}</strong></span></span>
-    <span class="meta" style="margin-top:8px">${st.kin?`<span class="pill gray">${st.kin} câu kín (ĐGĐK)</span>`:""}${st.nhap?`<span class="pill warn">${st.nhap} nháp</span>`:""}<span class="pill ${ps.cls}">${ps.p?(ps.cls==="warn"?"có thay đổi":"đã xuất bản"):"chưa xuất bản"}</span></span></a>`};
+    <span class="meta" style="margin-top:8px">${st.kin?`<span class="pill gray">${st.kin} câu kín (ĐGĐK)</span>`:""}${st.nhap?`<span class="pill warn">${st.nhap} nháp</span>`:""}<span class="pill ${ps.cls}">${ps.cho?"có thay đổi chưa xuất bản":"web khớp ngân hàng"}</span></span></a>`};
+  const sr=NH.syncRes||[];const srAdd=sr.reduce((a,r)=>a+(r.add||0),0),srUpd=sr.reduce((a,r)=>a+(r.upd||0),0),srErr=sr.filter(r=>r.err);
   const tot=Object.values(NH.byHp).reduce((a,l)=>a+l.filter(nhIsQ).length,0),tth=Object.values(NH.byHp).reduce((a,l)=>a+l.filter(x=>x.kieu==="th").length,0);
   const body=`<div class="page"><div class="bar"><div><h1 class="t">Ngân hàng câu hỏi</h1><span class="t-sub">${tot} câu hỏi · ${tth} tình huống · ${Object.keys(NH.pub).length} học phần đã xuất bản lên web ôn tập</span></div>
     <div class="tools"><button type="button" class="btn pri" data-imp>${I.up}Nhập câu hỏi</button><button type="button" class="btn" data-ai>${I.chat}Lệnh mẫu cho AI</button><label class="search" style="flex:0 1 260px"><span class="sr">Tìm học phần</span><input type="search" id="q" value="${esc(S.q)}" placeholder="Tìm học phần…"></label></div></div>
     ${NH.denied?nhRulesBox():err?`<div class="empty">Chưa tải được: ${esc(err)}</div>`:""}
+    ${sr.length&&(srAdd||srUpd||srErr.length)?`<div class="scard" style="border-color:${srErr.length?"var(--warn)":"#bfe3cb"};background:${srErr.length?"var(--warn-soft)":"var(--ok-soft)"}"><b>Đồng bộ câu sẵn có trên web học phần:</b> ${srAdd?"đưa thêm "+srAdd+" câu/tình huống vào ngân hàng":""}${srAdd&&srUpd?"; ":""}${srUpd?"cập nhật "+srUpd+" câu theo bản GitHub mới":""}.${srErr.length?" Chưa xong: "+srErr.map(r=>esc(r.c.name)+" ("+esc(r.err)+")").join("; "):""}<br><span class="t-sub">${sr.filter(r=>!r.err).map(r=>esc(r.c.name)+": "+nhStats(NH.byHp[r.c.id]).tong+" câu").join(" · ")}</span></div>`:""}
     <div class="grid4">${cs.map(card).join("")||'<div class="empty">Không có học phần khớp.</div>'}</div>
-    <p class="note">Mỗi học phần một ngân hàng. Câu mới nhập để <b>Nháp</b>; sếp duyệt rồi bấm <b>Xuất bản lên web ôn tập</b> thì sinh viên thấy trong Câu hỏi lý thuyết, Tình huống, Thi thử (ghép sau câu sẵn có, không sửa nội dung cũ). Câu đánh dấu <b>Kín</b> chỉ dành cho đánh giá định kỳ, không bao giờ xuất bản.</p></div>`;
+    <p class="note">Mỗi học phần một ngân hàng. Câu mới nhập để <b>Nháp</b>; sếp duyệt rồi bấm <b>Xuất bản lên web ôn tập</b> thì sinh viên thấy trong Câu hỏi lý thuyết, Tình huống, Thi thử. Câu sẵn có trên web các học phần đã nằm trong ngân hàng (nhãn <b>Từ web</b>): sửa, ẩn, xóa ngay tại đây rồi xuất bản; câu mới thêm trên GitHub tự vào ngân hàng ở lần mở sau. Câu đánh dấu <b>Kín</b> chỉ dành cho đánh giá định kỳ, không bao giờ xuất bản.</p></div>`;
   $("#app").innerHTML=shell("nganhang",body);bindOut();nhBindRules();
   $("#q").oninput=e=>{S.q=e.target.value;viewNganHang().then(()=>keepFocus("#q"))};
   $("[data-imp]").onclick=()=>dlgNhImport(null,"dan");$("[data-ai]").onclick=()=>dlgNhImport(null,"ai")}
@@ -208,13 +211,13 @@ function nhRow(hp,x,i,thT){const ok=nhValid(x);const iss=[!ok?"lỗi đáp án/p
   return `<tr data-row="${esc(x.id)}"><td><input type="checkbox" data-sel="${esc(x.id)}" ${NH.sel.has(x.id)?"checked":""} aria-label="Chọn câu"></td><td>${i+1}</td><td style="white-space:nowrap">${x.ch?"Ch. "+x.ch:"—"}</td><td><span class="pill gray">${esc(x.lv||"—")}</span></td>
     <td class="nhq">${x.th&&thT[x.th]?`<span class="pill" style="margin-bottom:4px">TH: ${esc(String(thT[x.th].title).slice(0,48))}</span><br>`:""}<b>${esc(x.q)}</b>
       <ol class="nho">${(x.o||[]).map((o,j)=>`<li class="${j===x.a?"ok":""}">${esc(o)}</li>`).join("")}</ol>${x.b?`<span class="nhb">Căn cứ: ${esc(x.b)}</span>`:""}</td>
-    <td>${x.st==="duyet"?'<span class="pill">Đã duyệt</span>':'<span class="pill warn">Nháp</span>'}${x.kin?' <span class="pill gray">Kín</span>':""}${x.nguon==="ai"?' <span class="pill gray">AI</span>':""}${iss.map(t=>`<br><span class="pill bad" style="margin-top:3px">${t}</span>`).join("")}</td>
+    <td>${x.st==="duyet"?'<span class="pill">Đã duyệt</span>':'<span class="pill warn">Nháp</span>'}${x.kin?' <span class="pill gray">Kín</span>':""}${x.nguon==="ai"?' <span class="pill gray">AI</span>':""}${x.nguon==="web"?' <span class="pill gray">Từ web</span>':""}${iss.map(t=>`<br><span class="pill bad" style="margin-top:3px">${t}</span>`).join("")}</td>
     <td class="acts" style="white-space:nowrap"><button type="button" class="ico" data-edit="${esc(x.id)}" aria-label="Sửa câu" title="Sửa">${I.edit}</button> <button type="button" class="ico del" data-del="${esc(x.id)}" aria-label="Xóa câu" title="Xóa">${I.del}</button></td></tr>`}
 async function viewNganHangHp(hp){const c=courseOf(hp);if(!c){location.hash="#nganhang";return}
   const crumb=`<a class="back" href="#nganhang">${I.back}Ngân hàng câu hỏi</a><span class="sep">/</span><span class="sub">${esc(c.name)}</span>`;
   if(!NH.byHp[hp]||NH.cur!==hp)$("#app").innerHTML=shell("nganhang",`<div class="page"><div class="empty">Đang tải ngân hàng ${esc(c.name)}…</div></div>`,crumb),bindOut();
   if(NH.cur!==hp){NH.cur=hp;NH.sel.clear();NH.f={ch:"",lv:"",st:"",loai:"",q:""};NH.lim=60}
-  let err="";await nhChapters(hp);try{await nhLoad(hp)}catch(x){if(!nhDenied(x))err=errMsg(x);NH.byHp[hp]=NH.byHp[hp]||[]}
+  let err="";await nhChapters(hp);try{await nhLoad(hp);if(!NH.synced[hp]){await nhSync(hp);NH.synced[hp]=true}}catch(x){if(!nhDenied(x))err=errMsg(x);NH.byHp[hp]=NH.byHp[hp]||[]}
   const all=NH.byHp[hp],st=nhStats(all),ps=nhPubState(hp),f=NH.f,chs=NH.chs[hp]||[];const thT={};all.filter(x=>x.kieu==="th").forEach(x=>thT[x.id]=x);
   const list=nhFilter(hp);const ths=all.filter(x=>x.kieu==="th").filter(x=>!f.ch||String(x.ch|0)===f.ch).sort(nhByOrd);
   const nq=id=>all.filter(x=>x.th===id).length;
@@ -265,9 +268,12 @@ async function viewNganHangHp(hp){const c=courseOf(hp);if(!c){location.hash="#ng
 
 /* ---------- ghi ---------- */
 async function nhCommit(ops){const db=S.fs;for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(([k,ref,data])=>k==="del"?b.delete(ref):b.set(ref,data,{merge:k==="upd"}));await b.commit()}}
-async function nhUpdate(hp,ids,part){if(!ids.length)return;try{const p=Object.assign({},part,{updated:FV().serverTimestamp()});await nhCommit(ids.map(id=>["upd",S.fs.doc("pnl_nh/"+id),p]));
+async function nhUpdate(hp,ids,part){if(!ids.length)return;part=Object.assign({},part,{sua:true});try{const p=Object.assign({},part,{updated:FV().serverTimestamp()});await nhCommit(ids.map(id=>["upd",S.fs.doc("pnl_nh/"+id),p]));
   (NH.byHp[hp]||[]).forEach(x=>{if(ids.includes(x.id))Object.assign(x,part,{updated:new Date()})});toast("Đã cập nhật "+ids.length+" câu.");NH.sel.clear();render()}catch(x){nhDenied(x);toast("Chưa lưu được: "+errMsg(x))}}
-async function nhDelete(hp,ids){try{await nhCommit(ids.map(id=>["del",S.fs.doc("pnl_nh/"+id)]));NH.byHp[hp]=(NH.byHp[hp]||[]).filter(x=>!ids.includes(x.id));ids.forEach(id=>NH.sel.delete(id));
+async function nhDelete(hp,ids){/* câu lấy từ web học phần: giữ dấu đã xóa để đồng bộ không nhập lại, trang ôn tập ẩn câu đó */
+  try{const all=NH.byHp[hp]||[];const web=new Set(all.filter(x=>ids.includes(x.id)&&x.webId).map(x=>x.id));
+    await nhCommit(ids.map(id=>web.has(id)?["upd",S.fs.doc("pnl_nh/"+id),{xoa:true,sua:true,updated:FV().serverTimestamp()}]:["del",S.fs.doc("pnl_nh/"+id)]));
+    NH.tomb[hp]=(NH.tomb[hp]||[]).concat(all.filter(x=>web.has(x.id)).map(x=>Object.assign(x,{xoa:true})));NH.byHp[hp]=all.filter(x=>!ids.includes(x.id));ids.forEach(id=>NH.sel.delete(id));
   NH.byHp[hp].forEach(x=>{if(x.th&&ids.includes(x.th))x.th=""});toast("Đã xóa "+ids.length+" mục.");render()}catch(x){nhDenied(x);toast("Chưa xóa được: "+errMsg(x))}}
 
 /* ---------- hộp thoại: một câu ---------- */
@@ -292,7 +298,7 @@ function dlgNhQ(hp,x,thId){const dlg=$("#dlg");const all=NH.byHp[hp]||[];const t
     const k=nhKey(d.q);const dup=all.find(y=>nhIsQ(y)&&y.id!==(x&&x.id)&&nhKey(y.q)===k);if(dup&&!e.submitter?.dataset.force){err("Trùng nội dung với một câu đã có trong ngân hàng (Ch. "+(dup.ch||"—")+"). Bấm lưu lần nữa nếu vẫn muốn lưu.");$("button[type=submit]",dlg).dataset.force="1";return}
     if(d.st==="duyet"&&(!d.b||!d.e)&&!$("button[type=submit]",dlg).dataset.warn){err("Câu chưa có căn cứ hoặc giải thích (chuẩn ôn tập yêu cầu đủ). Bấm lưu lần nữa nếu vẫn muốn duyệt.");$("button[type=submit]",dlg).dataset.warn="1";return}
     const btn=$("button[type=submit]",dlg);btn.disabled=true;
-    try{const now=FV().serverTimestamp();if(x){await S.fs.doc("pnl_nh/"+x.id).set(Object.assign({},d,{updated:now}),{merge:true});Object.assign(x,d,{updated:new Date()})}
+    try{const now=FV().serverTimestamp();if(x){if(x.webId)Object.assign(d,{sua:true,cidRaw:""});await S.fs.doc("pnl_nh/"+x.id).set(Object.assign({},d,{updated:now}),{merge:true});Object.assign(x,d,{updated:new Date()})}
       else{const ref=S.fs.collection("pnl_nh").doc();const full=Object.assign({},d,{nguon:"tay",ord:Date.now(),created:now,updated:now});await ref.set(full);all.push(Object.assign({id:ref.id},full,{updated:new Date()}))}
       dlg.close();toast(x?"Đã lưu câu hỏi.":"Đã thêm câu hỏi.");render()}catch(ex){nhDenied(ex);err("Chưa lưu được: "+errMsg(ex));btn.disabled=false}}}
 
@@ -311,7 +317,7 @@ function dlgNhTh(hp,t){const dlg=$("#dlg");const v=t||{title:"",text:"",ask:[],g
   $("#f-th").onsubmit=async e=>{e.preventDefault();const lines=s=>s.split("\n").map(z=>z.replace(/^(?:[-–•+]|\d+[.)])\s+/,"").trim()).filter(Boolean);
     const d={kieu:"th",hp,ch:+$("#t-ch").value||0,title:$("#t-ti").value.trim(),text:$("#t-tx").value.trim(),ask:lines($("#t-yc").value),guide:lines($("#t-gy").value),st:$("#t-st").value,kin:$("#t-kin").checked};
     if(!d.title||!d.text){$("#t-err").textContent="Nhập tiêu đề và nội dung tình huống.";return}const btn=$("button[type=submit]",dlg);btn.disabled=true;
-    try{const now=FV().serverTimestamp();const all=NH.byHp[hp];if(t){await S.fs.doc("pnl_nh/"+t.id).set(Object.assign({},d,{updated:now}),{merge:true});Object.assign(t,d,{updated:new Date()});
+    try{const now=FV().serverTimestamp();const all=NH.byHp[hp];if(t){if(t.webId)d.sua=true;await S.fs.doc("pnl_nh/"+t.id).set(Object.assign({},d,{updated:now}),{merge:true});Object.assign(t,d,{updated:new Date()});
         /* câu của tình huống đi theo chương và chế độ kín của tình huống */
         const qs=all.filter(x=>x.th===t.id&&((x.ch|0)!==d.ch||!!x.kin!==d.kin));if(qs.length){await nhCommit(qs.map(x=>["upd",S.fs.doc("pnl_nh/"+x.id),{ch:d.ch,kin:d.kin,updated:now}]));qs.forEach(x=>Object.assign(x,{ch:d.ch,kin:d.kin}))}}
       else{const ref=S.fs.collection("pnl_nh").doc();const full=Object.assign({},d,{nguon:"tay",ord:Date.now(),created:now,updated:now});await ref.set(full);all.push(Object.assign({id:ref.id},full,{updated:new Date()}));NH.open.th=true}
@@ -440,24 +446,72 @@ async function nhSaveImport(hp,res,o){const db=S.fs,now=FV().serverTimestamp();l
     const d={kieu:"cau",hp,ch:x.ch|0,lv:x.lv||"NB",q:x.q,o:x.o.slice(0,4),a:x.a,b:x.b||"",e:x.e||"",th:x.thIdx!=null?caseId[x.thIdx]:(x.thId||""),st:o.st,kin:o.kin,nguon:o.nguon,ord:ord++,created:now,updated:now};ops.push(["set",ref,d]);add.push(Object.assign({id:ref.id},d))});
   await nhCommit(ops);add.forEach(x=>{x.created=x.updated=new Date();all.push(x)});return {q:add.filter(nhIsQ).length,t:add.filter(x=>x.kieu==="th").length}}
 
-/* ---------- xuất bản lên web ôn tập ---------- */
-function nhCompile(hp){const all=NH.byHp[hp]||[];const ok=x=>x.st==="duyet"&&!x.kin;const skip={nhap:0,kin:0,loi:0,ch:0,th:0};
-  all.filter(nhIsQ).forEach(x=>{if(x.kin)skip.kin++;else if(x.st!=="duyet")skip.nhap++;else if(!nhValid(x))skip.loi++;else if(!x.ch)skip.ch++});
-  const cases=all.filter(x=>x.kieu==="th"&&ok(x)&&x.ch&&x.text).sort(nhByOrd);const usable=all.filter(x=>nhIsQ(x)&&ok(x)&&nhValid(x)&&x.ch);
-  const q=[];usable.filter(x=>!x.th).sort(nhByOrd).forEach(x=>q.push({id:"NH-"+x.id,g:x.ch,lv:x.lv||"NB",q:x.q,o:x.o,a:x.a,b:x.b||"",e:x.e||""}));
-  const groups={};cases.forEach(c=>{const cid="NHT-"+c.id;const cq=usable.filter(x=>x.th===c.id).sort(nhByOrd);
-    const mcq=cq.map(x=>{const id="NH-"+x.id;q.push({id,g:c.ch,lv:x.lv||"VD",q:x.q,o:x.o,a:x.a,b:x.b||"",e:x.e||"",cid});return id});
-    (groups[c.ch]=groups[c.ch]||[]).push({cid,title:c.title,text:c.text,ask:c.ask||[],guide:c.guide||[],mcq})});
-  skip.th=usable.filter(x=>x.th&&!cases.some(c=>c.id===x.th)).length;
-  return {data:{q,th:Object.keys(groups).map(n=>({n:+n,items:groups[n]})).sort((a,b)=>a.n-b.n)},soCau:q.length,soTH:cases.length,skip}}
-async function nhPublish(hp){const r=nhCompile(hp);const c=courseOf(hp);const s=r.skip;
-  const extra=[s.nhap&&s.nhap+" câu nháp",s.kin&&s.kin+" câu kín",s.loi&&s.loi+" câu lỗi phương án/đáp án",s.ch&&s.ch+" câu chưa xếp chương",s.th&&s.th+" câu thuộc tình huống chưa duyệt"].filter(Boolean);
-  if(!r.soCau&&!r.soTH){toast("Chưa có câu nào đủ điều kiện xuất bản (phải Đã duyệt, không kín, đủ phương án, đáp án, chương)."+(extra.length?" Bỏ qua: "+extra.join(", ")+".":""),6000);return}
-  if(!await confirmDlg("Xuất bản lên web ôn tập "+(c?c.name:hp)+"?","Sinh viên sẽ thấy "+r.soCau+" câu"+(r.soTH?" (gồm "+r.soTH+" tình huống)":"")+" trong Câu hỏi lý thuyết, Tình huống và Thi thử, sau các câu sẵn có của học phần. Bản này thay bản xuất bản trước."+(extra.length?" Không đưa lên: "+extra.join(", ")+".":""),"Xuất bản"))return;
-  const json=JSON.stringify(r.data);if(json.length>900000){toast("Bản xuất bản quá lớn ("+Math.round(json.length/1024)+" KB). Tách bớt câu sang Kín hoặc báo Claude chia nhỏ.",6000);return}
-  try{const d={data:json,soCau:r.soCau,soTH:r.soTH,hp,at:FV().serverTimestamp()};await S.fs.doc("pnl_nh_pub/"+hp).set(d);NH.pub[hp]=Object.assign({},d,{at:new Date()});
-    toast("Đã xuất bản "+r.soCau+" câu lên web ôn tập. Sinh viên tải lại trang học phần là thấy.",5000);render()}catch(x){nhDenied(x);toast("Chưa xuất bản được: "+errMsg(x));render()}}
-async function nhUnpublish(hp){if(!await confirmDlg("Gỡ bản đã xuất bản?","Câu của ngân hàng biến khỏi web ôn tập; ngân hàng giữ nguyên. Câu sẵn có của học phần không bị ảnh hưởng.","Gỡ khỏi web"))return;
+/* ---------- đồng bộ câu sẵn có trên web học phần (GitHub) vào ngân hàng ----------
+   Mỗi câu/tình huống của trang học phần thành một bản ghi có webId (mã gốc) và wh (dấu nội dung lúc nhập).
+   Chạy lại: thêm câu mới xuất hiện trên GitHub; câu GitHub đổi nội dung mà ngân hàng chưa sửa (sua != true) thì cập nhật theo GitHub.
+   Câu đã xóa trong ngân hàng giữ dấu xoa:true để lần đồng bộ sau không nhập lại. */
+function nhH(s){let h=0x811c9dc5;for(const c of String(s)){h^=c.codePointAt(0);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)}
+const nhWid=(k,hp,id)=>(k+"~"+hp+"~"+String(id)).replace(/[\/]/g,"_").slice(0,1400);
+const nhNorm=o=>{const r={};Object.keys(o||{}).sort().forEach(k=>{const v=o[k];if(v===undefined||v===null||v===""||(Array.isArray(v)&&!v.length))return;r[k]=v});return JSON.stringify(r)};
+function nhCaseCh(d,g,gi,c){const q=(d.q||[]).find(x=>(c.mcq||[]).includes(x.id));if(q&&+q.g)return +q.g;const m=String(g.name||"").match(/^Chương\s+(\d+)/i);if(m)return +m[1];
+  return (d.th||[]).length===(d.chapters||[]).length?gi+1:0}
+async function nhSync(hp){await nhChapters(hp);const d=NH.raw[hp];if(!d||!((d.q||[]).length||(d.th||[]).length))return {add:0,upd:0};
+  const now=FV().serverTimestamp(),ops=[],cur=(NH.byHp[hp]=NH.byHp[hp]||[]),tomb=NH.tomb[hp]||[];const byW={};cur.concat(tomb).forEach(x=>{if(x.webId)byW[(x.kieu==="th"?"T:":"Q:")+x.webId]=x});
+  let add=0,upd=0;const cidDoc={};const put=(key,id,body,h)=>{const ex=byW[key];
+    if(!ex){const full=Object.assign(body,{st:"duyet",kin:false,nguon:"web",wh:h,created:now,updated:now});ops.push(["set",S.fs.doc("pnl_nh/"+id),full]);cur.push(Object.assign({id},full,{created:new Date(),updated:new Date()}));add++;return id}
+    if(!ex.sua&&!ex.xoa&&ex.wh!==h){const part=Object.assign(body,{wh:h,updated:now});ops.push(["upd",S.fs.doc("pnl_nh/"+ex.id),part]);Object.assign(ex,part,{updated:new Date()});upd++}return ex.id};
+  (d.th||[]).forEach((g,gi)=>(g.items||[]).forEach((c,ii)=>{const {cid,title,text,ask,guide,mcq,...ext}=c;const w=cid||("G"+gi+"-"+ii);
+    cidDoc[w]=put("T:"+w,nhWid("t",hp,w),{kieu:"th",hp,ch:nhCaseCh(d,g,gi,c),title:title||"",text:text||"",ask:ask||[],guide:guide||[],ext,nhom:g.name||"",nhomOrd:gi,ord:gi*1000+ii,webId:w},nhH(JSON.stringify(c)))}));
+  (d.q||[]).forEach((x,i)=>{const {id,g,lv,q,o,a,b,e,cid,...ext}=x;const w=String(id);
+    put("Q:"+w,nhWid("q",hp,w),{kieu:"cau",hp,ch:+g||0,gRaw:Number.isFinite(+g)&&g!==""&&g!=null?null:(g==null?null:g),lv:lv||"",q:q||"",o:o||[],a:a==null?null:a,b:b||"",e:e||"",th:cid?(cidDoc[cid]||""):"",cidRaw:cid||"",ext,ord:i,webId:w},nhH(JSON.stringify(x)))});
+  if(ops.length)await nhCommit(ops);return {add,upd}}
+async function nhSyncAll(onStep){const out=[];for(const c of S.courses){if(!c.src||c.fb)continue;onStep&&onStep(c);try{const r=await nhSync(c.id);NH.synced[c.id]=true;out.push(Object.assign({c},r))}catch(x){out.push({c,err:errMsg(x)});if(nhDenied(x))break}}return out}
+
+/* ---------- xuất bản: bản ghi chênh lệch so với trang học phần ----------
+   {v:2, del[], delc[], chg[], chgc[], q[], th[{n,items}]}: xóa / thay câu, tình huống sẵn có; thêm câu, tình huống mới.
+   Câu ngân hàng chưa sửa gì so với GitHub thì không ghi vào bản xuất bản (trang dùng nguyên bản GitHub). */
+function nhCompile(hp){const all=NH.byHp[hp]||[],tomb=NH.tomb[hp]||[],raw=NH.raw[hp]||{q:[],th:[]};const ok=x=>x.st==="duyet"&&!x.kin;const skip={nhap:0,kin:0,loi:0,ch:0,th:0};
+  const sQ={},sC={};(raw.q||[]).forEach(x=>sQ[String(x.id)]=x);(raw.th||[]).forEach((g,gi)=>(g.items||[]).forEach((c,ii)=>sC[c.cid||("G"+gi+"-"+ii)]=c));
+  const byId={};all.forEach(x=>byId[x.id]=x);const caseOk=c=>c&&ok(c)&&c.text;
+  const P={v:2,del:[],delc:[],chg:[],chgc:[],q:[],th:[]};
+  tomb.forEach(x=>{if(x.webId)(x.kieu==="th"?P.delc:P.del).push(x.webId)});
+  all.forEach(x=>{if(!nhIsQ(x)||x.webId)return;if(x.kin)skip.kin++;else if(x.st!=="duyet")skip.nhap++;else if(!nhValid(x))skip.loi++;else if(!x.ch)skip.ch++;else if(x.th&&!caseOk(byId[x.th]))skip.th++});
+  /* tình huống sẵn có */
+  all.filter(x=>x.kieu==="th"&&x.webId).forEach(c=>{if(!caseOk(c)){P.delc.push(c.webId);return}
+    const f=Object.assign({},c.ext||{},{cid:c.webId,title:c.title,text:c.text,ask:c.ask||[],guide:c.guide||[]});const st=sC[c.webId];const {mcq,...st0}=st||{};
+    if(!st||nhNorm(f)!==nhNorm(st0))P.chgc.push(Object.assign(f,{n:c.ch,nhom:c.nhom||""}))});
+  /* câu sẵn có */
+  all.filter(x=>nhIsQ(x)&&x.webId).sort(nhByOrd0).forEach(x=>{const cs=x.th?byId[x.th]:null;
+    if(!ok(x)||(cs&&!caseOk(cs))){P.del.push(x.webId);return}
+    if(x.th&&cs&&!cs.webId){P.del.push(x.webId);P.q.push(Object.assign(nhPubQ(x),{id:"NH-"+x.id,cid:"NHT-"+cs.id}));return} // chuyển sang tình huống mới
+    const f=Object.assign({},x.ext||{},{id:x.webId,g:x.gRaw!=null&&!x.ch?x.gRaw:x.ch,q:x.q,o:x.o,a:x.a,lv:x.lv||"",b:x.b,e:x.e});if(cs)f.cid=cs.webId;else if(x.cidRaw&&!x.th)f.cid=x.cidRaw;
+    const st=sQ[x.webId];if(!st||nhNorm(f)!==nhNorm(st))P.chg.push(f)});
+  /* câu, tình huống mới */
+  const groups={};all.filter(x=>x.kieu==="th"&&!x.webId&&caseOk(x)&&x.ch).sort(nhByOrd).forEach(c=>{const cid="NHT-"+c.id;
+    (groups[c.ch]=groups[c.ch]||[]).push({cid,title:c.title,text:c.text,ask:c.ask||[],guide:c.guide||[],mcq:[]})});
+  const newC={};Object.values(groups).forEach(g=>g.forEach(c=>newC[c.cid]=c));
+  all.filter(x=>nhIsQ(x)&&!x.webId&&ok(x)&&nhValid(x)&&x.ch).sort(nhByOrd).forEach(x=>{const cs=x.th?byId[x.th]:null;if(x.th&&!caseOk(cs))return;
+    const q=Object.assign(nhPubQ(x),{id:"NH-"+x.id});if(cs){q.cid=cs.webId||("NHT-"+cs.id);q.g=cs.ch||q.g;if(newC[q.cid])newC[q.cid].mcq.push(q.id)}P.q.push(q)});
+  P.th=Object.keys(groups).map(n=>({n:+n,items:groups[n]})).sort((a,b)=>a.n-b.n);
+  const live=all.filter(x=>ok(x));const soCau=live.filter(nhIsQ).length,soTH=live.filter(x=>x.kieu==="th").length;
+  const nDoi=P.del.length+P.delc.length+P.chg.length+P.chgc.length+P.q.length+P.th.reduce((a,g)=>a+g.items.length,0);
+  return {data:P,soCau,soTH,nDoi,skip}}
+const nhByOrd0=(a,b)=>(a.ord||0)-(b.ord||0);
+function nhPubQ(x){const q={g:x.ch,q:x.q,o:x.o,a:x.a};if(x.lv)q.lv=x.lv;if(x.b)q.b=x.b;if(x.e)q.e=x.e;return q}
+function nhPubState(hp){const p=NH.pub[hp];if(!NH.byHp[hp])return {txt:"",cls:"gray",p,cho:false};const r=nhCompile(hp);const h=nhH(JSON.stringify(r.data));
+  if(!p)return r.nDoi?{txt:"Có "+r.nDoi+" thay đổi chưa xuất bản",cls:"warn",p,cho:true}:{txt:"Web ôn tập đang khớp ngân hàng",cls:"",p,cho:false};
+  const at=nhTs(p.at);const t=at?" · xuất bản "+new Date(at).toLocaleString("vi-VN",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):"";
+  return p.h===h?{txt:"Web ôn tập đang khớp ngân hàng"+t,cls:"",p,cho:false}:{txt:"Có thay đổi chưa xuất bản"+t,cls:"warn",p,cho:true}}
+async function nhPublish(hp,quiet){try{await nhSync(hp)}catch(x){if(nhDenied(x)){toast("Chưa có quyền ghi: cần cập nhật quy tắc dữ liệu.");return render()}}
+  const r=nhCompile(hp);const c=courseOf(hp);const s=r.skip;
+  const extra=[s.nhap&&s.nhap+" câu mới còn nháp",s.kin&&s.kin+" câu kín",s.loi&&s.loi+" câu lỗi phương án/đáp án",s.ch&&s.ch+" câu chưa xếp chương",s.th&&s.th+" câu thuộc tình huống chưa duyệt"].filter(Boolean);
+  const h=nhH(JSON.stringify(r.data));if(NH.pub[hp]&&NH.pub[hp].h===h&&!quiet){toast("Web ôn tập đã khớp ngân hàng, không có gì mới để xuất bản."+(extra.length?" Chưa đưa lên: "+extra.join(", ")+".":""),5000);return}
+  if(!quiet&&!await confirmDlg("Xuất bản lên web ôn tập "+(c?c.name:hp)+"?","Web ôn tập sẽ có "+r.soCau+" câu, "+r.soTH+" tình huống đúng như ngân hàng (câu Đã duyệt, không kín)."+(extra.length?" Chưa đưa lên: "+extra.join(", ")+".":""),"Xuất bản"))return;
+  const json=JSON.stringify(r.data);if(json.length>900000){toast("Phần thay đổi quá lớn ("+Math.round(json.length/1024)+" KB) — báo Claude chia nhỏ.",6000);return}
+  try{if(!r.nDoi&&!NH.pub[hp]){if(!quiet)toast("Web ôn tập đã khớp ngân hàng.");return}
+    const d={data:json,soCau:r.soCau,soTH:r.soTH,hp,h,at:FV().serverTimestamp()};await S.fs.doc("pnl_nh_pub/"+hp).set(d);NH.pub[hp]=Object.assign({},d,{at:new Date()});
+    if(!quiet)toast("Đã xuất bản. Sinh viên tải lại trang học phần là thấy.",5000);render()}catch(x){nhDenied(x);toast("Chưa xuất bản được: "+errMsg(x));render()}}
+async function nhUnpublish(hp){if(!await confirmDlg("Gỡ bản đã xuất bản?","Web ôn tập trở về đúng bản GitHub; câu mới và chỉnh sửa trong ngân hàng không hiện nữa (ngân hàng giữ nguyên).","Gỡ khỏi web"))return;
   try{await S.fs.doc("pnl_nh_pub/"+hp).delete();delete NH.pub[hp];toast("Đã gỡ khỏi web ôn tập.");render()}catch(x){toast("Chưa gỡ được: "+errMsg(x))}}
 
 /* ---------- xuất Excel (cùng cột với mẫu nhập để sửa hàng loạt rồi nhập lại) ---------- */
