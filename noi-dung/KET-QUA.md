@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 15:23 18/11/2026
+# Kết quả dựng nội dung — 15:39 18/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,7 +9,10 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - assets/pnl-shell.js
-      - index.html
+      - danh-gia/index.html
+      - danh-gia/qt-apag.js
+      - danh-gia/tu-luan-luat-dan-su.html
+      - lop/index.html
+      - lop/lop-hoc.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44266566704 · commit c0345d6
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44268852740 · commit 1b7c6bb
