@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 18:07 18/11/2026
+# Kết quả dựng nội dung — 16:12 20/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,7 +9,7 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
+      - danh-gia/index.html
       - lop/app.js
-      - lop/index.html
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44291698162 · commit 7a86502
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/44708737486 · commit 71f36c0
