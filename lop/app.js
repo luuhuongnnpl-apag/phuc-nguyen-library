@@ -99,6 +99,15 @@ async function loadMa(){const ms=await S.fs.collection("pnl_ma").get();const out
   await Promise.all(ms.docs.map(async d=>{const x=d.data()||{};let used=null;try{used=(await S.fs.collection("pnl_ma/"+d.id+"/luot").get()).size+(x.usedBefore|0)}catch(e){}
     out.push({code:d.id,note:x.note||"",han:x.han||"",max:x.max|0,courses:Array.isArray(x.courses)&&x.courses.length?x.courses:["*"],used,created:x.created||""})}));
   S.ma=out.sort((a,b)=>String(b.created).localeCompare(String(a.created)));return S.ma}
+/* 20/11/2026: lớp còn gắn đề trắc nghiệm cũ Luật Dân sự (hocPhan "luat-dan-su", đã ngừng phát đề từ 08/11) → SV bấm "Làm bài" bị chặn.
+   Khi quản trị đăng nhập: lớp cũ CHƯA có bài làm nào → tự chuyển sang đề chính thức 12+1 (luat-dan-su-tu-luan), giữ nguyên mở/đóng, giờ, danh sách SV.
+   Lớp đã có bài đề cũ → không đụng (giữ bài để xem, chấm), chỉ báo. */
+async function suaLopDeCu(){const cu=[...S.lop,...(S.dg||[])].filter(l=>l.hocPhan==="luat-dan-su");if(!cu.length)return;const ok=[],giu=[];
+  for(const l of cu){try{const b=await S.fs.collection("pnl_dg_bai").where("maLop","==",l.id).limit(1).get();if(!b.empty){giu.push(l.id);continue}
+    const d={hocPhan:"luat-dan-su-tu-luan",hocPhanTen:"Luật Dân sự – Đánh giá định kỳ (trắc nghiệm + tự luận)",thoiGian:+l.thoiGian||40,migratedFrom:"luat-dan-su",migratedAt:FV().serverTimestamp()};
+    if(!l.cha&&!(Array.isArray(l.hps)&&l.hps.length))d.hps=["luat-dan-su"];
+    await S.fs.doc("pnl_dg_lop/"+l.id).set(d,{merge:true});Object.assign(l,d);ok.push(l.id)}catch(e){console.warn("suaLopDeCu",l.id,e&&e.code)}}
+  if(ok.length||giu.length){toast((ok.length?"Đã chuyển "+ok.length+" lớp từ đề trắc nghiệm cũ sang đề Luật Dân sự 12+1: "+ok.join(", ")+". ":"")+(giu.length?"Lớp còn bài đề cũ, giữ nguyên: "+giu.join(", ")+".":""),9000);render()}}
 const courseOf=id=>S.courses.find(c=>c.id===id)||(id?{id,name:S.lop.find(l=>l.hocPhan===id)?.hocPhanTen||id,c:"#1d5677"}:null);
 /* Học phần của lớp (18/11/2026): l.hps = các học phần gán cho lớp (sinh viên vào học không cần mã).
    l.hocPhan là LOẠI ĐỀ đánh giá định kỳ ("nh" = đề rút từ ngân hàng; mã cũ của trang danh-gia), không còn dùng làm học phần. */
@@ -548,7 +557,7 @@ window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.inc
   S.sv=store.get(SV_KEY,null);await loadCourses();
   let first=true;
   S.auth.onAuthStateChanged(async u=>{S.user=u;const adm=fbIsAdmin(u);
-    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{})});return}
+    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{})});suaLopDeCu().catch(e=>console.warn("suaLopDeCu",e));return}
     if(!adm&&S.admin){S.admin=false;S.loaded=false;if(typeof rsBar==="function")rsBar()}
     S.admin=adm;
     if(first){first=false;if(!adm&&!u){try{await S.auth.signInAnonymously()}catch(e){}return}}

@@ -478,14 +478,15 @@ async function studentEntry(msg){
   for(const ma of acc.lop){try{const d=await db.doc("pnl_dg_lop/"+ma).get();if(!d.exists)continue;const l=d.data();
       if(l.hocPhan&&(l.hocPhan!=="nh"||l.deNh))await add(ma,l,ma);
       for(const id of (l.dgs||[])){try{const e=await db.doc("pnl_dg_lop/"+id).get();if(e.exists)await add(id,e.data(),ma)}catch(x){}}}catch(e){}}
-  const act=r=>r.bai&&r.bai.status==="dang-lam"?"tiep":r.bai&&r.bai.status==="da-nop"?"xong":r.st.k==="open"?"lam":"";
+  const deCu=r=>r.l.hocPhan==="luat-dan-su"&&!r.bai;/* 20/11: lớp gắn đề trắc nghiệm cũ, SV chưa có bài → không hiện "Làm bài" (đề cũ đã ngừng phát) */
+  const act=r=>r.bai&&r.bai.status==="dang-lam"?"tiep":r.bai&&r.bai.status==="da-nop"?"xong":deCu(r)?"cu":r.st.k==="open"?"lam":"";
   const want=(new URLSearchParams(location.search).get("ma")||"").toUpperCase();const auto=store.get("pndg-go")==="1";store.del("pndg-go");
   const doable=rows.filter(r=>act(r)==="lam"||act(r)==="tiep");const pick=want?rows.find(r=>r.ma===want&&act(r)):(auto&&doable.length===1?doable[0]:null);
   if(pick&&!msg)return go(pick.ma);
   $("#app").innerHTML=`<section class="card narrow"><h1>Đánh giá định kỳ</h1>
     <p class="lead">Xin chào <b>${esc(acc.hoTen||acc.mssv)}</b> (${esc(acc.mssv)}). Chọn bài kiểm tra định kỳ (mọi học phần của các lớp bạn đang học).</p>${msg?`<div class="err" role="alert">${esc(msg)}</div>`:""}
     ${rows.length?rows.map(r=>{const a=act(r);return `<div class="row" style="align-items:center;justify-content:space-between;border:1px solid var(--line,#dfe6ee);border-radius:12px;padding:12px 14px;margin:0 0 10px">
-      <div><b>${esc((r.l.deNh&&r.l.deNh.hpTen)||r.l.hocPhanTen||r.l.ten||r.ma)}</b><br><span class="msg">Lớp ${esc(r.cha)}${r.cha!==r.ma?" · đợt "+esc(r.ma):""} · ${a==="xong"?"đã nộp bài":a==="tiep"?"đang làm dở":esc(r.st.t)}</span></div>
+      <div><b>${esc((r.l.deNh&&r.l.deNh.hpTen)||r.l.hocPhanTen||r.l.ten||r.ma)}</b><br><span class="msg">Lớp ${esc(r.cha)}${r.cha!==r.ma?" · đợt "+esc(r.ma):""} · ${a==="xong"?"đã nộp bài":a==="tiep"?"đang làm dở":a==="cu"?"chờ giảng viên cập nhật đề":esc(r.st.t)}</span></div>
       ${a==="lam"||a==="tiep"?`<button class="btn primary" data-ma="${esc(r.ma)}">${a==="tiep"?"Tiếp tục làm bài":"Làm bài"}</button>`:""}</div>`}).join(""):`<p class="msg">Tài khoản của bạn chưa thuộc lớp nào.</p>`}
     ${rows.length&&!doable.length?`<p class="msg">Hiện chưa có bài kiểm tra định kỳ nào đang mở cho lớp của bạn.</p>`:""}
     <div class="err" id="in-err" role="alert"></div><div class="row"><a class="btn" href="../lop/#sv/kiemtra">Về Quản trị của tôi</a></div></section>`;
