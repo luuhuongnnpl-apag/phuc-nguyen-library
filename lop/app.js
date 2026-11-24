@@ -108,6 +108,28 @@ async function suaLopDeCu(){const cu=[...S.lop,...(S.dg||[])].filter(l=>l.hocPha
     if(!l.cha&&!(Array.isArray(l.hps)&&l.hps.length))d.hps=["luat-dan-su"];
     await S.fs.doc("pnl_dg_lop/"+l.id).set(d,{merge:true});Object.assign(l,d);ok.push(l.id)}catch(e){console.warn("suaLopDeCu",l.id,e&&e.code)}}
   if(ok.length||giu.length){toast((ok.length?"Đã chuyển "+ok.length+" lớp từ đề trắc nghiệm cũ sang đề Luật Dân sự 12+1: "+ok.join(", ")+". ":"")+(giu.length?"Lớp còn bài đề cũ, giữ nguyên: "+giu.join(", ")+".":""),9000);render()}}
+/* 24/11/2026: nhập điểm danh từ danh sách giấy (data/diem-danh-giay.json, Claude chép từ ảnh sếp gửi) — tự chạy MỘT lần khi quản trị đăng nhập.
+   Mỗi buổi: tạo pnl_dd (đã đóng) nếu lớp chưa có buổi cùng ngày; mọi SV trong danh sách lớp trên web có mặt, trừ SV có dấu X (vắng, −0,5/buổi).
+   Đánh dấu đã nhập ở pnl_cc/{lớp}.giay[id] để không chạy lại. */
+async function nhapDiemDanhGiay(){let ds=[];try{ds=await (await fetch("../data/diem-danh-giay.json?t="+Date.now(),{cache:"no-store"})).json()}catch(e){return}
+  for(const g of ds){try{const ma=g.lop;const cc=(await S.fs.doc("pnl_cc/"+ma).get()).data()||{};if(cc.giay&&cc.giay[g.id])continue;
+    const l=(await S.fs.doc("pnl_dg_lop/"+ma).get());if(!l.exists){toast("Chưa có lớp "+ma+" trên web nên chưa nhập được điểm danh giấy.",8000);continue}
+    const rows=(((await S.fs.doc("pnl_dg_ds/"+ma).get()).data()||{}).rows||[]).map(r=>normId(r.mssv));if(!rows.length){toast("Lớp "+ma+" chưa có danh sách sinh viên — chưa nhập điểm danh giấy.",8000);continue}
+    const cu=(await S.fs.collection("pnl_dd").where("maLop","==",ma).get()).docs.map(d=>Object.assign({id:d.id},d.data()));const ops=[],thieu=new Set();let nV=0;
+    for(const b of g.buoi){const vang=new Set(b.vang.map(normId));vang.forEach(m=>{if(!rows.includes(m))thieu.add(m)});nV+=b.vang.length;
+      const co=cu.find(x=>x.ngay===b.ngay&&x.trangThai!=="huy");const id=co?co.id:ma+"-"+b.ngay.replace(/-/g,"");const ts=firebase.firestore.Timestamp.fromDate(new Date(b.ngay+"T07:00:00+07:00"));
+      if(!co)ops.push(x=>x.set(S.fs.doc("pnl_dd/"+id),{maLop:ma,ten:b.ten,ngay:b.ngay,maBuoi:String(100000+Math.floor(Math.random()*900000)),trangThai:"closed",moLuc:ts,dongLuc:ts,created:ts,nguon:"giay"}));
+      const maBuoi=co?co.maBuoi:null;
+      rows.forEach(m=>{const ref=S.fs.doc("pnl_dd_sv/"+id+"__"+m);if(vang.has(m))ops.push(x=>x.delete(ref));else ops.push(x=>x.set(ref,{buoi:id,maLop:ma,mssv:m,maBuoi:maBuoi||"giay",luc:ts,thuCong:true}))})}
+    ops.push(x=>x.set(S.fs.doc("pnl_cc/"+ma),{giay:Object.assign({},cc.giay||{},{[g.id]:new Date().toISOString()}),updated:FV().serverTimestamp()},{merge:true}));
+    for(let i=0;i<ops.length;i+=400){const b=S.fs.batch();ops.slice(i,i+400).forEach(f=>f(b));await b.commit()}
+    toast("Đã nhập điểm danh giấy lớp "+ma+": "+g.buoi.length+" buổi, "+nV+" lượt vắng (−0,5/lượt)."+(thieu.size?" Mã SV có dấu X nhưng không có trong lớp trên web: "+[...thieu].join(", ")+".":""),10000)}
+  catch(e){console.warn("nhapDiemDanhGiay",e);toast("Chưa nhập được điểm danh giấy lớp "+g.lop+": "+errMsg(e),8000)}}}
+/* Báo bản mới (24/11/2026): trang quản trị mở lâu không tự nạp mã mới → 5 phút kiểm tra một lần, có bản mới thì hiện nút Tải lại. */
+const VER_NOW=(document.querySelector('script[src^="app.js?v="]')||{src:""}).src.split("v=")[1]||"";
+setInterval(async()=>{try{const t=await (await fetch("index.html?t="+Date.now(),{cache:"no-store"})).text();const v=(t.match(/app\.js\?v=([\w.-]+)/)||[])[1];
+  if(v&&VER_NOW&&v!==VER_NOW&&!document.getElementById("ver-bar")){const b=document.createElement("div");b.id="ver-bar";b.setAttribute("role","status");b.style.cssText="position:fixed;right:18px;top:14px;z-index:70;background:#fff;border:2px solid var(--navy);border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px rgba(16,35,64,.2);font-size:13.5px;display:flex;gap:12px;align-items:center";
+    b.innerHTML='<span>Web vừa có <b>bản mới</b>.</span><button type="button" class="btn sm pri">Tải lại</button>';b.querySelector("button").onclick=()=>location.reload();document.body.appendChild(b)}}catch(e){}},300000);
 const courseOf=id=>S.courses.find(c=>c.id===id)||(id?{id,name:S.lop.find(l=>l.hocPhan===id)?.hocPhanTen||id,c:"#1d5677"}:null);
 /* Học phần của lớp (18/11/2026): l.hps = các học phần gán cho lớp (sinh viên vào học không cần mã).
    l.hocPhan là LOẠI ĐỀ đánh giá định kỳ ("nh" = đề rút từ ngân hàng; mã cũ của trang danh-gia), không còn dùng làm học phần. */
@@ -572,7 +594,7 @@ window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.inc
   S.sv=store.get(SV_KEY,null);await loadCourses();
   let first=true;
   S.auth.onAuthStateChanged(async u=>{S.user=u;const adm=fbIsAdmin(u);
-    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{})});suaLopDeCu().catch(e=>console.warn("suaLopDeCu",e));return}
+    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{})});suaLopDeCu().catch(e=>console.warn("suaLopDeCu",e));nhapDiemDanhGiay().catch(e=>console.warn("diem danh giay",e));return}
     if(!adm&&S.admin){S.admin=false;S.loaded=false;if(typeof rsBar==="function")rsBar()}
     S.admin=adm;
     if(first){first=false;if(!adm&&!u){try{await S.auth.signInAnonymously()}catch(e){}return}}

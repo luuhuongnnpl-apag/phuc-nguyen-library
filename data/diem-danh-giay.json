@@ -1,0 +1,58 @@
+[
+ {
+  "id": "2505LHOC-giay-20261124",
+  "lop": "2505LHOC",
+  "nguon": "Ảnh danh sách điểm danh giấy (sếp gửi 24/11/2026)",
+  "ghiChu": "Dấu X = vắng. Hai ô 30/10 bị tô đen (LHOC029 Nguyễn Thanh Huyền, LHOC030 Lý Linh Hương) tính là có mặt. Gạch tên trên giấy (LHOC017, LHOC033, LHOC037, LHOC043) không đổi danh sách lớp.",
+  "buoi": [
+   {
+    "ngay": "2026-08-28",
+    "ten": "Buổi 1",
+    "vang": [
+     "2505LHOC056",
+     "2505LHOC072"
+    ]
+   },
+   {
+    "ngay": "2026-09-04",
+    "ten": "Buổi 2",
+    "vang": []
+   },
+   {
+    "ngay": "2026-09-12",
+    "ten": "Buổi 3",
+    "vang": []
+   },
+   {
+    "ngay": "2026-09-19",
+    "ten": "Buổi 4",
+    "vang": [
+     "2505LHOC001",
+     "2505LHOC020",
+     "2505LHOC036",
+     "2505LHOC066"
+    ]
+   },
+   {
+    "ngay": "2026-09-26",
+    "ten": "Buổi 5",
+    "vang": []
+   },
+   {
+    "ngay": "2026-10-30",
+    "ten": "Buổi 6",
+    "vang": [
+     "2505LHOC007",
+     "2505LHOC028",
+     "2505LHOC032",
+     "2505LHOC039",
+     "2505LHOC045",
+     "2505LHOC056",
+     "2505LHOC058",
+     "2505LHOC064",
+     "2505LHOC066"
+    ]
+   }
+  ]
+ }
+]
