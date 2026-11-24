@@ -1,9 +1,9 @@
     // ===== PNL - Phúc Nguyên Library (viết lại 11/11/2026 — khớp mã đang chạy, bỏ toàn bộ quy tắc PNL cũ) =====
-    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026; thêm pnl_nh, pnl_nh_pub 18/11/2026; từ 18/11 trang quản trị tự xuất bản khối này (lop/rules-sync.js) (bản cũ: firestore-pnl-cu-0511.rules).
+    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026; thêm pnl_nh, pnl_nh_pub 18/11/2026; thêm pnl_kq 24/11/2026; từ 18/11 trang quản trị tự xuất bản khối này (lop/rules-sync.js) (bản cũ: firestore-pnl-cu-0511.rules).
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
     // Phiên bản khối quy tắc PNL: trang quản trị đọc thử pnl_rules_v/<phiên bản>; bị chặn = quy tắc trên máy chủ cũ hơn kho GitHub,
     // trang hiện nút "Cập nhật quy tắc" tự thay khối PNL (từ dòng tiêu đề đầu khối đến dòng kết thúc khối) qua Firebase Rules API. Đổi quy tắc thì tăng số này.
-    match /pnl_rules_v/{v} { allow get: if v == '20261118i'; }
+    match /pnl_rules_v/{v} { allow get: if v == '20261124a'; }
 
 
     // --- Mã lớp ôn tập (trang chủ) ---
@@ -193,4 +193,9 @@
     // Đề kiểm tra gốc trong Ngân hàng câu hỏi (kèm đáp án) — chỉ quản trị; bản phát hành cho từng đợt ở pnl_dg_de / pnl_dg_dap
     match /pnl_nh_de/{id} { allow read, write: if isAdmin(); }
     match /pnl_nh_pub/{hp} { allow read: if true; allow write: if isAdmin(); }
+    // --- Kết quả học tập công bố cho sinh viên (24/11/2026): quản trị ghi khi mở Bảng điểm; sinh viên chỉ đọc điểm của chính mình ---
+    match /pnl_kq/{id} {
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
+      allow write: if isAdmin();
+    }
     // Hết khối PNL

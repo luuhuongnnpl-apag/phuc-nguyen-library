@@ -10,6 +10,8 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 const pad=n=>String(n).padStart(2,"0");
 const strip=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
 const fnum=x=>x==null||x===""?"":String(x).replace(".",",");
+/* Làm tròn điểm (sếp chốt 24/11/2026, áp dụng ngay khi chấm): phần lẻ dưới 0,5 → bỏ (8,45 → 8,0); từ 0,5 trở lên → 0,5 (8,69 → 8,5). */
+const lam05=x=>x==null||x===""||isNaN(+x)?null:Math.floor(Math.round(+x*1000)/1000*2)/2;
 const P='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
 const ICON={
   home:P+'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>',
@@ -193,6 +195,7 @@ function cmpTen(a,b){const x=tenKey(a.hoTen),y=tenKey(b.hoTen);return coll.compa
    opts: {scoreTitle, onAction(a,mssv), state:{}} */
 function grid(el,rows,opts){
   opts=opts||{};const S=opts.state||(opts.state={});S.sort=S.sort||"ten";S.dir=S.dir||1;S.sv=S.sv||"";S.st=S.st||"";S.hd=S.hd||"";S.q=S.q||"";
+  rows.forEach(r=>{if(r.diem!=null&&r.diem!=="")r.diem=lam05(r.diem)});
   const byM=new Map(rows.map(r=>[r.mssv,r]));
   const svOpts=rows.slice().sort(cmpTen).map(r=>`<option value="${esc(r.mssv)}"${S.sv===r.mssv?" selected":""}>${esc(r.hoTen)} – ${esc(r.mssv)}</option>`).join("");
   el.innerHTML=`<div class="qta-card"><div class="qta-filters">
@@ -204,11 +207,11 @@ function grid(el,rows,opts){
     <div class="qta-tw"><table class="qg"><thead><tr>
       <th rowspan="2" style="width:52px">STT</th><th rowspan="2" class="sort" data-s="mssv">Mã sinh viên<span></span></th><th rowspan="2" class="sort" data-s="ten" style="min-width:190px">Họ tên<span></span></th><th rowspan="2">Ngày sinh</th>
       <th colspan="2" class="sep">Điểm quá trình</th><th rowspan="2" class="sep">Bài làm</th><th rowspan="2">Rời trang</th><th rowspan="2" class="sep" style="min-width:200px">Ghi chú</th></tr>
-      <tr><th class="sep" title="Điểm danh (đủ = 8, vắng −0,5/buổi) + thưởng ĐGĐK (từ 9: +0,5; từ 9,5: +1) + 30 bạn nộp ĐGĐK sớm nhất +0,5; tối đa 10">Kiểm tra thường xuyên</th><th class="sort" data-s="diem">${esc(opts.scoreTitle||"Kiểm tra định kỳ")}<span></span></th></tr></thead><tbody id="qg-tb"></tbody></table></div>`;
+      <tr><th class="sep" title="Điểm danh (đủ = 8, vắng −0,5/buổi) + thưởng ĐGĐK (từ 9: +0,5; từ 9,5: +1) + 30 bạn nộp ĐGĐK sớm nhất +0,5 + mỗi dấu tích trên ảnh/file điểm danh +0,5; tối đa 10; làm tròn xuống 0,5">Kiểm tra thường xuyên</th><th class="sort" data-s="diem">${esc(opts.scoreTitle||"Kiểm tra định kỳ")}<span></span></th></tr></thead><tbody id="qg-tb"></tbody></table></div>`;
   ["sv","st","hd"].forEach(k=>{const s=el.querySelector("#qg-"+k);s.value=S[k];s.onchange=()=>{S[k]=s.value;draw()}});
   const q=el.querySelector("#qg-q");q.oninput=()=>{S.q=q.value;draw()};
   el.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{if(S.sort===th.dataset.s)S.dir=-S.dir;else{S.sort=th.dataset.s;S.dir=1}draw()});
-  el.querySelector("#qg-tb").addEventListener("click",e=>{const k=e.target.closest("[data-kt]");if(k&&opts.ma){const r=rows.find(x=>x.mssv===k.dataset.kt);if(r&&KT[opts.ma])kttxDialog(opts.ma,r,draw);return}const b=e.target.closest("[data-a]");if(b&&opts.onAction)opts.onAction(b.dataset.a,b.closest("tr").dataset.m,b)});
+  el.querySelector("#qg-tb").addEventListener("click",e=>{const k=e.target.closest("[data-kt]");if(k&&opts.ma){const r=rows.find(x=>x.mssv===k.dataset.kt);if(r&&KT[opts.ma])kttxDialog(opts.ma,r,()=>{draw();pub()});return}const b=e.target.closest("[data-a]");if(b&&opts.onAction)opts.onAction(b.dataset.a,b.closest("tr").dataset.m,b)});
   function draw(){
     const qq=strip(S.q).trim();
     let xs=rows.filter(r=>(!S.sv||r.mssv===S.sv)&&(!S.st||(S.st==="dang"?(r.st==="dang"||r.st==="khoa"):r.st===S.st))&&
@@ -224,7 +227,9 @@ function grid(el,rows,opts){
       <td>${r.roi==null?"":`<span class="roi ${r.roi>(opts.maxRoi||10)?"bad":""}">${r.roi}</span>`}</td>
       <td class="sep">${r.ghiChu?`<span class="note">${esc(r.ghiChu)}</span>`:""}<div class="acts">${(r.ghi||[]).map(btn).join("")}</div></td></tr>`).join(""):`<tr><td colspan="9" style="padding:24px;color:var(--qa-muted)">${rows.length?"Không có sinh viên phù hợp bộ lọc.":"Lớp chưa có sinh viên. Bấm “Import excel” hoặc “Thêm sinh viên”."}</td></tr>`;
   }
-  draw();if(opts.ma&&!KT[opts.ma])kttxLoad(opts.ma).then(draw).catch(e=>console.warn("KTTX",e));return {draw,byM};
+  const pub=()=>{if(opts.ma&&KT[opts.ma])kqPublish(opts.ma,rows).catch(e=>console.warn("Công bố điểm",e&&(e.code||e.message)))};
+  const draw2=()=>{draw();pub()};
+  draw();if(opts.ma&&!KT[opts.ma])kttxLoad(opts.ma).then(draw2).catch(e=>console.warn("KTTX",e));else pub();return {draw:draw2,byM};
 }
 
 /* ---------- Kiểm tra thường xuyên (18/11/2026, mọi học phần) ----------
@@ -241,20 +246,45 @@ async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]
   const nop=bl.docs.map(d=>d.data()).filter(x=>x.status==="da-nop"&&x.mssv).sort((x,y)=>ms(x.submittedAt)-ms(y.submittedAt));const som={};nop.slice(0,KT_SOM).forEach((x,i)=>som[String(x.mssv).toUpperCase()]=i+1);
   const buoi=new Set(b.docs.filter(d=>d.data().trangThai!=="huy").map(d=>d.id));const co={};
   c.docs.forEach(d=>{const x=d.data();if(!buoi.has(x.buoi))return;const k=String(x.mssv).toUpperCase();(co[k]=co[k]||new Set()).add(x.buoi)});
-  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som}}
+  /* dấu tích trên ảnh/file điểm danh (24/11/2026): lưu ở pnl_cc/{lớp}.tichDot, mỗi tích +0,5 */
+  let ccCha=cc;if(cha!==ma){try{ccCha=await fs.doc("pnl_cc/"+cha).get()}catch(e){ccCha=null}}
+  const tich=tichTong(ccCha&&ccCha.exists?ccCha.data():null);
+  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som,tich,cha}}
+function tichTong(d){const t={};((d&&d.tichDot)||[]).forEach(x=>Object.entries(x.ds||{}).forEach(([k,n])=>{k=String(k).toUpperCase();t[k]=(t[k]||0)+(+n||0)}));return t}
 const ktThuong=dk=>dk==null||dk===""?0:+dk>=9.5?1:+dk>=9?0.5:0;
 function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vang=Math.max(0,K.tong-co);
-  const base=K.tong?Math.max(0,8-0.5*vang):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0;const auto=base==null?null:Math.min(10,base+bonus+som);
-  const o={auto,base,vang,bonus,som,thuTu,tong:K.tong};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
-const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
+  const base=K.tong?Math.max(0,8-0.5*vang):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0,nTich=(K.tich||{})[k]||0,tich=0.5*nTich;const auto=base==null?null:lam05(Math.min(10,base+bonus+som+tich));
+  const o={auto,base,vang,bonus,som,thuTu,tong:K.tong,nTich,tich};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
+const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""}${x.tich?" + "+x.nTich+" tích × 0,5 = "+fnum(x.tich):""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
 function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,r.diem)||{};const d=modal(`<h2>Kiểm tra thường xuyên — ${esc(r.hoTen)}</h2>
-  <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${`Tự tính: điểm danh <b>${fnum(x.base)}</b> (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"}) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} = <b>${fnum(x.auto)}</b>.`}</p>
+  <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${`Tự tính: điểm danh <b>${fnum(x.base)}</b> (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"}) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} + dấu tích <b>${fnum(x.tich||0)}</b>${x.nTich?" ("+x.nTich+" tích × 0,5)":""} = <b>${fnum(x.auto)}</b> (tối đa 10).`}</p>
   <div class="fr"><div><label for="kt-v">Điểm Kiểm tra thường xuyên (để trống = dùng điểm tự tính)</label><input type="text" inputmode="decimal" id="kt-v" value="${x.sua?fnum(x.v):""}" placeholder="${x.auto==null?"":fnum(x.auto)}"></div></div>
   <div class="qta-err" id="kt-err"></div><div class="foot"><button class="qb ghost" id="kt-x">Hủy</button><button class="qb exp" id="kt-ok">Lưu</button></div>`);
   d.querySelector("#kt-x").onclick=close;d.querySelector("#kt-ok").onclick=async()=>{const v=d.querySelector("#kt-v").value.trim().replace(",",".");const K=KT[ma];const k=String(r.mssv).toUpperCase();
-    if(v!==""&&!(+v>=0&&+v<=10)){d.querySelector("#kt-err").textContent="Điểm từ 0 đến 10.";return}const sua=Object.assign({},K.sua);if(v==="")delete sua[k];else sua[k]=Math.round(+v*100)/100;
+    if(v!==""&&!(+v>=0&&+v<=10)){d.querySelector("#kt-err").textContent="Điểm từ 0 đến 10.";return}const sua=Object.assign({},K.sua);if(v==="")delete sua[k];else sua[k]=lam05(+v);
     try{await firebase.firestore().doc("pnl_cc/"+ma).set({kttx:sua,updated:firebase.firestore.FieldValue.serverTimestamp()},{mergeFields:["kttx","updated"]});K.sua=sua;close();after&&after()}
     catch(e){d.querySelector("#kt-err").textContent="Chưa lưu được: "+(e.code||e.message)}}}
+
+/* ---------- Công bố điểm cho sinh viên (24/11/2026) ----------
+   Mỗi lần quản trị mở Bảng điểm / Danh sách & điểm của một đợt, điểm đang hiện được ghi vào pnl_kq/{đợt}__{mssv}
+   (chỉ chính sinh viên đó đọc được — quy tắc Firestore). Chỉ ghi khi có thay đổi. Điểm tạm (chưa xác nhận) không công bố. */
+const KQ={};
+async function kqPublish(ma,rows){if(!window.firebase)return;const fs=firebase.firestore();const K=KT[ma];if(!K)return;
+  let st=KQ[ma];if(!st){st=KQ[ma]={cur:{},lop:null};
+    const [ls,q]=await Promise.all([fs.doc("pnl_dg_lop/"+ma).get(),fs.collection("pnl_kq").where("dot","==",ma).get()]);
+    st.lop=ls.exists?ls.data():{};q.docs.forEach(d=>st.cur[d.id]=d.data())}
+  const l=st.lop||{},cha=l.cha||ma,hp=(l.deNh&&l.deNh.hp)||(Array.isArray(l.hps)&&l.hps[0])||({"luat-dan-su-tu-luan":"luat-dan-su"})[l.hocPhan]||l.hocPhan||"";
+  const hpTen=(l.deNh&&l.deNh.hpTen)||String(l.hocPhanTen||hp).replace(/\s*[–-]\s*(Đánh giá định kỳ|Đề cũ).*$/i,"").trim();
+  const ops=[];
+  for(const r of rows){const k=String(r.mssv||"").toUpperCase();if(!k)continue;const x=kttxOf(ma,k,r.diem)||{};
+    const d={mssv:k,hoTen:r.hoTen||"",dot:ma,maLop:cha,hp,hpTen,tenLop:l.ten||"",namHoc:l.namHoc||"",
+      ktdk:r.diem!=null&&!r.tam?lam05(r.diem):null,cho:r.diem!=null&&!!r.tam,bai:r.st||"chua",
+      kttx:x.v==null?null:x.v,coMat:K.tong?(K.co[k]||0):null,tongBuoi:K.tong,tich:x.nTich||0};
+    const id=ma+"__"+k,o=st.cur[id];
+    if(o&&Object.keys(d).every(f=>o[f]===d[f]))continue;
+    ops.push([id,d])}
+  for(let i=0;i<ops.length;i+=400){const b=fs.batch();ops.slice(i,i+400).forEach(([id,d])=>b.set(fs.doc("pnl_kq/"+id),Object.assign({},d,{luc:firebase.firestore.FieldValue.serverTimestamp()})));await b.commit();
+    ops.slice(i,i+400).forEach(([id,d])=>st.cur[id]=d)}}
 
 /* ---------- bảng danh sách lớp ---------- */
 function classTable(el,list,opts){
@@ -362,7 +392,7 @@ function studentDialog(o){
 }
 
 /* ---------- xuất Excel ---------- */
-const rnd=(x,m)=>x==null?null:m==="1"?Math.round(x*10)/10:m==="05"?Math.round(x*2)/2:Math.round(x*100)/100;
+const rnd=(x,m)=>x==null?null:m==="1"?Math.round(x*10)/10:m==="05"?lam05(x):Math.round(x*100)/100;
 function tenMonOf(l){return (l.apag&&l.apag.tenMon)||String(l.hocPhanTen||l.hocPhan||"").replace(/\s*[–-]\s*(Đánh giá định kỳ|Đề cũ).*$/i,"").trim()}
 function download(buf,name){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
 const safeName=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^A-Za-z0-9_.-]+/g,"_").replace(/^_+|_+$/g,"");
@@ -454,7 +484,7 @@ function exportDialog(o){
     <label class="opt"><input type="radio" name="qx-k" value="mau"><b>Bảng điểm theo mẫu APAG</b><span>File Excel đúng bố cục “Bảng điểm quá trình”: TT · Mã sinh viên · Họ và tên · Ngày sinh · Điểm quá trình (Kiểm tra thường xuyên | Kiểm tra định kỳ) · Số tiết nghỉ · TBCBP · Ghi chú; mỗi sinh viên một dòng, mỗi điểm một ô. Dùng để lưu, in, ký — <b>không dùng để Import lên APAG</b> (thiếu mã định danh ẩn của APAG).</span></label>
     <label class="opt"><input type="radio" name="qx-k" value="apag" checked><b>Điền điểm vào file Export excel của APAG</b><span>Dùng để nhập điểm lên APAG. Ngay trước khi nhập, trên APAG bấm Export excel ở lớp này (file mới nhất), chọn file đó ở dưới. Web ghi điểm vào cột “Kiểm tra thường xuyên” và “Kiểm tra định kỳ” theo mã sinh viên, giữ nguyên các cột khác → tải về rồi Import excel lên APAG.</span></label>
     <div id="qx-fwrap" class="fr"><div><label for="qx-f">File Export excel của APAG</label><input type="file" id="qx-f" accept=".xlsx" style="border:0;padding:4px 0"></div></div>
-    <div class="fr"><div><label for="qx-r">Làm tròn điểm</label><select id="qx-r"><option value="2">Giữ nguyên (tối đa 2 chữ số thập phân)</option><option value="1">1 chữ số thập phân</option><option value="05">Đến 0,5</option></select></div></div>
+    <div class="fr"><div><label for="qx-r">Làm tròn điểm</label><select id="qx-r"><option value="05" selected>Đến 0,5 (dưới 0,5 bỏ; từ 0,5 lấy 0,5)</option><option value="1">1 chữ số thập phân</option><option value="2">Giữ nguyên (tối đa 2 chữ số thập phân)</option></select></div></div>
     <div id="qx-res"></div><div class="qta-err" id="qx-err"></div>
     <div class="foot"><button class="qb ghost" id="qx-x">Đóng</button><button class="qb exp" id="qx-ok">${ICON.down}Tải file Excel</button></div>`,true);
   const kind=()=>(d.querySelector("[name=qx-k]:checked")||{}).value;
@@ -474,5 +504,5 @@ function exportDialog(o){
     }catch(x){console.error(x);err.textContent=x.message||String(x)}b.disabled=false};
 }
 
-window.QTA={kttxLoad,kttxOf,mount,unmount,modal,close,ask,info,grid,classTable,rosterDialog,studentDialog,mergeRows,exportDialog,buildAPAG,fillAPAG,parseAOA,parseText,readRosterFile,cmpTen,ICON,esc,lib};
+window.QTA={lam05,kqPublish,kttxLoad,kttxOf,mount,unmount,modal,close,ask,info,grid,classTable,rosterDialog,studentDialog,mergeRows,exportDialog,buildAPAG,fillAPAG,parseAOA,parseText,readRosterFile,cmpTen,ICON,esc,lib};
 })();

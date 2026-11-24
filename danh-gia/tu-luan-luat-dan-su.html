@@ -20,7 +20,7 @@ html.nhung .band{display:none}
 </style>
 </head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
 <main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
-<script src="./qt-apag.js?v=20261118i"></script>
+<script src="./qt-apag.js?v=20261124a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -100,6 +100,11 @@ function hoi(title,text,ok){return new Promise(res=>{const w=document.createElem
 const valid=s=>/^[A-Z0-9_-]{2,24}$/.test(s);
 const until=d=>d&&d.toDate?d.toDate():new Date(d);
 function access(l){const t=Date.now();return l.open&&(!l.openAt||until(l.openAt).getTime()<=t)&&(!l.closeAt||until(l.closeAt).getTime()>=t)}
+function svAccTL(){try{const x=JSON.parse(localStorage.getItem("pnl-lop-sv")||"null");return x&&x.mssv&&x.uid?x:null}catch(e){return null}}
+/* chẩn đoán khi máy chủ từ chối tạo bài: quy tắc máy chủ cũ / ngoài giờ theo giờ máy chủ */
+async function whyDenied(l){try{const v=(await (await fetch("../firebase/firestore-pnl.rules?t="+Date.now(),{cache:"no-store"})).text()).match(/pnl_rules_v\/\{v\}\s*\{\s*allow get: if v == '([^']+)'/);
+  if(v){try{await db.doc("pnl_rules_v/"+v[1]).get()}catch(x){if(x.code==="permission-denied")return "Máy chủ dữ liệu chưa cập nhật quy tắc mới nên chưa cho tạo bài. Báo giảng viên đăng nhập trang Quản trị và bấm “Cập nhật ngay”."}}}catch(e){}
+  if(!access(l))return "Bài kiểm tra chưa mở hoặc đã hết giờ.";return ""}
 async function ensureAnon(){if(auth.currentUser)return auth.currentUser;return(await auth.signInAnonymously()).user}
 function navigate(){if(DETACH){DETACH();DETACH=null}clearInterval(TIMER);if(location.hash.startsWith("#quan-tri"))return adminEntry();if(window.QTA){QTA.unmount();QTA.close()}studentEntry()}
 window.addEventListener("hashchange",navigate);
@@ -128,15 +133,22 @@ function studentEntry(){app.innerHTML=`<article>
 <label style="display:flex;gap:9px;align-items:center;font-weight:400"><input id="agree" type="checkbox" style="width:auto" required> Tôi đã đọc quy định kiểm tra định kỳ.</label>
 <button type="submit">Xác nhận và vào bài kiểm tra</button></form><p id="msg" class="error"></p></article>`;
 const qp=new URLSearchParams(location.search);if(qp.get("ma"))$("#entry").elements.ma.value=qp.get("ma");if(qp.get("sv"))$("#entry").elements.sv.value=qp.get("sv");
+/* 24/11/2026: từ 18/11 máy chủ chỉ cho tạo bài khi đã đăng nhập TÀI KHOẢN LỚP trên chính trình duyệt này (pnl_phien).
+   Trước đây trang này vẫn cho gõ mã lớp + mã SV rồi báo lỗi chung "lớp chưa mở…" → SV tưởng hệ thống hỏng. Nay kiểm tra phiên trước và khóa mã SV theo tài khoản. */
+const ACC=svAccTL();if(ACC){const f=$("#entry").elements.sv;f.value=ACC.mssv;f.readOnly=true}
 $("#entry").onsubmit=async e=>{e.preventDefault();const ma=e.target.ma.value.trim().toUpperCase(),sv=e.target.sv.value.trim().toUpperCase();if(!valid(ma)||!valid(sv)){note("Mã lớp hoặc mã sinh viên không hợp lệ.");return}
-try{await ensureAnon();await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get(),ss=await db.doc("pnl_dg_sv/"+ma+"__"+sv).get();if(!ls.exists||!ss.exists)throw Error("Không tìm thấy mã lớp hoặc mã sinh viên.");
-const l=ls.data();if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
+try{await ensureAnon();const acc=svAccTL();
+if(!acc||acc.uid!==auth.currentUser.uid||acc.mssv!==sv){app.innerHTML='<article><h2>Cần đăng nhập tài khoản lớp</h2><p>Bài kiểm tra định kỳ chỉ làm bằng <b>tài khoản lớp</b> trên chính trình duyệt này: ID = mã sinh viên, mật khẩu = mật khẩu chung của lớp (hoặc mật khẩu bạn đã đổi).</p>'+(acc&&acc.mssv!==sv?'<p class="error">Trình duyệt đang đăng nhập mã SV '+E(acc.mssv)+', không phải '+E(sv)+'.</p>':'')+'<p><a href="../lop/?ve=dg"><button type="button">Đăng nhập tài khoản lớp</button></a></p></article>';return}
+const ph=await db.doc("pnl_phien/"+auth.currentUser.uid).get().catch(()=>null);if(!ph||!ph.exists||ph.data().mssv!==sv){localStorage.removeItem("pnl-lop-sv");throw Error("Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại tài khoản lớp (trang Lớp học) rồi vào bài.")}
+await bankLoad();await loadMCQ();const ls=await db.doc("pnl_dg_lop/"+ma).get();if(!ls.exists)throw Error("Không tìm thấy mã lớp "+ma+".");
+const l=ls.data();/* đợt con (cha = mã lớp) dùng danh sách sinh viên của lớp cha */const ss=await db.doc("pnl_dg_sv/"+(l.cha||ma)+"__"+sv).get();if(!ss.exists)throw Error("Mã sinh viên "+sv+" chưa có trong danh sách lớp "+(l.cha||ma)+". Báo giảng viên kiểm tra danh sách lớp.");
+if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đánh giá định kỳ Luật Dân sự.");
 if(!await confirmStudentIdentity(ma,sv,ss.data().hoTen,l))return;
 const id=ma+"__"+sv,readPaper=async()=>{try{return await db.doc("pnl_dg_bai/"+id).get()}catch(x){if(x.code==="permission-denied")throw Error("Mã sinh viên này đã bắt đầu hoặc đã nộp bài trên một thiết bị hoặc trình duyệt khác. Mỗi sinh viên chỉ làm một lần, trên một máy. Hãy quay lại đúng máy, trình duyệt đã làm bài, hoặc báo giảng viên mở lại lượt.");throw x}};let old=await readPaper(),createErr=null;
 if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!await hoi("Bắt đầu làm bài","Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự (trắc nghiệm kết hợp tự luận). Thời gian 40 phút được tính từ lúc nhận đề; mỗi sinh viên chỉ làm một lần.","Bắt đầu làm bài")){studentEntry();return}await loadMCQ();const de=newMixedExam();
 try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x;createErr=x}
 old=await readPaper()}
-if(!old.exists){const e=Error("Hệ thống chưa tạo được bài làm (lớp chưa mở, đã hết giờ hoặc mã sinh viên chưa có trong danh sách). Vui lòng liên hệ giảng viên.");if(createErr)e.code=createErr.code;throw e}
+if(!old.exists){const e=Error(await whyDenied(l)||"Hệ thống chưa tạo được bài làm (lớp chưa mở, đã hết giờ hoặc mã sinh viên chưa có trong danh sách). Vui lòng liên hệ giảng viên.");if(createErr)e.code=createErr.code;throw e}
 const b=old.data();if(b.hocPhan!==COURSE)throw Error("Mã sinh viên đã có bài của học phần khác.");SESSION={id,ma,sv,l,b};await loadMCQ();renderExam()}catch(x){err(x)}}}
 function answerMap(b){try{return JSON.parse(b.essay||"{}")}catch(x){return{}}}
 function renderExam(){
@@ -309,7 +321,8 @@ function gradeAutomatic(b){
  }
  const essay=Math.round(scores.reduce((a,b)=>a+b,0)*100)/100;
  const tn=mixed?markMCQ(de,ans):{score:0,correct:0,items:[]};
- return {diem:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
+ /* làm tròn ngay khi chấm (24/11/2026): dưới 0,5 bỏ, từ 0,5 lấy 0,5 */
+ return {diem:QTA.lam05(Math.round((essay+tn.score)*100)/100),diemGoc:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
 }
 /* 09/11/2026: chấm tự luận rộng tay (mỗi yêu cầu: 0,5 trả lời đúng hướng + 0,5 nội dung). Bài máy chấm theo bản cũ được chấm lại; bài giảng viên đã chấm giữ nguyên. */
 const GRADE_POLICY="2026-11-09-v4";
@@ -323,7 +336,7 @@ async function markPending(ma,papers,grades){
  for(const [sv,b] of entries){
   try{
    const r=gradeAutomatic(b);
-   const saved={maLop:ma,mssv:sv,diem:r.diem,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,cu:grades[sv]&&grades[sv].nguon==="tu-dong"?{diem:grades[sv].diem,tuLuan:grades[sv].tuLuan,v:grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   const saved={maLop:ma,mssv:sv,diem:r.diem,diemGoc:r.diemGoc,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,cu:grades[sv]&&grades[sv].nguon==="tu-dong"?{diem:grades[sv].diem,tuLuan:grades[sv].tuLuan,v:grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
    grades[sv]=saved;done++;
   }catch(e){errors.push(sv+": "+e.message)}
@@ -641,8 +654,8 @@ async function grade(ma,sv,b,g){
  };
  document.querySelectorAll("[data-point]").forEach(x=>x.oninput=calc);calc();
  $("#saveGrade").onclick=async()=>{
-  const {v,essay,total}=calc();
-  if(!confirm("Lưu điểm "+total.toFixed(2)+"/10 cho "+sv+"?"))return;
+  const {v,essay}=calc(),total=QTA.lam05(calc().total);
+  if(!confirm("Lưu điểm "+String(total).replace(".",",")+"/10 (đã làm tròn 0,5) cho "+sv+"?"))return;
   try{
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,diem:total,nguon:"giang-vien",xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:de.set||"",phienBanDapAn:"mixed-2026-11-07",chamBoi:auth.currentUser?.uid||"",luc:FV.serverTimestamp()});
    manageClass(ma,"ds");

@@ -479,7 +479,7 @@ async function viewSinhVien(){$("#app").innerHTML=shell("sinhvien",`<div class="
 
 /* ============ SINH VIÊN ============ */
 /* Khung quản trị của sinh viên (18/11/2026): Trang chủ (về màn hình chính thư viện) · Bảng điều khiển · Học tập · Kiểm tra, thi · Bài tập · Điểm danh · Tài khoản */
-const SV_RAIL=cur=>[[HOME,"home","Trang chủ thư viện"],["#sv","grade","Bảng điều khiển","home"],["#sv/hoctap","hp","Học tập","hoctap"],["#sv/kiemtra","exam","Kiểm tra, thi","kiemtra"],["#sv/baitap","task","Bài tập & bảng tin","baitap"],["#sv/diemdanh","qr","Điểm danh","diemdanh"],["#sv/taikhoan","user","Tài khoản","taikhoan"]];
+const SV_RAIL=cur=>[[HOME,"home","Trang chủ thư viện"],["#sv","grade","Bảng điều khiển","home"],["#sv/hoctap","hp","Học tập","hoctap"],["#sv/kiemtra","exam","Kiểm tra, thi","kiemtra"],["#sv/baitap","task","Bài tập & bảng tin","baitap"],["#sv/diemdanh","qr","Điểm danh","diemdanh"],["#sv/diem","grade","Điểm các học phần","diem"],["#sv/taikhoan","user","Tài khoản","taikhoan"]];
 async function svLops(me){const lops=[];for(const ma of me.lop||[]){let l=S.lop.find(x=>x.id===ma);if(!l){try{const d=await S.fs.doc("pnl_dg_lop/"+ma).get();if(d.exists){l=Object.assign({id:ma},d.data());if(!l.cha)S.lop.push(l)}}catch(e){}}if(l&&!l.cha)lops.push(l)}return lops}
 const svMe=()=>S.sv||{mssv:"XEM-THU",hoTen:ADMIN_NAME,lop:S.lop.filter(l=>!l.luuTru).slice(0,2).map(l=>l.id),pwDefault:false};
 const svHead=(me,text)=>`<header class="top"><div class="crumb">${text}</div><div style="display:flex;align-items:center;gap:10px"><a class="btn sm" href="${HOME}">${I.home}Trang chủ</a>${S.sv?who(me.hoTen,me.mssv+" · Sinh viên"):`<div class="who"><span class="pill warn">Đang xem như sinh viên</span><a class="out" href="#home">Về quản trị</a></div>`}</div></header>`;
@@ -505,6 +505,7 @@ async function viewSvHome(){const me=svMe();const lops=await svLops(me);const fi
       <a href="#sv/hoctap" class="stile"><span class="ic">${I.hp}</span><b>Học tập</b><span>${hpCards.length} học phần · ôn tập, tóm tắt, mind map, tài liệu</span></a>
       <a href="#sv/kiemtra" class="stile"><span class="ic">${I.exam}</span><b>Kiểm tra, thi</b><span>${can.length?can.length+" bài cần làm":"Chưa có bài đang mở"} · ${dgs.length} đợt của các lớp</span></a>
       <a href="#sv/baitap" class="stile"><span class="ic">${I.task}</span><b>Bài tập &amp; bảng tin</b><span>Bài được giao, hạn nộp, thông báo của lớp</span></a>
+      <a href="#sv/diem" class="stile"><span class="ic">${I.grade}</span><b>Điểm các học phần</b><span>Kiểm tra thường xuyên (chuyên cần) và kiểm tra định kỳ của bạn</span></a>
       <a href="#sv/diemdanh" class="stile"><span class="ic">${I.qr}</span><b>Điểm danh</b><span>Có mặt ${dd.co.length}/${dd.buoi.filter(b=>b.trangThai!=="huy").length} buổi · quét QR hoặc nhập mã buổi</span></a>
     </div></section>
     <div class="grid2"><section class="scard"><h2 class="sec">Lớp và học phần đang học</h2>${hpCards.join("")||(lops.length?'<p class="note">Lớp của bạn chưa được gán học phần.</p>':'<p class="note">Bạn chưa được xếp vào lớp nào. Hãy báo giảng viên.</p>')}</section>
@@ -517,6 +518,20 @@ async function viewSvKiemTra(){const me=svMe();const lops=await svLops(me);const
       :`<div class="empty">${lops.length?"Các lớp của bạn chưa có đợt kiểm tra định kỳ nào.":"Bạn chưa được xếp vào lớp nào."}</div>`}
     <p class="note">Mỗi bài làm một lần bằng tài khoản này. Đợt chỉ làm được khi giảng viên mở và trong khung giờ; điểm kiểm tra định kỳ từ 9 trở lên và nộp sớm (30 bạn đầu) được cộng vào điểm kiểm tra thường xuyên.</p></div></main>`;
   $("#app").innerHTML=rail(SV_RAIL(),true,"kiemtra")+body;bindOut()}
+/* Điểm các học phần (24/11/2026): đọc pnl_kq — quy tắc máy chủ chỉ trả điểm của chính sinh viên đang đăng nhập.
+   Điểm được ghi khi giảng viên mở Bảng điểm của lớp; đã làm tròn (dưới 0,5 bỏ, từ 0,5 lấy 0,5). */
+async function viewSvDiem(){const me=svMe();let xs=[],err="";
+  if(S.sv){try{xs=(await S.fs.collection("pnl_kq").where("mssv","==",me.mssv).get()).docs.map(d=>d.data())}catch(x){err=x&&x.code==="permission-denied"?"Máy chủ dữ liệu chưa mở quyền xem điểm (giảng viên cần cập nhật quy tắc) hoặc phiên đăng nhập đã hết hạn — đăng xuất rồi đăng nhập lại.":errMsg(x)}}
+  const f=v=>v==null?"—":String(v).replace(".",",");const by={};xs.forEach(x=>(by[x.hp||x.hpTen||"khac"]=by[x.hp||x.hpTen||"khac"]||[]).push(x));
+  const sec=Object.entries(by).map(([h,rs])=>{const c=courseOf(h)||{name:rs[0].hpTen||h};rs.sort((a,b)=>String(a.dot).localeCompare(String(b.dot)));
+    return `<section class="scard"><h2 class="sec" style="margin-top:0">${esc(c.name||rs[0].hpTen||h)}</h2><div class="tbl"><table><thead><tr><th>Lớp</th><th>Đợt kiểm tra</th><th style="text-align:center">Có mặt</th><th style="text-align:center">Dấu tích</th><th style="text-align:center">Kiểm tra thường xuyên</th><th style="text-align:center">Kiểm tra định kỳ</th></tr></thead><tbody>
+      ${rs.map(x=>`<tr><td><b>${esc(x.maLop)}</b>${x.tenLop&&x.tenLop!==x.maLop?"<br><span style=\"font-size:12px;color:var(--muted)\">"+esc(x.tenLop)+"</span>":""}</td><td>${esc(x.dot)}</td><td style="text-align:center">${x.tongBuoi?x.coMat+"/"+x.tongBuoi:"—"}</td><td style="text-align:center">${x.tich?x.tich+" (+"+f(x.tich*0.5)+")":"—"}</td><td style="text-align:center"><b>${f(x.kttx)}</b></td><td style="text-align:center"><b>${x.ktdk!=null?f(x.ktdk):x.cho?'<span class="pill warn">chờ chấm</span>':x.bai==="dang"?'<span class="pill gray">đang làm</span>':'<span class="pill gray">chưa làm</span>'}</b></td></tr>`).join("")}</tbody></table></div></section>`}).join("");
+  const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Bảng điều khiển</a><span class="sep">/</span><span class="sub">Điểm các học phần</span>`)}
+  <div class="page" style="max-width:1000px"><h1 class="t">Điểm các học phần</h1>
+    ${err?`<div class="empty" style="text-align:left;border-color:var(--warn);background:var(--warn-soft);color:var(--warn)">${esc(err)}</div>`:""}
+    ${!S.sv?'<div class="empty">Đang xem như sinh viên: trang này chỉ hiện điểm khi sinh viên đăng nhập bằng tài khoản của mình.</div>':sec||(err?"":'<div class="empty">Chưa có điểm được công bố. Điểm hiện ở đây sau khi giảng viên chấm và mở bảng điểm của lớp.</div>')}
+    <p class="note">Chỉ bạn xem được điểm của mình. <b>Kiểm tra thường xuyên</b> = điểm điểm danh (đủ buổi = 8, vắng −0,5/buổi) + mỗi dấu tích trên ảnh/file điểm danh +0,5 + thưởng kiểm tra định kỳ (từ 9: +0,5; từ 9,5: +1) + nộp sớm (30 bạn đầu) +0,5, tối đa 10. Điểm làm tròn: phần lẻ dưới 0,5 bỏ, từ 0,5 lấy 0,5 (VD 8,45 → 8,0; 8,69 → 8,5). Thắc mắc về điểm, báo giảng viên.</p></div></main>`;
+  $("#app").innerHTML=rail(SV_RAIL(),true,"diem")+body;bindOut()}
 async function viewSvHocTap(){const me=svMe();const lops=await svLops(me);
   const TASKS=[["Tóm tắt lý thuyết","map"],["Mind map","map"],["Câu hỏi lý thuyết","de"],["Câu hỏi tình huống","task"],["Thi thử","exam"],["Văn bản, án lệ","bank"]];
   const body=`<main>${svHead(me,`<a class="back" href="#sv">${I.back}Bảng điều khiển</a><span class="sep">/</span><span class="sub">Học tập</span>`)}
@@ -548,7 +563,7 @@ function render(){closeMenu();const h=decodeURIComponent((location.hash||"").sli
   if(S.sv){try{sessionStorage.removeItem("pnl-dn")}catch(e){}if(new URLSearchParams(location.search).get("ve")==="dg"){location.href=DG;return}if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);return svRoute(p)}
   if(p[0]==="dd")return viewQrCheckin(p[1],p[2]);
   viewLogin()}
-function svRoute(p){return p[1]==="kiemtra"?viewSvKiemTra():p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():p[1]==="diemdanh"?viewSvDiemDanh():p[1]==="baitap"?viewSvBaiTap():viewSvHome()}
+function svRoute(p){return p[1]==="diem"?viewSvDiem():p[1]==="kiemtra"?viewSvKiemTra():p[1]==="hoctap"?viewSvHocTap():p[1]==="taikhoan"?viewSvTaiKhoan():p[1]==="diemdanh"?viewSvDiemDanh():p[1]==="baitap"?viewSvBaiTap():viewSvHome()}
 window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.includes("#lop/")||h.startsWith("#hocphan")||h.startsWith("#malop")||h.startsWith("#gopy")||h.startsWith("#sinhvien");if(!keep)S.q="";render()});
 
 /* ============ khởi động ============ */

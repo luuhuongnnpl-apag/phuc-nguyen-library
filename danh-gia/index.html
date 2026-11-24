@@ -141,7 +141,7 @@ html.nhung .band{display:none}
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
 <script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
-<script src="qt-apag.js?v=20261118i"></script>
+<script src="qt-apag.js?v=20261124a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -473,6 +473,11 @@ async function studentEntry(msg){
     <p class="lead">Bài kiểm tra định kỳ chỉ làm bằng <b>tài khoản lớp</b>: ID = mã sinh viên, mật khẩu = mật khẩu chung của lớp (hoặc mật khẩu bạn đã đổi).</p>
     ${msg?`<div class="err" role="alert">${esc(msg)}</div>`:""}<div class="row"><a class="btn primary" href="${back}">Đăng nhập tài khoản lớp</a><a class="btn" href="../index.html">Về trang chủ</a></div>
     <p class="msg" style="margin-top:14px">Khách chưa có tài khoản lớp chỉ xem tài liệu bằng mã lớp ôn tập ở trang chủ.</p></section>`;return}
+  /* 24/11/2026: kiểm tra phiên trên máy chủ (đăng xuất ở máy khác / đặt lại mật khẩu làm phiên mất hiệu lực) và lấy danh sách lớp mới nhất
+     của tài khoản — trước đây dùng bản lưu lúc đăng nhập nên SV được thêm vào lớp sau khi đăng nhập không thấy bài. */
+  try{const ph=await db.doc("pnl_phien/"+USER.uid).get();if(!ph.exists||ph.data().mssv!==acc.mssv){localStorage.removeItem("pnl-lop-sv");return studentEntry("Phiên đăng nhập tài khoản lớp đã hết hạn. Hãy đăng nhập lại.")}
+    const tk=await db.doc("pnl_tk/"+acc.mssv).get();if(tk.exists&&Array.isArray(tk.data().lop)){acc.lop=tk.data().lop;try{const x=JSON.parse(localStorage.getItem("pnl-lop-sv"));x.lop=acc.lop;localStorage.setItem("pnl-lop-sv",JSON.stringify(x))}catch(e){}}}
+  catch(e){if(e&&e.code==="permission-denied"){localStorage.removeItem("pnl-lop-sv");return studentEntry("Phiên đăng nhập tài khoản lớp đã hết hạn hoặc mật khẩu vừa được đặt lại. Hãy đăng nhập lại.")}}
   /* mọi đợt kiểm tra của các lớp: chính lớp (đề gắn thẳng lớp, cách cũ) + các đợt con l.dgs (mỗi đề ra từ ngân hàng một đợt, 18/11/2026) */
   const rows=[];const add=async(ma,l,cha)=>{let bai=null;try{const b=await db.doc("pnl_dg_bai/"+ma+"__"+acc.mssv).get();bai=b.exists?b.data():null}catch(e){}rows.push({ma,l,bai,cha,st:lopTrangThai(l)})};
   for(const ma of acc.lop){try{const d=await db.doc("pnl_dg_lop/"+ma).get();if(!d.exists)continue;const l=d.data();
@@ -493,6 +498,11 @@ async function studentEntry(msg){
   document.querySelectorAll("[data-ma]").forEach(b=>b.onclick=()=>go(b.dataset.ma));
   async function go(ma){try{await checkIn(ma,acc.mssv)}catch(x){console.error(x);studentEntry(x.userMsg||"Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.")}}
 }
+/* chẩn đoán khi máy chủ từ chối tạo bài (24/11/2026) */
+async function whyDenied(l){try{const t=await (await fetch("../firebase/firestore-pnl.rules?t="+Date.now(),{cache:"no-store"})).text();const v=t.match(/pnl_rules_v\/\{v\}\s*\{\s*allow get: if v == '([^']+)'/);
+    if(v){try{await db.doc("pnl_rules_v/"+v[1]).get()}catch(x){if(x.code==="permission-denied")return "Máy chủ dữ liệu chưa cập nhật quy tắc mới nên chưa cho tạo bài. Báo giảng viên đăng nhập trang Quản trị và bấm “Cập nhật ngay”."}}}catch(e){}
+  try{const ph=await db.doc("pnl_phien/"+USER.uid).get();if(!ph.exists){localStorage.removeItem("pnl-lop-sv");return "Phiên đăng nhập tài khoản lớp đã hết hạn — đăng nhập lại ở trang Lớp học rồi vào bài."}}catch(e){}
+  if(l&&lopTrangThai(l).k!=="open")return "Bài kiểm tra: "+lopTrangThai(l).t+".";return ""}
 function uerr(m){const e=new Error(m);e.userMsg=m;return e}
 async function ensureUser(){if(auth.currentUser){USER=auth.currentUser;return USER}USER=(await auth.signInAnonymously()).user;return USER}
 async function checkIn(ma,sv){
@@ -533,7 +543,7 @@ function confirmView(c){
     try{await ensureUser();const B=await loadBank(c.lop.hocPhan);const de=buildDe(B,c.lop.hocPhan);
       await db.doc("pnl_dg_bai/"+c.id).set({maLop:c.ma,mssv:c.sv,hoTen:c.svd.hoTen,uid:USER.uid,status:"dang-lam",startedAt:FV.serverTimestamp(),de,hocPhan:c.lop.hocPhan,roiTrang:0});
       const bai=(await db.doc("pnl_dg_bai/"+c.id).get()).data();startExam({...c,bai});
-    }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm.":(x.message||"Lỗi kết nối, thử lại.");$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
+    }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?(await whyDenied(c.lop)||"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm."):(x.message||"Lỗi kết nối, thử lại.");$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
 }
 async function startExam(c){
   const de=c.bai.de;const B=await bankFor(c.lop.hocPhan,de);
@@ -716,7 +726,8 @@ async function showClass(ma,view,force){
 function classView(ma){return showClass(ma||AD.ma,AD.view,true)}
 /* Bài đề cũ 30+10+1 (học phần luat-dan-su) còn trong lớp đã chuyển sang đề 12+1 */
 const laDeCu=b=>!!b&&!!b.de&&!b.de.essayMode&&!b.de.caseIds&&(b.hocPhan==="luat-dan-su"||(Array.isArray(b.de.lt)&&b.de.lt.length>0));
-const t10Of=(B,tong)=>B.tl?Math.round(r2(tong)*10)/10:Math.round(r2(tong))/10;
+/* làm tròn ngay khi chấm (24/11/2026): dưới 0,5 bỏ, từ 0,5 lấy 0,5 — QTA.lam05 */
+const t10Of=(B,tong)=>QTA.lam05(B.tl?r2(tong):r2(tong)/10);
 /* Xác nhận điểm máy cho mọi bài tự luận đã nộp chưa xác nhận (ghi cả tổng thang 10 để trang Luật Dân sự hiển thị) */
 async function xacNhanTatCa(rows){const xs=rows.filter(x=>x.st==="nop"&&x.tam);if(!xs.length)return;
   if(!await QTA.ask("Xác nhận điểm máy","Ghi điểm máy chấm (tự luận theo 2 tiêu chí: làm đủ yêu cầu + nội dung theo từ khóa, chấm rộng tay) làm điểm chính thức cho <b>"+xs.length+"</b> bài. Sau đó vẫn sửa từng bài được bằng nút Sửa điểm TL.","Xác nhận "+xs.length+" bài"))return;
@@ -727,13 +738,13 @@ function renderView(){({ds:viewDS,tk:viewTK,cai:viewCai})[AD.view||"ds"]()}
 const BB=b=>(b&&AD.BL&&laTLCu(AD.l.hocPhan,b.de))?AD.BL:AD.B;
 function ketQua(sv){
   const b=AD.bai[sv.mssv];if(!b)return {sv,b:null};const B=BB(b);
-  if(!b.de.tl){const t=chamTNTH(B,b.de,b.answers);return {sv,b,lt:0,th:t.diem,sai:t.sai,tl:0,xn:true,tong:t.diem,t10:Math.round(t.diem*10)/10,tn:t}}
+  if(!b.de.tl){const t=chamTNTH(B,b.de,b.answers);return {sv,b,lt:0,th:t.diem,sai:t.sai,tl:0,xn:true,tong:t.diem,t10:QTA.lam05(t.diem),tn:t}}
   const tn=chamTN(B,b.de,b.answers);const c=AD.cham[sv.mssv];const cs=B.cases[b.de.tl];
   let tl,xn=false,ys=null;
   if(cs&&cs.guide){const yy=chamTL(cs,b.essay),bs=chamBuoc(cs,b.essay,tlMaxOf(B));
     if(c&&c.xacNhan){xn=true;tl=tongTL(bs,yy,Array.isArray(c.buoc)?c.buoc:null,Array.isArray(c.muc)?c.muc:null)}else tl=tongTL(bs,yy)}
   else tl=c&&c.xacNhan?(xn=true,c.diem):0;
-  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:B.tl?Math.round(tong*10)/10:Math.round(tong)/10};
+  const tong=r2(tn.lt+tn.th+tl);return {sv,b,lt:tn.lt,th:tn.th,sai:tn.sai,tl,xn,tong,t10:t10Of(B,tong)};
 }
 function classHead(extra){const l=AD.l,st=lopTrangThai(l);
   return `<div class="qta-meta"><span>Lớp: <b>${esc(l.cha||l.id)}</b>${l.ten&&l.ten!==(l.cha||l.id)?" · "+esc(l.ten):""}${l.cha?" · Đợt kiểm tra: <b>"+esc(l.id)+"</b>":""}</span><span>Học phần: <b>${esc(l.hocPhanTen||l.hocPhan)}</b></span>${l.apag&&l.apag.tenLopTc?`<span>Lớp tín chỉ APAG: <b>${esc(l.apag.tenLopTc)}</b></span>`:""}<span>Năm học: <b>${esc(l.namHoc||"")}</b></span><span>${THOI_GIAN_CHUNG} phút · mở ${esc(fmtDT(toDate(l.openAt)))} → đóng ${esc(fmtDT(toDate(l.closeAt)))}</span><span><span class="tag ${st.k==="open"?"nop":st.k==="wait"?"dang":"lock"}">${esc(st.t)}</span></span>${extra||""}</div>`}
@@ -879,7 +890,7 @@ function gradeView(mssv){
     ${B.tl?"":`<h3>Phần trắc nghiệm</h3><div class="tblwrap"><table><thead><tr><th>Câu</th><th>Nội dung</th><th>SV chọn</th><th>Đáp án</th></tr></thead><tbody>${b.de.lt.map(line).join("")}${b.de.th.flatMap(x=>x.q).map(line).join("")}</tbody></table></div>`}`);
   const calc=()=>{const v=[...m.querySelectorAll(".g-muc")].map(s=>+s.value),bv=[...m.querySelectorAll(".g-buoc")].map(s=>+s.value);
     m.querySelectorAll(".y").forEach(el=>{const x=+el.querySelector("select").value;el.classList.toggle("d1",x===1);el.classList.toggle("d05",x>0&&x<1)});
-    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(B.tl?Math.round(tong*10)/10:Math.round(tong)/10).replace(".",",");return {v,bv,tl}};
+    const tl=tongTL(bs,ys,bv,v),tong=r2(r.lt+r.th+tl);m.querySelector("#g-tl").textContent=String(tl).replace(".",",");m.querySelector("#g-sum").textContent=String(tong).replace(".",",")+" · "+String(t10Of(B,tong)).replace(".",",");return {v,bv,tl}};
   calc();m.querySelectorAll(".g-muc,.g-buoc").forEach(s=>s.onchange=calc);
   m.querySelector("#g-x").onclick=()=>{closeModal();renderView()};
   m.querySelector("#g-save").onclick=async()=>{const {v,bv,tl}=calc();

@@ -80,3 +80,11 @@ Một nơi cho mọi việc quản trị: `lop/index.html` + `lop/app.js`. Vào 
 - Quy tắc Firestore: `firebase/firestore-pnl.rules` (khối pnl_tk, pnl_phien 17/11/2026 — phải xuất bản lại trong Firebase Console).
 - `lop/lop-hoc.js` (17/11): **Điểm danh QR** (`pnl_dd` buổi với mã 6 số + hạn mở, `pnl_dd_sv` lượt có mặt — sinh viên quét QR `#dd/<buổi>/<mã>` hoặc nhập mã; GV đánh dấu tay), **Điểm chuyên cần** = 10 × có mặt / tổng buổi, sửa tay ở `pnl_cc`, xuất CSV; **Bảng tin** `pnl_tin`; **Bài tập** `pnl_bt` + bài nộp `pnl_bt_nop` (link hoặc nội dung). Quản trị ĐGĐK nhúng trong tab Kiểm tra, thi / Bảng điểm / Thống kê (iframe `danh-gia/index.html?embed=1`).
 - Đợt sau: tài khoản giảng viên khác (ID = tên viết liền, chỉ thấy lớp được chia sẻ), ngân hàng câu hỏi, Kết quả học tập cho sinh viên (gộp chuyên cần + ĐGĐK).
+
+## Điểm cho sinh viên, làm tròn, dấu tích, sửa lỗi vào bài (24/11/2026)
+
+- **Làm tròn** (`QTA.lam05`, `lop/lop-hoc.js lam05`): phần lẻ dưới 0,5 bỏ, từ 0,5 lấy 0,5 (8,45 → 8,0; 8,69 → 8,5). Áp dụng ngay khi chấm (điểm máy, điểm GV chấm tự luận, KTTX tự tính và sửa tay) và mặc định khi xuất Excel.
+- **Dấu tích** (tab Điểm danh & chuyên cần → *Cộng điểm từ ảnh/file điểm danh*): Excel/CSV tự đếm ✓/x/v/+ theo mã SV hoặc họ tên; ảnh/PDF xem bên cạnh và nhập số tích. Mỗi tích +0,5 vào điểm chuyên cần và KTTX (tối đa 10). Lưu `pnl_cc/{lớp}.tichDot`; xóa đợt = trừ lại.
+- **Điểm các học phần cho sinh viên** (`lop/#sv/diem`): đọc `pnl_kq/{đợt}__{mssv}`; quy tắc chỉ cho chính sinh viên đó đọc. Bảng điểm (danh-gia, tu-luan) tự ghi `pnl_kq` mỗi khi quản trị mở, chỉ ghi phần thay đổi; điểm tạm chưa xác nhận không công bố.
+- **Sửa lỗi không vào làm bài được**: trang tự luận Luật Dân sự tra danh sách theo lớp cha khi là đợt con, bắt buộc phiên tài khoản lớp và khóa mã SV theo phiên (trước đây gõ tay mã SV không đăng nhập → máy chủ từ chối, báo lỗi chung); trang Đánh giá định kỳ lấy danh sách lớp mới nhất của tài khoản, phát hiện phiên hết hạn, báo rõ khi quy tắc máy chủ cũ.
+- Quy tắc: phiên bản `20261124a` (thêm `pnl_kq`) — trang quản trị hiện thanh **Cập nhật ngay**, bấm một lần.
