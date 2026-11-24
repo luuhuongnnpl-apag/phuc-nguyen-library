@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 20:26 24/11/2026
+# Kết quả dựng nội dung — 20:58 24/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -9,13 +9,9 @@
 ## Cảnh báo về file bị sửa
 
     Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - README.md
-      - danh-gia/index.html
-      - danh-gia/qt-apag.js
-      - danh-gia/tu-luan-luat-dan-su.html
-      - firebase/firestore-pnl.rules
+      - data/diem-danh-giay.json
       - lop/app.js
       - lop/index.html
       - lop/lop-hoc.js
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45403506445 · commit 1792014
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45408942376 · commit 99ee407
