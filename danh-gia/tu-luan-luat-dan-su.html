@@ -20,7 +20,8 @@ html.nhung .band{display:none}
 </style>
 </head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
 <main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
-<script src="./qt-apag.js?v=20261126a"></script>
+<script src="../assets/pnl-nk.js?v=20261126b"></script>
+<script src="./qt-apag.js?v=20261126b"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -87,7 +88,7 @@ function markMCQ(de,ans){
 }
 
 function note(text){const p=$("#msg");if(p)p.textContent=text}
-function err(x){console.error(x);const t=(x.message||String(x))+(x.code?" (mã lỗi: "+x.code+")":"");
+function err(x){console.error(x);const t=(x.message||String(x))+(x.code?" (mã lỗi: "+x.code+")":"");if(window.PNK&&!(typeof SESSION!=="undefined"&&SESSION&&SESSION.b&&SESSION.b.status))PNK.log("loi-vao",{nd:t});
  if($("#msg")){note(t);return}
  /* Màn hình hiện tại không có ô thông báo (vd. màn Xác nhận thông tin) → hiện màn báo lỗi để sinh viên chụp gửi giảng viên. */
  app.innerHTML='<article><h2>Chưa vào được bài kiểm tra</h2><p class="error">'+E(t)+'</p><p class="muted">Chụp màn hình này gửi giảng viên nếu lỗi lặp lại.</p><button id="errBack">Quay lại</button></article>';
@@ -146,10 +147,10 @@ if(l.hocPhan!==COURSE)throw Error("Mã lớp này không thuộc học phần đ
 if(!await confirmStudentIdentity(ma,sv,ss.data().hoTen,l))return;
 const id=ma+"__"+sv,readPaper=async()=>{try{return await db.doc("pnl_dg_bai/"+id).get()}catch(x){if(x.code==="permission-denied")throw Error("Mã sinh viên này đã bắt đầu hoặc đã nộp bài trên một thiết bị hoặc trình duyệt khác. Mỗi sinh viên chỉ làm một lần, trên một máy. Hãy quay lại đúng máy, trình duyệt đã làm bài, hoặc báo giảng viên mở lại lượt.");throw x}};let old=await readPaper(),createErr=null;
 if(!old.exists){if(!access(l))throw Error("Bài kiểm tra chưa mở hoặc đã hết hạn.");if(!await hoi("Bắt đầu làm bài","Xác nhận bắt đầu bài đánh giá định kỳ Luật Dân sự (trắc nghiệm kết hợp tự luận). Thời gian 40 phút được tính từ lúc nhận đề; mỗi sinh viên chỉ làm một lần.","Bắt đầu làm bài")){studentEntry();return}await loadMCQ();const de=newMixedExam();
-try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()})}catch(x){if(x.code!=="permission-denied")throw x;createErr=x}
+try{await db.doc("pnl_dg_bai/"+id).set({maLop:ma,mssv:sv,hoTen:ss.data().hoTen,uid:auth.currentUser.uid,hocPhan:COURSE,de,status:"dang-lam",roiTrang:0,startedAt:FV.serverTimestamp()});window.PNK&&PNK.log("bat-dau",{dot:ma,hp:COURSE})}catch(x){if(x.code!=="permission-denied")throw x;createErr=x}
 old=await readPaper()}
 if(!old.exists){const e=Error(await whyDenied(l)||"Hệ thống chưa tạo được bài làm (lớp chưa mở, đã hết giờ hoặc mã sinh viên chưa có trong danh sách). Vui lòng liên hệ giảng viên.");if(createErr)e.code=createErr.code;throw e}
-const b=old.data();if(b.hocPhan!==COURSE)throw Error("Mã sinh viên đã có bài của học phần khác.");SESSION={id,ma,sv,l,b};await loadMCQ();renderExam()}catch(x){err(x)}}}
+const b=old.data();if(b.hocPhan!==COURSE)throw Error("Mã sinh viên đã có bài của học phần khác.");if(window.PNK&&!createErr&&b.status!=="da-nop"&&b.startedAt&&Date.now()-((b.startedAt.toMillis&&b.startedAt.toMillis())||0)>60000)PNK.log("tiep-tuc",{dot:ma,hp:COURSE},{once:ma,ms:6e5});SESSION={id,ma,sv,l,b};await loadMCQ();renderExam()}catch(x){err(x)}}}
 function answerMap(b){try{return JSON.parse(b.essay||"{}")}catch(x){return{}}}
 function renderExam(){
  const S=SESSION,b=S.b;
@@ -203,11 +204,14 @@ function renderExam(){
          await db.doc("pnl_dg_bai/"+SESSION.id).update(update);
          SESSION.b.essay=answer;if(extra)Object.assign(SESSION.b,extra);dirty=false;lastSave=Date.now();
          if(advance){SESSION.b.step=step+1}else if(Number.isInteger(SESSION.b.step))SESSION.b.step=step;
+         if(window.PNK){const dot=SESSION.ma,v=gather(),nTL=Object.entries(v).filter(([k,x])=>!k.startsWith("mcq_")&&k!=="_step"&&String(x||"").trim()).length,nTN=Object.keys(v).filter(k=>k.startsWith("mcq_")&&v[k]!=null).length,nd="Trắc nghiệm đã chọn "+nTN+" câu, tự luận đã viết "+nTL+" ý";
+           if(final)PNK.log(extra&&extra.roiTrang>MAX_ROI?"tu-nop":"nop",{dot,nd:(extra&&extra.roiTrang>MAX_ROI?"Rời trang quá "+MAX_ROI+" lần. ":"")+nd});else PNK.log("luu",{dot,nd},{once:dot,ms:6e5})}
          if(final){SESSION.b.status="da-nop";detach();renderExam()}
          else if(advance){detach();renderExam()}
          else{const status=$("#saveStatus");if(status)status.textContent="Đã lưu lúc "+new Date().toLocaleTimeString("vi-VN")}
          return true;
        }catch(e){console.error(e);if(final&&i<2){await new Promise(r=>setTimeout(r,1500));continue}
+         if(final&&window.PNK)PNK.log("nop-loi",{dot:SESSION.ma,nd:"Nộp 3 lần không thành công: "+(e.code||e.message||"")});
          const msg=$("#msg");if(msg)msg.textContent="Chưa lưu được bài. Kiểm tra kết nối rồi bấm lại.";return false}
      }
    };
@@ -221,7 +225,7 @@ function renderExam(){
  const onVisible=async()=>{
    if(!SESSION||SESSION.b.status==="da-nop")return;
    if(document.visibilityState==="hidden"){
-     const n=(SESSION.b.roiTrang|0)+1;
+     const n=(SESSION.b.roiTrang|0)+1;window.PNK&&PNK.log("roi-trang",{dot:SESSION.ma,nd:"Lần "+n+"/"+MAX_ROI});
      if(n>MAX_ROI){save(true,false,{roiTrang:n});return}
      save(false,false,{roiTrang:n});
    }else{

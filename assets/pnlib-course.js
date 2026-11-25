@@ -113,7 +113,10 @@ app.innerHTML=`<header class="pn-band"><div class="pn-wrap"><img class="pn-logo"
 $("#pn-home").addEventListener("click",e=>{if(window.parent&&window.parent!==window){e.preventDefault();try{window.parent.postMessage({pn:"home"},"*")}catch(err){}}});
 const CTRL=$("#pn-ctrl"),BODY=$("#pn-body");
 let view="";const R={};
-function show(v,noScroll){if(!R[v])v="thithu";view=v;store.set("tab",v);
+/* nhật ký ôn tập (26/11/2026): gửi lên trang chủ (trang chủ ghi vào pnl_nk nếu sinh viên đã đăng nhập tài khoản lớp) */
+const nk=(loai,o,opt)=>{try{if(window.parent&&window.parent!==window)window.parent.postMessage({pn:"nk",loai,o:Object.assign({hp:M.id},o||{}),opt},"*")}catch(e){}};
+nk("on-tap",{nd:M.name||M.id},{once:M.id,ms:36e5});
+function show(v,noScroll){if(!R[v])v="thithu";view=v;store.set("tab",v);nk("on-tap-muc",{nd:((VIEWS.find(x=>x[0]===v)||[])[1]||v)+" · "+(M.name||M.id)},{once:M.id+":"+v,ms:36e5});
   $$(".pn-menu [data-pn]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.pn===v)));
   stopTimer();R[v]();if(!noScroll&&window.innerWidth<820)CTRL.scrollIntoView({behavior:"smooth",block:"start"})}
 $$(".pn-menu [data-pn]").forEach(b=>b.onclick=()=>show(b.dataset.pn));
@@ -212,6 +215,7 @@ function examRun(){
 function score(e){return e.ids.filter(k=>byKey[k]&&isRight(byKey[k],e.c[k])).length}
 function submit(){stopTimer();const e=exam;if(!e)return;e.done=true;e.used=Math.min(Date.now(),e.end)-e.start;e.r=score(e);store.set("exam",e);
   const hist=store.get("hist",[]);hist.unshift({t:Date.now(),ids:e.ids,c:e.c,r:e.r,n:e.ids.length,min:e.min,used:e.used,cfg:e.cfg});store.set("hist",hist.slice(0,30));
+  nk("thi-thu",{diem:+grade10(e.r,e.ids.length).replace(",","."),nd:e.r+"/"+e.ids.length+" câu đúng · làm "+Math.round((e.used||0)/60000)+"/"+e.min+" phút · "+(M.name||M.id)});
   reviewFilter="all";examResult(e,true);scrollTo(0,0)}
 function examResult(e,current){
   const ids=e.ids.filter(k=>byKey[k]),r=score(e),n=ids.length,blank=ids.filter(k=>e.c[k]===undefined).length;

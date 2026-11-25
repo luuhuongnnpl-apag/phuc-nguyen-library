@@ -3,7 +3,7 @@
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
     // Phiên bản khối quy tắc PNL: trang quản trị đọc thử pnl_rules_v/<phiên bản>; bị chặn = quy tắc trên máy chủ cũ hơn kho GitHub,
     // trang hiện nút "Cập nhật quy tắc" tự thay khối PNL (từ dòng tiêu đề đầu khối đến dòng kết thúc khối) qua Firebase Rules API. Đổi quy tắc thì tăng số này.
-    match /pnl_rules_v/{v} { allow get: if v == '20261124a'; }
+    match /pnl_rules_v/{v} { allow get: if v == '20261126b'; }
 
 
     // --- Mã lớp ôn tập (trang chủ) ---
@@ -77,7 +77,8 @@
     match /pnl_dg_bai/{baiId} {
       allow get: if resource == null || isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
-      allow list, delete: if isAdmin();
+      allow delete: if isAdmin();
+      allow list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid); // SV xem lịch sử bài của mình (26/11/2026)
       allow create: if isAdmin() || (signedIn()
         && request.resource.data.keys().hasOnly(['maLop','mssv','hoTen','uid','status','startedAt','de','hocPhan','roiTrang','essay','answers','step'])
         && request.resource.data.uid == request.auth.uid
@@ -197,5 +198,18 @@
     match /pnl_kq/{id} {
       allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
       allow write: if isAdmin();
+    }
+    // --- Nhật ký hoạt động sinh viên (26/11/2026): SV tự ghi việc của mình (giờ máy chủ), không sửa/xóa; SV đọc của mình, quản trị đọc tất cả ---
+    match /pnl_nk/{id} {
+      allow create: if pnlSvHopLe()
+        && request.resource.data.mssv == pnlPhien().mssv
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.luc == request.time
+        && request.resource.data.keys().hasOnly(['mssv','uid','lop','loai','ngay','tb','luc','dot','hp','nd','diem'])
+        && request.resource.data.loai is string && request.resource.data.loai.size() < 30
+        && request.resource.data.lop is list && request.resource.data.lop.size() <= 10
+        && (!('nd' in request.resource.data) || request.resource.data.nd.size() <= 400);
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
+      allow update, delete: if isAdmin();
     }
     // Hết khối PNL

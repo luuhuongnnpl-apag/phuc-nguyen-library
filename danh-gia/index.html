@@ -141,7 +141,8 @@ html.nhung .band{display:none}
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
 <script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
-<script src="qt-apag.js?v=20261126a"></script>
+<script src="../assets/pnl-nk.js?v=20261126b"></script>
+<script src="qt-apag.js?v=20261126b"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -478,6 +479,7 @@ async function studentEntry(msg){
   try{const ph=await db.doc("pnl_phien/"+USER.uid).get();if(!ph.exists||ph.data().mssv!==acc.mssv){localStorage.removeItem("pnl-lop-sv");return studentEntry("Phiên đăng nhập tài khoản lớp đã hết hạn. Hãy đăng nhập lại.")}
     const tk=await db.doc("pnl_tk/"+acc.mssv).get();if(tk.exists&&Array.isArray(tk.data().lop)){acc.lop=tk.data().lop;try{const x=JSON.parse(localStorage.getItem("pnl-lop-sv"));x.lop=acc.lop;localStorage.setItem("pnl-lop-sv",JSON.stringify(x))}catch(e){}}}
   catch(e){if(e&&e.code==="permission-denied"){localStorage.removeItem("pnl-lop-sv");return studentEntry("Phiên đăng nhập tài khoản lớp đã hết hạn hoặc mật khẩu vừa được đặt lại. Hãy đăng nhập lại.")}}
+  PNK.log("vao-kt",{},{once:"kt",ms:18e5});
   /* mọi đợt kiểm tra của các lớp: chính lớp (đề gắn thẳng lớp, cách cũ) + các đợt con l.dgs (mỗi đề ra từ ngân hàng một đợt, 18/11/2026) */
   const rows=[];const add=async(ma,l,cha)=>{let bai=null;try{const b=await db.doc("pnl_dg_bai/"+ma+"__"+acc.mssv).get();bai=b.exists?b.data():null}catch(e){}rows.push({ma,l,bai,cha,st:lopTrangThai(l)})};
   for(const ma of acc.lop){try{const d=await db.doc("pnl_dg_lop/"+ma).get();if(!d.exists)continue;const l=d.data();
@@ -541,11 +543,13 @@ function confirmView(c){
   $("#cf-back").onclick=()=>studentEntry();
   $("#cf-go").onclick=async()=>{$("#cf-go").disabled=true;$("#cf-go").textContent="Đang tạo đề…";
     try{await ensureUser();const B=await loadBank(c.lop.hocPhan);const de=buildDe(B,c.lop.hocPhan);
-      await db.doc("pnl_dg_bai/"+c.id).set({maLop:c.ma,mssv:c.sv,hoTen:c.svd.hoTen,uid:USER.uid,status:"dang-lam",startedAt:FV.serverTimestamp(),de,hocPhan:c.lop.hocPhan,roiTrang:0});
+      await db.doc("pnl_dg_bai/"+c.id).set({maLop:c.ma,mssv:c.sv,hoTen:c.svd.hoTen,uid:USER.uid,status:"dang-lam",startedAt:FV.serverTimestamp(),de,hocPhan:c.lop.hocPhan,roiTrang:0});c.moi=true;
+      PNK.log("bat-dau",{dot:c.ma,hp:c.lop.hocPhan});
       const bai=(await db.doc("pnl_dg_bai/"+c.id).get()).data();startExam({...c,bai});
-    }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?(await whyDenied(c.lop)||"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm."):(x.message||"Lỗi kết nối, thử lại.");$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
+    }catch(x){console.error(x);$("#cf-err").textContent=x.code==="permission-denied"?(await whyDenied(c.lop)||"Không bắt đầu được: bài kiểm tra đã đóng, hoặc mã sinh viên này đã có bài làm."):(x.message||"Lỗi kết nối, thử lại.");PNK.log("loi-vao",{dot:c.ma,nd:$("#cf-err").textContent+(x.code?" ("+x.code+")":"")});$("#cf-go").disabled=false;$("#cf-go").textContent="Bắt đầu làm bài"}};
 }
 async function startExam(c){
+  if(!c.moi)PNK.log("tiep-tuc",{dot:c.ma,hp:c.lop.hocPhan},{once:c.ma,ms:6e5});
   const de=c.bai.de;const B=await bankFor(c.lop.hocPhan,de);
   const stamp=(toDate(c.bai.startedAt)||new Date(0)).getTime()+"|"+de.tl;
   let local=JSON.parse(store.get("pndg-"+c.id)||"{}");if(local.stamp!==stamp)local={};
@@ -646,14 +650,16 @@ function renderExam(){
 }
 function touch(){const E=EXAM;E.dirty=true;store.set("pndg-"+E.id,JSON.stringify({stamp:E.stamp,answers:E.answers,essay:E.essay}));if(Date.now()-E.lastSave>15000)save(false)}
 async function save(force){const E=EXAM;if(!E||!E.active||(!E.dirty&&!force))return;E.lastSave=Date.now();
-  try{await db.doc("pnl_dg_bai/"+E.id).update({answers:E.answers,essay:E.essay.slice(0,20000),roiTrang:E.roi,luu:FV.serverTimestamp()});E.dirty=false;$("#x-save").textContent="Đã lưu "+fmtDT(new Date()).slice(0,5)}
+  try{await db.doc("pnl_dg_bai/"+E.id).update({answers:E.answers,essay:E.essay.slice(0,20000),roiTrang:E.roi,luu:FV.serverTimestamp()});E.dirty=false;$("#x-save").textContent="Đã lưu "+fmtDT(new Date()).slice(0,5);PNK.log("luu",{dot:E.id.split("__")[0],nd:"Đã trả lời "+questionsOf(E.de).filter(id=>E.answers[K(id)]!=null).length+"/"+questionsOf(E.de).length+" câu"+(E.essay.trim()?", tự luận "+E.essay.trim().split(/\s+/).length+" từ":"")},{once:E.id,ms:6e5})}
   catch(x){console.warn(x);$("#x-save").textContent="Chưa lưu được lên máy chủ (đã giữ trên máy)"}}
 function tick(){const E=EXAM;if(!E||!E.active)return;const s=Math.max(0,Math.round((E.end-new Date())/1000));const el=$("#x-clock");if(el){el.textContent=pad(Math.floor(s/60))+":"+pad(s%60);el.classList.toggle("low",s<=300)}
   if(s<=0)submit(true)}
 async function submit(auto,why){const E=EXAM;if(!E||!E.active)return;E.active=false;E.why=why||"";clearInterval(E.timer);clearInterval(E.saver);
   $("#app").insertAdjacentHTML("afterbegin",'<div class="card narrow" id="x-wait"><p>'+(why==="roi"?"Bạn đã rời trang quá "+MAX_ROI+" lần — bài bị khóa và tự động nộp. ":auto?"Hết giờ. ":"")+'Đang nộp bài…</p></div>');window.scrollTo(0,0);
   for(let i=0;i<3;i++){try{await db.doc("pnl_dg_bai/"+E.id).update({answers:E.answers,essay:E.essay.slice(0,20000),roiTrang:E.roi,status:"da-nop",submittedAt:FV.serverTimestamp()});
+      PNK.log(auto?"tu-nop":"nop",{dot:E.id.split("__")[0],nd:(why==="roi"?"Rời trang quá "+MAX_ROI+" lần. ":auto?"Hết giờ. ":"")+"Đã trả lời "+questionsOf(E.de).filter(id=>E.answers[K(id)]!=null).length+"/"+questionsOf(E.de).length+" câu"+(E.essay.trim()?", tự luận "+E.essay.trim().split(/\s+/).length+" từ":"")});
       store.del("pndg-"+E.id);const bai=(await db.doc("pnl_dg_bai/"+E.id).get()).data();return doneView(E.lop,E.svd,bai,E.why)}catch(x){console.warn(x);await new Promise(r=>setTimeout(r,1500))}}
+  PNK.log("nop-loi",{dot:E.id.split("__")[0],nd:"Thử nộp 3 lần không thành công (mất mạng hoặc quá giờ đóng)"});
   E.active=true;$("#x-wait").innerHTML='<p class="err">Chưa nộp được bài (mất mạng hoặc đã quá giờ đóng). Bài vẫn được giữ trên máy này. Kiểm tra mạng rồi bấm nộp lại, hoặc báo ngay cho giảng viên.</p><button class="btn primary" id="x-retry">Nộp lại</button>';
   $("#x-retry").onclick=()=>submit(false);
 }
@@ -661,7 +667,7 @@ function doneView(lop,svd,bai,why){EXAM=null;if(!why&&(bai.roiTrang|0)>MAX_ROI)w
   $("#app").innerHTML=`<section class="card narrow"><h1>Đã nộp bài</h1><p class="ok">Bài làm của ${esc(svd.hoTen)} (${esc(bai.mssv)}) đã được ghi nhận${bai.submittedAt?" lúc "+esc(fmtDT(toDate(bai.submittedAt))):""}.</p>
   ${why==="roi"?`<p class="err">Bài bị khóa và tự động nộp vì rời khỏi trang làm bài quá ${MAX_ROI} lần.</p>`:""}<p class="msg">Kết quả sẽ do giảng viên thông báo. Bạn có thể đóng trang này.</p><div class="row"><a class="btn primary" href="../lop/#sv/kiemtra" style="display:inline-block;text-decoration:none">Về Kiểm tra, thi của tôi</a><a class="btn" href="../index.html" style="display:inline-block;text-decoration:none">Về trang chủ</a></div></section>`}
 document.addEventListener("visibilitychange",()=>{if(!EXAM||!EXAM.active)return;
-  if(document.hidden){EXAM.roi++;EXAM.dirty=true;store.set("pndg-"+EXAM.id,JSON.stringify({stamp:EXAM.stamp,answers:EXAM.answers,essay:EXAM.essay}));
+  if(document.hidden){EXAM.roi++;PNK.log("roi-trang",{dot:EXAM.id.split("__")[0],nd:"Lần "+EXAM.roi+"/"+MAX_ROI});EXAM.dirty=true;store.set("pndg-"+EXAM.id,JSON.stringify({stamp:EXAM.stamp,answers:EXAM.answers,essay:EXAM.essay}));
     if(EXAM.roi>MAX_ROI)submit(true,"roi");else save(true)}
   else roiWarn()});
 function roiWarn(){const E=EXAM;if(!E||!E.active||!E.roi)return;let w=$("#x-roi");if(!w){$("#app").insertAdjacentHTML("afterbegin",'<div id="x-roi" role="alert" style="background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-weight:600"></div>');w=$("#x-roi")}
