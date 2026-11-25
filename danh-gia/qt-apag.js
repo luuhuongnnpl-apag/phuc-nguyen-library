@@ -195,7 +195,7 @@ function cmpTen(a,b){const x=tenKey(a.hoTen),y=tenKey(b.hoTen);return coll.compa
    opts: {scoreTitle, onAction(a,mssv), state:{}} */
 function grid(el,rows,opts){
   opts=opts||{};const S=opts.state||(opts.state={});S.sort=S.sort||"ten";S.dir=S.dir||1;S.sv=S.sv||"";S.st=S.st||"";S.hd=S.hd||"";S.q=S.q||"";
-  rows.forEach(r=>{if(r.diem!=null&&r.diem!=="")r.diem=lam05(r.diem)});
+  apDK(opts.ma,rows);
   const byM=new Map(rows.map(r=>[r.mssv,r]));
   const svOpts=rows.slice().sort(cmpTen).map(r=>`<option value="${esc(r.mssv)}"${S.sv===r.mssv?" selected":""}>${esc(r.hoTen)} – ${esc(r.mssv)}</option>`).join("");
   el.innerHTML=`<div class="qta-card"><div class="qta-filters">
@@ -221,14 +221,14 @@ function grid(el,rows,opts){
     const btn=x=>`<button type="button" class="qb sm ${x.kind||"link"}" data-a="${esc(x.a)}">${esc(x.t)}</button>`;
     const tag={nop:'<span class="tag nop">Đã nộp</span>',dang:'<span class="tag dang">Đang làm</span>',khoa:'<span class="tag lock">Bị khóa</span>',chua:'<span class="tag chua">Chưa làm</span>'};
     el.querySelector("#qg-tb").innerHTML=xs.length?xs.map((r,i)=>`<tr data-m="${esc(r.mssv)}"><td>${i+1}</td><td class="nw">${esc(r.mssv)}</td><td class="l">${esc(r.hoTen)}</td><td class="nw">${esc(r.ngaySinh||"")}</td>
-      <td class="sep">${(()=>{const x=opts.ma?kttxOf(opts.ma,r.mssv,r.diem):null;r.kttx=x&&x.v!=null?x.v:null;return opts.ma?`<button type="button" class="qcell ktc${x&&x.sua?" tam":""}" data-kt="${esc(r.mssv)}" title="${esc(KT[opts.ma]?ktTip(x)+" — bấm để nhập/sửa":"Đang tải điểm danh…")}">${!KT[opts.ma]?"…":x&&x.v!=null?fnum(x.v):"&nbsp;"}${x&&x.sua?"<small>sửa tay</small>":""}</button>`:""})()}</td>
-      <td>${r.diem==null?'<span class="qcell" style="color:var(--qa-muted);font-weight:400">&nbsp;</span>':`<span class="qcell${r.tam?" tam":""}">${fnum(r.diem)}${r.tam?"<small>tạm</small>":""}</span>`}</td>
+      <td class="sep">${(()=>{const x=opts.ma?kttxOf(opts.ma,r.mssv,dkGoc(r)):null;r.kttx=x&&x.v!=null?x.v:null;return opts.ma?`<button type="button" class="qcell ktc${x&&x.sua?" tam":""}" data-kt="${esc(r.mssv)}" title="${esc(KT[opts.ma]?ktTip(x)+" — bấm để nhập/sửa":"Đang tải điểm danh…")}">${!KT[opts.ma]?"…":x&&x.v!=null?fnum(x.v):"&nbsp;"}${x&&x.sua?"<small>sửa tay</small>":""}</button>`:""})()}</td>
+      <td>${r.diem==null?'<span class="qcell" style="color:var(--qa-muted);font-weight:400">&nbsp;</span>':`<span class="qcell${r.tam?" tam":""}"${r.congDK?` title="Bài làm ${fnum(r.diem0)} + Top 5 ${fnum(r.congDK)}"`:""}>${fnum(r.diem)}${r.tam?"<small>tạm</small>":r.congDK?"<small>+"+fnum(r.congDK)+"</small>":""}</span>`}</td>
       <td class="sep">${tag[r.st]||""}<div class="acts">${(r.bai||[]).map(btn).join("")}</div></td>
       <td>${r.roi==null?"":`<span class="roi ${r.roi>(opts.maxRoi||10)?"bad":""}">${r.roi}</span>`}</td>
       <td class="sep">${r.ghiChu?`<span class="note">${esc(r.ghiChu)}</span>`:""}<div class="acts">${(r.ghi||[]).map(btn).join("")}</div></td></tr>`).join(""):`<tr><td colspan="9" style="padding:24px;color:var(--qa-muted)">${rows.length?"Không có sinh viên phù hợp bộ lọc.":"Lớp chưa có sinh viên. Bấm “Import excel” hoặc “Thêm sinh viên”."}</td></tr>`;
   }
   const pub=()=>{if(opts.ma&&KT[opts.ma])kqPublish(opts.ma,rows).catch(e=>console.warn("Công bố điểm",e&&(e.code||e.message)))};
-  const draw2=()=>{draw();pub()};
+  const draw2=()=>{apDK(opts.ma,rows);draw();pub()};
   draw();if(opts.ma&&!KT[opts.ma])kttxLoad(opts.ma).then(draw2).catch(e=>console.warn("KTTX",e));else pub();return {draw:draw2,byM};
 }
 
@@ -248,15 +248,20 @@ async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]
   c.docs.forEach(d=>{const x=d.data();if(!buoi.has(x.buoi))return;const k=String(x.mssv).toUpperCase();(co[k]=co[k]||new Set()).add(x.buoi)});
   /* dấu tích trên ảnh/file điểm danh (24/11/2026): lưu ở pnl_cc/{lớp}.tichDot, mỗi tích +0,5 */
   let ccCha=cc;if(cha!==ma){try{ccCha=await fs.doc("pnl_cc/"+cha).get()}catch(e){ccCha=null}}
-  const tich=tichTong(ccCha&&ccCha.exists?ccCha.data():null);
-  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som,tich,cha}}
+  const ccd=ccCha&&ccCha.exists?ccCha.data():{};const tich=tichTong(ccd);
+  /* 25/11/2026: vắng ghi ngoài web (file/danh sách giấy) −0,5/buổi vào KTTX; Top 5 cộng điểm Kiểm tra định kỳ (tối đa 10) */
+  const up=o=>Object.fromEntries(Object.entries(o||{}).map(([k,v])=>[String(k).toUpperCase(),+v||0]));const vangThem=up(ccd.vangThem),congDK=up(ccd.congDK);
+  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som,tich,cha,vangThem,congDK}}
 function tichTong(d){const t={};((d&&d.tichDot)||[]).forEach(x=>Object.entries(x.ds||{}).forEach(([k,n])=>{k=String(k).toUpperCase();t[k]=(t[k]||0)+(+n||0)}));return t}
 const ktThuong=dk=>dk==null||dk===""?0:+dk>=9.5?1:+dk>=9?0.5:0;
-function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vang=Math.max(0,K.tong-co);
-  const base=K.tong?Math.max(0,8-0.5*vang):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0,nTich=(K.tich||{})[k]||0,tich=0.5*nTich;const auto=base==null?null:lam05(Math.min(10,base+bonus+som+tich));
+/* điểm Kiểm tra định kỳ cộng thêm (Top 5…): r.diem0 = điểm bài làm đã làm tròn, r.diem = điểm sau cộng (tối đa 10). Gọi lại được nhiều lần. */
+function apDK(ma,rows){const K=KT[ma];rows.forEach(r=>{if(r.diem0===undefined)r.diem0=r.diem==null||r.diem===""?null:lam05(r.diem);const c=K&&K.congDK?(K.congDK[String(r.mssv).toUpperCase()]||0):0;r.congDK=r.diem0!=null&&c?c:0;r.diem=r.diem0==null?r.diem0:Math.min(10,r.diem0+r.congDK)})}
+const dkGoc=r=>r.diem0!==undefined?r.diem0:r.diem;
+function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vt=(K.vangThem||{})[k]||0,vang=Math.max(0,K.tong-co)+vt;
+  const base=K.tong||vt?Math.max(0,8-0.5*vang):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0,nTich=(K.tich||{})[k]||0,tich=0.5*nTich;const auto=base==null?null:lam05(Math.min(10,base+bonus+som+tich));
   const o={auto,base,vang,bonus,som,thuTu,tong:K.tong,nTich,tich};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
-const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""}${x.tich?" + "+x.nTich+" tích × 0,5 = "+fnum(x.tich):""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
-function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,r.diem)||{};const d=modal(`<h2>Kiểm tra thường xuyên — ${esc(r.hoTen)}</h2>
+const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong||x.vang?"vắng "+x.vang+" buổi":"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""}${x.tich?" + "+x.nTich+" tích × 0,5 = "+fnum(x.tich):""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
+function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,dkGoc(r))||{};const d=modal(`<h2>Kiểm tra thường xuyên — ${esc(r.hoTen)}</h2>
   <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${`Tự tính: điểm danh <b>${fnum(x.base)}</b> (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"}) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} + dấu tích <b>${fnum(x.tich||0)}</b>${x.nTich?" ("+x.nTich+" tích × 0,5)":""} = <b>${fnum(x.auto)}</b> (tối đa 10).`}</p>
   <div class="fr"><div><label for="kt-v">Điểm Kiểm tra thường xuyên (để trống = dùng điểm tự tính)</label><input type="text" inputmode="decimal" id="kt-v" value="${x.sua?fnum(x.v):""}" placeholder="${x.auto==null?"":fnum(x.auto)}"></div></div>
   <div class="qta-err" id="kt-err"></div><div class="foot"><button class="qb ghost" id="kt-x">Hủy</button><button class="qb exp" id="kt-ok">Lưu</button></div>`);
@@ -276,9 +281,9 @@ async function kqPublish(ma,rows){if(!window.firebase)return;const fs=firebase.f
   const l=st.lop||{},cha=l.cha||ma,hp=(l.deNh&&l.deNh.hp)||(Array.isArray(l.hps)&&l.hps[0])||({"luat-dan-su-tu-luan":"luat-dan-su"})[l.hocPhan]||l.hocPhan||"";
   const hpTen=(l.deNh&&l.deNh.hpTen)||String(l.hocPhanTen||hp).replace(/\s*[–-]\s*(Đánh giá định kỳ|Đề cũ).*$/i,"").trim();
   const ops=[];
-  for(const r of rows){const k=String(r.mssv||"").toUpperCase();if(!k)continue;const x=kttxOf(ma,k,r.diem)||{};
+  for(const r of rows){const k=String(r.mssv||"").toUpperCase();if(!k)continue;const x=kttxOf(ma,k,dkGoc(r))||{};
     const d={mssv:k,hoTen:r.hoTen||"",dot:ma,maLop:cha,hp,hpTen,tenLop:l.ten||"",namHoc:l.namHoc||"",
-      ktdk:r.diem!=null&&!r.tam?lam05(r.diem):null,cho:r.diem!=null&&!!r.tam,bai:r.st||"chua",
+      ktdk:r.diem!=null&&!r.tam?r.diem:null,congDK:r.congDK||0,cho:r.diem!=null&&!!r.tam,bai:r.st||"chua",
       kttx:x.v==null?null:x.v,coMat:K.tong?(K.co[k]||0):null,tongBuoi:K.tong,tich:x.nTich||0};
     const id=ma+"__"+k,o=st.cur[id];
     if(o&&Object.keys(d).every(f=>o[f]===d[f]))continue;
@@ -492,7 +497,7 @@ function exportDialog(o){
   d.querySelector("#qx-x").onclick=close;
   d.querySelector("#qx-ok").onclick=async()=>{const err=d.querySelector("#qx-err"),res=d.querySelector("#qx-res"),b=d.querySelector("#qx-ok");err.textContent="";res.innerHTML="";const m=d.querySelector("#qx-r").value;
     b.disabled=true;try{
-      try{await kttxLoad(l.id,true);o.rows.forEach(r=>{const x=kttxOf(l.id,r.mssv,r.diem);r.kttx=x&&x.v!=null?x.v:null})}catch(e){console.warn("KTTX",e)}
+      try{await kttxLoad(l.id,true);apDK(l.id,o.rows);o.rows.forEach(r=>{const x=kttxOf(l.id,r.mssv,dkGoc(r));r.kttx=x&&x.v!=null?x.v:null})}catch(e){console.warn("KTTX",e)}
       const base="Bang-diem-KTDK-"+safeName(l.id);
       if(kind()==="mau"){const rows=o.rows.slice().sort(cmpTen);
         download(await buildAPAG(l,rows,m),base+".xlsx");res.innerHTML=`<p class="qta-ok">Đã tải ${esc(base)}.xlsx (${rows.length} sinh viên).</p>`}

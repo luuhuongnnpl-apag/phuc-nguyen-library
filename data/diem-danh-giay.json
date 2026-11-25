@@ -54,5 +54,98 @@
     ]
    }
   ]
+ },
+ {
+  "id": "2505LHOD-excel-20261125",
+  "lop": "2505LHOD",
+  "nguon": "File Excel Danh sách điểm danh học phần Luật Dân sự (sếp gửi 25/11/2026)",
+  "ghiChu": "Phát biểu = số dấu tích, mỗi tích +0,5 vào Kiểm tra thường xuyên; Vắng (kể cả có phép) −0,5/buổi vào Kiểm tra thường xuyên; Top 5 +0,5 vào Kiểm tra định kỳ (tối đa 10). Sửa mã gõ nhầm: 25005LHOD053 → 2505LHOD053, 22505LHOD067 → 2505LHOD067.",
+  "tichTen": "Phát biểu (file Excel 25/11/2026)",
+  "ngay": "2026-11-25",
+  "tich": {
+   "2505LHOD003": 2,
+   "2505LHOD004": 3,
+   "2505LHOD005": 1,
+   "2505LHOD008": 1,
+   "2505LHOD009": 6,
+   "2505LHOD011": 2,
+   "2505LHOD013": 8,
+   "2505LHOD018": 3,
+   "2505LHOD019": 2,
+   "2505LHOD021": 1,
+   "2505LHOD022": 5,
+   "2505LHOD025": 2,
+   "2505LHOD030": 6,
+   "2505LHOD032": 2,
+   "2505LHOD035": 2,
+   "2505LHOD037": 3,
+   "2505LHOD040": 5,
+   "2505LHOD041": 5,
+   "2505LHOD042": 2,
+   "2505LHOD045": 1,
+   "2505LHOD050": 1,
+   "2505LHOD051": 5,
+   "2505LHOD052": 7,
+   "2505LHOD054": 5,
+   "2505LHOD056": 1,
+   "2505LHOD058": 2,
+   "2505LHOD061": 6,
+   "2505LHOD062": 2,
+   "2505LHOD064": 2,
+   "2505LHOD065": 2,
+   "2505LHOD067": 4,
+   "2505LHOD069": 1,
+   "2505LHOD071": 1
+  },
+  "vangThem": {
+   "2505LHOD001": 1,
+   "2505LHOD007": 1,
+   "2505LHOD020": 1,
+   "2505LHOD037": 1,
+   "2505LHOD039": 2,
+   "2505LHOD044": 2,
+   "2505LHOD053": 1,
+   "2505LHOD054": 1,
+   "2505LHOD057": 1,
+   "2505LHOD059": 1,
+   "2505LHOD063": 1,
+   "2505LHOD066": 1
+  },
+  "vangChiTiet": {
+   "2505LHOD001": "21/09 (có phép)",
+   "2505LHOD007": "05/10",
+   "2505LHOD020": "28/09",
+   "2505LHOD037": "06/10 (có phép)",
+   "2505LHOD039": "28/9 - 5/10",
+   "2505LHOD044": "21/9 - 5/10",
+   "2505LHOD053": "12/10",
+   "2505LHOD054": "12/10 (có phép)",
+   "2505LHOD057": "22/09 (có phép)",
+   "2505LHOD059": "22/09",
+   "2505LHOD063": "29/09 (có phép)",
+   "2505LHOD066": "28/09 (có phép)"
+  },
+  "congDK": {
+   "2505LHOD001": 0.5,
+   "2505LHOD008": 0.5,
+   "2505LHOD019": 0.5,
+   "2505LHOD021": 0.5,
+   "2505LHOD027": 0.5,
+   "2505LHOD031": 0.5,
+   "2505LHOD041": 0.5,
+   "2505LHOD042": 0.5,
+   "2505LHOD063": 0.5,
+   "2505LHOD066": 0.5
+  }
+ },
+ {
+  "id": "2505LHOB-excel-20261125",
+  "lop": "2505LHOB",
+  "nguon": "File Excel điểm danh lớp D (sinh viên lớp B học cùng)",
+  "tichTen": "Phát biểu (học cùng lớp D, file 25/11/2026)",
+  "ngay": "2026-11-25",
+  "tich": {
+   "2505LHOB071": 8
+  }
  }
 ]

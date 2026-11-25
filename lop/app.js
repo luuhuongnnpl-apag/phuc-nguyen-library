@@ -115,6 +115,17 @@ async function nhapDiemDanhGiay(){let ds=[];try{ds=await (await fetch("../data/d
   for(const g of ds){try{const ma=g.lop;const cc=(await S.fs.doc("pnl_cc/"+ma).get()).data()||{};if(cc.giay&&cc.giay[g.id])continue;
     const l=(await S.fs.doc("pnl_dg_lop/"+ma).get());if(!l.exists){toast("Chưa có lớp "+ma+" trên web nên chưa nhập được điểm danh giấy.",8000);continue}
     const rows=(((await S.fs.doc("pnl_dg_ds/"+ma).get()).data()||{}).rows||[]).map(r=>normId(r.mssv));if(!rows.length){toast("Lớp "+ma+" chưa có danh sách sinh viên — chưa nhập điểm danh giấy.",8000);continue}
+    if(!g.buoi){/* dạng tổng hợp (file Excel): số tích phát biểu, số buổi vắng thêm, cộng điểm Kiểm tra định kỳ */
+      const ids=[...Object.keys(g.tich||{}),...Object.keys(g.vangThem||{}),...Object.keys(g.congDK||{})].map(normId);const thieu=[...new Set(ids.filter(m=>!rows.includes(m)))];
+      const loc=o=>Object.fromEntries(Object.entries(o||{}).map(([k,v])=>[normId(k),v]).filter(([k])=>rows.includes(k)));
+      const tich=loc(g.tich),vt=loc(g.vangThem),dk=loc(g.congDK);
+      const upd={giay:Object.assign({},cc.giay||{},{[g.id]:new Date().toISOString()}),updated:FV().serverTimestamp()};
+      if(Object.keys(tich).length)upd.tichDot=(cc.tichDot||[]).filter(x=>x.id!==g.id).concat([{id:g.id,ten:g.tichTen||"Phát biểu",ngay:g.ngay||todayISO(),tep:g.nguon||"",luc:new Date().toISOString(),ds:tich}]);
+      if(g.vangThem)upd.vangThem=Object.assign({},cc.vangThem||{},vt);
+      if(g.vangChiTiet)upd.vangChiTiet=Object.assign({},cc.vangChiTiet||{},loc(g.vangChiTiet));
+      if(g.congDK)upd.congDK=Object.assign({},cc.congDK||{},dk);
+      await S.fs.doc("pnl_cc/"+ma).set(upd,{merge:true});
+      toast("Đã nhập lớp "+ma+": "+Object.values(tich).reduce((a,b)=>a+b,0)+" tích phát biểu, "+Object.values(vt).reduce((a,b)=>a+b,0)+" buổi vắng, "+Object.keys(dk).length+" bạn Top 5."+(thieu.length?" Không có trong lớp trên web: "+thieu.join(", ")+".":""),10000);continue}
     const cu=(await S.fs.collection("pnl_dd").where("maLop","==",ma).get()).docs.map(d=>Object.assign({id:d.id},d.data()));const ops=[],thieu=new Set();let nV=0;
     for(const b of g.buoi){const vang=new Set(b.vang.map(normId));vang.forEach(m=>{if(!rows.includes(m))thieu.add(m)});nV+=b.vang.length;
       const co=cu.find(x=>x.ngay===b.ngay&&x.trangThai!=="huy");const id=co?co.id:ma+"-"+b.ngay.replace(/-/g,"");const ts=firebase.firestore.Timestamp.fromDate(new Date(b.ngay+"T07:00:00+07:00"));
