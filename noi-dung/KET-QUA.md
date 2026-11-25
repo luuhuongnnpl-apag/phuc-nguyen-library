@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 09:17 25/11/2026
+# Kết quả dựng nội dung — 09:26 25/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -6,4 +6,15 @@
 
 - Đã mở thử 11 trang học phần, trang chủ và 184 tờ mind map.
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45531908197 · commit 3a7db37
+## Cảnh báo về file bị sửa
+
+    Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
+      - danh-gia/index.html
+      - danh-gia/qt-apag.js
+      - danh-gia/tu-luan-luat-dan-su.html
+      - data/diem-danh-giay.json
+      - lop/app.js
+      - lop/index.html
+      - lop/lop-hoc.js
+
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45532905865 · commit 808795e
