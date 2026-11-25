@@ -20,7 +20,7 @@ html.nhung .band{display:none}
 </style>
 </head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
 <main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
-<script src="./qt-apag.js?v=20261125b"></script>
+<script src="./qt-apag.js?v=20261126a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -527,7 +527,7 @@ async function manageClass(ma,view){CURRENT=ma;view=view||"ds";
    {id:"exp",label:"Export excel",icon:"down",kind:"exp",onClick:()=>QTA.exportDialog({lop:l,rows})},
    {id:"lock",label:l.open?"Khóa":"Mở lớp",icon:l.open?"lock":"unlock",kind:l.open?"lock":"unlock",onClick:tlToggle},{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>manageClass(ma,"ds")}],
   body:tlHead()+`<p id="msg" class="qta-err" style="margin:0 0 8px">${auto.errors.length?E("Lỗi tự chấm: "+auto.errors.join("; ")):""}</p><div id="qg"></div>`});
- QTA.grid(body.querySelector("#qg"),rows,{ma:l.id,state:TLC.gs,maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
+ QTA.grid(body.querySelector("#qg"),rows,{ma:l.id,review:r=>tlReview(papers[r.mssv],grades[r.mssv]),state:TLC.gs,maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
   note:`Sĩ số ${students.length} · đã nộp ${nop}${auto.done?` · vừa tự chấm thêm ${auto.done} bài`:""}. Điểm = trắc nghiệm (6) + tự luận (4), máy chấm khi mở lớp; bấm “Xem / chấm bài” để xem bài và sửa điểm. Sửa, xóa sinh viên ở cột Ghi chú.`,
   onAction:(a,sv)=>{if(a==="cu")location.href="./index.html#quan-tri/"+encodeURIComponent(ma)+"/de-cu";else if(a==="cham")grade(ma,sv,papers[sv],grades[sv]);else if(a==="sua")tlEditSV(sv);else if(a==="xoa")tlDelSV(sv);else if(a==="mo")tlReset(sv)}});
 }
@@ -620,6 +620,23 @@ async function decryptRubric(password){
 }
 
 function guideFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);if(!c)return"";const a=c.answer||[];return a.length===4?a[j]:(a[j*2+1]||"")}
+/* Bản xem lại cho sinh viên (26/11/2026): trắc nghiệm (bạn chọn / đáp án / giải thích / căn cứ), tự luận (bài làm, gợi ý đáp án, điểm từng ý, nhận xét).
+   Ghi vào pnl_kq khi đã có điểm chính thức và lớp đã đóng — xem qt-apag.js kqPublish. */
+async function tlReview(b,g){if(!b||b.status!=="da-nop"||laDeCu(b))return null;await Promise.all([loadAutoKey(),loadMCQ()]);if(!RUBRIC||!MCQ)return null;
+ const de=b.de||{},mixed=de.essayMode==="mixed12x1",ids=de.caseIds||[],ans=answerMap(b),max=mixed?1:1.25,L="ABCD";let h="";
+ if(mixed){const tn=markMCQ(de,ans);h+='<h3 class="rv-sec">Phần I. Trắc nghiệm · đúng '+tn.correct+'/'+tn.items.length+' câu</h3>';
+  tn.items.forEach((x,i)=>{const q=MCQ.questions[x.id];if(!q)return;if(i===8){const c=MCQ.contexts.find(c=>c.cid===de.mcqCase);if(c)h+='<div class="rv-case">'+E(c.text)+'</div>'}
+   const per=(de.perm&&de.perm[x.id])||[0,1,2,3];
+   h+='<div class="rv-q"><p><b>Câu '+(i+1)+'.</b> '+E(q.q)+' '+(x.selected==null?'<span class="rv-bad">Bỏ trống</span>':x.ok?'<span class="rv-ok">Đúng</span>':'<span class="rv-bad">Sai</span>')+'</p>'+
+    per.map((oi,k)=>[q.o[oi],k]).map(([o,k])=>'<div class="rv-opt'+(k===x.correct?' dung':'')+(k===x.selected?' chon':'')+'"><b>'+L[k]+'.</b> '+E(o)+(k===x.selected?' <b>← bạn chọn</b>':'')+(k===x.correct?' <b class="rv-ok">✓ đáp án</b>':'')+'</div>').join('')+
+    (q.e?'<p class="rv-note">Giải thích: '+E(q.e)+'</p>':'')+(q.b?'<p class="rv-note">Căn cứ: '+E(q.b)+'</p>':'')+'</div>'})}
+ h+='<h3 class="rv-sec">Phần '+(mixed?'II':'')+' Tự luận</h3>';
+ ids.forEach((id,i)=>{const c=caseBy(id);if(!c)return;h+='<div class="rv-case"><b>Tình huống '+(ids.length>1?i+1:'')+'.</b> '+E(c.text)+'</div>';
+  c.questions.forEach((q,j)=>{const pos=i*4+j,d=g&&g.muc&&g.muc[pos]!=null?+g.muc[pos]:null;
+   h+='<div class="rv-q"><p><b>'+E(q)+'</b>'+(d!=null?' <span class="rv-note">('+String(Math.round(d*100)/100).replace(".",",")+'/'+String(max).replace(".",",")+' điểm)</span>':'')+'</p><p class="rv-lab">Bài làm của bạn</p><div class="rv-ans">'+E(ans[id+"_"+j]||"(Không trả lời)")+'</div><details><summary>Gợi ý đáp án</summary><div class="rv-ans">'+E(guideFor(id,j))+'</div></details></div>'})});
+ if(g&&g.note)h+='<p class="rv-sum">Nhận xét của giảng viên: '+E(g.note)+'</p>';
+ const t=g&&g.diem!=null?QTA.lam05(g.diem):null;
+ return (t!=null?'<p class="rv-sum"><b>Điểm bài làm (thang 10): '+String(t).replace(".",",")+'</b></p>':'')+h}
 async function grade(ma,sv,b,g){
  try{await Promise.all([loadAutoKey(),loadMCQ()])}catch(x){console.error(x)}
  if(!RUBRIC||!MCQ){QTA.info('Chưa có khóa đáp án hoặc lỗi kết nối nên chưa mở được bài chấm.','Không tải được đáp án');return}

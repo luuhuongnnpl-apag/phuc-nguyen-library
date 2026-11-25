@@ -141,7 +141,7 @@ html.nhung .band{display:none}
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
 <script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
-<script src="qt-apag.js?v=20261125b"></script>
+<script src="qt-apag.js?v=20261126a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -761,7 +761,7 @@ function viewDS(){
       nop.some(x=>x.tam)?{id:"xn",label:"Xác nhận điểm máy ("+nop.filter(x=>x.tam).length+")",kind:"save",onClick:()=>xacNhanTatCa(rows)}:null,
       coTLcu&&!AD.cu?{id:"cl",label:"Chấm lại tự luận",kind:"ghost",onClick:()=>chamLai(nop)}:null,{id:"re",label:"Tải lại",icon:"refresh",kind:"ghost",onClick:()=>classView(AD.ma)}],
     body:(AD.cu?`<div class="qta-card" style="border-color:#e0b252"><b>Bài làm theo đề cũ 30+10+1</b> — các sinh viên dưới đây làm bài trước khi lớp chuyển sang đề 12 trắc nghiệm + 1 tự luận. Chấm ở đây (máy gợi ý tự luận rộng tay, giảng viên xác nhận); điểm thang 10 hiện sang bảng điểm lớp ở <a href="tu-luan-luat-dan-su.html#quan-tri/${encodeURIComponent(AD.ma)}">trang Luật Dân sự</a>.</div>`:"")+classHead(`<span>Sĩ số: <b>${AD.ds.length}</b> · đã nộp <b>${nop.length}</b></span>`)+'<div id="qg"></div>'});
-  QTA.grid(body.querySelector("#qg"),rows,{ma:AD.ma,state:AD.gs||(AD.gs={}),maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
+  QTA.grid(body.querySelector("#qg"),rows,{ma:AD.ma,review:r=>paperReview(r.mssv),state:AD.gs||(AD.gs={}),maxRoi:MAX_ROI,scoreTitle:"Kiểm tra định kỳ (thang 10)",
     note:(AD.B.tn?"Điểm = số câu đúng / tổng số câu × 10, máy chấm ngay khi sinh viên nộp.":"Điểm thang 10 của bài đã nộp.")+" Ô viền vàng “tạm” là bài tự luận chưa xác nhận. Sửa, xóa sinh viên ở cột Ghi chú.",
     onAction:(a,ms)=>{if(a==="xem")paperView(ms);else if(a==="cham")gradeView(ms);else if(a==="sua")editSV(ms);else if(a==="xoa")delSV(ms);else if(a==="mo")resetSV(ms)}});
 }
@@ -901,21 +901,28 @@ function gradeView(mssv){
 function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
   const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';
   return t+` <button class="btn small" data-paper="${esc(mssv)}">Xem bài</button>`}
-function paperView(mssv){
-  const b=AD.bai[mssv];if(!b)return;const B=BB(b),de=b.de,sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};
+/* Bản xem lại cho sinh viên (26/11/2026): cùng nội dung bài làm như giảng viên xem, không có mã câu nội bộ; ghi vào pnl_kq khi đã có điểm và đợt đã đóng */
+function paperReview(mssv){const b=AD.bai[mssv];if(!b||!b.de)return null;const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};
+  const {h,r,B,de}=paperBody(mssv,b,sv,true);
+  const kq=!de.tl?"Trắc nghiệm: đúng "+r.tn.dung+"/"+r.tn.tong+" câu":`${B.tl?"":"Lý thuyết "+fz(r.lt)+" · Tình huống "+fz(r.th)+" · "}Tự luận ${fz(r.tl)}/${fz(tlMaxOf(B))}`;
+  return `<p class="rv-sum">${esc(kq)} · <b>Điểm bài làm (thang 10): ${String(r.t10).replace(".",",")}</b></p><p class="rv-note">Ô viền xanh là đáp án đúng; phương án theo đúng thứ tự A, B, C, D bạn đã thấy khi làm bài.</p>`+h}
+function paperBody(mssv,b,sv,svXem){const B=BB(b),de=b.de;
   const r=ketQua(sv);const ans=b.answers||{};let n=0,dung=0;
   const qHtml=id=>{n++;const q=B.byId[id];if(!q)return `<div class="q"><p class="stem"><b>Câu ${n}.</b> (câu ${esc(id)} không còn trong ngân hàng)</p></div>`;
     const perm=(de.perm[K(id)]||"").split("").map(Number);const ord=perm.length===q.o.length?perm:[...q.o.keys()];
     const a=ans[K(id)]!=null?+ans[K(id)]:null;const ok=a===q.a;if(ok)dung++;
-    return `<div class="q"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)} <span class="msg">[${esc(id)} · ${esc(q.lv||"")}]</span> ${a==null?'<span class="wrong">Bỏ trống</span>':ok?'<span class="right">Đúng</span>':'<span class="wrong">Sai</span>'}</p>
-      ${ord.map((oi,pos)=>{const isA=oi===q.a,isC=oi===a;return `<div class="opt${isC?" sel":""}" style="cursor:default${isA?";border-color:var(--ok);background:var(--ok-soft)":""}"><span><b>${LET[pos]}.</b> ${esc(q.o[oi])}${isC?' <b>← sinh viên chọn</b>':''}${isA?' <b class="right">✓ đáp án</b>':''}</span></div>`}).join("")}
-      <p class="msg" style="margin:6px 0 0">Căn cứ: ${esc(q.b||"")}</p></div>`};
+    return `<div class="q"><p class="stem"><b>Câu ${n}.</b> ${esc(q.q)} ${svXem?"":`<span class="msg">[${esc(id)} · ${esc(q.lv||"")}]</span>`} ${a==null?'<span class="wrong">Bỏ trống</span>':ok?'<span class="right">Đúng</span>':'<span class="wrong">Sai</span>'}</p>
+      ${ord.map((oi,pos)=>{const isA=oi===q.a,isC=oi===a;return `<div class="opt${isC?" sel":""}" style="cursor:default${isA?";border-color:var(--ok);background:var(--ok-soft)":""}"><span><b>${LET[pos]}.</b> ${esc(q.o[oi])}${isC?(svXem?' <b>← bạn chọn</b>':' <b>← sinh viên chọn</b>'):''}${isA?' <b class="right">✓ đáp án</b>':''}</span></div>`}).join("")}
+      ${svXem&&q.e?`<p class="msg" style="margin:6px 0 0">Giải thích: ${esc(q.e)}</p>`:""}<p class="msg" style="margin:6px 0 0">Căn cứ: ${esc(q.b||"")}</p></div>`};
   let h=(B.tl||(!de.tl&&!(de.lt||[]).length))?"":`<div class="sec-title">Phần I. Lý thuyết</div>`+de.lt.map(qHtml).join("")+`<div class="sec-title">Phần II. Tình huống trắc nghiệm</div>`;
   de.th.forEach((c,i)=>{const cs=B.cases[c.cid]||{};h+=`<div class="case"><h4>Tình huống ${i+1} <span class="msg">[${esc(c.cid)}]</span></h4><p>${esc(cs.text||"")}</p></div>`+c.q.map(qHtml).join("")});
   const tl=B.cases[de.tl]||{};const c=AD.cham[mssv];
   if(de.tl)h+=`<div class="sec-title">${B.tl?"Bài tự luận — Ý kiến tư vấn":"Phần III. Tự luận"}</div><div class="case"><h4>Tình huống ${B.tl?"":de.th.length+1} <span class="msg">[${esc(de.tl)}]</span></h4><p>${esc(tl.text||"")}</p><ol>${(tl.ask||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ol></div>
-    <p class="lab">Bài làm của sinh viên (${(b.essay||"").trim()?(b.essay.trim().split(/\s+/).length+" từ"):"bỏ trống"})</p><div class="ans" style="max-height:none">${esc(b.essay||"(bỏ trống)")}</div>
+    <p class="lab">${svXem?"Bài làm của bạn":"Bài làm của sinh viên"} (${(b.essay||"").trim()?(b.essay.trim().split(/\s+/).length+" từ"):"bỏ trống"})</p><div class="ans" style="max-height:none">${esc(b.essay||"(bỏ trống)")}</div>
     ${c&&c.xacNhan?`<p class="ok">Điểm tự luận đã xác nhận: ${fz(r.tl)}/${fz(tlMaxOf(B))}${c.note?" · Nhận xét: "+esc(c.note):""}</p>`:'<p class="msg">Tự luận chưa được xác nhận điểm (đang dùng điểm gợi ý theo từ khóa).</p>'}`;
+  return {h,r,B,de}}
+function paperView(mssv){
+  const b=AD.bai[mssv];if(!b)return;const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};const {h,r,B,de}=paperBody(mssv,b,sv,false);
   const m=modal(`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Bài làm · ${esc(sv.hoTen)} · ${esc(mssv)}</h2><div><button class="btn small" id="p-print">In / lưu PDF</button> <button class="btn small" id="p-x">Đóng</button></div></div>
     <dl class="info" style="margin-top:12px"><dt>Lớp</dt><dd>${esc(AD.ma)} · ${esc(AD.l.ten||"")} · ${esc(AD.l.hocPhanTen||"")}</dd><dt>Ngày sinh</dt><dd>${esc(sv.ngaySinh||"–")}</dd>
       <dt>Bắt đầu</dt><dd>${esc(fmtDT(toDate(b.startedAt)))}</dd><dt>Nộp bài</dt><dd>${b.submittedAt?esc(fmtDT(toDate(b.submittedAt))):"Chưa nộp"+(b.luu?" (lưu lần cuối "+esc(fmtDT(toDate(b.luu)))+")":"")}</dd>

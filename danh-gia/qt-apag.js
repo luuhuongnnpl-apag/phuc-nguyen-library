@@ -227,7 +227,7 @@ function grid(el,rows,opts){
       <td>${r.roi==null?"":`<span class="roi ${r.roi>(opts.maxRoi||10)?"bad":""}">${r.roi}</span>`}</td>
       <td class="sep">${r.ghiChu?`<span class="note">${esc(r.ghiChu)}</span>`:""}<div class="acts">${(r.ghi||[]).map(btn).join("")}</div></td></tr>`).join(""):`<tr><td colspan="9" style="padding:24px;color:var(--qa-muted)">${rows.length?"Không có sinh viên phù hợp bộ lọc.":"Lớp chưa có sinh viên. Bấm “Import excel” hoặc “Thêm sinh viên”."}</td></tr>`;
   }
-  const pub=()=>{if(opts.ma&&KT[opts.ma])kqPublish(opts.ma,rows).catch(e=>console.warn("Công bố điểm",e&&(e.code||e.message)))};
+  const pub=()=>{if(opts.ma&&KT[opts.ma])kqPublish(opts.ma,rows,opts).catch(e=>console.warn("Công bố điểm",e&&(e.code||e.message)))};
   const draw2=()=>{apDK(opts.ma,rows);draw();pub()};
   draw();if(opts.ma&&!KT[opts.ma])kttxLoad(opts.ma).then(draw2).catch(e=>console.warn("KTTX",e));else pub();return {draw:draw2,byM};
 }
@@ -275,7 +275,11 @@ function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,dkGoc(r))||{};const d=m
    Mỗi lần quản trị mở Bảng điểm / Danh sách & điểm của một đợt, điểm đang hiện được ghi vào pnl_kq/{đợt}__{mssv}
    (chỉ chính sinh viên đó đọc được — quy tắc Firestore). Chỉ ghi khi có thay đổi. Điểm tạm (chưa xác nhận) không công bố. */
 const KQ={};
-async function kqPublish(ma,rows){if(!window.firebase)return;const fs=firebase.firestore();const K=KT[ma];if(!K)return;
+const tms=v=>!v?null:v.toMillis?v.toMillis():v.seconds?v.seconds*1000:+new Date(v);
+const daDong=l=>l.open===false||(tms(l.closeAt)!=null&&tms(l.closeAt)<Date.now());
+const KQB={};async function kqPublish(ma,rows,opts){const L=KQB[ma]||(KQB[ma]={busy:false,again:null});if(L.busy){L.again=[rows,opts];return}L.busy=true;
+  try{await kqPublish1(ma,rows,opts)}finally{L.busy=false;if(L.again){const [r,o]=L.again;L.again=null;kqPublish(ma,r,o)}}}
+async function kqPublish1(ma,rows,opts){if(!window.firebase)return;const fs=firebase.firestore();const K=KT[ma];if(!K)return;
   let st=KQ[ma];if(!st){st=KQ[ma]={cur:{},lop:null};
     const [ls,q]=await Promise.all([fs.doc("pnl_dg_lop/"+ma).get(),fs.collection("pnl_kq").where("dot","==",ma).get()]);
     st.lop=ls.exists?ls.data():{};q.docs.forEach(d=>st.cur[d.id]=d.data())}
@@ -286,11 +290,13 @@ async function kqPublish(ma,rows){if(!window.firebase)return;const fs=firebase.f
     const d={mssv:k,hoTen:r.hoTen||"",dot:ma,maLop:cha,hp,hpTen,tenLop:l.ten||"",namHoc:l.namHoc||"",
       ktdk:r.diem!=null&&!r.tam?r.diem:null,congDK:r.congDK||0,cho:r.diem!=null&&!!r.tam,bai:r.st||"chua",
       kttx:x.v==null?null:x.v,coMat:K.tong?(K.co[k]||0):null,tongBuoi:K.tong,tich:x.nTich||0};
+    /* Xem lại bài (26/11/2026): chỉ khi đã có điểm chính thức VÀ bài kiểm tra đã đóng (tránh lộ đáp án cho bạn đang làm) */
+    if(opts&&opts.review&&d.ktdk!=null&&daDong(l)){try{d.xem=await opts.review(r)||null}catch(e){console.warn("Xem lại bài",k,e);d.xem=null}}else d.xem=null;
     const id=ma+"__"+k,o=st.cur[id];
     if(o&&Object.keys(d).every(f=>o[f]===d[f]))continue;
     ops.push([id,d])}
-  for(let i=0;i<ops.length;i+=400){const b=fs.batch();ops.slice(i,i+400).forEach(([id,d])=>b.set(fs.doc("pnl_kq/"+id),Object.assign({},d,{luc:firebase.firestore.FieldValue.serverTimestamp()})));await b.commit();
-    ops.slice(i,i+400).forEach(([id,d])=>st.cur[id]=d)}}
+  for(let i=0;i<ops.length;i+=40){const b=fs.batch();ops.slice(i,i+40).forEach(([id,d])=>b.set(fs.doc("pnl_kq/"+id),Object.assign({},d,{luc:firebase.firestore.FieldValue.serverTimestamp()})));await b.commit();
+    ops.slice(i,i+40).forEach(([id,d])=>st.cur[id]=d)}}
 
 /* ---------- bảng danh sách lớp ---------- */
 function classTable(el,list,opts){
