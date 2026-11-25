@@ -250,17 +250,18 @@ async function kttxLoad(ma,force){if(!ma||!window.firebase)return null;if(KT[ma]
   let ccCha=cc;if(cha!==ma){try{ccCha=await fs.doc("pnl_cc/"+cha).get()}catch(e){ccCha=null}}
   const ccd=ccCha&&ccCha.exists?ccCha.data():{};const tich=tichTong(ccd);
   /* 25/11/2026: vắng ghi ngoài web (file/danh sách giấy) −0,5/buổi vào KTTX; Top 5 cộng điểm Kiểm tra định kỳ (tối đa 10) */
-  const up=o=>Object.fromEntries(Object.entries(o||{}).map(([k,v])=>[String(k).toUpperCase(),+v||0]));const vangThem=up(ccd.vangThem),congDK=up(ccd.congDK);
-  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som,tich,cha,vangThem,congDK}}
+  const up=o=>Object.fromEntries(Object.entries(o||{}).map(([k,v])=>[String(k).toUpperCase(),+v||0]));const vangThem=up(ccd.vangThem),vangPhep=up(ccd.vangPhep),congDK=up(ccd.congDK);
+  const sua=(cc.exists&&cc.data().kttx)||{};return KT[ma]={tong:buoi.size,co:Object.fromEntries(Object.entries(co).map(([k,v])=>[k,v.size])),sua,som,tich,cha,vangThem,vangPhep,congDK}}
 function tichTong(d){const t={};((d&&d.tichDot)||[]).forEach(x=>Object.entries(x.ds||{}).forEach(([k,n])=>{k=String(k).toUpperCase();t[k]=(t[k]||0)+(+n||0)}));return t}
 const ktThuong=dk=>dk==null||dk===""?0:+dk>=9.5?1:+dk>=9?0.5:0;
 /* điểm Kiểm tra định kỳ cộng thêm (Top 5…): r.diem0 = điểm bài làm đã làm tròn, r.diem = điểm sau cộng (tối đa 10). Gọi lại được nhiều lần. */
 function apDK(ma,rows){const K=KT[ma];rows.forEach(r=>{if(r.diem0===undefined)r.diem0=r.diem==null||r.diem===""?null:lam05(r.diem);const c=K&&K.congDK?(K.congDK[String(r.mssv).toUpperCase()]||0):0;r.congDK=r.diem0!=null&&c?c:0;r.diem=r.diem0==null?r.diem0:Math.min(10,r.diem0+r.congDK)})}
 const dkGoc=r=>r.diem0!==undefined?r.diem0:r.diem;
-function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vt=(K.vangThem||{})[k]||0,vang=Math.max(0,K.tong-co)+vt;
-  const base=K.tong||vt?Math.max(0,8-0.5*vang):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0,nTich=(K.tich||{})[k]||0,tich=0.5*nTich;const auto=base==null?null:lam05(Math.min(10,base+bonus+som+tich));
-  const o={auto,base,vang,bonus,som,thuTu,tong:K.tong,nTich,tich};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
-const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong||x.vang?"vắng "+x.vang+" buổi":"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""}${x.tich?" + "+x.nTich+" tích × 0,5 = "+fnum(x.tich):""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
+function kttxOf(ma,mssv,dk){const K=KT[ma];if(!K)return null;const k=String(mssv).toUpperCase();const co=K.co[k]||0,vt=(K.vangThem||{})[k]||0,vp=(K.vangPhep||{})[k]||0,vang=Math.max(0,K.tong-co)+vt;
+  /* vắng không phép −0,5/buổi; vắng có phép −0,25/buổi (sếp chốt 25/11/2026) */
+  const base=K.tong||vt||vp?Math.max(0,8-0.5*vang-0.25*vp):8,bonus=ktThuong(dk),thuTu=(K.som||{})[k]||0,som=thuTu?0.5:0,nTich=(K.tich||{})[k]||0,tich=0.5*nTich;const auto=base==null?null:lam05(Math.min(10,base+bonus+som+tich));
+  const o={auto,base,vang,vp,bonus,som,thuTu,tong:K.tong,nTich,tich};if(K.sua[k]!=null&&K.sua[k]!=="")return Object.assign(o,{v:+K.sua[k],sua:true});return Object.assign(o,{v:auto,sua:false})}
+const ktTip=x=>!x?"":`Điểm danh ${fnum(x.base)} (${x.tong||x.vang||x.vp?"vắng "+x.vang+" buổi"+(x.vp?", có phép "+x.vp+" buổi (−0,25)":""):"lớp chưa điểm danh — mặc định 8"})${x.bonus?" + thưởng ĐGĐK "+fnum(x.bonus):""}${x.som?" + nộp sớm (thứ "+x.thuTu+") 0,5":""}${x.tich?" + "+x.nTich+" tích × 0,5 = "+fnum(x.tich):""} = ${fnum(x.auto)}${x.sua?" · đã sửa tay":""}`;
 function kttxDialog(ma,r,after){const x=kttxOf(ma,r.mssv,dkGoc(r))||{};const d=modal(`<h2>Kiểm tra thường xuyên — ${esc(r.hoTen)}</h2>
   <p class="qta-msg" style="margin-top:0">${esc(r.mssv)} · ${`Tự tính: điểm danh <b>${fnum(x.base)}</b> (${x.tong?"vắng "+x.vang+"/"+x.tong+" buổi":"lớp chưa điểm danh — mặc định 8"}) + thưởng Kiểm tra định kỳ <b>${fnum(x.bonus)}</b> (ĐGĐK ${r.diem==null?"chưa có":fnum(r.diem)}) + nộp sớm <b>${fnum(x.som)}</b>${x.thuTu?" (nộp thứ "+x.thuTu+"/"+KT_SOM+")":""} + dấu tích <b>${fnum(x.tich||0)}</b>${x.nTich?" ("+x.nTich+" tích × 0,5)":""} = <b>${fnum(x.auto)}</b> (tối đa 10).`}</p>
   <div class="fr"><div><label for="kt-v">Điểm Kiểm tra thường xuyên (để trống = dùng điểm tự tính)</label><input type="text" inputmode="decimal" id="kt-v" value="${x.sua?fnum(x.v):""}" placeholder="${x.auto==null?"":fnum(x.auto)}"></div></div>
