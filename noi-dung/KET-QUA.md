@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 11:30 26/11/2026
+# Kết quả dựng nội dung — 11:54 26/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -13,4 +13,4 @@
       - danh-gia/tu-luan-luat-dan-su.html
       - tools/kiem_tra_dap_an_ds.py
 
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45755654980 · commit 0ded160
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45758119044 · commit fba25aa
