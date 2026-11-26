@@ -38,6 +38,9 @@ const isAdmin=u=>u&&!u.isAnonymous&&(u.uid===ADMIN_UID||(u.emailVerified&&ADMINS
 let BANK=null,SESSION=null,TIMER=null,RUBRIC=null,CURRENT=null,DETACH=null,SAVE_Q=Promise.resolve();
 const MAX_ROI=10;
 const caseBy=id=>BANK.cases.find(c=>c.id===id);
+/* 17 tình huống cốt lõi được phát cho sinh viên; tools/kiem_tra_dap_an_ds.py đọc đúng hai hằng số này. */
+const CORE_IDS=["DS01","DS02","DS03","DS05","DS06","DS08","DS09","DS13","DS14","DS15","DS17","DS18","DS19","DS20","DS21","DS22","DS23"];
+const DAP_AN_VER="2026-11-26";
 async function bankLoad(){if(BANK)return BANK;const r=await fetch("./de/luat-dan-su-tu-luan.b64",{cache:"no-cache"});if(!r.ok)throw Error("Không tải được ngân hàng đề.");
 const data=atob((await r.text()).trim()),bytes=Uint8Array.from(data,c=>c.charCodeAt(0)),stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
 BANK=JSON.parse(await new Response(stream).text());if(BANK.cases.length!==30||BANK.exam_sets.length!==15)throw Error("Ngân hàng đề không hợp lệ.");return BANK}
@@ -69,7 +72,7 @@ function newMixedExam(){
  const ids=picks.concat(shuffleExam(ch.mcq).slice(0,4));
  const order={};ids.forEach(id=>order[id]=shuffleExam([0,1,2,3]));
  /* Chỉ rút tình huống ở sáu nhóm kiến thức cốt lõi, không dùng chủ đề chuyên sâu/ngoài phạm vi. */
-  const coreIds=new Set(["DS01","DS02","DS03","DS05","DS06","DS08","DS09","DS13","DS14","DS15","DS17","DS18","DS19","DS20","DS21","DS22","DS23"]);
+  const coreIds=new Set(CORE_IDS);
   const coreCases=BANK.cases.filter(c=>coreIds.has(c.id)&&Array.isArray(c.questions)&&c.questions.length===4);
   if(!coreCases.length)throw Error("Chưa có tình huống tự luận thuộc sáu chủ đề cốt lõi.");
   const essayCase=shuffleExam(coreCases)[0];
@@ -296,6 +299,12 @@ async function decryptAutoKey(code){
  const stream=new Blob([zipped]).stream().pipeThrough(new DecompressionStream("deflate"));
  return JSON.parse(await new Response(stream).text());
 }
+function kiemDapAn(d,bank){const loi=[];if(d.version!==DAP_AN_VER)loi.push("phiên bản "+d.version+" ≠ "+DAP_AN_VER);
+ for(const id of CORE_IDS){const r=d.cases.find(x=>x.id===id),c=bank.cases.find(x=>x.id===id);
+  if(!r||!c){loi.push(id+" thiếu");continue}
+  if(!Array.isArray(r.questions)||r.questions.length!==4||r.questions.some((q,j)=>String(q).trim()!==String(c.questions[j]||"").trim()))loi.push(id+" lệch câu hỏi");
+  else if(r.answers.some(a=>String(a||"").trim().length<40))loi.push(id+" thiếu đáp án")}
+ return loi}
 let AUTOKEY_P=null;
 function loadAutoKey(){if(RUBRIC)return Promise.resolve(RUBRIC);if(!AUTOKEY_P)AUTOKEY_P=loadAutoKeyOnce().finally(()=>{AUTOKEY_P=null});return AUTOKEY_P}
 async function loadAutoKeyOnce(){
@@ -310,7 +319,10 @@ async function loadAutoKeyOnce(){
  }
  if(!Array.isArray(d.cases)||d.cases.length!==30||!d.cases.every(x=>x.answers?.length===4))throw Error("Dữ liệu đáp án không hợp lệ.");
  if(fresh){try{localStorage.setItem(KHOA_LS,code)}catch(x){}try{await db.doc(KHOA_DOC).set({k:code,luc:FV.serverTimestamp()})}catch(x){console.warn("Không lưu khóa lên kho quản trị",x)}}
- RUBRIC={case_bank:d.cases.map(x=>({id:x.id,answer:x.answers}))};
+ /* Chốt chặn 26/11/2026 (sự cố đáp án lệch câu): chỉ dùng đáp án mang đúng 4 yêu cầu của đề; lệch thì dừng chấm và không hiện gợi ý. */
+ await bankLoad();const lech=kiemDapAn(d,BANK);
+ if(lech.length)throw Error("Đáp án tự luận không khớp đề ("+lech.slice(0,3).join("; ")+"). Đã dừng chấm tự động và ẩn gợi ý đáp án.");
+ RUBRIC={case_bank:d.cases.filter(x=>CORE_IDS.includes(x.id)).map(x=>({id:x.id,answer:x.answers}))};
  return RUBRIC;
 }
 function gradeAutomatic(b){
@@ -329,18 +341,18 @@ function gradeAutomatic(b){
  return {diem:QTA.lam05(Math.round((essay+tn.score)*100)/100),diemGoc:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
 }
 /* 09/11/2026: chấm tự luận rộng tay (mỗi yêu cầu: 0,5 trả lời đúng hướng + 0,5 nội dung). Bài máy chấm theo bản cũ được chấm lại; bài giảng viên đã chấm giữ nguyên. */
-const GRADE_POLICY="2026-11-09-v4";
+const GRADE_POLICY="2026-11-26-v5";
 /* Bài làm theo đề cũ 30+10+1 (học phần luat-dan-su) nằm trong lớp đã chuyển: chấm ở quản trị chung (index.html#quan-tri/<lớp>/de-cu). */
 const laDeCu=b=>!!b&&!!b.de&&!b.de.essayMode&&!b.de.caseIds&&(b.hocPhan==="luat-dan-su"||(Array.isArray(b.de.lt)&&b.de.lt.length>0));
 async function markPending(ma,papers,grades){
- const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!laDeCu(b)&&(!grades[sv]?.xacNhan||(grades[sv].nguon==="tu-dong"&&grades[sv].gradePolicyVersion!==GRADE_POLICY)));
+ const entries=Object.entries(papers).filter(([sv,b])=>b.status==="da-nop"&&!laDeCu(b)&&(!grades[sv]?.xacNhan||grades[sv].phienBanDapAn!==DAP_AN_VER));
  if(!entries.length)return {done:0,errors:[]};
  try{await Promise.all([loadAutoKey(),loadMCQ()])}catch(x){return {done:0,errors:[x.message||String(x)]}}
  let done=0,errors=[];
  for(const [sv,b] of entries){
   try{
    const r=gradeAutomatic(b);
-   const saved={maLop:ma,mssv:sv,diem:r.diem,diemGoc:r.diemGoc,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,cu:grades[sv]&&grades[sv].nguon==="tu-dong"?{diem:grades[sv].diem,tuLuan:grades[sv].tuLuan,v:grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   const saved={maLop:ma,mssv:sv,diem:r.diem,diemGoc:r.diemGoc,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,phienBanDapAn:DAP_AN_VER,cu:grades[sv]?{diem:grades[sv].diem??null,tuLuan:grades[sv].tuLuan??null,muc:grades[sv].muc||null,nguon:grades[sv].nguon||"",note:grades[sv].note||"",v:grades[sv].phienBanDapAn||grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
    grades[sv]=saved;done++;
   }catch(e){errors.push(sv+": "+e.message)}
@@ -678,7 +690,7 @@ async function grade(ma,sv,b,g){
   const {v,essay}=calc(),total=QTA.lam05(calc().total);
   if(!confirm("Lưu điểm "+String(total).replace(".",",")+"/10 (đã làm tròn 0,5) cho "+sv+"?"))return;
   try{
-   await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,diem:total,nguon:"giang-vien",xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:de.set||"",phienBanDapAn:"mixed-2026-11-07",chamBoi:auth.currentUser?.uid||"",luc:FV.serverTimestamp()});
+   await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,diem:total,nguon:"giang-vien",xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:de.set||"",phienBanDapAn:DAP_AN_VER,chamBoi:auth.currentUser?.uid||"",luc:FV.serverTimestamp()});
    manageClass(ma,"ds");
   }catch(e){err(e)}
  };
