@@ -11,7 +11,7 @@ Kiểm:
   3. Đủ 4 đáp án, mỗi đáp án có dẫn "Điều", không còn tiền tố "Định hướng đáp án / phân hóa trường hợp".
   4. Tên người, số tuổi, năm nêu trong đáp án phải có trong đề (chống sót dữ kiện của tình huống khác).
   5. Cảnh báo: đáp án ý j "giống" yêu cầu khác hơn yêu cầu j.
-  6. Có khung chấm cho từng ý; chấm thử bằng mã của trang: đáp án mẫu = 1 điểm, bỏ năm ban hành = 0 điểm căn cứ.
+  6. Có khung chấm cho từng ý; chấm thử bằng mã của trang: đáp án mẫu = 1 điểm, bỏ năm ban hành = 0,25 điểm căn cứ.
 """
 import base64, json, os, re, sys, zlib
 from pathlib import Path
@@ -110,7 +110,7 @@ def main():
 const R=JSON.parse(require('fs').readFileSync(process.argv[process.argv.length-1]));const CORE=%s;const out=[];
 for(const c of R.cases.filter(c=>CORE.includes(c.id))){if(!c.keys){out.push(c.id+": thiếu khung chấm");continue}
  c.keys.forEach((k,j)=>{const a=chamY(c.answers[j],k);if(a.diem!==1)out.push(c.id+" ý "+(j+1)+": đáp án mẫu chỉ đạt "+a.diem+" ("+a.thieu.join("; ")+")");
-  const b=chamY(c.answers[j].replace(/(năm )?20(15|14|23)/g,""),k);if(b.cs!==0)out.push(c.id+" ý "+(j+1)+": bỏ năm ban hành vẫn được điểm căn cứ")})}
+  const b=chamY(c.answers[j].replace(/(năm )?20(15|14|23)/g,""),k);if(b.cs!==0.25)out.push(c.id+" ý "+(j+1)+": bỏ năm ban hành phải được 0,25 điểm căn cứ, đang là "+b.cs)})}
 console.log(JSON.stringify(out));""" % json.dumps(CORE)
         try:
             r = subprocess.run(["node", "-e", js, f.name], capture_output=True, text=True, timeout=60)

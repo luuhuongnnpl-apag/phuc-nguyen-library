@@ -40,7 +40,7 @@ const MAX_ROI=10;
 const caseBy=id=>BANK.cases.find(c=>c.id===id);
 /* 17 tình huống cốt lõi được phát cho sinh viên; tools/kiem_tra_dap_an_ds.py đọc đúng hai hằng số này. */
 const CORE_IDS=["DS01","DS02","DS03","DS05","DS06","DS08","DS09","DS13","DS14","DS15","DS17","DS18","DS19","DS20","DS21","DS22","DS23"];
-const DAP_AN_VER="2026-11-26b";
+const DAP_AN_VER="2026-11-26c";
 async function bankLoad(){if(BANK)return BANK;const r=await fetch("./de/luat-dan-su-tu-luan.b64",{cache:"no-cache"});if(!r.ok)throw Error("Không tải được ngân hàng đề.");
 const data=atob((await r.text()).trim()),bytes=Uint8Array.from(data,c=>c.charCodeAt(0)),stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
 BANK=JSON.parse(await new Response(stream).text());if(BANK.cases.length!==30||BANK.exam_sets.length!==15)throw Error("Ngân hàng đề không hợp lệ.");return BANK}
@@ -343,7 +343,7 @@ function gradeAutomatic(b){
  return {diem:QTA.lam05(goc),diemGoc:goc,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report,roiTrang:roi,truRoi:tru};
 }
 /* 09/11/2026: chấm tự luận rộng tay (mỗi yêu cầu: 0,5 trả lời đúng hướng + 0,5 nội dung). Bài máy chấm theo bản cũ được chấm lại; bài giảng viên đã chấm giữ nguyên. */
-const GRADE_POLICY="2026-11-26-v6";
+const GRADE_POLICY="2026-11-26-v7";
 /* Bài làm theo đề cũ 30+10+1 (học phần luat-dan-su) nằm trong lớp đã chuyển: chấm ở quản trị chung (index.html#quan-tri/<lớp>/de-cu). */
 const laDeCu=b=>!!b&&!!b.de&&!b.de.essayMode&&!b.de.caseIds&&(b.hocPhan==="luat-dan-su"||(Array.isArray(b.de.lt)&&b.de.lt.length>0));
 async function markPending(ma,papers,grades){
@@ -639,7 +639,8 @@ async function decryptRubric(password){
 
 /*CHAM-Y:BAT-DAU*/
 /* Khung chấm tự luận 26/11/2026 (theo yêu cầu của giảng viên). Mỗi ý 1 điểm:
-   - Căn cứ pháp lý 0,5: đúng Điều, đủ điểm/khoản (nếu đáp án yêu cầu) và tên văn bản KÈM NĂM (vd "Bộ luật Dân sự năm 2015"); thiếu một thành phần = 0.
+   - Căn cứ pháp lý 0,5: đúng Điều, đủ điểm/khoản (nếu đáp án yêu cầu) và tên văn bản KÈM NĂM (vd "Bộ luật Dân sự năm 2015").
+     Đúng Điều nhưng chưa đủ (thiếu điểm/khoản, tên văn bản hoặc năm) = 0,25 (giảng viên chốt 26/11); không nêu Điều hoặc ghi sai khoản/điểm = 0.
      Nhiều nhóm căn cứ bắt buộc thì chia đều 0,5; trong một nhóm, nêu đúng một phương án là đủ.
    - Trích dẫn nội dung quy định 0,25; lập luận áp dụng vào tình huống, kết luận 0,25 (đủ các ý = 0,25; được một nửa số ý trở lên = 0,125).
    - Rời trang: mỗi lần trừ 0,25 vào tổng điểm. */
@@ -647,21 +648,28 @@ const KDY=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()
 const VB_CHAM={BLDS:{ten:"Bộ luật Dân sự",nam:"2015",re:/(bo luat dan su|blds)/},HNGD:{ten:"Luật Hôn nhân và gia đình",nam:"2014",re:/(luat hon nhan va gia dinh|hon nhan va gia dinh|luat hn ?gd|hngd)/},NO:{ten:"Luật Nhà ở",nam:"2023",re:/luat nha o/}};
 const TRU_ROI=0.25;
 function canCu(t,c){const [diem,khoan,dieu,vb]=c,v=VB_CHAM[vb];
- const re=new RegExp("dieu\\s*(?:\\d+\\s*(?:,|va|;|-)\\s*)*0*"+dieu+"(?!\\d)","g");let m,coDieu=false,dung=false;
+ const re=new RegExp("dieu\\s*(?:\\d+\\s*(?:,|va|;|-)\\s*)*0*"+dieu+"(?!\\d)","g");let m,coDieu=false,dung=false,thieuK=false;
  while((m=re.exec(t))){coDieu=true;const truoc=t.slice(Math.max(0,m.index-50),m.index).split("dieu").pop(),sau=t.slice(m.index+m[0].length,m.index+m[0].length+30);
   const kOK=!khoan||new RegExp("khoan\\s*(?:\\d+\\s*(?:,|va)\\s*)*"+khoan+"(?!\\d)[^.;]*$").test(truoc)||new RegExp("^\\s*,?\\s*khoan\\s*(?:\\d+\\s*(?:,|va)\\s*)*"+khoan+"(?!\\d)").test(sau);
   const d=diem?KDY(diem):"",dOK=!diem||new RegExp("diem\\s*"+d+"(?![a-z0-9])").test(truoc)||new RegExp("^[^.;]{0,25}diem\\s*"+d+"(?![a-z0-9])").test(sau);
-  if(kOK&&dOK){dung=true;break}}
+  if(kOK&&dOK){dung=true;break}
+  /* không ghi khoản/điểm nào sát Điều này = thiếu (được một nửa); ghi khoản/điểm khác = sai */
+  const coK=/khoan\s*\d/.test(truoc)||/^\s*,?\s*khoan\s*\d/.test(sau),coD=/diem\s*[a-z]\b/.test(truoc)||/^[^.;]{0,25}diem\s*[a-z]\b/.test(sau);
+  if((kOK||!coK)&&(dOK||!coD))thieuK=true}
  const coVb=v.re.test(t),coNam=new RegExp(v.re.source+"[^.;:]{0,30}"+v.nam).test(t);
  const ten=(diem?"điểm "+diem+" ":"")+(khoan?"khoản "+khoan+" ":"")+"Điều "+dieu+" "+v.ten+" năm "+v.nam;
- let thieu="";if(!coDieu)thieu="chưa nêu Điều "+dieu;else if(!dung)thieu="Điều "+dieu+": thiếu/sai "+(khoan&&diem?"điểm, khoản":khoan?"khoản "+khoan:"điểm "+diem);else if(!coVb)thieu="thiếu tên văn bản ("+v.ten+" năm "+v.nam+")";else if(!coNam)thieu="thiếu năm ban hành "+v.nam;
- return {ok:!thieu,thieu,ten}}
+ let thieu="",muc=1;
+ if(!coDieu){thieu="chưa nêu Điều "+dieu;muc=0}
+ else if(!dung&&!thieuK){thieu="Điều "+dieu+": sai "+(khoan&&diem?"điểm, khoản":khoan?"khoản (đúng là khoản "+khoan+")":"điểm (đúng là điểm "+diem+")");muc=0}
+ else{const t2=[];if(!dung)t2.push(khoan&&diem?"điểm "+diem+" khoản "+khoan:khoan?"khoản "+khoan:"điểm "+diem);if(!coVb)t2.push("tên văn bản");else if(!coNam)t2.push("năm "+v.nam);
+  if(t2.length){thieu="Điều "+dieu+": thiếu "+t2.join(", ")+" (được 1/2 điểm căn cứ)";muc=0.5}}
+ return {ok:muc===1,muc,thieu,ten}}
 function nhomCum(t,groups){const hit=groups.filter(g=>String(g).split("|").some(p=>t.includes(KDY(p).trim())));return {hit,thieu:groups.filter(g=>!hit.includes(g))}}
 function chamY(text,k){const t=KDY(text);
  if(!k)throw Error("Thiếu khung chấm");
  if(t.replace(/[^a-z0-9]/g,"").length<10)return {diem:0,cs:0,qd:0,ll:0,thieu:["Bỏ trống"],nhan:"Bỏ trống"};
  const thieu=[];let ok=0;
- for(const g of k.cs){const r=g.map(c=>canCu(t,c)),x=r.find(z=>z.ok);if(x)ok++;else thieu.push("Căn cứ: "+(r.find(z=>z.thieu.indexOf("chưa nêu")<0)||r[0]).thieu+(g.length>1?" (hoặc "+r.slice(1).map(z=>z.ten).join("; ")+")":""))}
+ for(const g of k.cs){const r=g.map(c=>canCu(t,c)),best=r.reduce((a,z)=>z.muc>a.muc?z:a,r[0]);ok+=best.muc;if(best.muc<1)thieu.push("Căn cứ: "+best.thieu+(g.length>1&&best.muc===0?" (hoặc "+r.slice(1).map(z=>z.ten).join("; ")+")":""))}
  const cs=Math.round(0.5*ok/k.cs.length*1000)/1000;
  const mk=(gr,lab)=>{const r=nhomCum(t,gr),f=r.hit.length/gr.length;if(f<1)thieu.push(lab+": chưa có ý \""+r.thieu.map(x=>x.split("|")[0]).join("\", \"")+"\"");return f===1?0.25:f>=0.5?0.125:0};
  const qd=mk(k.qg,"Trích dẫn quy định"),ll=mk(k.lg,"Lập luận");
@@ -693,7 +701,7 @@ async function grade(ma,sv,b,g){
  if(!RUBRIC||!MCQ){QTA.info('Chưa có khóa đáp án hoặc lỗi kết nối nên chưa mở được bài chấm.','Không tải được đáp án');return}
  const de=b.de||{},mixed=de.essayMode==="mixed12x1",ids=de.caseIds||[],ans=answerMap(b),max=mixed?1:1.25;
  const auto=gradeAutomatic(b),tn=mixed?markMCQ(de,ans):{score:0,correct:0,items:[]};
- let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Máy tự chấm theo ngân hàng đáp án. Trắc nghiệm so với đáp án đúng. Tự luận mỗi ý 1 điểm: căn cứ pháp lý 0,5 (đủ điểm, khoản, Điều, tên văn bản và năm), trích dẫn quy định 0,25, lập luận 0,25. Mỗi lần rời trang trừ 0,25 điểm. Giảng viên có thể hiệu chỉnh.</p></article>';
+ let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Máy tự chấm theo ngân hàng đáp án. Trắc nghiệm so với đáp án đúng. Tự luận mỗi ý 1 điểm: căn cứ pháp lý 0,5 (đủ điểm, khoản, Điều, tên văn bản và năm; đúng Điều nhưng chưa đủ = 0,25), trích dẫn quy định 0,25, lập luận 0,25. Mỗi lần rời trang trừ 0,25 điểm. Giảng viên có thể hiệu chỉnh.</p></article>';
  if(mixed){
   h+='<article><h3>Phần I. Trắc nghiệm: '+tn.correct+'/12 câu đúng – '+tn.score.toFixed(1)+' / 6 điểm</h3>';
   tn.items.forEach((x,i)=>{const q=MCQ.questions[x.id],selected=x.selected===null?"Chưa trả lời":"ABCD"[x.selected],right="ABCD"[x.correct];
