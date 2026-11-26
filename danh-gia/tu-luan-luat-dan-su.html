@@ -40,7 +40,7 @@ const MAX_ROI=10;
 const caseBy=id=>BANK.cases.find(c=>c.id===id);
 /* 17 tình huống cốt lõi được phát cho sinh viên; tools/kiem_tra_dap_an_ds.py đọc đúng hai hằng số này. */
 const CORE_IDS=["DS01","DS02","DS03","DS05","DS06","DS08","DS09","DS13","DS14","DS15","DS17","DS18","DS19","DS20","DS21","DS22","DS23"];
-const DAP_AN_VER="2026-11-26";
+const DAP_AN_VER="2026-11-26b";
 async function bankLoad(){if(BANK)return BANK;const r=await fetch("./de/luat-dan-su-tu-luan.b64",{cache:"no-cache"});if(!r.ok)throw Error("Không tải được ngân hàng đề.");
 const data=atob((await r.text()).trim()),bytes=Uint8Array.from(data,c=>c.charCodeAt(0)),stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
 BANK=JSON.parse(await new Response(stream).text());if(BANK.cases.length!==30||BANK.exam_sets.length!==15)throw Error("Ngân hàng đề không hợp lệ.");return BANK}
@@ -303,7 +303,8 @@ function kiemDapAn(d,bank){const loi=[];if(d.version!==DAP_AN_VER)loi.push("phi�
  for(const id of CORE_IDS){const r=d.cases.find(x=>x.id===id),c=bank.cases.find(x=>x.id===id);
   if(!r||!c){loi.push(id+" thiếu");continue}
   if(!Array.isArray(r.questions)||r.questions.length!==4||r.questions.some((q,j)=>String(q).trim()!==String(c.questions[j]||"").trim()))loi.push(id+" lệch câu hỏi");
-  else if(r.answers.some(a=>String(a||"").trim().length<40))loi.push(id+" thiếu đáp án")}
+  else if(r.answers.some(a=>String(a||"").trim().length<40))loi.push(id+" thiếu đáp án");
+  else if(!Array.isArray(r.keys)||r.keys.length!==4||r.keys.some(k=>!k||!Array.isArray(k.cs)||!k.cs.length||!Array.isArray(k.qg)||!k.qg.length||!Array.isArray(k.lg)||!k.lg.length))loi.push(id+" thiếu khung chấm")}
  return loi}
 let AUTOKEY_P=null;
 function loadAutoKey(){if(RUBRIC)return Promise.resolve(RUBRIC);if(!AUTOKEY_P)AUTOKEY_P=loadAutoKeyOnce().finally(()=>{AUTOKEY_P=null});return AUTOKEY_P}
@@ -322,7 +323,7 @@ async function loadAutoKeyOnce(){
  /* Chốt chặn 26/11/2026 (sự cố đáp án lệch câu): chỉ dùng đáp án mang đúng 4 yêu cầu của đề; lệch thì dừng chấm và không hiện gợi ý. */
  await bankLoad();const lech=kiemDapAn(d,BANK);
  if(lech.length)throw Error("Đáp án tự luận không khớp đề ("+lech.slice(0,3).join("; ")+"). Đã dừng chấm tự động và ẩn gợi ý đáp án.");
- RUBRIC={case_bank:d.cases.filter(x=>CORE_IDS.includes(x.id)).map(x=>({id:x.id,answer:x.answers}))};
+ RUBRIC={case_bank:d.cases.filter(x=>CORE_IDS.includes(x.id)).map(x=>({id:x.id,answer:x.answers,keys:x.keys}))};
  return RUBRIC;
 }
 function gradeAutomatic(b){
@@ -330,18 +331,19 @@ function gradeAutomatic(b){
  if(mixed?(ids.length!==1||de.mcq?.length!==12):ids.length!==2)throw Error("Mã đề không hợp lệ");
  const ans=answerMap(b),scores=[],report=[];
  for(const id of ids)for(let j=0;j<4;j++){
-  const key=id+"_"+j,g=guideFor(id,j);if(!g)throw Error("Thiếu đáp án "+id+"/"+j);
-  const ev=legalGrade(ans[key]||"",g);
-  const pts=mixed?Math.round(ev.score*.8*100)/100:ev.score;
-  scores.push(pts);report.push({id,question:j+1,score:pts,matched:ev.hits.map(x=>x.clause),missing:ev.missing});
+  const key=id+"_"+j,k=keyFor(id,j);if(!k)throw Error("Thiếu khung chấm "+id+"/"+j);
+  const ev=chamY(ans[key]||"",k);
+  const pts=mixed?ev.diem:Math.round(ev.diem*1.25*100)/100;
+  scores.push(pts);report.push({id,question:j+1,score:pts,cs:ev.cs,qd:ev.qd,ll:ev.ll,missing:ev.thieu});
  }
  const essay=Math.round(scores.reduce((a,b)=>a+b,0)*100)/100;
  const tn=mixed?markMCQ(de,ans):{score:0,correct:0,items:[]};
  /* làm tròn ngay khi chấm (24/11/2026): dưới 0,5 bỏ, từ 0,5 lấy 0,5 */
- return {diem:QTA.lam05(Math.round((essay+tn.score)*100)/100),diemGoc:Math.round((essay+tn.score)*100)/100,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report};
+ const roi=b.roiTrang|0,tru=Math.round(roi*TRU_ROI*100)/100,goc=Math.max(0,Math.round((essay+tn.score-tru)*100)/100);
+ return {diem:QTA.lam05(goc),diemGoc:goc,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,chiTietTN:tn.items,muc:scores,chiTiet:report,roiTrang:roi,truRoi:tru};
 }
 /* 09/11/2026: chấm tự luận rộng tay (mỗi yêu cầu: 0,5 trả lời đúng hướng + 0,5 nội dung). Bài máy chấm theo bản cũ được chấm lại; bài giảng viên đã chấm giữ nguyên. */
-const GRADE_POLICY="2026-11-26-v5";
+const GRADE_POLICY="2026-11-26-v6";
 /* Bài làm theo đề cũ 30+10+1 (học phần luat-dan-su) nằm trong lớp đã chuyển: chấm ở quản trị chung (index.html#quan-tri/<lớp>/de-cu). */
 const laDeCu=b=>!!b&&!!b.de&&!b.de.essayMode&&!b.de.caseIds&&(b.hocPhan==="luat-dan-su"||(Array.isArray(b.de.lt)&&b.de.lt.length>0));
 async function markPending(ma,papers,grades){
@@ -352,7 +354,7 @@ async function markPending(ma,papers,grades){
  for(const [sv,b] of entries){
   try{
    const r=gradeAutomatic(b);
-   const saved={maLop:ma,mssv:sv,diem:r.diem,diemGoc:r.diemGoc,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,phienBanDapAn:DAP_AN_VER,cu:grades[sv]?{diem:grades[sv].diem??null,tuLuan:grades[sv].tuLuan??null,muc:grades[sv].muc||null,nguon:grades[sv].nguon||"",note:grades[sv].note||"",v:grades[sv].phienBanDapAn||grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo dấu hiệu nội dung đáp án; giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
+   const saved={maLop:ma,mssv:sv,diem:r.diem,diemGoc:r.diemGoc,roiTrang:r.roiTrang,truRoi:r.truRoi,tuLuan:r.tuLuan,tracNghiem:r.tracNghiem,soCauDung:r.soCauDung,chiTietTN:r.chiTietTN,muc:r.muc,chiTiet:r.chiTiet,nguon:"tu-dong",gradePolicyVersion:GRADE_POLICY,phienBanDapAn:DAP_AN_VER,cu:grades[sv]?{diem:grades[sv].diem??null,tuLuan:grades[sv].tuLuan??null,muc:grades[sv].muc||null,nguon:grades[sv].nguon||"",note:grades[sv].note||"",v:grades[sv].phienBanDapAn||grades[sv].gradePolicyVersion||""}:null,xacNhan:true,note:"Chấm tự động theo khung 26/11: căn cứ pháp lý 0,5 + trích dẫn quy định 0,25 + lập luận 0,25 mỗi ý; trừ 0,25 điểm mỗi lần rời trang. Giảng viên có quyền điều chỉnh.",hocPhan:COURSE,luc:FV.serverTimestamp()};
    await db.doc("pnl_dg_cham/"+ma+"__"+sv).set(saved);
    grades[sv]=saved;done++;
   }catch(e){errors.push(sv+": "+e.message)}
@@ -635,6 +637,38 @@ async function decryptRubric(password){
  RUBRIC=d;return d;
 }
 
+/*CHAM-Y:BAT-DAU*/
+/* Khung chấm tự luận 26/11/2026 (theo yêu cầu của giảng viên). Mỗi ý 1 điểm:
+   - Căn cứ pháp lý 0,5: đúng Điều, đủ điểm/khoản (nếu đáp án yêu cầu) và tên văn bản KÈM NĂM (vd "Bộ luật Dân sự năm 2015"); thiếu một thành phần = 0.
+     Nhiều nhóm căn cứ bắt buộc thì chia đều 0,5; trong một nhóm, nêu đúng một phương án là đủ.
+   - Trích dẫn nội dung quy định 0,25; lập luận áp dụng vào tình huống, kết luận 0,25 (đủ các ý = 0,25; được một nửa số ý trở lên = 0,125).
+   - Rời trang: mỗi lần trừ 0,25 vào tổng điểm. */
+const KDY=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/đ/g,"d").replace(/\s+/g," ");
+const VB_CHAM={BLDS:{ten:"Bộ luật Dân sự",nam:"2015",re:/(bo luat dan su|blds)/},HNGD:{ten:"Luật Hôn nhân và gia đình",nam:"2014",re:/(luat hon nhan va gia dinh|hon nhan va gia dinh|luat hn ?gd|hngd)/},NO:{ten:"Luật Nhà ở",nam:"2023",re:/luat nha o/}};
+const TRU_ROI=0.25;
+function canCu(t,c){const [diem,khoan,dieu,vb]=c,v=VB_CHAM[vb];
+ const re=new RegExp("dieu\\s*(?:\\d+\\s*(?:,|va|;|-)\\s*)*0*"+dieu+"(?!\\d)","g");let m,coDieu=false,dung=false;
+ while((m=re.exec(t))){coDieu=true;const truoc=t.slice(Math.max(0,m.index-50),m.index).split("dieu").pop(),sau=t.slice(m.index+m[0].length,m.index+m[0].length+30);
+  const kOK=!khoan||new RegExp("khoan\\s*(?:\\d+\\s*(?:,|va)\\s*)*"+khoan+"(?!\\d)[^.;]*$").test(truoc)||new RegExp("^\\s*,?\\s*khoan\\s*(?:\\d+\\s*(?:,|va)\\s*)*"+khoan+"(?!\\d)").test(sau);
+  const d=diem?KDY(diem):"",dOK=!diem||new RegExp("diem\\s*"+d+"(?![a-z0-9])").test(truoc)||new RegExp("^[^.;]{0,25}diem\\s*"+d+"(?![a-z0-9])").test(sau);
+  if(kOK&&dOK){dung=true;break}}
+ const coVb=v.re.test(t),coNam=new RegExp(v.re.source+"[^.;:]{0,30}"+v.nam).test(t);
+ const ten=(diem?"điểm "+diem+" ":"")+(khoan?"khoản "+khoan+" ":"")+"Điều "+dieu+" "+v.ten+" năm "+v.nam;
+ let thieu="";if(!coDieu)thieu="chưa nêu Điều "+dieu;else if(!dung)thieu="Điều "+dieu+": thiếu/sai "+(khoan&&diem?"điểm, khoản":khoan?"khoản "+khoan:"điểm "+diem);else if(!coVb)thieu="thiếu tên văn bản ("+v.ten+" năm "+v.nam+")";else if(!coNam)thieu="thiếu năm ban hành "+v.nam;
+ return {ok:!thieu,thieu,ten}}
+function nhomCum(t,groups){const hit=groups.filter(g=>String(g).split("|").some(p=>t.includes(KDY(p).trim())));return {hit,thieu:groups.filter(g=>!hit.includes(g))}}
+function chamY(text,k){const t=KDY(text);
+ if(!k)throw Error("Thiếu khung chấm");
+ if(t.replace(/[^a-z0-9]/g,"").length<10)return {diem:0,cs:0,qd:0,ll:0,thieu:["Bỏ trống"],nhan:"Bỏ trống"};
+ const thieu=[];let ok=0;
+ for(const g of k.cs){const r=g.map(c=>canCu(t,c)),x=r.find(z=>z.ok);if(x)ok++;else thieu.push("Căn cứ: "+(r.find(z=>z.thieu.indexOf("chưa nêu")<0)||r[0]).thieu+(g.length>1?" (hoặc "+r.slice(1).map(z=>z.ten).join("; ")+")":""))}
+ const cs=Math.round(0.5*ok/k.cs.length*1000)/1000;
+ const mk=(gr,lab)=>{const r=nhomCum(t,gr),f=r.hit.length/gr.length;if(f<1)thieu.push(lab+": chưa có ý \""+r.thieu.map(x=>x.split("|")[0]).join("\", \"")+"\"");return f===1?0.25:f>=0.5?0.125:0};
+ const qd=mk(k.qg,"Trích dẫn quy định"),ll=mk(k.lg,"Lập luận");
+ const diem=Math.round((cs+qd+ll)*1000)/1000,f=x=>String(x).replace(".",",");
+ return {diem,cs,qd,ll,thieu,nhan:"Căn cứ "+f(cs)+"/0,5 · Trích dẫn "+f(qd)+"/0,25 · Lập luận "+f(ll)+"/0,25"}}
+/*CHAM-Y:KET-THUC*/
+function keyFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);return c&&c.keys?c.keys[j]:null}
 function guideFor(id,j){const c=RUBRIC&&RUBRIC.case_bank.find(x=>x.id===id);if(!c)return"";const a=c.answer||[];return a.length===4?a[j]:(a[j*2+1]||"")}
 /* Bản xem lại cho sinh viên (26/11/2026): trắc nghiệm (bạn chọn / đáp án / giải thích / căn cứ), tự luận (bài làm, gợi ý đáp án, điểm từng ý, nhận xét).
    Ghi vào pnl_kq khi đã có điểm chính thức và lớp đã đóng — xem qt-apag.js kqPublish. */
@@ -650,6 +684,7 @@ async function tlReview(b,g){if(!b||b.status!=="da-nop"||laDeCu(b))return null;a
  ids.forEach((id,i)=>{const c=caseBy(id);if(!c)return;h+='<div class="rv-case"><b>Tình huống '+(ids.length>1?i+1:'')+'.</b> '+E(c.text)+'</div>';
   c.questions.forEach((q,j)=>{const pos=i*4+j,d=g&&g.muc&&g.muc[pos]!=null?+g.muc[pos]:null;
    h+='<div class="rv-q"><p><b>'+E(q)+'</b>'+(d!=null?' <span class="rv-note">('+String(Math.round(d*100)/100).replace(".",",")+'/'+String(max).replace(".",",")+' điểm)</span>':'')+'</p><p class="rv-lab">Bài làm của bạn</p><div class="rv-ans">'+E(ans[id+"_"+j]||"(Không trả lời)")+'</div><details><summary>Gợi ý đáp án</summary><div class="rv-ans">'+E(guideFor(id,j))+'</div></details></div>'})});
+ const roiR=b.roiTrang|0;if(roiR)h+='<p class="rv-sum">Rời trang '+roiR+' lần: trừ '+String(roiR*TRU_ROI).replace(".",",")+' điểm.</p>';
  if(g&&g.note)h+='<p class="rv-sum">Nhận xét của giảng viên: '+E(g.note)+'</p>';
  const t=g&&g.diem!=null?QTA.lam05(g.diem):null;
  return (t!=null?'<p class="rv-sum"><b>Điểm bài làm (thang 10): '+String(t).replace(".",",")+'</b></p>':'')+h}
@@ -658,7 +693,7 @@ async function grade(ma,sv,b,g){
  if(!RUBRIC||!MCQ){QTA.info('Chưa có khóa đáp án hoặc lỗi kết nối nên chưa mở được bài chấm.','Không tải được đáp án');return}
  const de=b.de||{},mixed=de.essayMode==="mixed12x1",ids=de.caseIds||[],ans=answerMap(b),max=mixed?1:1.25;
  const auto=gradeAutomatic(b),tn=mixed?markMCQ(de,ans):{score:0,correct:0,items:[]};
- let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Máy tự chấm theo ngân hàng đáp án. Phần trắc nghiệm được so với đáp án đúng; điểm tự luận dựa trên dấu hiệu lập luận và căn cứ. Giảng viên có thể hiệu chỉnh kết quả tự luận.</p></article>';
+ let h='<article><div class="top"><h2>Chấm bài · '+E(sv)+'</h2><button id="back" class="secondary">Trở lại lớp</button></div><p class="warn">Máy tự chấm theo ngân hàng đáp án. Trắc nghiệm so với đáp án đúng. Tự luận mỗi ý 1 điểm: căn cứ pháp lý 0,5 (đủ điểm, khoản, Điều, tên văn bản và năm), trích dẫn quy định 0,25, lập luận 0,25. Mỗi lần rời trang trừ 0,25 điểm. Giảng viên có thể hiệu chỉnh.</p></article>';
  if(mixed){
   h+='<article><h3>Phần I. Trắc nghiệm: '+tn.correct+'/12 câu đúng – '+tn.score.toFixed(1)+' / 6 điểm</h3>';
   tn.items.forEach((x,i)=>{const q=MCQ.questions[x.id],selected=x.selected===null?"Chưa trả lời":"ABCD"[x.selected],right="ABCD"[x.correct];
@@ -671,9 +706,9 @@ async function grade(ma,sv,b,g){
   h+='<h3>Tình huống '+(i+1)+' · '+E(id)+'</h3><div class="case">'+E(c.text)+'</div>';
   c.questions.forEach((q,j)=>{
    const key=id+"_"+j,guide=guideFor(id,j),input=ans[key]||"",pos=i*4+j;
-   const ev=legalGrade(input,guide),suggested=mixed?Math.round(ev.score*.8*100)/100:ev.score;
+   const ev=chamY(input,keyFor(id,j)),suggested=mixed?ev.diem:Math.round(ev.diem*1.25*100)/100;
    const selected=g?.muc?.[pos]!=null?g.muc[pos]:suggested;
-   h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div><details><summary>Đáp án và các ý còn thiếu</summary><div class="ans">'+E(guide)+'</div>'+(ev.missing.length?'<p>Các ý cần rà soát:</p><ul>'+ev.missing.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul>':'')+'</details>'+(ev.hits&&ev.hits.length?'<p class="mini">Ý trùng với đáp án: '+ev.hits.map(x=>E(x.clause)).join(' · ')+'</p>':'')+'<p class="mini muted">'+E(ev.warning||'')+'. Điểm máy gợi ý: '+suggested.toFixed(2)+' / '+max.toFixed(2)+' điểm</p><label>Điểm tự luận (0 – '+max.toFixed(2)+')</label><input data-point="'+pos+'" type="number" min="0" max="'+max+'" step="0.05" value="'+E(selected)+'"></div>';
+   h+='<div class="q"><strong>'+E(q)+'</strong><div class="ans">'+E(input||"(Không trả lời)")+'</div><details><summary>Đáp án</summary><div class="ans">'+E(guide)+'</div></details>'+(ev.thieu.length?'<ul class="mini">'+ev.thieu.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul>':'')+'<p class="mini muted">'+E(ev.nhan)+'. Điểm máy gợi ý: '+suggested.toFixed(2)+' / '+max.toFixed(2)+' điểm</p><label>Điểm tự luận (0 – '+max.toFixed(2)+')</label><input data-point="'+pos+'" type="number" min="0" max="'+max+'" step="0.125" value="'+E(selected)+'"></div>';
   });
  });h+='</article><article><div class="top"><span>Tổng điểm</span><strong class="score" id="total"></strong></div><label>Nhận xét</label><textarea id="review" maxlength="1000">'+E(g?.note||"")+'</textarea><button id="saveGrade">Lưu điểm đã điều chỉnh</button><p id="msg" class="error"></p></article>';
  const svName=(TLC&&TLC.ma===ma&&(TLC.students.find(x=>x.mssv===sv)||{}).hoTen)||"";
@@ -681,8 +716,9 @@ async function grade(ma,sv,b,g){
   actions:[{id:"bk",label:"Trở lại danh sách",kind:"ghost",onClick:()=>manageClass(ma,"ds")}],body:h});
  $("#back").onclick=()=>manageClass(ma,"ds");
  const points=()=>[...document.querySelectorAll("[data-point]")].map(x=>Math.max(0,Math.min(max,Number(x.value)||0)));
- const calc=()=>{const v=points(),essay=Math.round(v.reduce((a,b)=>a+b,0)*100)/100,total=Math.round((essay+tn.score)*100)/100;
-  $("#total").textContent=(mixed?tn.score.toFixed(2)+' + '+essay.toFixed(2)+' = ':'')+total.toFixed(2)+'/10';
+ const roiG=b.roiTrang|0,truG=Math.round(roiG*TRU_ROI*100)/100;
+ const calc=()=>{const v=points(),essay=Math.round(v.reduce((a,b)=>a+b,0)*100)/100,total=Math.max(0,Math.round((essay+tn.score-truG)*100)/100);
+  $("#total").textContent=(mixed?tn.score.toFixed(2)+' + '+essay.toFixed(3).replace(/0$/,'')+(truG?' − '+truG.toFixed(2)+' (rời trang '+roiG+' lần)':'')+' = ':'')+total.toFixed(2)+'/10';
   return {v,essay,total};
  };
  document.querySelectorAll("[data-point]").forEach(x=>x.oninput=calc);calc();
@@ -690,7 +726,7 @@ async function grade(ma,sv,b,g){
   const {v,essay}=calc(),total=QTA.lam05(calc().total);
   if(!confirm("Lưu điểm "+String(total).replace(".",",")+"/10 (đã làm tròn 0,5) cho "+sv+"?"))return;
   try{
-   await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,diem:total,nguon:"giang-vien",xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:de.set||"",phienBanDapAn:DAP_AN_VER,chamBoi:auth.currentUser?.uid||"",luc:FV.serverTimestamp()});
+   await db.doc("pnl_dg_cham/"+ma+"__"+sv).set({maLop:ma,mssv:sv,muc:v,tuLuan:essay,tracNghiem:tn.score,soCauDung:tn.correct,diem:total,roiTrang:roiG,truRoi:truG,nguon:"giang-vien",xacNhan:true,note:$("#review").value.trim(),hocPhan:COURSE,maDe:de.set||"",phienBanDapAn:DAP_AN_VER,chamBoi:auth.currentUser?.uid||"",luc:FV.serverTimestamp()});
    manageClass(ma,"ds");
   }catch(e){err(e)}
  };

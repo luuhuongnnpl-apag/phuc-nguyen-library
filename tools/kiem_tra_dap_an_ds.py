@@ -11,6 +11,7 @@ Kiểm:
   3. Đủ 4 đáp án, mỗi đáp án có dẫn "Điều", không còn tiền tố "Định hướng đáp án / phân hóa trường hợp".
   4. Tên người, số tuổi, năm nêu trong đáp án phải có trong đề (chống sót dữ kiện của tình huống khác).
   5. Cảnh báo: đáp án ý j "giống" yêu cầu khác hơn yêu cầu j.
+  6. Có khung chấm cho từng ý; chấm thử bằng mã của trang: đáp án mẫu = 1 điểm, bỏ năm ban hành = 0 điểm căn cứ.
 """
 import base64, json, os, re, sys, zlib
 from pathlib import Path
@@ -97,6 +98,26 @@ def main():
         for j, s in enumerate(a):
             T = tu(s); sc = [len(T & x) / (len(x) or 1) for x in Q]
             if sc[j] == 0 or sc[j] < max(sc) - 0.5: canh.append(f"{cid} ý {j+1}: nội dung gần yêu cầu {sc.index(max(sc))+1} hơn (kiểm bằng mắt)")
+    # Chấm thử bằng ĐÚNG mã chấm của trang (khối CHAM-Y): đáp án mẫu phải đạt 1 điểm; bỏ năm ban hành thì căn cứ = 0.
+    import subprocess, tempfile
+    khoi = re.search(r"/\*CHAM-Y:BAT-DAU\*/[\s\S]*?/\*CHAM-Y:KET-THUC\*/", HTML)
+    if not khoi:
+        loi.append("Trang thiếu khối CHAM-Y")
+    else:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump(d, f, ensure_ascii=False)
+        js = khoi.group(0) + """
+const R=JSON.parse(require('fs').readFileSync(process.argv[process.argv.length-1]));const CORE=%s;const out=[];
+for(const c of R.cases.filter(c=>CORE.includes(c.id))){if(!c.keys){out.push(c.id+": thiếu khung chấm");continue}
+ c.keys.forEach((k,j)=>{const a=chamY(c.answers[j],k);if(a.diem!==1)out.push(c.id+" ý "+(j+1)+": đáp án mẫu chỉ đạt "+a.diem+" ("+a.thieu.join("; ")+")");
+  const b=chamY(c.answers[j].replace(/(năm )?20(15|14|23)/g,""),k);if(b.cs!==0)out.push(c.id+" ý "+(j+1)+": bỏ năm ban hành vẫn được điểm căn cứ")})}
+console.log(JSON.stringify(out));""" % json.dumps(CORE)
+        try:
+            r = subprocess.run(["node", "-e", js, f.name], capture_output=True, text=True, timeout=60)
+            loi += json.loads(r.stdout) if r.stdout.strip() else ["Không chạy được chấm thử: " + r.stderr.strip()[:300]]
+        except FileNotFoundError:
+            canh.append("Không có node — bỏ qua chấm thử")
+        os.unlink(f.name)
     for x in loi: print("LỖI     ", x)
     for x in canh: print("CẢNH BÁO", x)
     print(f"Đã kiểm {len(CORE)} tình huống cốt lõi · phiên bản {d.get('version')} · {len(loi)} lỗi, {len(canh)} cảnh báo")
