@@ -1,9 +1,68 @@
     // ===== PNL - Phúc Nguyên Library (viết lại 11/11/2026 — khớp mã đang chạy, bỏ toàn bộ quy tắc PNL cũ) =====
-    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026; thêm pnl_nh, pnl_nh_pub 18/11/2026; thêm pnl_kq 24/11/2026; từ 18/11 trang quản trị tự xuất bản khối này (lop/rules-sync.js) (bản cũ: firestore-pnl-cu-0511.rules).
+    // ĐÃ XUẤT BẢN trong console 11/11/2026 15:11; thêm Giảng viên 27/11/2026 (bản 20261127a); thêm khối Quản trị 13/11/2026; thêm pnl_tk, pnl_phien 17/11/2026; thêm pnl_nh, pnl_nh_pub 18/11/2026; thêm pnl_kq 24/11/2026; từ 18/11 trang quản trị tự xuất bản khối này (lop/rules-sync.js) (bản cũ: firestore-pnl-cu-0511.rules).
     // Dùng hàm chung isAdmin() và signedIn() ở đầu tệp; không đụng phần PNW, PND.
+    // 27/11/2026: thêm GIẢNG VIÊN (pnl_gv, pnl_phien_gv): đăng nhập ID + mã quản trị cấp; chỉ làm việc trong lớp (lop) và học phần (hp) được giao.
+
+    // --- Giảng viên (27/11/2026) ---
+    function pnlPhienGv() {
+      return get(/databases/$(database)/documents/pnl_phien_gv/$(request.auth.uid)).data;
+    }
+    function pnlGvTk() {
+      return get(/databases/$(database)/documents/pnl_gv/$(pnlPhienGv().gv)).data;
+    }
+    function pnlGvHopLe() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/pnl_phien_gv/$(request.auth.uid))
+        && pnlPhienGv().h == pnlGvTk().pw
+        && pnlGvTk().get('khoa', false) != true;
+    }
+    // lớp được giao (mã lớp gốc)
+    function pnlGvLop(ma) {
+      return pnlGvHopLe() && ma in pnlGvTk().get('lop', []);
+    }
+    // đợt kiểm tra: chính lớp được giao, hoặc đợt con (cha = lớp được giao)
+    function pnlGvDot(ma) {
+      return pnlGvLop(ma) || (pnlGvHopLe()
+        && exists(/databases/$(database)/documents/pnl_dg_lop/$(ma))
+        && get(/databases/$(database)/documents/pnl_dg_lop/$(ma)).data.get('cha', '-') in pnlGvTk().get('lop', []));
+    }
+    // học phần được giao
+    function pnlGvHp(hp) {
+      return pnlGvHopLe() && hp in pnlGvTk().get('hp', []);
+    }
+    // danh sách lớp thay đổi (thêm/bớt) chỉ gồm lớp được giao
+    function pnlGvDoiLop(cu, moi) {
+      return cu.toSet().difference(moi.toSet()).union(moi.toSet().difference(cu.toSet()))
+        .difference(pnlGvTk().get('lop', []).toSet()).size() == 0;
+    }
+    match /pnl_gv/{id} {
+      allow get: if isAdmin() || (signedIn()
+        && exists(/databases/$(database)/documents/pnl_phien_gv/$(request.auth.uid))
+        && pnlPhienGv().gv == id && pnlPhienGv().h == resource.data.pw);
+      allow list, create, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn()
+        && exists(/databases/$(database)/documents/pnl_phien_gv/$(request.auth.uid))
+        && pnlPhienGv().gv == id && pnlPhienGv().h == resource.data.pw
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pw', 'pwDefault', 'doiLuc'])
+        && request.resource.data.pw is string && request.resource.data.pw.size() == 64
+        && request.resource.data.pwDefault == false);
+    }
+    // mã đăng nhập ban đầu (bản rõ) để quản trị xem lại: chỉ quản trị
+    match /pnl_gv_ma/{id} { allow read, write: if isAdmin(); }
+    match /pnl_phien_gv/{uid} {
+      allow get, delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['gv', 'h', 'at'])
+        && request.resource.data.gv is string && request.resource.data.h is string
+        && request.resource.data.at == request.time
+        && exists(/databases/$(database)/documents/pnl_gv/$(request.resource.data.gv))
+        && get(/databases/$(database)/documents/pnl_gv/$(request.resource.data.gv)).data.pw == request.resource.data.h
+        && get(/databases/$(database)/documents/pnl_gv/$(request.resource.data.gv)).data.get('khoa', false) != true;
+    }
     // Phiên bản khối quy tắc PNL: trang quản trị đọc thử pnl_rules_v/<phiên bản>; bị chặn = quy tắc trên máy chủ cũ hơn kho GitHub,
     // trang hiện nút "Cập nhật quy tắc" tự thay khối PNL (từ dòng tiêu đề đầu khối đến dòng kết thúc khối) qua Firebase Rules API. Đổi quy tắc thì tăng số này.
-    match /pnl_rules_v/{v} { allow get: if v == '20261126b'; }
+    match /pnl_rules_v/{v} { allow get: if v == '20261127a'; }
 
 
     // --- Mã lớp ôn tập (trang chủ) ---
@@ -33,16 +92,23 @@
     // --- Quản trị (13/11/2026): học phần, chương thêm thủ công trên trang quan-tri/ ---
     // Ai cũng đọc được khi đã công bố (pub == true); chỉ quản trị đọc bản ẩn/nháp và ghi.
     match /pnl_hp/{id} {
-      allow read: if isAdmin() || resource.data.pub == true;
+      allow read: if isAdmin() || resource.data.pub == true || pnlGvHp(id);
       allow write: if isAdmin();
+      allow create, update: if pnlGvHp(id);
     }
     match /pnl_hp_ch/{id} {
-      allow read: if isAdmin() || resource.data.pub == true;
-      allow write: if isAdmin();
+      allow read: if isAdmin() || resource.data.pub == true || pnlGvHp(id.split('__')[0]);
+      allow write: if isAdmin() || pnlGvHp(id.split('__')[0]);
     }
-    // Tài liệu, thư mục, liên kết thông dụng (14/11/2026): ai cũng đọc, chỉ quản trị ghi
-    match /pnl_docs/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /pnl_folders/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Tài liệu, thư mục, liên kết thông dụng (14/11/2026): ai cũng đọc, chỉ quản trị ghi; giảng viên ghi tài liệu, thư mục của học phần được giao
+    match /pnl_docs/{id} { allow read: if true; allow write: if isAdmin();
+      allow create: if pnlGvHp(request.resource.data.course);
+      allow update: if pnlGvHp(resource.data.course) && pnlGvHp(request.resource.data.course);
+      allow delete: if pnlGvHp(resource.data.course); }
+    match /pnl_folders/{id} { allow read: if true; allow write: if isAdmin();
+      allow create: if pnlGvHp(request.resource.data.course);
+      allow update: if pnlGvHp(resource.data.course) && pnlGvHp(request.resource.data.course);
+      allow delete: if pnlGvHp(resource.data.course); }
     match /pnl_links/{id} { allow read: if true; allow write: if isAdmin(); }
 
     // --- Đánh giá định kỳ ---
@@ -58,27 +124,40 @@
     match /pnl_dg_lop/{ma} {
       allow get: if true;
       allow list, write: if isAdmin();
+      allow list: if pnlGvLop(resource.data.cha);
+      // giảng viên: sửa lớp/đợt được giao (không đổi học phần gắn lớp, không đổi cha); tạo, xóa đợt con của lớp được giao
+      allow update: if pnlGvDot(ma)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['hps', 'cha']);
+      allow create: if pnlGvLop(request.resource.data.get('cha', '-'));
+      allow delete: if pnlGvLop(resource.data.get('cha', '-'));
     }
     match /pnl_dg_sv/{id} {
       allow get: if true;
       allow list, write: if isAdmin();
+      allow list: if pnlGvLop(resource.data.maLop);
+      allow write: if pnlGvLop(id.split('__')[0]);
     }
-    // Danh sách kèm ngày sinh, điểm, khóa đáp án: chỉ quản trị
+    // Danh sách kèm ngày sinh, điểm, khóa đáp án: chỉ quản trị (giảng viên: lớp/đợt được giao)
     match /pnl_dg_ds/{ma} {
-      allow read, write: if isAdmin();
+      allow read, write: if isAdmin() || pnlGvLop(ma);
     }
     match /pnl_dg_cham/{id} {
       allow read, write: if isAdmin();
+      allow get, write: if pnlGvDot(id.split('__')[0]);
+      allow list: if pnlGvDot(resource.data.maLop);
+      // khóa giải mã đáp án tự luận Luật Dân sự: giảng viên được giao học phần Luật Dân sự đọc được
+      allow get: if id == '_khoa-dap-an-ds' && pnlGvHp('luat-dan-su');
     }
     // Đề rút từ Ngân hàng câu hỏi (18/11/2026): đề nguồn không kèm đáp án — ai biết mã lớp đọc được; đáp án chỉ quản trị
-    match /pnl_dg_de/{ma} { allow get: if true; allow list, write: if isAdmin(); }
-    match /pnl_dg_dap/{ma} { allow read, write: if isAdmin(); }
+    match /pnl_dg_de/{ma} { allow get: if true; allow list, write: if isAdmin(); allow write: if pnlGvDot(ma); }
+    match /pnl_dg_dap/{ma} { allow read, write: if isAdmin() || pnlGvDot(ma); }
     // Bài làm: sinh viên tạo một lần khi lớp đang mở, chỉ đọc/sửa bài của chính mình đến giờ đóng + 15 phút
     match /pnl_dg_bai/{baiId} {
       allow get: if resource == null || isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid);
-      allow delete: if isAdmin();
-      allow list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid); // SV xem lịch sử bài của mình (26/11/2026)
+        || (signedIn() && resource.data.uid == request.auth.uid) || pnlGvDot(resource.data.maLop);
+      allow delete: if isAdmin() || pnlGvDot(resource.data.maLop);
+      allow list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid) // SV xem lịch sử bài của mình (26/11/2026)
+        || pnlGvDot(resource.data.maLop);
       allow create: if isAdmin() || (signedIn()
         && request.resource.data.keys().hasOnly(['maLop','mssv','hoTen','uid','status','startedAt','de','hocPhan','roiTrang','essay','answers','step'])
         && request.resource.data.uid == request.auth.uid
@@ -93,7 +172,7 @@
         // 18/11/2026: chỉ tài khoản lớp đã đăng nhập, đúng mã SV của phiên, mới tạo được bài
         && exists(/databases/$(database)/documents/pnl_phien/$(request.auth.uid))
         && get(/databases/$(database)/documents/pnl_phien/$(request.auth.uid)).data.mssv == request.resource.data.mssv);
-      allow update: if isAdmin() || (signedIn()
+      allow update: if isAdmin() || (pnlGvDot(resource.data.maLop) && request.resource.data.maLop == resource.data.maLop) || (signedIn()
         && resource.data.uid == request.auth.uid
         && resource.data.status == 'dang-lam'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answers','essay','status','submittedAt','roiTrang','luu','step','khoaVi'])
@@ -116,8 +195,15 @@
         && pnlPhien().h == resource.data.pw;
     }
     match /pnl_tk/{mssv} {
-      allow get: if isAdmin() || pnlLaChinhMinh(mssv);
+      allow get: if isAdmin() || pnlLaChinhMinh(mssv)
+        || (pnlGvHopLe() && resource.data.get('lop', []).hasAny(pnlGvTk().get('lop', [])));
       allow list, create, delete: if isAdmin();
+      // giảng viên: tạo tài khoản cho sinh viên lớp được giao; đặt lại mật khẩu, gắn/gỡ lớp được giao
+      allow create: if pnlGvHopLe() && request.resource.data.lop is list && request.resource.data.lop.size() > 0
+        && pnlGvDoiLop([], request.resource.data.lop);
+      allow update: if pnlGvHopLe()
+        && (resource.data.get('lop', []).hasAny(pnlGvTk().get('lop', [])) || request.resource.data.get('lop', []).hasAny(pnlGvTk().get('lop', [])))
+        && pnlGvDoiLop(resource.data.get('lop', []), request.resource.data.get('lop', []));
       allow update: if isAdmin() || (pnlLaChinhMinh(mssv)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pw', 'pwDefault', 'doiLuc'])
         && request.resource.data.pw is string && request.resource.data.pw.size() == 64
@@ -150,13 +236,18 @@
     function pnlBuoi(id) {
       return get(/databases/$(database)/documents/pnl_dd/$(id)).data;
     }
+    // giảng viên: dữ liệu lớp được giao (mã lớp trong trường maLop, không chuyển sang lớp khác)
+    function pnlGvGhiLop() {
+      return (resource == null || pnlGvLop(resource.data.maLop))
+        && (request.resource == null || pnlGvLop(request.resource.data.maLop));
+    }
     match /pnl_dd/{id} {
-      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop);
-      allow write: if isAdmin();
+      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop) || pnlGvLop(resource.data.maLop);
+      allow write: if isAdmin() || pnlGvGhiLop();
     }
     match /pnl_dd_sv/{id} {
-      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
-      allow write: if isAdmin();
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv) || pnlGvLop(resource.data.maLop);
+      allow write: if isAdmin() || pnlGvGhiLop();
       allow create: if pnlSvHopLe()
         && request.resource.data.mssv == pnlPhien().mssv
         && id == request.resource.data.buoi + '__' + request.resource.data.mssv
@@ -169,19 +260,19 @@
         && pnlBuoi(request.resource.data.buoi).maBuoi == request.resource.data.maBuoi;
     }
     match /pnl_cc/{maLop} {
-      allow read, write: if isAdmin();
+      allow read, write: if isAdmin() || pnlGvLop(maLop);
     }
     match /pnl_tin/{id} {
-      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop);
-      allow write: if isAdmin();
+      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop) || pnlGvLop(resource.data.maLop);
+      allow write: if isAdmin() || pnlGvGhiLop();
     }
     match /pnl_bt/{id} {
-      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop);
-      allow write: if isAdmin();
+      allow get, list: if isAdmin() || pnlSvTrongLop(resource.data.maLop) || pnlGvLop(resource.data.maLop);
+      allow write: if isAdmin() || pnlGvGhiLop();
     }
     match /pnl_bt_nop/{id} {
-      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
-      allow delete: if isAdmin();
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv) || pnlGvLop(resource.data.maLop);
+      allow delete: if isAdmin() || pnlGvLop(resource.data.maLop);
       allow create, update: if pnlSvHopLe()
         && request.resource.data.mssv == pnlPhien().mssv
         && id == request.resource.data.bt + '__' + request.resource.data.mssv
@@ -190,14 +281,23 @@
         && pnlSvTrongLop(request.resource.data.maLop);
     }
     // --- Ngân hàng câu hỏi (18/11/2026): kho kín chỉ quản trị; bản xuất bản cho web ôn tập ai cũng đọc ---
-    match /pnl_nh/{id} { allow read, write: if isAdmin(); }
+    // giảng viên: câu hỏi, đề của học phần được giao (trường hp)
+    function pnlGvGhiHp() {
+      return (resource == null || pnlGvHp(resource.data.hp))
+        && (request.resource == null || pnlGvHp(request.resource.data.hp));
+    }
+    match /pnl_nh/{id} { allow read, write: if isAdmin();
+      allow get, list: if pnlGvHp(resource.data.hp);
+      allow write: if pnlGvGhiHp(); }
     // Đề kiểm tra gốc trong Ngân hàng câu hỏi (kèm đáp án) — chỉ quản trị; bản phát hành cho từng đợt ở pnl_dg_de / pnl_dg_dap
-    match /pnl_nh_de/{id} { allow read, write: if isAdmin(); }
-    match /pnl_nh_pub/{hp} { allow read: if true; allow write: if isAdmin(); }
+    match /pnl_nh_de/{id} { allow read, write: if isAdmin();
+      allow get, list: if pnlGvHp(resource.data.hp);
+      allow write: if pnlGvGhiHp(); }
+    match /pnl_nh_pub/{hp} { allow read: if true; allow write: if isAdmin() || pnlGvHp(hp); }
     // --- Kết quả học tập công bố cho sinh viên (24/11/2026): quản trị ghi khi mở Bảng điểm; sinh viên chỉ đọc điểm của chính mình ---
     match /pnl_kq/{id} {
-      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv);
-      allow write: if isAdmin();
+      allow get, list: if isAdmin() || (pnlSvHopLe() && resource.data.mssv == pnlPhien().mssv) || pnlGvDot(resource.data.dot);
+      allow write: if isAdmin() || pnlGvDot(id.split('__')[0]);
     }
     // --- Nhật ký hoạt động sinh viên (26/11/2026): SV tự ghi việc của mình (giờ máy chủ), không sửa/xóa; SV đọc của mình, quản trị đọc tất cả ---
     match /pnl_nk/{id} {

@@ -141,8 +141,9 @@ html.nhung .band{display:none}
 <footer>© Bản quyền: Phúc Nguyên</footer>
 
 <script>if(/[?&]nhung=1/.test(location.search))document.documentElement.classList.add("nhung")</script>
-<script src="../assets/pnl-nk.js?v=20261126b"></script>
-<script src="qt-apag.js?v=20261126b"></script>
+<script src="../assets/pnl-nk.js?v=20261127a"></script>
+<script src="qt-apag.js?v=20261127a"></script>
+<script src="../assets/pnl-gv.js?v=20261127a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -216,7 +217,7 @@ function strip(s){return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").r
 
 firebase.initializeApp(FB_CFG);
 const db=firebase.firestore(),auth=firebase.auth(),FV=firebase.firestore.FieldValue,TS=firebase.firestore.Timestamp;
-let USER=null,ADMIN=false;
+let USER=null,ADMIN=false,GV=null; /* GV: phiên giảng viên (27/11/2026) — được vào quản trị trong lớp được giao */
 const isAdminUser=u=>!!u&&!u.isAnonymous&&(u.uid===ADMIN_UID||(u.emailVerified&&ADMIN_EMAILS.includes(u.email)));
 
 /* ====== NGÂN HÀNG CÂU HỎI: đọc thẳng từ trang học phần, luôn khớp bản ôn tập mới nhất ====== */
@@ -473,7 +474,7 @@ async function studentEntry(msg){
   if(!acc||!USER||acc.uid!==USER.uid){$("#app").innerHTML=`<section class="card narrow"><h1>Đánh giá định kỳ</h1>
     <p class="lead">Bài kiểm tra định kỳ chỉ làm bằng <b>tài khoản lớp</b>: ID = mã sinh viên, mật khẩu = mật khẩu chung của lớp (hoặc mật khẩu bạn đã đổi).</p>
     ${msg?`<div class="err" role="alert">${esc(msg)}</div>`:""}<div class="row"><a class="btn primary" href="${back}">Đăng nhập tài khoản lớp</a><a class="btn" href="../index.html">Về trang chủ</a></div>
-    <p class="msg" style="margin-top:14px">Khách chưa có tài khoản lớp chỉ xem tài liệu bằng mã lớp ôn tập ở trang chủ.</p></section>`;return}
+    <p class="msg" style="margin-top:14px">Chưa có tài khoản thì không có quyền đăng nhập: báo giảng viên của lớp để được cấp.</p></section>`;return}
   /* 24/11/2026: kiểm tra phiên trên máy chủ (đăng xuất ở máy khác / đặt lại mật khẩu làm phiên mất hiệu lực) và lấy danh sách lớp mới nhất
      của tài khoản — trước đây dùng bản lưu lúc đăng nhập nên SV được thêm vào lớp sau khi đăng nhập không thấy bài. */
   try{const ph=await db.doc("pnl_phien/"+USER.uid).get();if(!ph.exists||ph.data().mssv!==acc.mssv){localStorage.removeItem("pnl-lop-sv");return studentEntry("Phiên đăng nhập tài khoản lớp đã hết hạn. Hãy đăng nhập lại.")}
@@ -677,7 +678,7 @@ window.addEventListener("beforeunload",e=>{if(EXAM&&EXAM.active){e.preventDefaul
 /* =================== QUẢN TRỊ =================== */
 let AD={view:"ds"};
 function adminLogin(){
-  $("#app").innerHTML=`<section class="card narrow"><h1>Đăng nhập quản trị</h1><p class="lead">Đăng nhập bằng Google với tài khoản quản trị <b>luuhuong.nnpl@gmail.com</b> (dùng chung cho toàn hệ sinh thái Phúc Nguyên).</p>
+  $("#app").innerHTML=`<section class="card narrow"><h1>Đăng nhập quản trị</h1><p class="lead">Quản trị: đăng nhập Google với tài khoản <b>luuhuong.nnpl@gmail.com</b>. Giảng viên: <a href="../lop/">đăng nhập tài khoản giảng viên</a> ở trang Lớp học (ID + mật khẩu được cấp).</p>
   <form id="al" novalidate>
   <div class="err" id="al-err" role="alert"></div><div class="row"><button class="btn primary" type="button" id="al-g">Đăng nhập Google</button><a class="btn" href="#" style="text-decoration:none">Giao diện sinh viên</a></div></form></section>`;
   const after=u=>{USER=u;ADMIN=isAdminUser(u);if(!ADMIN){$("#al-err").textContent="Tài khoản "+(u.email||"")+" không phải quản trị. Hãy chọn "+ADMIN_EMAILS[0]+".";auth.signOut().then(()=>auth.signInAnonymously())}else route()};
@@ -687,7 +688,7 @@ function adminLogin(){
 }
 /* ==== QUẢN TRỊ – giao diện kiểu APAG (qt-apag.js, 08/11/2026) ==== */
 function sideItems(ma,view){
-  const it=[{grp:"Không gian quản trị"},{label:"Trang chủ quản trị",icon:"home",href:"../lop/#home"},{label:"Lớp",icon:"users",href:"../lop/#lop"},{label:"Học phần",icon:"book",href:"../lop/#hocphan"},{label:"Mã lớp ôn tập",icon:"lock",href:"../lop/#malop"},{label:"Sinh viên & tài khoản",icon:"user",href:"../lop/#sinhvien"},{grp:"Đánh giá định kỳ"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
+  const it=[{grp:"Không gian quản trị"},{label:"Trang chủ quản trị",icon:"home",href:"../lop/#home"},{label:"Lớp",icon:"users",href:"../lop/#lop"},{label:"Học phần",icon:"book",href:"../lop/#hocphan"},...(GV?[]:[{label:"Sinh viên & tài khoản",icon:"user",href:"../lop/#sinhvien"}]),{grp:"Đánh giá định kỳ"},{label:"Danh sách lớp",icon:"list",href:"#quan-tri",on:!ma},
     {label:"Đề kiểm tra (Ngân hàng câu hỏi)",icon:"plus",href:"../lop/#nganhang"}];
   if(ma&&AD.cu)it.push({grp:"Lớp "+ma},{label:"Bài đề cũ 30+10+1",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma)+"/de-cu",on:true,sub:true},{label:"Về lớp (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri/"+encodeURIComponent(ma),sub:true});
   else if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},
@@ -695,8 +696,8 @@ function sideItems(ma,view){
     {label:"Cài đặt lớp",icon:"cog",href:"#quan-tri/"+encodeURIComponent(ma)+"/cai-dat",on:view==="cai",sub:true});
   it.push({grp:"Khác"},{label:"Lớp Luật Dân sự (đề 12+1)",icon:"book",href:"tu-luan-luat-dan-su.html#quan-tri"},{label:"Giao diện sinh viên",icon:"users",href:"#"});
   return it}
-async function adminLogout(){await auth.signOut();USER=(await auth.signInAnonymously()).user;ADMIN=false;QTA.unmount();location.hash="";route()}
-function shell(o){return QTA.mount({user:USER&&USER.email,onLogout:adminLogout,...o})}
+async function adminLogout(){if(GV){(window.top||window).location.href=new URL("../lop/?out=1",location.href).href;return}await auth.signOut();USER=(await auth.signInAnonymously()).user;ADMIN=false;QTA.unmount();location.hash="";route()}
+function shell(o){return QTA.mount({user:GV?GV.ten+" (giảng viên)":USER&&USER.email,onLogout:adminLogout,...o})}
 async function adminView(){
   if(!ADMIN){QTA.unmount();return adminLogin()}
   const parts=location.hash.split("/");
@@ -704,8 +705,7 @@ async function adminView(){
   const body=shell({side:sideItems(null),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Đánh giá định kỳ"},{t:"Danh sách lớp"}],
     actions:[{id:"nh",label:"Tạo / giao đề ở Ngân hàng câu hỏi",icon:"plus",kind:"blue",onClick:()=>{(window.top||window).location.href=new URL("../lop/#nganhang",location.href).href}}],
     body:'<p class="qta-msg">Các đợt kiểm tra định kỳ của mọi lớp. Đề mới tạo ở <b>Ngân hàng câu hỏi › Đề kiểm tra</b> rồi giao cho lớp; đề Luật Dân sự, Kỹ năng tư vấn cũ chỉ còn để xem, chấm bài đã làm.</p><p class="qta-msg">Đang tải danh sách lớp…</p>'});
-  try{const qs=await db.collection("pnl_dg_lop").get();
-    const xs=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0)).map(l=>({...l,st:lopTrangThai(l).k,khung:fmtDT(toDate(l.openAt))+" → "+fmtDT(toDate(l.closeAt))}));
+  try{const xs=(GV?await PNGV.classes(db,GV):(await db.collection("pnl_dg_lop").get()).docs.map(d=>({id:d.id,...d.data()}))).sort((a,b)=>(toDate(b.created)||0)-(toDate(a.created)||0)).map(l=>({...l,st:lopTrangThai(l).k,khung:fmtDT(toDate(l.openAt))+" → "+fmtDT(toDate(l.closeAt))}));
     QTA.classTable(body,xs,{onOpen:id=>location.hash="#quan-tri/"+encodeURIComponent(id)});
   }catch(x){body.innerHTML='<p class="qta-err">Không tải được danh sách lớp ('+esc(x.code||x.message)+').</p>'}
 }
@@ -724,6 +724,8 @@ async function loadClass(ma){
 }
 async function showClass(ma,view,force){
   AD.view=view||AD.view||"ds";
+  if(GV){let l=null;try{const d=await db.doc("pnl_dg_lop/"+ma).get();if(d.exists)l={id:ma,...d.data()}}catch(x){}
+    if(!PNGV.allowed(GV,l)){shell({side:sideItems(null),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:ma}],body:'<p class="qta-err">Tài khoản giảng viên không có quyền với lớp '+esc(ma)+'.</p>'});return}}
   if(force||AD.ma!==ma||!AD.loaded){const body=shell({side:sideItems(ma,AD.view),crumbs:[{t:"Quản trị",href:"#quan-tri"},{t:"Danh sách lớp",href:"#quan-tri"},{t:ma}],body:'<p class="qta-msg">Đang tải lớp '+esc(ma)+'…</p>'});
     try{const r=await loadClass(ma);if(r==="redirect")return;if(!r){body.innerHTML='<p class="qta-err">Không có lớp '+esc(ma)+'.</p>';return}}
     catch(x){console.error(x);body.innerHTML='<p class="qta-err">Không tải được dữ liệu lớp ('+esc(x.code||x.message)+').</p>';return}}
@@ -952,7 +954,7 @@ function parseRows(aoa,X){
 
 /* ====== KHỞI ĐỘNG ====== */
 (async function boot(){
-  try{let u=await new Promise(res=>{const off=auth.onAuthStateChanged(x=>{off();res(x)})});if(!u)u=(await auth.signInAnonymously()).user;USER=u;ADMIN=isAdminUser(u);auth.onAuthStateChanged(x=>{if(x){USER=x;ADMIN=isAdminUser(x)}})}
+  try{let u=await new Promise(res=>{const off=auth.onAuthStateChanged(x=>{off();res(x)})});if(!u)u=(await auth.signInAnonymously()).user;USER=u;ADMIN=isAdminUser(u);if(!ADMIN){GV=await PNGV.check(db,u);ADMIN=!!GV}auth.onAuthStateChanged(x=>{if(x){USER=x;ADMIN=isAdminUser(x)||(!!GV&&x.uid===u.uid)}})}
   catch(e){console.error(e);$("#app").innerHTML='<div class="card narrow"><p class="err">Không kết nối được máy chủ. Kiểm tra mạng rồi tải lại trang.</p></div>';return}
   route();
 })();

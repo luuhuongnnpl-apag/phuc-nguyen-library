@@ -15,7 +15,7 @@
   function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   let access=false;
   try{const s=JSON.parse(localStorage.getItem("pnlib-ma-lop")||"null");const sc=s&&Array.isArray(s.courses)?s.courses:null;
-    access=!!(courseId&&s&&s.code&&s.han&&today()<=s.han&&(!sc||!sc.length||sc.includes("*")||sc.includes(courseId)))}catch(e){access=false}
+    access=!!(courseId&&s&&(s.sv||s.gv||s.admin)&&s.code&&s.han&&today()<=s.han&&sc&&(sc.includes("*")||sc.includes(courseId)))}catch(e){access=false}
   if(!access){document.documentElement.style.visibility="hidden";
     if(window.top!==window.self)window.parent.postMessage({pn:"home",course:courseId},"*");else window.location.replace("../index.html#"+courseId)}
 })();

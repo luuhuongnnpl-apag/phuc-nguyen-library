@@ -24,7 +24,7 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BAO_CAO = ROOT / "noi-dung" / "KET-QUA.md"
 PN_DATA = re.compile(r'<script id="pn-data" type="application/json">(.*?)</script>', re.S)
-PHIEN_THU = "localStorage.setItem('pnlib-ma-lop', JSON.stringify({code:'KIEM-THU',label:'Kiểm thử',han:'2099-12-31',courses:['*']}))"
+PHIEN_THU = "localStorage.setItem('pnlib-ma-lop', JSON.stringify({code:'KIEM-THU',label:'Kiểm thử',han:'2099-12-31',courses:['*'],gv:true}))"
 
 
 def main():

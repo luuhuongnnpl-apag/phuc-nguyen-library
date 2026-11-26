@@ -186,11 +186,11 @@ function nhRulesBox(){return `<div class="scard" style="border-color:var(--warn)
 function nhBindRules(){const g=$("[data-rsgo]");if(g)g.onclick=()=>typeof rsRun==="function"&&rsRun();const b=$("[data-copyrules]");if(b)b.onclick=async()=>{try{await navigator.clipboard.writeText(NH_RULES+"\n");toast("Đã chép. Dán vào Firebase Console rồi bấm Publish.")}catch(e){const r=document.createRange();r.selectNodeContents($("#nh-rules"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Đã bôi đen — nhấn Ctrl + C để chép.")}}}
 async function viewNganHang(hp){if(hp)return viewNganHangHp(hp);const tok=location.hash;
   $("#app").innerHTML=shell("nganhang",`<div class="page"><div class="empty">Đang tải ngân hàng câu hỏi…</div></div>`);bindOut();
-  let err="";try{if(!NH.all)await nhLoadAll()}catch(x){if(!nhDenied(x))err=errMsg(x)}
+  let err="";try{if(S.admin){if(!NH.all)await nhLoadAll()}else for(const h of (S.gv&&S.gv.hp)||[])await nhLoad(h)}catch(x){if(!nhDenied(x))err=errMsg(x)} /* giảng viên: chỉ học phần được giao */
   /* lần đầu mở trong phiên: tự trích câu sẵn có của các trang học phần vào ngân hàng (chỉ ghi phần còn thiếu / GitHub mới đổi) */
-  if(!err&&!NH.denied&&!NH.syncRes){const el=$(".page .empty");NH_AUTO.step=c=>{if(el)el.textContent="Đang đồng bộ câu sẵn có của học phần "+c.name+" vào ngân hàng…"};await nhAutoSync()}
+  if(S.admin&&!err&&!NH.denied&&!NH.syncRes){const el=$(".page .empty");NH_AUTO.step=c=>{if(el)el.textContent="Đang đồng bộ câu sẵn có của học phần "+c.name+" vào ngân hàng…"};await nhAutoSync()}
   if(location.hash!==tok)return; /* đã chuyển trang trong lúc tải */
-  const q=strip(S.q);const cs=S.courses.filter(c=>!q||strip(c.name).includes(q));
+  const q=strip(S.q);const cs=S.courses.filter(c=>gvHp(c.id)&&(!q||strip(c.name).includes(q)));
   const card=c=>{const st=nhStats(NH.byHp[c.id]);const ps=nhPubState(c.id);return `<a class="card" href="#nganhang/${encodeURIComponent(c.id)}"><b class="nm" title="${esc(c.name)}">${esc(c.name)}</b>
     <span class="meta"><span>Câu hỏi: <strong>${st.tong}</strong></span><span>Đã duyệt: <strong>${st.duyet}</strong></span><span>Tình huống: <strong>${st.th}</strong></span></span>
     <span class="meta" style="margin-top:8px">${st.kin?`<span class="pill gray">${st.kin} câu kín (ĐGĐK)</span>`:""}${st.nhap?`<span class="pill warn">${st.nhap} nháp</span>`:""}<span class="pill ${ps.cls}">${ps.cho?"có thay đổi chưa xuất bản":"web khớp ngân hàng"}</span></span></a>`};

@@ -7,7 +7,15 @@ Trang ôn tập luật học theo học phần. © Bản quyền thuộc Phúc N
 - `assets/`: logo và ảnh minh họa
 - `data/ma-lop.json`: danh sách mã lớp. **Không sửa tay** — file do trang *Quản lý mã lớp* tự sinh.
 
-## Mã lớp (Firebase, từ 04/11/2026)
+## Đăng nhập bằng tài khoản (từ 27/11/2026)
+
+Bỏ hẳn đăng nhập bằng **mã lớp**. Chỉ tài khoản mới vào được học phần:
+- **Sinh viên**: ID = mã sinh viên, mật khẩu chung của lớp (tự đổi sau). Vào được các học phần gắn với lớp; lớp chưa gắn học phần thì không mở học phần nào.
+- **Giảng viên**: ID + mã quản trị cấp ở `lop/#giangvien` (`pnl_gv`, `pnl_phien_gv`). Chỉ làm việc trong lớp, học phần được giao; quy tắc Firestore bản `20261127a` chặn ngoài phạm vi.
+- **Quản trị**: Google `luuhuong.nnpl@gmail.com`.
+Khách chỉ thấy danh mục học phần; bấm vào báo không có quyền truy cập.
+
+## Mã lớp (Firebase, từ 04/11/2026) — đã ngừng dùng 27/11/2026, dữ liệu `pnl_ma` giữ nguyên để tra cứu
 
 Mã lớp, số người dùng mã và góp ý lưu trên **Firebase Firestore** (dự án `phuc-nguyen-library`, collection `pnl_ma`, `pnl_ma/{mã}/luot`, `pnl_gopy`). Mỗi lớp một mã, cả lớp dùng chung.
 

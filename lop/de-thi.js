@@ -71,11 +71,13 @@ function dtCompile(st,E){const tong=dtTong(st);if(!tong&&!st.thSo)throw new Erro
 const dtMeta=de=>({hp:de.hp,hpTen:de.hpTen,deId:de.id,ten:de.ten,n:de.n,thSo:de.thSo|0,kieu:de.kieu,mota:de.mota,at:de.at});
 /* phát hành bản đề cho một đợt (ghi đề nguồn, đáp án, thông tin đợt) */
 async function dtPublish(de,dot,extra){const fs=S.fs;
-  await fs.doc("pnl_dg_de/"+dot).set(Object.assign({},de.P,{deId:de.id,at:FV().serverTimestamp()}));
-  await fs.doc("pnl_dg_dap/"+dot).set(Object.assign({},de.K,{deId:de.id,at:FV().serverTimestamp()}));
+  /* 27/11/2026: ghi thông tin đợt TRƯỚC (đợt con có cha = lớp) để quy tắc giảng viên nhận ra đợt thuộc lớp được giao khi ghi đề, đáp án */
   const part=Object.assign({deId:de.id,hps:[de.hp],hocPhan:"nh",hocPhanTen:de.hpTen,thoiGian:+de.tg||40,deNh:dtMeta(de)},extra||{});
   if(S.lop.some(l=>l.id===dot)&&!(extra&&extra.cha)){delete part.hps;delete part.hocPhanTen}/* đề cũ gắn thẳng vào lớp: không đụng danh sách học phần của lớp */
-  await fs.doc("pnl_dg_lop/"+dot).set(part,{merge:true});const ex=(S.dg||[]).find(x=>x.id===dot);if(ex)Object.assign(ex,part);else S.dg.push(Object.assign({id:dot},part));DT.bai[dot]=DT.bai[dot]||0}
+  await fs.doc("pnl_dg_lop/"+dot).set(part,{merge:true});
+  await fs.doc("pnl_dg_de/"+dot).set(Object.assign({},de.P,{deId:de.id,at:FV().serverTimestamp()}));
+  await fs.doc("pnl_dg_dap/"+dot).set(Object.assign({},de.K,{deId:de.id,at:FV().serverTimestamp()}));
+  const ex=(S.dg||[]).find(x=>x.id===dot);if(ex)Object.assign(ex,part);else S.dg.push(Object.assign({id:dot},part));DT.bai[dot]=DT.bai[dot]||0}
 
 /* ---------- trang: danh sách đề của học phần ---------- */
 async function viewDeNh(hp,sub){const c=courseOf(hp);if(!c){location.hash="#nganhang";return}const tok=location.hash;
@@ -202,7 +204,7 @@ function dlgGiaoDe(de,after,chon){const dlg=$("#dlg");const hp=de.hp;const now=n
     try{const full=de.P?de:Object.assign({id:de.id},(await S.fs.doc("pnl_nh_de/"+de.id).get()).data());const made=[];
       for(const ma of ids){const l=S.lop.find(x=>x.id===ma);const dot=dtNewDot(l,hp,made);made.push(dot);
         await dtPublish(full,dot,{cha:l.id,ten:l.ten||l.id,namHoc:l.namHoc||"",open:$("#gd-open").checked,openAt:dtTs(A),closeAt:dtTs(B),created:FV().serverTimestamp()});
-        const lp={dgs:FV().arrayUnion(dot)};const hps=lopHps(l);if(!hps.includes(hp))lp.hps=hps.concat(hp);await S.fs.doc("pnl_dg_lop/"+l.id).set(lp,{merge:true});
+        const lp={dgs:FV().arrayUnion(dot)};const hps=lopHps(l);if(!hps.includes(hp)&&S.admin)lp.hps=hps.concat(hp);/* giảng viên không đổi học phần gắn lớp */await S.fs.doc("pnl_dg_lop/"+l.id).set(lp,{merge:true});
         l.dgs=[...new Set([...(l.dgs||[]),dot])];if(lp.hps)l.hps=lp.hps}
       await S.fs.doc("pnl_nh_de/"+de.id).set({dots:FV().arrayUnion(...made)},{merge:true});de.dots=[...(de.dots||[]),...made];DT.des[hp]=null;
       dlg.close();toast("Đã giao đề cho "+made.length+" lớp: "+made.join(", ")+($("#gd-open").checked?" — đang mở theo khung giờ.":" — mở đợt ở mục Kiểm tra, thi của lớp."),6000);if(after)after()}

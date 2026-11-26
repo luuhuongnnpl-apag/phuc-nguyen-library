@@ -10,7 +10,7 @@
   function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   let access=false;
   try{const raw=localStorage.getItem("pnlib-ma-lop");const session=raw?JSON.parse(raw):null;const scopes=session&&Array.isArray(session.courses)?session.courses:null;
-    access=!!(session&&session.code&&session.han&&today()<=session.han&&(!scopes||!scopes.length||scopes.includes("*")||scopes.includes(courseId)));
+    access=!!(session&&(session.sv||session.gv||session.admin)&&session.code&&session.han&&today()<=session.han&&scopes&&(scopes.includes("*")||scopes.includes(courseId)));
   }catch(e){access=false}
   if(!access){document.documentElement.style.visibility="hidden";if(window.top!==window.self){window.parent.postMessage({pn:"home",course:courseId},"*")}else{window.location.replace("../index.html#"+courseId)}}
 })();

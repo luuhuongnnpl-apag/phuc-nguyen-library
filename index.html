@@ -288,14 +288,13 @@ ol.mm-d li{margin:1px 0}
   <div class="gate-card">
     <button type="button" class="gate-x" id="gate-x" aria-label="Đóng">×</button>
     <div class="gate-top"><div class="logo"><img src="assets/logo.png" alt="Logo Phúc Nguyên Library"></div><div class="kicker">THƯ VIỆN PHÚC NGUYÊN</div><h1 id="gate-h">Tài liệu luật học</h1></div>
-    <form class="gate-form" id="gate-form" novalidate>
-      <p id="gate-msg">Lần đầu mở tài liệu, bạn cần nhập mã lớp do giảng viên cung cấp. Trình duyệt sẽ nhớ mã cho đến khi mã hết hạn.</p>
-      <label class="lab" for="code-in">Mã lớp</label>
-      <input type="text" id="code-in" autocomplete="off" spellcheck="false" placeholder="K25D-LDS">
+    <div class="gate-form" id="gate-form">
+      <p id="gate-msg"><b>Không có quyền truy cập.</b> Học phần chỉ mở cho sinh viên, giảng viên đã được cấp tài khoản.</p>
       <div class="err" id="code-err" role="alert"></div>
-      <button class="btn primary" type="submit">Xác nhận mã</button>
+      <a class="btn primary" id="gate-login" href="lop/" style="text-align:center;text-decoration:none">Đăng nhập tài khoản</a>
+      <p class="msg">Sinh viên: ID là mã sinh viên, mật khẩu do giảng viên cấp. Chưa có tài khoản thì không đăng nhập được, báo giảng viên của lớp.</p>
       <div class="msg">© Bản quyền thuộc Phúc Nguyên</div>
-    </form>
+    </div>
   </div>
 </div>
 
@@ -321,8 +320,8 @@ ol.mm-d li{margin:1px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
-<script src="assets/pnl-nk.js?v=20261126b"></script>
-<script src="assets/pnl-shell.js?v=20261118h"></script>
+<script src="assets/pnl-nk.js?v=20261127a"></script>
+<script src="assets/pnl-shell.js?v=20261127a"></script>
 <script>
 /* ===== CẤU HÌNH: điền khi đã tạo biểu mẫu góp ý và bộ đếm truy cập ===== */
 const CONFIG={
@@ -734,8 +733,13 @@ function fbApiBind(){
 const FREE=["home","gop-y","quan-ly-ma","qt-ma","qt-dg","qt-sl"];
 let pending=null,gateReturn=null,expiredMsg="";
 function scopeForRoute(id){const z=shScope(id);if(z!==null)return z;const p=tlParse(id);if(p)return p.k;return course(id)?id:""}
-function needsCode(id){if(FREE.includes(id))return false;if(!session)return true;const xs=session.courses;if(!Array.isArray(xs)||!xs.length||xs.includes("*"))return false;const target=scopeForRoute(id);return !!target&&!xs.includes(target)}
-function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;$("#code-err").textContent=msg||"";document.body.style.overflow="hidden";setTimeout(()=>$("#code-in").focus(),30)}
+function needsCode(id){if(FREE.includes(id))return false;if(!okSession(session))return true;const xs=Array.isArray(session.courses)?session.courses:[];if(xs.includes("*"))return false;const target=scopeForRoute(id);return !!target&&!xs.includes(target)}
+/* 27/11/2026: bỏ hẳn đăng nhập bằng mã lớp. Chỉ tài khoản (sinh viên, giảng viên, quản trị) mới vào học phần; học phần mở theo lớp được gắn. */
+function okSession(s){return !!s&&!!(s.admin||s.sv||s.gv)}
+function showGate(msg){gateReturn=document.activeElement;$("#gate").hidden=false;const logged=okSession(session);
+  $("#gate-msg").innerHTML=logged?"<b>Tài khoản của bạn không có quyền vào học phần này.</b> Học phần chỉ mở cho lớp đã được giảng viên gắn học phần.":"<b>Không có quyền truy cập.</b> Học phần chỉ mở cho sinh viên, giảng viên đã được cấp tài khoản.";
+  $("#code-err").textContent=msg||"";const a=$("#gate-login");a.textContent=logged?"Đăng nhập tài khoản khác":"Đăng nhập tài khoản";a.href="lop/"+(logged?"?out=1":"?sau="+encodeURIComponent(pending||""));
+  document.body.style.overflow="hidden";setTimeout(()=>a.focus(),30)}
 function hideGate(){$("#gate").hidden=true;document.body.style.overflow="";if(gateReturn&&gateReturn.focus)try{gateReturn.focus()}catch(e){}}
 /* 05/11/2026: tài khoản quản trị vào mọi học phần, không cần mã */
 const ADMIN_SESSION={code:"QUAN-TRI",label:"Giảng viên (quản trị)",han:"2099-12-31",courses:["*"],admin:true};
@@ -747,18 +751,12 @@ function enter(sv){session=sv;store.set(KEY,JSON.stringify(sv));hideGate();rende
 $("#gate-x").onclick=()=>{pending=null;hideGate()};
 $("#gate").addEventListener("click",e=>{if(e.target.id==="gate"){pending=null;hideGate()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#gate").hidden){pending=null;hideGate()}});
-$("#gate-form").addEventListener("submit",async e=>{e.preventDefault();
-  if(!$("#code-in").value.trim()){$("#code-err").textContent="Nhập mã lớp trước khi vào.";return}
-  const btn=$("#gate-form button[type=submit]");btn.disabled=true;const old=btn.textContent;btn.textContent="Đang kiểm tra…";
-  const p=tlParse(pending||"");const target=p?p.k:(course(pending)?pending:"");
-  const v=await checkCode($("#code-in").value,target);btn.disabled=false;btn.textContent=old;
-  if(!v.ok){$("#code-err").textContent=v.why;return}enter(v.s)});
-$("#code-in").addEventListener("input",()=>$("#code-err").textContent="");
+
 
 let cur="home";
 let ROUTE_POP=false;
 window.addEventListener("popstate",()=>{const h=decodeURIComponent((location.hash||"").slice(1))||"home";ROUTE_POP=true;try{route(h)}finally{ROUTE_POP=false}});
-function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện tại chưa được cấp quyền cho học phần này. Nhập mã khác để tiếp tục.":expiredMsg);return}
+function route(id){if(needsCode(id)){pending=id;showGate("");return}
   if(!$("#gate").hidden)hideGate();
   document.body.classList.remove("in-course");
   cur=id;const m=$("#main");
@@ -766,7 +764,7 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   document.querySelectorAll(".dlg,.dview").forEach(x=>x.remove());document.body.style.overflow="";
   if(id==="home"){m.innerHTML=homeHTML();bindDg()}
   else if(id==="gop-y"){if(BE()){m.innerHTML=fbApiHTML();fbApiBind()}else if(!onClaude){m.innerHTML=fbMailHTML();fbMailBind()}else m.innerHTML=fbHTML()}
-  else if(id==="quan-ly-ma"){if(!onClaude){route("qt-ma");return}m.innerHTML=admin2HTML();admin2Bind()}
+  else if(id==="quan-ly-ma"){route("home");return} /* 27/11/2026: bỏ mã lớp */
   else if(tlRoute(id,m)){$("#layout").classList.add("no-tools")}
   else if(shRoute(id,m)){}
   else{const c=course(id);if(!c){route("home");return}
@@ -781,8 +779,7 @@ function route(id){if(needsCode(id)){pending=id;showGate(session?"Mã hiện t�
   if(id==="home"){$("#layout").classList.remove("no-tools");shBindPage(m)}else if(id==="gop-y")$("#layout").classList.add("no-tools");
   shNav();shSide();window.scrollTo(0,0)}
 
-/* Ô trên trang chủ (18/11/2026): đăng nhập tài khoản lớp (mã SV + mật khẩu lớp) thay cho cách cũ gõ mã lớp + mã SV.
-   Sinh viên đã đăng nhập: vào thẳng kiểm tra định kỳ / lớp học. Khách: dùng mã lớp ôn tập (nút Đăng nhập ở đầu trang) chỉ để xem tài liệu. */
+/* Ô trên trang chủ (18/11/2026): đăng nhập tài khoản lớp (mã SV + mật khẩu). 27/11/2026: bỏ mã lớp ôn tập; khách chỉ thấy danh mục. */
 function bindDg(){const f=$("#dg-form");const go=$("[data-dg-go]");if(go)go.onclick=()=>{location.href="lop/#sv/kiemtra"};
   if(!f)return;["dg-id","dg-pw"].forEach(id=>$("#"+id).addEventListener("input",()=>$("#dg-err").textContent=""));
   f.onsubmit=e=>{e.preventDefault();const id=$("#dg-id").value.trim().toUpperCase().replace(/\s+/g,""),pw=$("#dg-pw").value;
@@ -790,9 +787,9 @@ function bindDg(){const f=$("#dg-form");const go=$("[data-dg-go]");if(go)go.oncl
     if(pw.length<4){$("#dg-err").textContent="Nhập mật khẩu (mật khẩu chung của lớp hoặc mật khẩu bạn đã đổi).";$("#dg-pw").focus();return}
     try{sessionStorage.setItem("pnl-dn",JSON.stringify({id,pw}))}catch(x){}location.href="lop/?dn=1"}}
 function homeHTML(){const sv=session&&session.sv;return shHomeHTML(`<section class="dg-box" aria-labelledby="dg-title"><div class="ftitle" id="dg-title">Lớp học và kiểm tra định kỳ</div>
-      ${sv?`<p class="dg-lead">Xin chào <b>${esc(session.label||"")}</b>. Bạn đã đăng nhập tài khoản lớp: các học phần của lớp mở được ngay, không cần mã. Nút <b>Quản trị</b> (đầu trang) mở lớp học, điểm danh và các bài kiểm tra định kỳ của mọi học phần bạn đang học.</p>
+      ${sv?`<p class="dg-lead">Xin chào <b>${esc(session.label||"")}</b>. Bạn đã đăng nhập tài khoản lớp: các học phần của lớp mở được ngay. Nút <b>Quản trị</b> (đầu trang) mở lớp học, điểm danh và các bài kiểm tra định kỳ của mọi học phần bạn đang học.</p>
       <div class="dg-form" style="grid-template-columns:auto auto 1fr"><button class="dg-go" type="button" data-dg-go>Bài kiểm tra của tôi</button><a class="dg-go" style="background:var(--paper);color:var(--band);border:2px solid var(--band);text-decoration:none;text-align:center" href="lop/#sv">Quản trị của tôi</a></div>`
-      :`<p class="dg-lead">Sinh viên có tài khoản lớp đăng nhập bằng <b>mã sinh viên</b> và <b>mật khẩu lớp</b> để học các học phần của lớp và làm bài kiểm tra định kỳ. Khách chưa có tài khoản dùng <b>mã lớp ôn tập</b> (nút Đăng nhập ở đầu trang) để xem tài liệu.</p>
+      :`<p class="dg-lead">Sinh viên có tài khoản lớp đăng nhập bằng <b>mã sinh viên</b> và <b>mật khẩu lớp</b> để học các học phần của lớp và làm bài kiểm tra định kỳ. Chưa có tài khoản thì không đăng nhập được: báo giảng viên của lớp để được cấp.</p>
       <form id="dg-form" class="dg-form" novalidate>
         <div><label class="dg-lab" for="dg-id">Mã sinh viên</label><input type="text" id="dg-id" maxlength="16" autocomplete="username" spellcheck="false" placeholder="Mã sinh viên"></div>
         <div><label class="dg-lab" for="dg-pw">Mật khẩu</label><input type="password" id="dg-pw" maxlength="32" autocomplete="current-password" placeholder="Mật khẩu lớp" style="text-transform:none;letter-spacing:0"></div>
@@ -973,7 +970,7 @@ function tlRoute(id,m){const p=tlParse(id);if(!p)return false;
   else m.innerHTML=tlHomeHTML(p.k);
   return true}
 
-window.addEventListener("message",e=>{if(e.data&&e.data.pn==="nk"&&e.origin===location.origin&&window.PNK){const d=e.data;PNK.log(d.loai,d.o,d.opt);return}if(e.data&&e.data.pn==="home"){const target=String(e.data.course||"");route("home");if(target){pending=target;showGate("Nhập mã có quyền truy cập học phần này để tiếp tục.")}}});
+window.addEventListener("message",e=>{if(e.data&&e.data.pn==="nk"&&e.origin===location.origin&&window.PNK){const d=e.data;PNK.log(d.loai,d.o,d.opt);return}if(e.data&&e.data.pn==="home"){const target=String(e.data.course||"");route("home");if(target){pending=target;showGate("")}}});
 
 /* ===== Dữ liệu thêm khi đăng nhập quản trị: học phần mới, chương bổ sung — lưu Firestore pnl_hp, pnl_hp_ch ===== */
 function courseReady(c){return !!(c.src||(TL[c.id]&&TL[c.id].chapters.some(x=>x.maps.length)))}
@@ -1009,6 +1006,7 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
   session=loadSession();
   if(session&&todayISO()>session.han){expiredMsg="Mã của lớp đã hết hạn ngày "+fmtDate(session.han)+". Hỏi giảng viên mã mới.";session=null;store.del(KEY)}
   else if(!session&&store.get(KEY))store.del(KEY);
+  if(session&&!okSession(session)){session=null;store.del(KEY)} /* phiên mã lớp cũ: hủy */
   $("#app").hidden=false;renderWho();
   const h0=(location.hash||"").slice(1);ROUTE_POP=true;try{route(course(h0)||tlParse(h0)||h0==="gop-y"||shKnown(h0)?h0:"home")}finally{ROUTE_POP=false}
   try{const u=onClaude&&await window.claude.use("user");isOwner=u?!!(await u.isOwner()):false;if(u){try{UID=await u.id()}catch(e){}}}catch(e){isOwner=false}
@@ -1028,15 +1026,10 @@ async function loadDyn(fs){DYN_FS=fs;let docs;
   catch(e){console.warn("Firebase",e);DB=null;FBW=false;isOwner=false}}
   if(isOwner){grantAdmin();renderWho()}
   dbReadyRes();
-  /* phiên tài khoản sinh viên (sv:true, cấp từ trang lop/) không phải mã lớp: không kiểm tra với danh sách mã */
-  if(session&&!session.admin&&!session.sv){(DB?dbCall({action:"check",code:session.code}):staticCheck(session.code,"")).then(async r=>{if(FBW&&!MIGRATED&&r&&!r.ok&&r.why==="notfound"){try{r=await staticCheck(session.code,"")}catch(e){}}if(r&&!r.ok&&(r.why==="notfound"||r.why==="expired"||r.why==="full")){
-      store.del(KEY);session=null;expiredMsg=r.why==="expired"?"Mã của lớp đã hết hạn. Hỏi giảng viên mã mới.":"Mã của bạn không còn dùng được. Hỏi giảng viên mã mới.";renderWho();
-      if(needsCode(cur)){pending=cur;route("home");showGate(expiredMsg)}}}).catch(()=>{})}
   await Promise.all([loadFeedback(),loadVisits(),loadStats()]);
   try{cmt=onClaude?await window.claude.use("comments"):null}catch(e){cmt=null}
   if(isOwner)renderWho();
   if(cur==="home"||cur==="gop-y")shRerender();
-  if(isOwner&&(location.hash||"").slice(1)==="quan-ly-ma")route("quan-ly-ma");
 })();
 </script>
 

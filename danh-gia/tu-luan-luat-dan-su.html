@@ -20,8 +20,9 @@ html.nhung .band{display:none}
 </style>
 </head><body><header><div class="wrap"><div><h1>PHÚC NGUYÊN LIBRARY</h1><div>Đánh giá định kỳ · Trắc nghiệm và tự luận Luật Dân sự</div></div><nav><a href="./index.html">Đánh giá định kỳ</a> &nbsp; <a href="../index.html">Thư viện</a> &nbsp; <a href="#quan-tri" id="adminLink">Quản trị</a></nav></div></header>
 <main id="app"><article>Đang nạp dữ liệu…</article></main><footer>© Phúc Nguyên Library · Đánh giá định kỳ</footer>
-<script src="../assets/pnl-nk.js?v=20261126b"></script>
-<script src="./qt-apag.js?v=20261126b"></script>
+<script src="../assets/pnl-nk.js?v=20261127a"></script>
+<script src="./qt-apag.js?v=20261127a"></script>
+<script src="../assets/pnl-gv.js?v=20261127a"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -34,7 +35,9 @@ firebase.initializeApp(cfg);
 const db=firebase.firestore(),auth=firebase.auth(),FV=firebase.firestore.FieldValue,TS=firebase.firestore.Timestamp,app=document.getElementById("app");
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $=s=>document.querySelector(s);
-const isAdmin=u=>u&&!u.isAnonymous&&(u.uid===ADMIN_UID||(u.emailVerified&&ADMINS.includes(u.email)));
+const isAdminG=u=>u&&!u.isAnonymous&&(u.uid===ADMIN_UID||(u.emailVerified&&ADMINS.includes(u.email)));
+/* 27/11/2026: giảng viên (phiên pnl_phien_gv) được quản trị các lớp được giao — quy tắc máy chủ giới hạn phạm vi */
+let GV=null;const isAdmin=u=>isAdminG(u)||(!!GV&&!!u&&u.isAnonymous);
 let BANK=null,SESSION=null,TIMER=null,RUBRIC=null,CURRENT=null,DETACH=null,SAVE_Q=Promise.resolve();
 const MAX_ROI=10;
 const caseBy=id=>BANK.cases.find(c=>c.id===id);
@@ -132,11 +135,12 @@ function studentEntry(){app.innerHTML=`<article>
 <li>Phần tự luận gồm 01 tình huống và 04 yêu cầu; phân tích, lập luận và nêu căn cứ pháp luật.</li>
 <li>Hệ thống phân phối một mã đề ngẫu nhiên; mỗi sinh viên chỉ làm một lần trong đợt kiểm tra.</li>
 <li>Bài tự lưu và tự động nộp khi hết thời gian quy định.</li><li>Phần tự luận phải tự gõ, không sao chép, dán được. Mỗi lần rời khỏi trang làm bài đều bị ghi lại; <b>rời trang quá 10 lần, bài bị khóa và tự động nộp</b>.</li></ol>
-<form id="entry"><label>Mã lớp kiểm tra</label><input name="ma" required maxlength="24" autocomplete="off" placeholder="Mã lớp giảng viên cung cấp">
+<form id="entry"><input type="hidden" name="ma"><p class="mini muted" id="ma-info"></p>
 <label>Mã sinh viên</label><input name="sv" required maxlength="20" autocomplete="off" placeholder="Mã sinh viên">
 <label style="display:flex;gap:9px;align-items:center;font-weight:400"><input id="agree" type="checkbox" style="width:auto" required> Tôi đã đọc quy định kiểm tra định kỳ.</label>
 <button type="submit">Xác nhận và vào bài kiểm tra</button></form><p id="msg" class="error"></p></article>`;
-const qp=new URLSearchParams(location.search);if(qp.get("ma"))$("#entry").elements.ma.value=qp.get("ma");if(qp.get("sv"))$("#entry").elements.sv.value=qp.get("sv");
+/* 27/11/2026: bỏ ô nhập mã lớp — đợt kiểm tra lấy từ đường dẫn (Quản trị của tôi → Kiểm tra, thi → Làm bài); không có thì về danh sách bài của tài khoản */
+const qp=new URLSearchParams(location.search);if(!qp.get("ma")){location.replace("./");return}$("#entry").elements.ma.value=qp.get("ma");$("#ma-info").textContent="Đợt kiểm tra: "+qp.get("ma").toUpperCase();if(qp.get("sv"))$("#entry").elements.sv.value=qp.get("sv");
 /* 24/11/2026: từ 18/11 máy chủ chỉ cho tạo bài khi đã đăng nhập TÀI KHOẢN LỚP trên chính trình duyệt này (pnl_phien).
    Trước đây trang này vẫn cho gõ mã lớp + mã SV rồi báo lỗi chung "lớp chưa mở…" → SV tưởng hệ thống hỏng. Nay kiểm tra phiên trước và khóa mã SV theo tài khoản. */
 const ACC=svAccTL();if(ACC){const f=$("#entry").elements.sv;f.value=ACC.mssv;f.readOnly=true}
@@ -270,8 +274,8 @@ function tlSide(ma,view){const it=[{label:"Trang chủ thư viện",icon:"home",
   {label:"Lớp Luật Dân sự",icon:"book",href:"#quan-tri",on:!ma}];
   if(ma)it.push({grp:"Lớp "+ma},{label:"Danh sách & điểm",icon:"sheet",href:"#quan-tri/"+encodeURIComponent(ma),on:view==="ds",sub:true},{label:"Cài đặt lớp",icon:"cog",href:"#quan-tri/"+encodeURIComponent(ma)+"/cai-dat",on:view==="cai",sub:true});
   it.push({grp:"Khác"},{label:"Giao diện sinh viên",icon:"users",href:"#"});return it}
-function tlShell(o){return QTA.mount({user:auth.currentUser&&auth.currentUser.email,onLogout:async()=>{await auth.signOut();QTA.unmount();location.hash="";navigate()},...o})}
-function adminEntry(){if(!isAdmin(auth.currentUser)){QTA.unmount();app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Đăng nhập bằng Google với tài khoản quản trị <b>luuhuong.nnpl@gmail.com</b>.</p><form id="login"><button type="button" id="google">Đăng nhập Google</button></form><p id="msg" class="error"></p></article>';
+function tlShell(o){return QTA.mount({user:GV?GV.ten+" (giảng viên)":auth.currentUser&&auth.currentUser.email,onLogout:async()=>{if(GV){(window.top||window).location.href=new URL("../lop/?out=1",location.href).href;return}await auth.signOut();QTA.unmount();location.hash="";navigate()},...o})}
+function adminEntry(){if(!isAdmin(auth.currentUser)){QTA.unmount();app.innerHTML='<article><h2>Quản trị đánh giá định kỳ</h2><p>Quản trị: đăng nhập Google với tài khoản <b>luuhuong.nnpl@gmail.com</b>. Giảng viên: <a href="../lop/">đăng nhập tài khoản giảng viên</a> ở trang Lớp học.</p><form id="login"><button type="button" id="google">Đăng nhập Google</button></form><p id="msg" class="error"></p></article>';
 $("#login").onsubmit=e=>e.preventDefault();
 $("#google").onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account",login_hint:ADMINS[0]});try{await auth.signInWithPopup(p);if(!isAdmin(auth.currentUser)){const em=auth.currentUser&&auth.currentUser.email;await auth.signOut();throw Error("Tài khoản "+(em||"")+" không phải quản trị. Hãy chọn "+ADMINS[0]+".")}adminEntry()}catch(x){if(x.code==="auth/popup-blocked"){auth.signInWithRedirect(p);return}err(x)}};return}
  const parts=location.hash.split("/"),ma=decodeURIComponent(parts[1]||"");if(ma)return manageClass(ma,parts[2]==="cai-dat"?"cai":"ds");adminHome()}
@@ -282,8 +286,7 @@ async function adminHome(){
   body:'<div class="qta-card"><p style="margin:0">Đề: 12 câu trắc nghiệm (6 điểm) + 1 tình huống tự luận 4 yêu cầu (4 điểm), 40 phút, thang 10. Bài đã nộp được máy tự chấm khi mở lớp; giảng viên xem và sửa điểm ở cột Bài làm.</p><p id="msg" class="qta-err"></p></div><div id="classes"><p class="qta-msg">Đang tải…</p></div>'});
  try{
   loadAutoKey().catch(x=>note(x.message));
-  const q=await db.collection("pnl_dg_lop").get();
-  const xs=q.docs.filter(d=>d.data().hocPhan===COURSE).map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.created&&b.created.toMillis?b.created.toMillis():0)-(a.created&&a.created.toMillis?a.created.toMillis():0)).map(l=>({...l,st:stOf(l),khung:fmtT(l.openAt)+" → "+fmtT(l.closeAt)}));
+  const xs=(GV?(await PNGV.classes(db,GV)).filter(l=>l.hocPhan===COURSE):(await db.collection("pnl_dg_lop").get()).docs.filter(d=>d.data().hocPhan===COURSE).map(d=>({id:d.id,...d.data()}))).sort((a,b)=>(b.created&&b.created.toMillis?b.created.toMillis():0)-(a.created&&a.created.toMillis?a.created.toMillis():0)).map(l=>({...l,st:stOf(l),khung:fmtT(l.openAt)+" → "+fmtT(l.closeAt)}));
   QTA.classTable(body.querySelector("#classes"),xs,{onOpen:id=>location.hash="#quan-tri/"+encodeURIComponent(id)});
  }catch(x){err(x)}
 }
@@ -529,6 +532,7 @@ async function loadTLClass(ma){
 }
 function tlHead(){const l=TLC.l,st=stOf(l);return `<div class="qta-meta"><span>Lớp: <b>${E(l.id)}</b>${l.ten?" · "+E(l.ten):""}</span><span>Học phần: <b>Luật Dân sự</b> (12 trắc nghiệm + 1 tự luận)</span>${l.apag&&l.apag.tenLopTc?`<span>Lớp tín chỉ APAG: <b>${E(l.apag.tenLopTc)}</b></span>`:""}<span>${E(l.namHoc||"")}</span><span>40 phút · mở ${E(fmtT(l.openAt))} → đóng ${E(fmtT(l.closeAt))}</span><span><span class="tag ${st==="open"?"nop":st==="wait"?"dang":"lock"}">${ST_T[st]}</span></span></div>`}
 async function manageClass(ma,view){CURRENT=ma;view=view||"ds";
+ if(GV){let l=null;try{const d=await db.doc("pnl_dg_lop/"+ma).get();if(d.exists)l={id:ma,...d.data()}}catch(x){}if(!PNGV.allowed(GV,l)){tlShell({side:tlSide(null),crumbs:[{t:"Lớp "+ma}],body:'<p class="qta-err">Tài khoản giảng viên không có quyền với lớp '+E(ma)+'.</p>'});return}}
  const crumbs=[{t:"Quản trị",href:"./index.html#quan-tri"},{t:"Luật Dân sự",href:"#quan-tri"},{t:"Lớp "+ma,href:"#quan-tri/"+encodeURIComponent(ma)}];
  const body0=tlShell({side:tlSide(ma,view),crumbs,body:'<p class="qta-msg">Đang tải lớp '+E(ma)+' và tự chấm bài mới nộp…</p><p id="msg" class="qta-err"></p>'});
  try{await loadTLClass(ma)}catch(x){body0.innerHTML='<p class="qta-err">'+E(x.message||x)+'</p>';return}
@@ -739,5 +743,5 @@ async function grade(ma,sv,b,g){
   }catch(e){err(e)}
  };
 }
-(async()=>{try{await bankLoad();let first=true;const stop=auth.onAuthStateChanged(()=>{if(!first)return;first=false;if(typeof stop==="function")stop();navigate()})}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
+(async()=>{try{await bankLoad();let first=true;const stop=auth.onAuthStateChanged(async u=>{if(!first)return;first=false;if(typeof stop==="function")stop();if(u&&u.isAnonymous)GV=await PNGV.check(db,u);navigate()})}catch(x){app.innerHTML='<article class="error">'+E(x.message)+'</article>'}})();
 </script></body></html>
