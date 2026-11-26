@@ -1,4 +1,4 @@
-# Kết quả dựng nội dung — 11:59 26/11/2026
+# Kết quả dựng nội dung — 12:02 26/11/2026
 
 **Bước 1/2 (đọc nội dung): ĐẠT.** Bước 2 (chạy thử hiển thị) xem ở mục cuối file này.
 
@@ -6,11 +6,4 @@
 
 - Đã mở thử 11 trang học phần, trang chủ và 184 tờ mind map.
 
-## Cảnh báo về file bị sửa
-
-    Lần đẩy này sửa cả file ngoài noi-dung/ (chỉ Claude hoặc giảng viên được sửa các file này):
-      - danh-gia/de/luat-dan-su-tu-luan-rubric.enc.json
-      - danh-gia/tu-luan-luat-dan-su.html
-      - tools/kiem_tra_dap_an_ds.py
-
-Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45758119044 · commit fba25aa
+Lần chạy: https://github.com/luuhuongnnpl-apag/phuc-nguyen-library/actions/runs/45758952554 · commit 5fa29b5
