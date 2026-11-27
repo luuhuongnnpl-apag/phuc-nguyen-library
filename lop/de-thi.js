@@ -237,3 +237,62 @@ async function dtCongNhan(){if(DT.cn)return 0;DT.cn=true;let n=0;
       const deNh=Object.assign({},e.deNh,{deId:id,ten});await S.fs.doc("pnl_dg_lop/"+e.id).set({deId:id,deNh},{merge:true});Object.assign(e,{deId:id,deNh});DT.des[hp]=null;n++}
     catch(x){if(nhDenied(x)){DT.cn=false;return 0}console.warn("công nhận đề",e.id,x)}}
   if(n)toast("Đã công nhận "+n+" đề đã ra vào Ngân hàng câu hỏi › Đề kiểm tra (không phải ra lại).",6000);return n}
+
+/* ---------- 27/11/2026: ĐẶT LẠI ĐỀ + ĐIỂM DANH CỦA MỘT LỚP (sếp yêu cầu, lớp 2405LHOA — Luật Đất đai) ----------
+   Chạy MỘT lần khi quản trị đăng nhập (đánh dấu ở pnl_dg_lop/{lớp}.datLai[id]). Thứ tự an toàn:
+   1) dựng và soát đề mới từ câu ÔN TẬP đã duyệt (chỉ trắc nghiệm ABCD, không tự luận) — lỗi thì dừng, KHÔNG xóa gì;
+   2) xóa đề cũ: các đợt Đất đai của lớp (và đợt Dân sự gắn nhầm chưa có bài), bản phát hành, đáp án, bài làm, chấm, điểm công bố;
+      nếu đề cũ gắn thẳng vào lớp thì gỡ các trường đề khỏi lớp (giữ danh sách sinh viên, tài khoản);
+   3) xóa toàn bộ điểm danh của lớp (buổi, lượt có mặt, điểm chuyên cần/tích phát biểu/vắng);
+   4) phát hành đề mới thành đợt mới cho lớp, giữ khung giờ mở/đóng của đợt cũ nếu chưa hết hạn. */
+const DAT_LAI=[{id:"dat-lai-20261127",lop:"2405LHOA",hp:"luat-dat-dai",ten:"Kiểm tra định kỳ Luật Đất đai — lớp 2405LHOA (đề ôn tập trộn)",tong:30,tl:[50,50,0],thSo:2,thCau:4,tg:40,diemDanh:true}];
+/* soát đề đã biên dịch: mỗi câu 4 phương án khác nhau, đáp án 0–3, không trùng câu; rút thử 300 đề như trang làm bài */
+function dtSoatDe(C){const P=C.P,K=C.K,loi=[];const nk=s=>String(s||"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu,"");const seen={};
+  Object.entries(P.q).forEach(([id,x])=>{if(!nk(x.q))loi.push(id+": thiếu nội dung câu");if(!Array.isArray(x.o)||x.o.length!==4||x.o.some(o=>!nk(o))||new Set(x.o.map(nk)).size!==4)loi.push(id+": phương án thiếu/trùng");
+    if(!(K.a[id]>=0&&K.a[id]<=3))loi.push(id+": đáp án không hợp lệ");if(!DT_LV.includes(x.lv))loi.push(id+": mức độ "+x.lv);const k=nk(x.q);if(seen[k])loi.push(id+": trùng câu "+seen[k]);seen[k]=id});
+  Object.entries(P.cs).forEach(([t,c])=>{if(!nk(c.x))loi.push(t+": tình huống thiếu đề bài");if(!c.m.length)loi.push(t+": tình huống không có câu hỏi")});
+  const lt=Object.entries(P.q).filter(([,x])=>!x.c);
+  for(let r=0;r<300&&!loi.length;r++){const used=new Set();let n=0;
+    for(const m of P.mt)for(const lv of DT_LV){const k=+m[lv]||0;if(!k)continue;const pool=lt.filter(([id,x])=>+x.g===+m.ch&&x.lv===lv&&!used.has(id));if(pool.length<k){loi.push("Chương "+m.ch+" "+lv+" thiếu câu khi rút");break}
+      dtShuffle(pool).slice(0,k).forEach(([id])=>used.add(id));n+=k}
+    if(Object.keys(P.cs).length<P.thSo)loi.push("Thiếu tình huống khi rút");if(n!==C.n-P.thSo*P.thCau&&P.thCau>0)loi.push("Số câu rút ("+n+") lệch ma trận")}
+  return loi}
+async function datLaiDe(){if(DT.datLai)return;DT.datLai=true;
+  for(const R of DAT_LAI){const l=S.lop.find(x=>x.id===R.lop);if(!l||(l.datLai&&l.datLai[R.id]))continue;
+    try{/* 1) đề mới */
+      await nhChapters(R.hp);await nhLoad(R.hp,true);await nhSyncOnce(R.hp);const E=dtElig(R.hp,"on");
+      const st=Object.assign(dtDefault(R.hp),{ten:R.ten,nguon:"on",kieu:"rieng",tronCau:true,tronDA:true,tg:R.tg,tong:R.tong,tl:R.tl.slice(),thSo:R.thSo,thCau:R.thCau,thChs:[]});
+      dtChia(st,E);if(st.thieu)throw new Error(st.thieu);const C=dtCompile(st,E);const loi=dtSoatDe(C);if(loi.length)throw new Error("Đề mới chưa đạt: "+loi.slice(0,5).join("; "));
+      /* 2) đề cũ */
+      const all=(await S.fs.collection("pnl_dg_lop").where("cha","==",l.id).get()).docs.map(d=>Object.assign({id:d.id},d.data()));
+      const hpOfDot=e=>e.hocPhan==="nh"?(e.deNh&&e.deNh.hp)||"":(DG_HP[e.hocPhan]||e.hocPhan||"");
+      const nBai=async id=>(await S.fs.collection("pnl_dg_bai").where("maLop","==",id).get()).docs;
+      const xoa=[],giu=[];for(const e of all){const h=hpOfDot(e);const bs=await nBai(e.id);if(h===R.hp||!h||!bs.length)xoa.push({e,bs});else giu.push(e.id)}
+      const goc=dgLaDe(l)?{e:l,bs:await nBai(l.id)}:null;
+      const del=[];const ids=xoa.map(x=>x.e.id).concat(goc?[l.id]:[]);
+      for(const x of xoa.concat(goc?[goc]:[])){x.bs.forEach(d=>del.push(d.ref));if(x.e!==l){del.push(S.fs.doc("pnl_dg_lop/"+x.e.id),S.fs.doc("pnl_dg_ds/"+x.e.id))}
+        del.push(S.fs.doc("pnl_dg_de/"+x.e.id),S.fs.doc("pnl_dg_dap/"+x.e.id))}
+      for(const id of ids){(await S.fs.collection("pnl_dg_cham").where("maLop","==",id).get()).docs.forEach(d=>del.push(d.ref));
+        (await S.fs.collection("pnl_kq").where("dot","==",id).get()).docs.forEach(d=>del.push(d.ref))}
+      (await S.fs.collection("pnl_kq").where("maLop","==",l.id).get()).docs.forEach(d=>del.push(d.ref));
+      const desCu=(await S.fs.collection("pnl_nh_de").where("hp","==",R.hp).get()).docs.filter(d=>(d.data().dots||[]).some(x=>ids.includes(x)));
+      /* 3) điểm danh */
+      if(R.diemDanh){for(const c of ["pnl_dd","pnl_dd_sv"])(await S.fs.collection(c).where("maLop","==",l.id).get()).docs.forEach(d=>del.push(d.ref));del.push(S.fs.doc("pnl_cc/"+l.id))}
+      const uniq=[...new Map(del.map(r=>[r.path,r])).values()];
+      for(let i=0;i<uniq.length;i+=400){const b=S.fs.batch();uniq.slice(i,i+400).forEach(r=>b.delete(r));await b.commit()}
+      for(const d of desCu){const rest=(d.data().dots||[]).filter(x=>!ids.includes(x));if(rest.length)await d.ref.set({dots:rest},{merge:true});else await d.ref.delete()}
+      const cu=xoa.map(x=>x.e).concat(goc?[l]:[]).filter(e=>e.closeAt).sort((a,b)=>tsMs(b.closeAt)-tsMs(a.closeAt))[0];
+      const lp={dgs:(l.dgs||[]).filter(x=>!ids.includes(x)),hps:[...new Set(lopHps(l).concat(R.hp))]};const bo=goc?["hocPhan","hocPhanTen","deNh","deId","thoiGian","open","openAt","closeAt","migratedFrom","migratedAt"]:[];
+      await S.fs.doc("pnl_dg_lop/"+l.id).set(Object.assign({},lp,Object.fromEntries(bo.map(k=>[k,FV().delete()]))),{merge:true});
+      S.dg=(S.dg||[]).filter(x=>!ids.includes(x.id));bo.forEach(k=>delete l[k]);Object.assign(l,lp);
+      /* 4) phát hành đề mới */
+      const deId="DE-"+dtAbbr(R.hp)+"-"+Date.now().toString(36).toUpperCase();
+      const cfg=JSON.parse(JSON.stringify({nguon:st.nguon,kieu:st.kieu,tronCau:st.tronCau,tronDA:st.tronDA,tg:st.tg,mt:st.mt,thSo:st.thSo,thCau:st.thCau,thChs:st.thChs,tong:st.tong,tl:st.tl}));
+      const dot=dtNewDot(l,R.hp,ids);const de={id:deId,hp:R.hp,hpTen:C.P.hpTen,ten:st.ten,cfg,P:C.P,K:C.K,mota:C.mota,n:C.n,thSo:st.thSo,kieu:st.kieu,tg:st.tg,dots:[dot],at:new Date().toISOString()};
+      await S.fs.doc("pnl_nh_de/"+deId).set(Object.assign({},de,{created:FV().serverTimestamp()}));
+      const now=Date.now(),conHan=cu&&tsMs(cu.closeAt)>now;
+      await dtPublish(de,dot,{cha:l.id,ten:l.ten||l.id,namHoc:l.namHoc||"",open:!!(conHan&&cu.open),openAt:conHan&&cu.openAt?cu.openAt:dtTs(new Date(now)),closeAt:conHan?cu.closeAt:dtTs(new Date(now+7*864e5)),created:FV().serverTimestamp()});
+      await S.fs.doc("pnl_dg_lop/"+l.id).set({dgs:FV().arrayUnion(dot),datLai:{[R.id]:new Date().toISOString()}},{merge:true});l.dgs=[...new Set([...(l.dgs||[]),dot])];l.datLai=Object.assign({},l.datLai,{[R.id]:1});
+      DT.des[R.hp]=null;delete DD.buoi[l.id];delete DD.co[l.id];delete DD.cc[l.id];
+      toast(`Lớp ${l.id}: đã xóa ${ids.length} đợt đề cũ${giu.length?" (giữ "+giu.join(", ")+")":""} và toàn bộ điểm danh; phát hành đề mới ${dot} — ${C.n} câu trắc nghiệm, ${st.tg} phút, ${conHan&&cu.open?"đang mở theo khung giờ cũ":"CHƯA MỞ: vào lớp › Kiểm tra, thi để mở"}.`,15000);render()}
+    catch(x){DT.datLai=false;if(nhDenied(x))return;console.warn("datLaiDe",R.id,x);toast("Chưa đặt lại đề lớp "+R.lop+": "+errMsg(x),12000)}}}

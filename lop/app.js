@@ -612,7 +612,7 @@ window.addEventListener("hashchange",()=>{const h=location.hash;const keep=h.inc
   S.sv=store.get(SV_KEY,null);S.gv=S.sv?null:store.get(GV_KEY,null);await loadCourses();
   let first=true;
   S.auth.onAuthStateChanged(async u=>{S.user=u;const adm=fbIsAdmin(u);
-    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{})});suaLopDeCu().catch(e=>console.warn("suaLopDeCu",e));nhapDiemDanhGiay().catch(e=>console.warn("diem danh giay",e));return}
+    if(adm&&!S.admin){S.admin=true;S.loaded=false;render();await Promise.all([loadHp(),loadLop()]);S.loaded=true;if(!location.hash||location.hash==="#")location.hash="#home";render();if(typeof rsCheck==="function")rsCheck().then(ok=>{if(ok!==false&&typeof nhAutoSync==="function")nhAutoSync();if(ok!==false&&typeof dtCongNhan==="function")dtCongNhan().catch(()=>{}).then(()=>S.suaP).then(()=>{if(typeof datLaiDe==="function")return datLaiDe()}).catch(e=>console.warn("datLaiDe",e))});S.suaP=suaLopDeCu().catch(e=>console.warn("suaLopDeCu",e));nhapDiemDanhGiay().catch(e=>console.warn("diem danh giay",e));return}
     if(!adm&&S.admin){S.admin=false;S.loaded=false;if(typeof rsBar==="function")rsBar()}
     S.admin=adm;
     if(first){first=false;if(!adm&&!u){try{await S.auth.signInAnonymously()}catch(e){}return}}
