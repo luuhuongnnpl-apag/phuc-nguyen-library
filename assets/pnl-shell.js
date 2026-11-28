@@ -1,12 +1,12 @@
 /* PHÚC NGUYÊN LIBRARY — khung trang theo PND và chế độ quản trị gộp chung (14/11/2026)
-   - Đăng nhập Google bằng tài khoản quản trị: hiện nút thêm/sửa ngay trên trang (học phần, chương, tài liệu, thư mục, liên kết, mã lớp, đánh giá định kỳ).
+   - Đăng nhập Google bằng tài khoản quản trị: hiện nút thêm/sửa ngay trên trang (học phần, chương, tài liệu, thư mục, liên kết, đánh giá định kỳ).
    - Sinh viên, giảng viên đăng nhập tài khoản (trang lop/): chỉ đọc học phần của lớp. 27/11/2026: bỏ mã lớp.
    Dữ liệu Firestore (dự án phuc-nguyen-library):
      pnl_hp/{id}, pnl_hp_ch/{id}__{NN}  học phần thêm mới / phần bổ sung, nội dung chương (dàn ý, mind map, tóm tắt)
      pnl_docs/{id}     tài liệu: {title,url,driveId,mime,course,folder,star,note,added}
      pnl_folders/{id}  thư mục tài liệu trong học phần: {name,course,parent,order}
      pnl_links/{id}    liên kết thông dụng ở trang chủ: {name,url,order}
-     pnl_ma/{MÃ}       mã lớp (giữ nguyên cấu trúc cũ)
+     pnl_ma/{MÃ}       mã lớp cũ (đã bỏ 27/11/2026; chỉ còn trong Sao lưu)
    Tệp này được nạp TRƯỚC mã chính của index.html; các biến COURSES, TL, route, session… dùng tại thời điểm gọi. */
 "use strict";
 const SH={fs:null,docs:[],folders:[],links:[],hp:{},loaded:false,ma:null,layout:{}};
@@ -666,42 +666,6 @@ async function shChMeta(c,n,t,meta){let h=SH.hp[c.id];if(!h)h={kind:"bo-sung",na
   if(!meta&&TL[c.id]){const tc=TL[c.id].chapters.find(x=>x.n===n);if(tc&&tc.dyn){tc.maps=[];tc.ly=null}}}
 
 /* ================= Mã lớp ================= */
-function shMaHTML(){return `<section class="box"><h2 class="box-title">Mã lớp</h2><p class="note2" style="margin-bottom:14px">Mỗi mã mở một hoặc nhiều học phần cho một lớp, có hạn dùng và số người tối đa. Mỗi trình duyệt trên một máy là một người. Mã đã cấp giữ nguyên, sinh viên không phải nhập lại.</p>
-  <div data-maform></div></section><section class="box"><h2 class="box-title">Danh sách mã<span class="sp"></span><small data-masum></small></h2><div class="dtbl"><table><thead><tr><th>Mã</th><th>Lớp / ghi chú</th><th>Học phần</th><th>Hạn dùng</th><th>Đã dùng</th><th></th></tr></thead><tbody data-mabody><tr><td colspan="6" class="empty">Đang tải…</td></tr></tbody></table></div></section>`}
-async function shMaBind(m){shBindPage(m);const t=todayISO();
-  const d0=new Date();d0.setMonth(d0.getMonth()+4);const def=d0.getFullYear()+"-"+shPad(d0.getMonth()+1)+"-"+shPad(d0.getDate());
-  const cs=COURSES.filter(c=>!c.hidden);
-  m.querySelector("[data-maform]").innerHTML=`<div class="row2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><label class="fld2"><span>Mã</span><input data-f="code" maxlength="24" placeholder="Ví dụ: K25D-LDS" style="text-transform:uppercase" autocomplete="off"></label>
-    <label class="fld2"><span>Số người tối đa</span><input data-f="max" type="number" min="1" max="1000" value="40"><small>Nên dư khoảng 30%.</small></label><label class="fld2"><span>Hiệu lực đến hết ngày</span><input data-f="han" type="date" value="${def}"></label></div>
-    <label class="fld2" style="margin-top:10px"><span>Lớp / ghi chú</span><input data-f="note" maxlength="80" placeholder="K25D – Luật Dân sự"></label>
-    <div class="fld2" style="margin-top:10px"><span>Học phần được mở</span><label class="chk2"><input type="checkbox" data-all checked> <b>Tất cả học phần</b></label>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 12px;margin-top:4px">${cs.map(c=>`<label class="chk2"><input type="checkbox" data-c value="${esc(c.id)}" disabled> ${esc(c.name)}</label>`).join("")}</div></div>
-    <p class="err2" data-err></p><div class="page-tools" style="margin:8px 0 0"><button type="button" class="hl" data-save>Cấp mã</button><button type="button" data-cancel hidden>Hủy sửa</button></div>`;
-  const q=s=>m.querySelector(s);let EDIT=null;
-  const pick=xs=>{const all=!xs||!xs.length||xs.includes("*");q("[data-all]").checked=all;m.querySelectorAll("[data-c]").forEach(x=>{x.disabled=all;x.checked=!all&&xs.includes(x.value)})};
-  q("[data-all]").onchange=e=>m.querySelectorAll("[data-c]").forEach(x=>{x.disabled=e.target.checked;if(x.disabled)x.checked=false});
-  const load=async()=>{const ms=await SH.fs.collection("pnl_ma").get();const out=[];
-    await Promise.all(ms.docs.map(async d=>{const x=d.data()||{};let used=null;try{used=(await SH.fs.collection("pnl_ma/"+d.id+"/luot").get()).size+(x.usedBefore|0)}catch(e){}
-      out.push({code:d.id,note:x.note||"",han:x.han||"",max:x.max|0,courses:Array.isArray(x.courses)&&x.courses.length?x.courses:["*"],used,created:x.created||""})}));
-    SH.ma=out.sort((a,b)=>String(b.created).localeCompare(String(a.created)))};
-  const nm=id=>{const c=course(id);return c?c.name:id};
-  const draw=()=>{q("[data-masum]").textContent=SH.ma.length+" mã · "+SH.ma.filter(x=>x.han>=t).length+" đang hiệu lực";
-    q("[data-mabody]").innerHTML=SH.ma.length?SH.ma.map(x=>{const exp=t>x.han,full=x.max&&x.used!=null&&x.used>=x.max;
-      return `<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.note)}</td><td>${esc(x.courses.includes("*")?"Tất cả học phần":x.courses.map(nm).join("; "))}</td><td style="white-space:nowrap">${fmtDate(x.han)}${exp?' <span class="muted" style="color:#a1251b">hết hạn</span>':""}</td><td>${x.used==null?"?":x.used} / ${x.max||"—"}${full?' <span class="muted" style="color:#a1251b">đủ</span>':""}</td><td class="act"><button type="button" data-edit="${esc(x.code)}">Sửa</button><button type="button" class="del" data-del="${esc(x.code)}">Xóa</button></td></tr>`}).join(""):'<tr><td colspan="6" class="empty">Chưa có mã nào.</td></tr>';
-    m.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{const x=SH.ma.find(y=>y.code===b.dataset.edit);EDIT=x.code;q("[data-f=code]").value=x.code;q("[data-f=code]").readOnly=true;q("[data-f=max]").value=x.max||40;q("[data-f=han]").value=x.han;q("[data-f=note]").value=x.note;pick(x.courses);q("[data-save]").textContent="Lưu thay đổi";q("[data-cancel]").hidden=false;window.scrollTo({top:0,behavior:"smooth"})});
-    m.querySelectorAll("[data-del]").forEach(b=>shArm(b,"Xóa hẳn?",async()=>{const code=b.dataset.del;for(const d of (await SH.fs.collection("pnl_ma/"+code+"/luot").get()).docs)await d.ref.delete();await SH.fs.doc("pnl_ma/"+code).delete();SH.ma=SH.ma.filter(x=>x.code!==code);draw();shToast("Đã xóa mã "+code)}))};
-  const stop=()=>{EDIT=null;q("[data-f=code]").readOnly=false;q("[data-f=code]").value="";q("[data-f=note]").value="";q("[data-f=max]").value=40;q("[data-f=han]").value=def;pick(["*"]);q("[data-save]").textContent="Cấp mã";q("[data-cancel]").hidden=true};
-  q("[data-cancel]").onclick=stop;
-  q("[data-save]").onclick=async()=>{const err=x=>{q("[data-err]").textContent=x};const code=String(q("[data-f=code]").value).toUpperCase().replace(/\s+/g,"").replace(/[–—]/g,"-"),max=parseInt(q("[data-f=max]").value,10),han=q("[data-f=han]").value,note=q("[data-f=note]").value.trim().slice(0,80);
-    const courses=q("[data-all]").checked?["*"]:[...m.querySelectorAll("[data-c]:checked")].map(x=>x.value);
-    if(!/^[A-Z0-9_-]{3,24}$/.test(code))return err("Mã gồm 3–24 ký tự: chữ không dấu, số, gạch ngang hoặc gạch dưới.");if(!(max>=1&&max<=1000))return err("Số người từ 1 đến 1000.");
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(han)||han<t)return err("Chọn ngày hết hạn từ hôm nay trở đi.");if(!courses.length)return err("Chọn ít nhất một học phần.");err("");
-    q("[data-save]").disabled=true;
-    try{const ref=SH.fs.doc("pnl_ma/"+code);
-      if(EDIT){const curd=(await ref.get()).data()||{};await ref.set(Object.assign({},curd,{note,han,max,courses,updated:shNow()}));Object.assign(SH.ma.find(x=>x.code===code),{note,han,max,courses});stop();shToast("Đã cập nhật mã "+code)}
-      else{if((await ref.get()).exists)return err("Mã "+code+" đã có. Đặt mã khác.");const data={note,han,max,courses,created:shNow()};await ref.set(data);SH.ma.unshift(Object.assign({code,used:0},data));q("[data-f=code]").value="";q("[data-f=note]").value="";shToast("Đã cấp mã "+code+". Sinh viên dùng được ngay.")}
-      draw()}catch(ex){err("Chưa lưu được: "+shErrMsg(ex))}finally{q("[data-save]").disabled=false}};
-  try{await load();draw()}catch(ex){q("[data-mabody]").innerHTML=`<tr><td colspan="6" class="err2">Chưa tải được: ${esc(shErrMsg(ex))}</td></tr>`}}
 
 /* ================= Sao lưu ================= */
 function shBackupHTML(){return `<section class="box"><h2 class="box-title">Sao lưu dữ liệu</h2><p class="empty">Tải một tệp JSON gồm học phần, chương (dàn ý, mind map), tài liệu, thư mục, liên kết và mã lớp nhập trên trang. Nội dung trên GitHub có lịch sử riêng nên không cần sao lưu ở đây.</p><div class="page-tools" style="margin-top:12px"><button type="button" class="hl" data-bk>⬇ Tải bản sao lưu</button><span class="muted" data-bkmsg></span></div></section>`}

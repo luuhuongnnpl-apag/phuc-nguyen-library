@@ -165,7 +165,6 @@ const lopHpTen=l=>lopHps(l).map(id=>(S.courses.find(c=>c.id===id)||{}).name||id)
 const courseHref=c=>c&&c.src?(c.src.startsWith("hp/")?HOME+"#"+c.id:"../"+c.src):(c?HOME+"#"+c.id:HOME);
 const grpOf=l=>l.nhom||l.namHoc||"Khác";
 const lopName=l=>l.id+(l.ten?" — "+l.ten:"");
-const dgHref=ma=>DG+"#quan-tri"+(ma?"/"+encodeURIComponent(ma):"");
 /* nhúng quản trị Đánh giá định kỳ ngay trong khung (iframe cùng nguồn, tự giãn chiều cao) */
 const dgEmbed=(ma,view)=>`<iframe class="dgf" id="dgf" title="Đánh giá định kỳ" src="${DG}index.html?embed=1#quan-tri${ma?"/"+encodeURIComponent(ma)+(view?"/"+view:""):""}"></iframe>`;
 /* Chọn tất cả / Bỏ chọn cho mọi nhóm ô đánh dấu: nút [data-chkall="bộ chọn"] / [data-chknone="bộ chọn"] trong cùng hộp thoại, ô nhập hoặc mục (bỏ qua ô bị khóa, ô đang ẩn do lọc) */

@@ -5,7 +5,8 @@ Trang ôn tập luật học theo học phần. © Bản quyền thuộc Phúc N
 - `index.html`: trang chính (thư viện, học phần, góp ý, quản lý mã lớp)
 - `hp/`: web ôn tập của từng học phần
 - `assets/`: logo và ảnh minh họa
-- `data/ma-lop.json`: danh sách mã lớp. **Không sửa tay** — file do trang *Quản lý mã lớp* tự sinh.
+- `lop/`: không gian quản trị (lớp, học phần, sinh viên, giảng viên, đề thi, ngân hàng câu hỏi) và trang của sinh viên
+- `danh-gia/`: làm bài và quản trị Đánh giá định kỳ
 
 ## Đăng nhập bằng tài khoản (từ 27/11/2026)
 
@@ -15,16 +16,9 @@ Bỏ hẳn đăng nhập bằng **mã lớp**. Chỉ tài khoản mới vào đ�
 - **Quản trị**: Google `luuhuong.nnpl@gmail.com`.
 Khách chỉ thấy danh mục học phần; bấm vào báo không có quyền truy cập.
 
-## Mã lớp (Firebase, từ 04/11/2026) — đã ngừng dùng 27/11/2026, dữ liệu `pnl_ma` giữ nguyên để tra cứu
+## Mã lớp — đã bỏ (27/11/2026)
 
-Mã lớp, số người dùng mã và góp ý lưu trên **Firebase Firestore** (dự án `phuc-nguyen-library`, collection `pnl_ma`, `pnl_ma/{mã}/luot`, `pnl_gopy`). Mỗi lớp một mã, cả lớp dùng chung.
-
-- Giảng viên: trang chủ → **Quản lý mã lớp** → **Đăng nhập Google** bằng tài khoản quản trị duy nhất `luuhuong.nnpl@gmail.com` (từ 09/11/2026 toàn hệ sinh thái Phúc Nguyên chỉ dùng một cách đăng nhập này; đã bỏ ô email/mật khẩu và hệ mật khẩu quản trị cũ + token GitHub). Máy nhớ đăng nhập. Cấp, sửa, xóa mã có hiệu lực ngay, không qua GitHub.
-- Lần đầu (nếu mã lớp cũ chưa được chuyển): trang hỏi **mật khẩu quản trị cũ** một lần duy nhất để chuyển toàn bộ mã cũ (kèm số người đã dùng) từ `data/ma-lop.json` sang Firebase. Nếu máy đã ghi nhớ mật khẩu cũ, việc chuyển tự chạy.
-- Sinh viên: đăng nhập ẩn danh tự động (không phải tạo tài khoản); mỗi trình duyệt được tính một lượt cho mỗi mã; người vượt quá số người cho phép bị chặn.
-- Quy tắc bảo mật: chỉ tra được mã khi biết đúng mã, không xem được danh sách mã; chỉ admin cấp/sửa/xóa.
-- `data/ma-lop.json` (bản cũ, chỉ chứa dấu băm): giữ làm dự phòng cho tới khi chuyển xong, sau đó không dùng nữa. Bản trước khi chuyển: nhánh `backup-truoc-firebase-20261104`.
-- Bản mở trên Claude vẫn dùng kho dữ liệu của artifact như trước.
+Đăng nhập bằng mã lớp đã bỏ hẳn; mã nguồn cũ (mã lớp, đếm lượt, kết nối GitHub bằng token) đã xóa ngày 28/11/2026. Dữ liệu `pnl_ma` trên Firestore vẫn giữ để tra cứu và có trong bản Sao lưu.
 
 ## Khuôn web học phần (thống nhất từ 29/10/2026)
 
@@ -67,7 +61,7 @@ Luật Hiến pháp (9 chương, thêm khung chương cùng ngày). Khi biên so
 
 Trang chủ dựng lại theo bố cục Phúc Nguyên Digital (PND): thanh trên, băng giới thiệu, cột trái **Danh mục học phần**, cột giữa (Đánh giá định kỳ → Tài liệu, giáo trình ★ → Liên kết thông dụng), cột phải **Hướng dẫn sử dụng**. Mã khung: `assets/pnl-shell.js`, `assets/pnl-shell.css`.
 
-- **Một trang, hai vai**: đăng nhập Google bằng tài khoản quản trị → hiện nút thêm/sửa ngay trên trang và mục Quản trị ở cột trái (Mã lớp, Đánh giá định kỳ, Góp ý, Sao lưu). Người vào bằng mã lớp chỉ đọc. Thư mục `quan-tri/` chỉ còn chuyển hướng về trang chủ.
+- **Một trang, hai vai**: đăng nhập Google bằng tài khoản quản trị → hiện nút thêm/sửa ngay trên trang và mục Quản trị ở cột trái (Mã lớp, Đánh giá định kỳ, Góp ý, Sao lưu). Sinh viên, giảng viên đăng nhập tài khoản chỉ đọc học phần được mở. Thư mục `quan-tri/` chỉ còn chuyển hướng về trang chủ.
 - **Trang học phần**: 6 mục mặc định cho mọi học phần (Thi thử, Lý thuyết, Tình huống, Văn bản & án lệ, Tóm tắt lý thuyết, Mind map) + Tài liệu, giáo trình (thư mục, tài liệu). Học phần chưa có trang riêng dùng `hp/hoc-phan.html?id=…` (đọc Firestore).
 - **Thêm học phần**: tên, màu, ảnh bìa, trạng thái, vị trí; danh sách chương gõ tay hoặc đọc từ đề cương chi tiết (PDF, .docx, .txt).
 - **Tài liệu**: tải tệp lên Google Drive của quản trị (thư mục "PNL - Phúc Nguyên Library", quyền `drive.file`, mở chế độ ai có link được xem) hoặc dán liên kết; đánh dấu ★ để hiện ở trang chủ.
@@ -83,7 +77,7 @@ Một nơi cho mọi việc quản trị: `lop/index.html` + `lop/app.js`. Vào 
 - **Lớp**: thẻ lớp theo năm học; tạo lớp đặt **mật khẩu chung của lớp** (lưu `pnl_dg_ds/{mã}.matKhau`, chỉ quản trị đọc); nhập danh sách từ Excel APAG → tự tạo tài khoản `pnl_tk/{mssv}` với băm SHA-256 của (mssv | mật khẩu chung). Sinh viên tự đổi mật khẩu riêng; **Đặt lại** đưa về mật khẩu chung; đổi mật khẩu chung thì tài khoản còn dùng mật khẩu chung được cập nhật theo.
 - **Phiên sinh viên**: trình duyệt đăng nhập ẩn danh, ghi `pnl_phien/{uid}` = {mssv, h}; quy tắc Firestore chỉ cho ghi khi `h` khớp `pnl_tk/{mssv}.pw` (băm không bao giờ đọc được từ trình duyệt khác). Sinh viên đã đăng nhập được phiên mã lớp của trang chủ để mở học phần của lớp mình.
 - **Học phần**: thẻ học phần → trang quản trị theo học phần (lớp, ĐGĐK từng lớp, mã ôn tập mở học phần, nội dung); Thêm lớp / Cấp mã từ đây.
-- **Mã lớp ôn tập (khách)** `pnl_ma` chuyển từ trang chủ sang đây (cùng dữ liệu). **Góp ý** đọc `pnl_gopy`.
+- **Góp ý** đọc `pnl_gopy`.
 - Danh sách học phần tĩnh: `assets/pnl-courses.json` (sinh từ `COURSES` trong `index.html`; cập nhật lại khi đổi COURSES) + học phần thêm trên Firestore `pnl_hp`.
 - Quy tắc Firestore: `firebase/firestore-pnl.rules` (khối pnl_tk, pnl_phien 17/11/2026 — phải xuất bản lại trong Firebase Console).
 - `lop/lop-hoc.js` (17/11): **Điểm danh QR** (`pnl_dd` buổi với mã 6 số + hạn mở, `pnl_dd_sv` lượt có mặt — sinh viên quét QR `#dd/<buổi>/<mã>` hoặc nhập mã; GV đánh dấu tay), **Điểm chuyên cần** = 10 × có mặt / tổng buổi, sửa tay ở `pnl_cc`, xuất CSV; **Bảng tin** `pnl_tin`; **Bài tập** `pnl_bt` + bài nộp `pnl_bt_nop` (link hoặc nội dung). Quản trị ĐGĐK nhúng trong tab Kiểm tra, thi / Bảng điểm / Thống kê (iframe `danh-gia/index.html?embed=1`).
@@ -96,3 +90,11 @@ Một nơi cho mọi việc quản trị: `lop/index.html` + `lop/app.js`. Vào 
 - **Điểm các học phần cho sinh viên** (`lop/#sv/diem`): đọc `pnl_kq/{đợt}__{mssv}`; quy tắc chỉ cho chính sinh viên đó đọc. Bảng điểm (danh-gia, tu-luan) tự ghi `pnl_kq` mỗi khi quản trị mở, chỉ ghi phần thay đổi; điểm tạm chưa xác nhận không công bố.
 - **Sửa lỗi không vào làm bài được**: trang tự luận Luật Dân sự tra danh sách theo lớp cha khi là đợt con, bắt buộc phiên tài khoản lớp và khóa mã SV theo phiên (trước đây gõ tay mã SV không đăng nhập → máy chủ từ chối, báo lỗi chung); trang Đánh giá định kỳ lấy danh sách lớp mới nhất của tài khoản, phát hiện phiên hết hạn, báo rõ khi quy tắc máy chủ cũ.
 - Quy tắc: phiên bản `20261124a` (thêm `pnl_kq`) — trang quản trị hiện thanh **Cập nhật ngay**, bấm một lần.
+
+## Dọn dẹp toàn hệ thống (28/11/2026)
+
+Chỉ giữ bản đang chạy; bản cũ xem ở nhánh `backup-truoc-don-dep-20261128`.
+- Xóa thi vấn đáp AI đã ngừng: `danh-gia/van-dap-ai.html`, `van-dap-live.js`, `quan-tri-khao-thi.*`, tài liệu cài đặt, `functions/`, `firebase.json`, `.firebaserc`, `scripts/`.
+- Xóa dữ liệu, tệp cũ: `data/ma-lop.json`, `data/luat-thuong-mai-cau-hoi.json`, `exports/` (CSV Quizizz cũ), `firebase/firestore-pnl-cu-0511.rules`, khóa đáp án tự luận cũ `luat-dan-su-tu-luan-key.enc.json` (đáp án đang dùng: `luat-dan-su-tu-luan-rubric.enc.json`), ảnh mind map không còn dùng (`assets/luat-doanh-nghiep/`, `assets/luat-hinh-su/`, `assets/luat-thuong-mai/ch1–2`).
+- Xóa mã chết: toàn bộ quản lý mã lớp cũ trong `index.html` và `assets/pnl-shell.js`; bộ chấm tự luận cũ 09/11 (`legalGrade`) và các hàm lớp cũ trong `danh-gia/tu-luan-luat-dan-su.html` — chỉ còn khung chấm 26/11; lớp thử dữ liệu giả và ngưỡng chấm 05/11 trong `danh-gia/index.html`.
+- Sửa `tools/kiem_tra.py`: trước đây chỉ soát được thẻ `<script>` không thuộc tính; nay soát mọi khối mã của trang tự luận và kiểm tệp đáp án đang dùng.

@@ -196,10 +196,8 @@ const CT={lv:{NB:10,TH:12,VD:8},lt:30,thCases:[4,3,3],dLT:2.25,dTH:2.25,dTL:10};
 /* Tự luận (06/11/2026): tiêu chí 1 — làm đủ các bước, trả lời đủ câu hỏi = 50% điểm tự luận; tiêu chí 2 — nội dung chấm theo từ khóa = 50% */
 const PHAN_BUOC=0.5;
 /* Thang chấm rộng tay: đúng một nửa nội dung đạt ít nhất 70% phần điểm nội dung. */
-const quyDoiRongTay=p=>p<=0?0:p<0.5?1.4*p:0.7+0.6*(Math.min(1,p)-0.5);
 const fz=x=>String(r2(x)).replace(".",",");
 /* Chấm tự luận theo từ khóa: ngưỡng gợi ý mức đạt của từng ý */
-const NGUONG={dat:0.45,motPhan:0.2};
 
 /* ====== TIỆN ÍCH ====== */
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -856,12 +854,6 @@ function classForm(l){
     try{const ref=db.doc("pnl_dg_lop/"+ma);if(!l){if((await ref.get()).exists){err.textContent="Mã lớp này đã có.";return}data.created=FV.serverTimestamp();data.siSo=0}
       await ref.set(data,{merge:true});closeModal();AD.loaded=0;location.hash="#quan-tri/"+encodeURIComponent(ma);route()}catch(x){err.textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
-async function makeDemo(hpId){
-  const hp=hpOf(hpId||"luat-dan-su"),ma="THU-"+(hp.ma||"DS"),tg=THOI_GIAN_CHUNG;if(!await ask("Tạo lớp thử","Tạo lớp <b>"+ma+"</b> ("+esc(hp.name)+", "+tg+" phút, mở 14 ngày) với 5 sinh viên giả TEST001–TEST005. Nếu lớp đã có, danh sách được làm mới.","Tạo lớp thử"))return;
-  const now=new Date();const rows=[["TEST001","Nguyễn Văn An","01/01/2005"],["TEST002","Trần Thị Bình","02/02/2005"],["TEST003","Lê Minh Châu","03/03/2005"],["TEST004","Phạm Thu Dung","04/04/2005"],["TEST005","Hoàng Đức Em","05/05/2005"]].map(r=>({mssv:r[0],hoTen:r[1],ngaySinh:r[2]}));
-  await db.doc("pnl_dg_lop/"+ma).set({ten:"Lớp thử "+hp.name,hocPhan:hp.id,hocPhanTen:hp.name,namHoc:"2026–2027",thoiGian:tg,openAt:TS.fromDate(new Date(now.getTime()-6e4)),closeAt:TS.fromDate(new Date(now.getTime()+14*864e5)),open:true,created:FV.serverTimestamp(),siSo:0,thu:true},{merge:true});
-  await saveRoster(ma,rows);AD.loaded=0;location.hash="#quan-tri/"+ma;route();
-}
 async function saveRoster(ma,rows){
   const old=await db.collection("pnl_dg_sv").where("maLop","==",ma).get();const keep=new Set(rows.map(r=>r.mssv));
   let ops=[];old.docs.forEach(d=>{if(!keep.has(d.data().mssv))ops.push(b=>b.delete(d.ref))});
@@ -870,7 +862,6 @@ async function saveRoster(ma,rows){
   ops.push(b=>b.set(db.doc("pnl_dg_lop/"+ma),{siSo:rows.length},{merge:true}));
   for(let i=0;i<ops.length;i+=400){const b=db.batch();ops.slice(i,i+400).forEach(f=>f(b));await b.commit()}
 }
-function alertMsg(t){const m=modal('<p>'+esc(t)+'</p><div class="row" style="justify-content:flex-end"><button class="btn primary" id="m-ok">Đóng</button></div>',"sm");m.querySelector("#m-ok").onclick=closeModal}
 function gradeView(mssv){
   const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:""};const r=ketQua(sv);const b=r.b,B=BB(b),cs=B.cases[b.de.tl];
   const c=AD.cham[mssv];const ys=chamTL(cs,b.essay);const saved=c&&Array.isArray(c.muc)?c.muc:null;
@@ -906,9 +897,6 @@ function gradeView(mssv){
     try{await db.doc("pnl_dg_cham/"+AD.ma+"__"+mssv).set({maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tlMax:tlMaxOf(B),tong10,nguon:"giang-vien",xacNhan:true,note:m.querySelector("#g-note").value.trim(),luc:FV.serverTimestamp()});
       AD.cham[mssv]={maLop:AD.ma,mssv,muc:v,buoc:bv,diem:tl,tong10,xacNhan:true,luc:TS.now()};closeModal();renderView()}catch(x){m.querySelector("#g-err").textContent="Không lưu được ("+(x.code||x.message)+")."}};
 }
-function lichSu(mssv){const b=AD.bai[mssv];if(!b)return '<span class="msg">Chưa làm</span>';
-  const t=b.status==="da-nop"?'<span class="pill open">Đã nộp</span> <span class="msg">'+esc(fmtDT(toDate(b.submittedAt)))+'</span>':'<span class="pill wait">Đang làm</span> <span class="msg">từ '+esc(fmtDT(toDate(b.startedAt)))+'</span>';
-  return t+` <button class="btn small" data-paper="${esc(mssv)}">Xem bài</button>`}
 /* Bản xem lại cho sinh viên (26/11/2026): cùng nội dung bài làm như giảng viên xem, không có mã câu nội bộ; ghi vào pnl_kq khi đã có điểm và đợt đã đóng */
 function paperReview(mssv){const b=AD.bai[mssv];if(!b||!b.de)return null;const sv=AD.ds.find(x=>x.mssv===mssv)||{mssv,hoTen:b.hoTen||""};
   const {h,r,B,de}=paperBody(mssv,b,sv,true);
